@@ -16,6 +16,8 @@ import { ThemeService } from './services/theme.service';
   standalone: true,
   imports: [IonApp, IonRouterOutlet, ToastComponent],
   template: `
+    <!-- Vedi .statusbar-strip in styles.css: sta fuori da ion-app apposta. -->
+    <div class="statusbar-strip" aria-hidden="true"></div>
     <ion-app>
       <ion-router-outlet></ion-router-outlet>
     </ion-app>

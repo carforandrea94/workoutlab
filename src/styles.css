@@ -282,6 +282,26 @@ ion-back-button{--color:var(--label);--background:var(--surface-raise);--border-
 .navicon{width:38px;height:38px;border-radius:var(--r-md);border:1px solid var(--border-line);background:var(--surface-raise);color:var(--label);display:flex;align-items:center;justify-content:center;cursor:pointer;}
 .navicon:disabled{opacity:.5;cursor:not-allowed;}
 ion-buttons[slot=end] .navicon + .navicon,ion-buttons[slot=end] ion-segment + .navicon{margin-left:8px;}
+/* Striscia sotto la barra di stato, solo nell'app installata sulla Home.
+   Con apple-mobile-web-app-status-bar-style=black-translucent la pagina arriva
+   sotto la barra di stato, e da iOS 26 il sistema ci disegna sopra una
+   sfocatura progressiva (scroll-edge effect) che scende di una quarantina di
+   punti: dentro c'e' la prima riga della testata, il titolo, che esce sfocato.
+   Non c'e' un meta ne' una proprieta' CSS per spegnerla. Le segnalazioni
+   raccolte dai progetti che l'hanno incontrata dicono che WebKit la salta se in
+   cima alla pagina c'e' un box fixed (o sticky) con sfondo pieno, largo quasi
+   quanto lo schermo e senza backdrop-filter: invece della sfocatura usa il
+   colore di quel box. Cosi' basta una striscia dello stesso colore dello
+   sfondo, alta quanto l'area sicura, che non cambia nulla a vista.
+   Deve stare FUORI da ion-app: le pagine di Ionic hanno contain:layout, e un
+   fixed li' dentro si posiziona sulla pagina e non sullo schermo, quindi per
+   WebKit non sarebbe un oggetto fissato al bordo della finestra. Niente
+   z-index: lo sfondo della testata ha gia' lo stesso colore, e le finestre
+   sopra la pagina (alert, sheet) la devono coprire come coprono il resto. */
+.statusbar-strip{display:none;}
+@media (display-mode: standalone){
+  .statusbar-strip{display:block;position:fixed;top:0;left:0;right:0;height:var(--safe-t);background:var(--bg);pointer-events:none;}
+}
 ion-content{--background:var(--bg);--color:var(--label);--padding-bottom:calc(var(--tabbar-h) + var(--tabbar-gap) + 28px);}
 .wrap{position:relative;z-index:1;max-width:640px;margin:0 auto;padding:0 16px;}
 
