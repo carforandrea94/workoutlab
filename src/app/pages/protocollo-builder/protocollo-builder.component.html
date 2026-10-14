@@ -8,16 +8,16 @@
     </ion-title>
     <ion-buttons slot="end">
       @if (!protocolBuilderState.editingSubform()) {
-      <button class="navicon" (click)="save(false)" [disabled]="protocolBuilderState.saving()" aria-label="Salva bozza" title="Salva bozza">
+      <ion-button class="navicon" (click)="save(false)" [disabled]="protocolBuilderState.saving()" aria-label="Salva bozza" title="Salva bozza">
         <lucide-icon name="save" [size]="18"></lucide-icon>
-      </button>
-      <button class="navicon" (click)="save(true)" [disabled]="protocolBuilderState.saving()" aria-label="Salva e attiva" title="Salva e attiva">
+      </ion-button>
+      <ion-button class="navicon" (click)="save(true)" [disabled]="protocolBuilderState.saving()" aria-label="Salva e attiva" title="Salva e attiva">
         <lucide-icon name="check" [size]="18"></lucide-icon>
-      </button>
+      </ion-button>
       }
-      <button class="navicon" [routerLink]="['/scheda/protocolli/aggiorna-pdf', protocolId]" routerDirection="forward" aria-label="Aggiorna da PDF" title="Aggiorna da PDF">
+      <ion-button class="navicon" [routerLink]="['/scheda/protocolli/aggiorna-pdf', protocolId]" routerDirection="forward" aria-label="Aggiorna da PDF" title="Aggiorna da PDF">
         <lucide-icon name="file-up" [size]="18"></lucide-icon>
-      </button>
+      </ion-button>
     </ion-buttons>
   </ion-toolbar>
 </ion-header>
@@ -97,7 +97,7 @@
 
       <!-- ===================== IL SINGOLO GIORNO ===================== -->
       <ng-container *ngIf="tab === 'scheda' && !editingExercise && editingDay as ed">
-        <button class="editorback mb-4" (click)="closeDay()">← Giorni</button>
+        <ion-button class="editorback mb-4" (click)="closeDay()">← Giorni</ion-button>
 
         <div class="authfield">
           <label for="day-label">Nome giorno</label>
@@ -154,7 +154,7 @@
 
       <!-- ===================== EDITOR ESERCIZIO ===================== -->
       <ng-container *ngIf="tab === 'scheda' && editingExercise as ee">
-        <button class="editorback mb-4" (click)="cancelExercise()">← Annulla</button>
+        <ion-button class="editorback mb-4" (click)="cancelExercise()">← Annulla</ion-button>
 
         <div class="authfield">
           <label>Nome esercizio</label>
@@ -218,8 +218,8 @@
                     [attr.aria-label]="'Ripetizioni del blocco ' + (i + 1)"></ion-input>
                   <span class="unit">rip</span>
                 </div>
-                <button type="button" class="delete-btn" *ngIf="c.end === 'fixed' && c.blocks.length > 2"
-                  (click)="removeBlock(ee.ex, i)" [attr.aria-label]="'Togli il blocco ' + (i + 1)">✕</button>
+                <ion-button type="button" class="delete-btn" *ngIf="c.end === 'fixed' && c.blocks.length > 2"
+                  (click)="removeBlock(ee.ex, i)" [attr.aria-label]="'Togli il blocco ' + (i + 1)">✕</ion-button>
                 <span class="cluster-plus" *ngIf="i < c.blocks.length - 1" aria-hidden="true">+</span>
               </div>
             </div>
@@ -286,7 +286,7 @@
                 <ion-input type="number" [(ngModel)]="wp.reps" placeholder="rip"></ion-input>
                 <span class="unit">rip</span>
               </div>
-              <button class="delete-btn" (click)="removeExWeek(ee.ex, i)" title="Rimuovi settimana">✕</button>
+              <ion-button class="delete-btn" (click)="removeExWeek(ee.ex, i)" title="Rimuovi settimana">✕</ion-button>
             </div>
             <ion-button class="confirmbtn cancel mt-2 w-full" (click)="addExWeek(ee.ex)">+ Aggiungi settimana</ion-button>
           </div>
@@ -322,9 +322,9 @@
                 <div class="lbl">{{ plan.name }}</div>
                 <div class="meta">{{ countPlanItems(plan) }} alimenti</div>
               </div>
-              <button class="delete-btn" (click)="removePlan(plan, $event)" title="Elimina">
+              <ion-button class="delete-btn" (click)="removePlan(plan, $event)" title="Elimina">
                 <lucide-icon name="trash-2" [size]="14"></lucide-icon>
-              </button>
+              </ion-button>
               <span class="chev">
                 <lucide-icon name="chevron-right" [size]="13"></lucide-icon>
               </span>
@@ -338,7 +338,7 @@
 
         <!-- Editor del piano selezionato -->
         <ng-container *ngIf="editingPlan && !editingMeal">
-          <button class="editorback mb-4" (click)="closePlan()">← Torna ai piani</button>
+          <ion-button class="editorback mb-4" (click)="closePlan()">← Torna ai piani</ion-button>
 
           <div class="authfield mb-4">
             <label>Nome del piano</label>
@@ -356,9 +356,9 @@
           <div class="infocard meal-preview-card" *ngFor="let meal of editingPlan.meals" (click)="openMeal(meal)">
             <div class="meal-preview-header">
               <div class="lbl">{{ meal.name || 'Pasto senza nome' }}</div>
-              <button class="delete-btn" (click)="removeMeal(meal, $event)" title="Elimina pasto">
+              <ion-button class="delete-btn" (click)="removeMeal(meal, $event)" title="Elimina pasto">
                 <lucide-icon name="trash-2" [size]="14"></lucide-icon>
-              </button>
+              </ion-button>
             </div>
 
             <span class="meal-preview-catlabel mb-2" *ngIf="meal.combinations.length > 1" style="display:block">Combinazioni</span>
@@ -436,7 +436,7 @@
 
         <!-- Editor del pasto selezionato -->
         <ng-container *ngIf="editingPlan && editingMeal as em">
-          <button class="editorback mb-4" (click)="closeMeal()">← Torna ai pasti</button>
+          <ion-button class="editorback mb-4" (click)="closeMeal()">← Torna ai pasti</ion-button>
 
           <div class="authfield mb-4">
             <label>Nome pasto</label>
@@ -493,7 +493,7 @@
                   <div class="measure-input-wrap builder-qty">
                     <ion-input type="text" [(ngModel)]="item.qty" placeholder="Quantita'"></ion-input>
                   </div>
-                  <button class="delete-btn" (click)="clearComboItem(getActiveCombo(em), cat, $event)">✕</button>
+                  <ion-button class="delete-btn" (click)="clearComboItem(getActiveCombo(em), cat, $event)">✕</ion-button>
                   <div class="dragghost" *cdkDragPlaceholder></div>
                 </div>
               </div>
@@ -520,7 +520,7 @@
                       <div class="measure-input-wrap builder-qty">
                         <ion-input type="text" [(ngModel)]="a.qty" placeholder="Quantita'"></ion-input>
                       </div>
-                      <button class="delete-btn" (click)="removeItemAltEntry(item2, a)">✕</button>
+                      <ion-button class="delete-btn" (click)="removeItemAltEntry(item2, a)">✕</ion-button>
                       <div class="dragghost" *cdkDragPlaceholder></div>
                     </div>
                   </div>
@@ -571,7 +571,7 @@
                     <div class="measure-input-wrap builder-qty">
                       <ion-input type="text" [(ngModel)]="item.qty" placeholder="Quantita'"></ion-input>
                     </div>
-                    <button class="delete-btn" (click)="removeAltItem(em, cat, item)">✕</button>
+                    <ion-button class="delete-btn" (click)="removeAltItem(em, cat, item)">✕</ion-button>
                     <!-- Il posto dove la riga andrebbe a finire: la riga vera lo
                          segue sotto il dito, e qui resta il suo ingombro. -->
                     <div class="dragghost" *cdkDragPlaceholder></div>
@@ -599,7 +599,7 @@
                 <div class="measure-input-wrap builder-qty">
                   <ion-input type="text" [(ngModel)]="s.qty" placeholder="Dose (es. 5 g)"></ion-input>
                 </div>
-                <button class="delete-btn" (click)="removeSupplement(em, s)">✕</button>
+                <ion-button class="delete-btn" (click)="removeSupplement(em, s)">✕</ion-button>
                 <div class="dragghost" *cdkDragPlaceholder></div>
               </div>
             </div>

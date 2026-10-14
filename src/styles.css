@@ -278,8 +278,16 @@ ion-toolbar ion-buttons[slot=end]{margin-left:10px;}
 /* Solo la freccia: il testo lo toglie la configurazione (backButtonText in
    app.config.ts), qui il riquadro e il segno. Stessa forma dei .navicon. */
 ion-back-button{--color:var(--label);--background:var(--surface-raise);--border-radius:var(--r-md);--min-width:38px;--min-height:38px;--padding-start:0;--padding-end:0;--icon-margin-start:0;--icon-margin-end:0;--icon-font-size:24px;width:38px;height:38px;border:1px solid var(--border-line);border-radius:var(--r-md);}
-.navicon{width:38px;height:38px;border-radius:var(--r-md);border:1px solid var(--border-line);background:var(--surface-raise);color:var(--label);display:flex;align-items:center;justify-content:center;cursor:pointer;}
-.navicon:disabled{opacity:.5;cursor:not-allowed;}
+/* Le icone della testata: ion-button quadrati da 38px, come i riquadri
+   delle altre parti della testata. Il bordo e l'ombra sono quelli delle altre
+   superfici; disabilitato lo gestisce Ionic. */
+ion-button.navicon{--background:var(--surface-raise);--color:var(--label);--border-radius:var(--r-md);--border-width:1px;--border-style:solid;--border-color:var(--border-line);--box-shadow:var(--shadow-card);--padding-start:0;--padding-end:0;--padding-top:0;--padding-bottom:0;--background-activated-opacity:0;--background-hover-opacity:0;--background-focused-opacity:.12;min-height:0;text-transform:none;width:38px;height:38px;}
+:where(ion-button.navicon){margin:0;}
+/* Dentro ion-buttons, Ionic rifa' ogni pulsante a modo suo: 2px ai lati, angoli
+   a 4px, riempimento di 5px, altezza minima 32px. Lo fa con regole piu'
+   specifiche di quella sopra (una e' un :not()), quindi qui le si riprende
+   una per una; fra due icone restano gli 8px di sotto. */
+ion-buttons ion-button.navicon:not(.button-round){--border-radius:var(--r-md);--padding-start:0;--padding-end:0;--padding-top:0;--padding-bottom:0;min-height:0;margin-inline:0;}
 ion-buttons[slot=end] .navicon + .navicon,ion-buttons[slot=end] ion-segment + .navicon{margin-left:8px;}
 /* Striscia sotto la barra di stato, solo nell'app installata sulla Home.
    Con apple-mobile-web-app-status-bar-style=black-translucent la pagina arriva
@@ -364,8 +372,11 @@ ion-content{--background:var(--bg);--color:var(--label);--padding-bottom:calc(va
 .daycard .info .lbl,.cardrow .info .lbl{font-weight:700;font-size:var(--text-lg);letter-spacing:-.005em;line-height:1.25;}
 .daycard .info .meta,.cardrow .info .meta{font-family:'IBM Plex Mono',monospace;font-size:var(--text-xs);color:var(--label-2);margin-top:3px;}
 .daycard .chev{color:var(--label-3);font-size:var(--text-xl);flex-shrink:0;}
-.delete-btn{width:38px;height:38px;border-radius:var(--r-sm);flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;}
-.delete-btn:active{background:var(--state-danger);border-color:var(--state-danger);color:#fff;}
+/* Il cestino piccolo: fondo rosso tenue, gia' calcolato per tema in
+   --state-danger-soft; premuto diventa rosso pieno. */
+ion-button.delete-btn{--background:var(--state-danger-soft);--color:var(--state-danger-text);--border-color:var(--state-danger-soft-border);--border-width:1px;--border-style:solid;--box-shadow:var(--shadow-card);--border-radius:var(--r-sm);--padding-start:0;--padding-end:0;--padding-top:0;--padding-bottom:0;--background-activated-opacity:0;--background-hover-opacity:0;--background-focused-opacity:.12;width:38px;height:38px;min-height:0;flex-shrink:0;font-size:13.3333px;text-transform:none;}
+:where(ion-button.delete-btn){margin:0;}
+ion-button.delete-btn:active{--background:var(--state-danger);--border-color:var(--state-danger);--color:#fff;}
 .daycard:active{background:var(--surface-press);}
 /* La stessa card con l'azione che compare scorrendo verso sinistra
    (ion-item-sliding). Bordo, angoli e ombra stanno sul contenitore, che taglia
@@ -436,8 +447,9 @@ ion-item-sliding.cardrow ion-item-option{--background:var(--state-danger);--colo
 .ex-chip.rest:hover{color:var(--label);background:var(--surface-raise-2);}
 .sheet-title{font-weight:700;margin-bottom:16px;}
 .rest-stepper{display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:14px;}
-.rest-stepbtn{width:44px;height:44px;border-radius:var(--r-lg);border:1px solid var(--border-line);background:var(--surface-raise);color:var(--label);font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:var(--text-sm);cursor:pointer;}
-.rest-stepbtn:active{transform:scale(0.92);}
+ion-button.rest-stepbtn{--background:var(--surface-raise);--color:var(--label);--border-radius:var(--r-lg);--border-width:1px;--border-style:solid;--border-color:var(--border-line);--box-shadow:var(--shadow-card);--padding-start:0;--padding-end:0;--padding-top:0;--padding-bottom:0;--background-activated-opacity:0;--background-hover-opacity:0;--background-focused-opacity:.12;min-height:0;text-transform:none;width:44px;height:44px;font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:var(--text-sm);}
+:where(ion-button.rest-stepbtn){margin:0;}
+ion-button.rest-stepbtn:active{transform:scale(0.92);}
 .rest-value{font-family:'IBM Plex Mono',monospace;font-size:var(--text-3xl);font-weight:700;color:var(--label);min-width:88px;text-align:center;}
 .rest-defaultbtn{width:100%;padding:10px;margin-bottom:16px;border-radius:var(--r-md);border:1px dashed var(--border-line);background:transparent;color:var(--label-2);font-family:'Inter',sans-serif;font-size:var(--text-sm);font-weight:600;cursor:pointer;}
 .rest-defaultbtn:hover{color:var(--label);border-color:var(--label-2);}
@@ -719,10 +731,12 @@ lucide-icon svg.filled{fill:currentColor;}
 /* I link erano alti quanto la loro riga di testo, una ventina di px: sotto i
    44 che l'app tiene ovunque, e sono gli unici tre bersagli della schermata
    oltre al tasto. */
-.authlink{display:flex;align-items:center;justify-content:center;width:100%;min-height:44px;text-align:center;font-family:'Inter',sans-serif;font-size:var(--text-sm);color:var(--label-2);text-decoration:underline;text-underline-offset:3px;background:none;border:none;cursor:pointer;}
+a.authlink{display:flex;align-items:center;justify-content:center;width:100%;min-height:44px;text-align:center;font-family:'Inter',sans-serif;font-size:var(--text-sm);color:var(--label-2);text-decoration:underline;text-underline-offset:3px;background:none;border:none;cursor:pointer;}
+ion-button.authlink{--background:transparent;--color:var(--label-2);--border-width:0;--box-shadow:none;--padding-start:0;--padding-end:0;--padding-top:0;--padding-bottom:0;--background-activated-opacity:0;--background-hover-opacity:0;--background-focused-opacity:.12;width:100%;min-height:44px;font-family:'Inter',sans-serif;font-weight:400;font-size:var(--text-sm);text-decoration:underline;text-underline-offset:3px;text-transform:none;display:block;}
+:where(ion-button.authlink){margin:0;}
 /* Quello sotto al tasto e' un ripiego, non una destinazione: resta piu' spento. */
-.authlink.quiet{margin-top:6px;color:var(--label-3);text-decoration:none;}
-.authlink.quiet:disabled{opacity:.55;cursor:default;}
+a.authlink.quiet{margin-top:6px;color:var(--label-3);text-decoration:none;}
+ion-button.authlink.quiet{margin-top:6px;--color:var(--label-3);text-decoration:none;}
 /* Il messaggio che non e' un errore: l'email per reimpostare la password e'
    partita, e un fondo rosso direbbe il contrario. */
 .authinfo{font-size:var(--text-sm);color:var(--label-2);background:var(--surface-raise);border:1px solid var(--border-line);border-radius:var(--r-sm);padding:10px 12px;margin-bottom:14px;line-height:1.45;}
@@ -937,8 +951,9 @@ ion-item.shop-cartitem ion-label{margin:0;}
    stessa altezza, stessa ombra - ma larga quanto il suo testo, perche' e' una
    via d'uscita e non l'azione della pagina. Prima era .confirmbtn, con un
    raggio piu' stretto di tutto il resto della schermata. */
-.editorback{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 18px;border-radius:var(--r-xl);background:var(--surface-card);border:1px solid var(--border-line);box-shadow:var(--shadow-card);font-family:'Inter',sans-serif;font-weight:700;font-size:var(--text-md);color:var(--label);cursor:pointer;transition:filter .2s ease;}
-.editorback:active{filter:brightness(0.92);}
+ion-button.editorback{--background:var(--surface-card);--color:var(--label);--border-radius:var(--r-xl);--border-width:1px;--border-style:solid;--border-color:var(--border-line);--box-shadow:var(--shadow-card);--padding-start:18px;--padding-end:18px;--padding-top:0;--padding-bottom:0;--background-activated-opacity:0;--background-hover-opacity:0;--background-focused-opacity:.12;display:inline-block;min-height:44px;font-family:'Inter',sans-serif;font-weight:700;font-size:var(--text-md);text-transform:none;transition:filter .2s ease;}
+:where(ion-button.editorback){margin:0;}
+ion-button.editorback:active{filter:brightness(0.92);}
 
 .authfield input[type="file"]{font-family:'Inter',sans-serif;font-size:var(--text-sm);color:var(--label-2);background:var(--surface-raise);border:1px dashed var(--border-line);border-radius:var(--r-sm);padding:10px;width:100%;}
 .authfield input[type="file"]::file-selector-button{font-family:'Inter',sans-serif;font-weight:600;font-size:var(--text-xs);color:var(--label);background:var(--surface-raise-2);border:1px solid var(--border-line);border-radius:var(--r-xs);padding:6px 10px;margin-right:10px;cursor:pointer;}
@@ -1299,21 +1314,11 @@ ion-picker.heightpicker{margin-bottom:18px;}
    delimita, nient'altro.
    =================================================================== */
 .variant-tabs button,
-.navicon,
-.backbtn,
-.delete-btn {
+.backbtn {
   border: 1px solid var(--border-line);
   box-shadow: var(--shadow-card);
 }
 
-/* L'elimina piccolo, con il cestino: fondo rosso tenue, gia' calcolato per
-   tema in --state-danger-soft, invece di un gradiente traslucido steso sulla
-   card. (Quello largo e' ion-button.savebtn.delete-session-btn.) */
-.delete-btn {
-  background: var(--state-danger-soft);
-  color: var(--state-danger-text);
-  border-color: var(--state-danger-soft-border);
-}
 
 /* Il toast e' un ion-toast: qui solo l'aspetto, la posizione la dà positionAnchor. */
 ion-toast.apptoast{--background:var(--accent);--color:var(--accent-contrast);--border-radius:var(--r-pill);--box-shadow:var(--shadow-float);--max-width:calc(100vw - 32px);--button-color:var(--accent-contrast);font-weight:600;font-size:var(--text-md);text-align:center;}

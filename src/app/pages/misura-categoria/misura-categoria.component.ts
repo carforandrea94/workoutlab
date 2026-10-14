@@ -9,13 +9,13 @@ import { MeasureCategory, MeasureField, CATEGORY_FIELDS, CATEGORY_LABELS } from 
 import { MeasureCategoryStateService } from '../../services/measure-category-state.service';
 import { ToastService } from '../../services/toast.service';
 import { IONIC_PAGE } from '../../core/ionic-page';
-import { NavController, IonInput, IonSpinner } from '@ionic/angular';
+import { NavController, IonInput, IonSpinner, IonButton } from '@ionic/angular';
 import { LucideAngularModule } from 'lucide-angular';
 
 @Component({
   selector: 'app-misura-categoria',
   standalone: true,
-  imports: [IonInput, IonSpinner, ...IONIC_PAGE, LucideAngularModule, CommonModule, FormsModule],
+  imports: [IonButton, IonInput, IonSpinner, ...IONIC_PAGE, LucideAngularModule, CommonModule, FormsModule],
   templateUrl: './misura-categoria.component.html'
 })
 export class MisuraCategoriaComponent implements OnInit, OnDestroy {

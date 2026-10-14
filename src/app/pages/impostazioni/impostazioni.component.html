@@ -83,11 +83,11 @@
         <div class="account-row" *ngIf="percentualeAttiva">
           <span class="account-row-label">Quanto</span>
           <div class="percentstep">
-            <button class="rest-stepbtn" (click)="cambiaPercentuale(-passoPercentuale)"
-                    aria-label="Abbassa la percentuale">–2,5</button>
+            <ion-button class="rest-stepbtn" (click)="cambiaPercentuale(-passoPercentuale)"
+                    aria-label="Abbassa la percentuale">–2,5</ion-button>
             <span class="percentval">{{ percentualeLabel }}</span>
-            <button class="rest-stepbtn" (click)="cambiaPercentuale(passoPercentuale)"
-                    aria-label="Alza la percentuale">+2,5</button>
+            <ion-button class="rest-stepbtn" (click)="cambiaPercentuale(passoPercentuale)"
+                    aria-label="Alza la percentuale">+2,5</ion-button>
           </div>
         </div>
       </div>

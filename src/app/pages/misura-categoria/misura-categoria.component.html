@@ -7,9 +7,9 @@
       <div class="navtitle">{{ title }}</div>
     </ion-title>
     <ion-buttons slot="end">
-      <button class="navicon" (click)="save()" [disabled]="measureState.saving()" aria-label="Salva misurazione" title="Salva misurazione">
+      <ion-button class="navicon" (click)="save()" [disabled]="measureState.saving()" aria-label="Salva misurazione" title="Salva misurazione">
         <lucide-icon name="check" [size]="18"></lucide-icon>
-      </button>
+      </ion-button>
     </ion-buttons>
   </ion-toolbar>
 </ion-header>

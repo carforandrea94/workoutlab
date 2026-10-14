@@ -70,9 +70,9 @@
 
           <!-- Senza questo, una password dimenticata chiudeva fuori dall'app e
                basta: non c'era nessun modo di rientrare. -->
-          <button type="button" class="authlink quiet" [disabled]="sendingReset" (click)="resetPassword()">
+          <ion-button type="button" class="authlink quiet" [disabled]="sendingReset" (click)="resetPassword()">
             {{ sendingReset ? 'Invio in corso…' : 'Password dimenticata?' }}
-          </button>
+          </ion-button>
         </div>
       </form>
 

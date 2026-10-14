@@ -451,9 +451,9 @@
           Recupero — {{ restModalVm?.ex?.name }}
         </p>
         <div class="rest-stepper">
-          <button class="rest-stepbtn" (click)="adjustRestModalValue(-15)">–15</button>
+          <ion-button class="rest-stepbtn" (click)="adjustRestModalValue(-15)">–15</ion-button>
           <div class="rest-value">{{ formatRest(restModalValue) }}</div>
-          <button class="rest-stepbtn" (click)="adjustRestModalValue(15)">+15</button>
+          <ion-button class="rest-stepbtn" (click)="adjustRestModalValue(15)">+15</ion-button>
         </div>
         <button class="rest-defaultbtn" (click)="resetRestModalToDefault()">
           Usa il default del protocollo ({{ formatRest(parseRecSecondsPublic()) }})

@@ -92,7 +92,7 @@ import { IonModal, IonInput, IonSegment, IonSegmentButton, IonToggle, IonPicker,
       font-weight: 700; color: var(--label); font-variant-numeric: tabular-nums;
       min-width: 56px; text-align: center;
     }
-    .percentstep .rest-stepbtn { min-width: 52px; padding: 8px 10px; font-size: var(--text-xs); }
+    .percentstep ion-button.rest-stepbtn { min-width: 52px; font-size: var(--text-xs); }
     .settings-hint {
       font-size: var(--text-xs); line-height: 1.5; color: var(--label-3);
       margin: 10px 0 0;

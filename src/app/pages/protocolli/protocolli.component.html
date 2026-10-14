@@ -55,9 +55,9 @@
                 [disabled]="busyId === p.id" (click)="activate(p, $event)">
                 {{ busyId === p.id ? '…' : 'Attiva' }}
               </ion-button>
-              <button class="delete-btn" (click)="remove(p, $event)" title="Elimina">
+              <ion-button class="delete-btn" (click)="remove(p, $event)" title="Elimina">
                 <lucide-icon name="trash-2" [size]="14"></lucide-icon>
-              </button>
+              </ion-button>
             </div>
           </ion-item>
           <ion-item-options side="end">
