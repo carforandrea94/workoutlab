@@ -72,12 +72,12 @@
     <p class="sectiontitle">Allenamento</p>
     <div class="infocard">
       <div class="rows">
+        <!-- Acceso o spento: e' un interruttore, non una scelta fra due voci. -->
         <div class="account-row">
-          <span class="account-row-label">Percentuale del massimale</span>
-          <ion-segment class="seg labelseg" [value]="percentualeAttiva ? 'on' : 'off'">
-      <ion-segment-button value="off" (click)="spegniPercentuale()">Spenta</ion-segment-button>
-      <ion-segment-button value="on" (click)="accendiPercentuale()">Attiva</ion-segment-button>
-    </ion-segment>
+          <ion-toggle class="settingtoggle" labelPlacement="start" justify="space-between"
+            [checked]="percentualeAttiva" (ionChange)="impostaPercentuale($event.detail.checked)">
+            Percentuale del massimale
+          </ion-toggle>
         </div>
 
         <div class="account-row" *ngIf="percentualeAttiva">

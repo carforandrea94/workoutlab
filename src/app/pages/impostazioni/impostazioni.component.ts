@@ -19,12 +19,12 @@ import {
   heightOptions, toWheelValue, wheelValueAt, wheelOffsetOf, formatHeightCm
 } from '../../core/utils/height.util';
 import { IONIC_PAGE } from '../../core/ionic-page';
-import { IonModal, IonInput, IonSegment, IonSegmentButton } from '@ionic/angular';
+import { IonModal, IonInput, IonSegment, IonSegmentButton, IonToggle } from '@ionic/angular';
 
 @Component({
   selector: 'app-impostazioni',
   standalone: true,
-  imports: [IonSegment, IonSegmentButton, IonInput, ...IONIC_PAGE, IonModal, CommonModule, FormsModule, LucideAngularModule],
+  imports: [IonSegment, IonSegmentButton, IonToggle, IonInput, ...IONIC_PAGE, IonModal, CommonModule, FormsModule, LucideAngularModule],
   templateUrl: './impostazioni.component.html',
   styles: [`
     .account-row {
@@ -37,6 +37,17 @@ import { IonModal, IonInput, IonSegment, IonSegmentButton } from '@ionic/angular
        un separatore appeso al nulla. */
     .rows { display: flex; flex-direction: column; }
     .account-row-label {
+      font-family: 'Inter', sans-serif; font-size: 13.5px; color: var(--label-2);
+    }
+    /* L'interruttore di Ionic, con l'etichetta come quelle delle altre righe.
+       Il fondo da spento e' esplicito: Ionic lo ricava dal nero del testo, che
+       sul tema scuro non si vedrebbe. */
+    .settingtoggle {
+      width: 100%;
+      --track-background: var(--surface-raise-2);
+      --handle-background: #fff;
+    }
+    .settingtoggle::part(label) {
       font-family: 'Inter', sans-serif; font-size: 13.5px; color: var(--label-2);
     }
     .account-row-value {
@@ -178,6 +189,12 @@ export class ImpostazioniComponent implements OnInit {
     } catch {
       // Gia' segnalato da AppStateService: qui la riga resta spenta.
     }
+  }
+
+  /** L'interruttore dice solo acceso o spento: l'ultimo valore scelto non si ricorda, si riparte dal solito. */
+  impostaPercentuale(attiva: boolean): void {
+    if (attiva) this.accendiPercentuale();
+    else this.spegniPercentuale();
   }
 
   accendiPercentuale(): void {

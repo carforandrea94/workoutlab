@@ -38,18 +38,16 @@
     <div class="infocard measure-card">
       <div class="measure-field">
         <label>Tipo di uscita</label>
-        <div class="runseg">
-          <button type="button" class="runseg-btn" *ngFor="let t of types"
-            [class.on]="type === t.id" (click)="type = t.id">{{ t.label }}</button>
-        </div>
+        <ion-segment class="seg labelseg fullseg" [value]="type" aria-label="Tipo di uscita">
+          <ion-segment-button *ngFor="let t of types" [value]="t.id" (click)="type = t.id">{{ t.label }}</ion-segment-button>
+        </ion-segment>
       </div>
 
       <div class="measure-field mt-3">
         <label>Come e' andata</label>
-        <div class="runseg">
-          <button type="button" class="runseg-btn" *ngFor="let e of efforts"
-            [class.on]="effort === e.id" (click)="effort = e.id">{{ e.label }}</button>
-        </div>
+        <ion-segment class="seg labelseg fullseg" [value]="effort" aria-label="Come e' andata">
+          <ion-segment-button *ngFor="let e of efforts" [value]="e.id" (click)="effort = e.id">{{ e.label }}</ion-segment-button>
+        </ion-segment>
       </div>
 
       <div class="measure-field mt-3">
