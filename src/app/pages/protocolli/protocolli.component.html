@@ -10,6 +10,10 @@
 </ion-header>
 
 <ion-content>
+  <ion-refresher slot="fixed" (ionRefresh)="aggiorna($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
   <div class="wrap">
     <div *ngIf="loading" class="history-empty"><ion-spinner name="crescent" aria-label="Caricamento"></ion-spinner></div>
 

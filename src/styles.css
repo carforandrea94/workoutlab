@@ -1115,12 +1115,18 @@ lucide-icon svg.filled{fill:currentColor;}
 .confirmbtn{flex:1;padding:12px;border-radius:var(--r-lg);border:1px solid var(--border-line);font-family:'Inter',sans-serif;font-weight:700;font-size:var(--text-md);cursor:pointer;}
 
 /* ===== FOGLIO DAL BASSO (ion-modal.sheet-modal) =====
-   Ionic porta il modale sopra a tutto, tab comprese: non serve piu' spostare
-   il nodo in document.body a mano. Ancorato in fondo, alto quanto il contenuto. */
-ion-modal.sheet-modal{--width:100%;--max-width:608px;--height:auto;--background:transparent;--border-radius:0;--backdrop-opacity:.55;align-items:flex-end;}
+   Il foglio nativo di Ionic: handle in cima, si chiude trascinandolo verso il
+   basso o toccando lo sfondo, come i fogli di iOS. I breakpoint [0, 1] stanno
+   nel template; l'altezza e' quella del contenuto perche' i breakpoint sono
+   relativi al modale e non allo schermo, quindi --height:auto basta.
+   Sfondo, angoli e bordo stanno sul modale (e sulla sua parte "content"), non
+   piu' sul contenuto: l'handle e il gesto lavorano su quelli. */
+ion-modal.sheet-modal{--width:100%;--max-width:608px;--height:auto;--background:var(--surface-card);--border-radius:24px;--backdrop-opacity:.55;}
+ion-modal.sheet-modal::part(content){border:1px solid var(--border-line);border-bottom:none;box-shadow:0 -10px 28px rgba(0,0,0,.45);}
+ion-modal.sheet-modal::part(handle){width:36px;height:4px;background:var(--border-line);}
 ion-modal.sheet-modal .ion-page{position:relative;display:block;contain:content;}
-.bottomsheet{position:relative;width:100%;border-top-left-radius:24px;border-top-right-radius:24px;padding:10px 20px calc(var(--safe-b) + 16px);background:var(--surface-card);border:1px solid var(--border-line);border-bottom:none;box-shadow:0 -10px 28px rgba(0,0,0,.45);}
-.bottomsheet .grabber{width:36px;height:4px;border-radius:var(--r-pill);background:var(--border-line);margin:0 auto 14px;}
+/* In cima c'e' l'handle: il contenuto parte piu' sotto. */
+.bottomsheet{position:relative;width:100%;padding:24px 20px calc(var(--safe-b) + 16px);}
 /* Ruota di selezione. Il valore scelto e' quello fermo al centro: lo scorrimento
    si aggancia (scroll-snap) cosi' non esiste una posizione a meta' fra due
    tacche, e il valore fuori scala non e' respinto — e' irraggiungibile.

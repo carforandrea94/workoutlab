@@ -151,11 +151,11 @@
     <!-- La password si riscrive per due motivi: Firebase rifiuta di chiudere un
          account la cui sessione e' vecchia, e un'azione che non si annulla merita
          piu' di un tocco. -->
-    <ion-modal class="sheet-modal" [isOpen]="deleteSheetOpen" [backdropDismiss]="!deleting"
+    <ion-modal class="sheet-modal" [isOpen]="deleteSheetOpen" [canDismiss]="!deleting"
+               [breakpoints]="[0, 1]" [initialBreakpoint]="1"
                (didDismiss)="deleteSheetOpen = false">
      <ng-template>
       <div class="bottomsheet">
-        <div class="grabber"></div>
         <p class="confirmtext sheet-title">Chiudere l'account?</p>
 
         <p class="sheet-text">
@@ -189,10 +189,10 @@
 
     <!-- Lo apre la sezione Corpo. -->
     <ion-modal class="sheet-modal" [isOpen]="heightModalOpen" (willPresent)="onHeightPresent()"
+               [breakpoints]="[0, 1]" [initialBreakpoint]="1"
                (didDismiss)="heightModalOpen = false">
      <ng-template>
       <div class="bottomsheet">
-        <div class="grabber"></div>
         <p class="confirmtext sheet-title">Quanto sei alto</p>
 
         <div class="wheel-wrap">

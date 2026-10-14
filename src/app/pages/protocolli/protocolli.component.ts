@@ -4,7 +4,7 @@ import { CommonModule } from '@angular/common';
 import { ProtocolService } from '../../services/protocol.service';
 import { ConfirmDialogService } from '../../services/confirm-dialog.service';
 import { Protocol } from '../../models/protocol.model';
-import { IONIC_PAGE } from '../../core/ionic-page';
+import { IONIC_PAGE, IONIC_REFRESH, completaRefresh } from '../../core/ionic-page';
 import { NavController, IonSpinner } from '@ionic/angular';
 
 /**
@@ -14,7 +14,7 @@ import { NavController, IonSpinner } from '@ionic/angular';
 @Component({
   selector: 'app-protocolli',
   standalone: true,
-  imports: [IonSpinner, ...IONIC_PAGE, CommonModule, LucideAngularModule],
+  imports: [IonSpinner, ...IONIC_PAGE, ...IONIC_REFRESH, CommonModule, LucideAngularModule],
   templateUrl: './protocolli.component.html'
 })
 export class ProtocolliComponent implements OnInit {
@@ -30,6 +30,11 @@ export class ProtocolliComponent implements OnInit {
     private cdr: ChangeDetectorRef
   ) {}
 
+  /** Tira per aggiornare. */
+  aggiorna(ev: Event): Promise<void> {
+    return completaRefresh(ev, () => this.load(true));
+  }
+
   /** Ionic tiene viva la pagina nella pila: tornandoci ngOnInit non riparte, e i protocolli sono cambiati nel builder. */
   private primoIngresso = true;
   ionViewWillEnter(): void {
@@ -41,8 +46,9 @@ export class ProtocolliComponent implements OnInit {
     this.load();
   }
 
-  async load(): Promise<void> {
-    this.loading = true;
+  /** `silenzioso`: il gesto "tira per aggiornare" rilegge senza far sparire l'elenco dietro lo spinner. */
+  async load(silenzioso = false): Promise<void> {
+    if (!silenzioso) this.loading = true;
     this.errorMsg = '';
 
     const timeout = new Promise<never>((_, reject) =>
