@@ -17,14 +17,16 @@
 <ion-content>
   <div class="wrap">
     <p class="sectiontitle">Misure</p>
-    <div class="grouplist">
-      <div class="daycard press-fx" *ngFor="let c of categories" (click)="goTo(c.id)">
-        <div class="badge">{{ c.badge }}</div>
-        <div class="info">
-          <div class="lbl">{{ c.label }}</div>
+    <ion-list class="grouplist">
+      <ion-item class="cardrow press-fx" lines="none" [button]="true"
+        *ngFor="let c of categories" (click)="goTo(c.id)">
+        <div class="cardrow-body">
+          <div class="badge">{{ c.badge }}</div>
+          <div class="info">
+            <div class="lbl">{{ c.label }}</div>
+          </div>
         </div>
-        <span class="chev">›</span>
-      </div>
-    </div>
+      </ion-item>
+    </ion-list>
   </div>
 </ion-content>

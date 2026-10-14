@@ -18,17 +18,16 @@
 
     <app-forma-card></app-forma-card>
 
-    <div class="infocard method-card" (click)="goToImpostazioni()">
-      <div class="method-icon">
-        <lucide-icon name="settings" [size]="24"></lucide-icon>
+    <ion-item class="cardrow method-row press-fx" lines="none" [button]="true" (click)="goToImpostazioni()">
+      <div class="cardrow-body">
+        <div class="method-icon">
+          <lucide-icon name="settings" [size]="24"></lucide-icon>
+        </div>
+        <div class="method-info">
+          <div class="method-title">Impostazioni</div>
+          <div class="method-sub">Tema, dati dell'account e uscita</div>
+        </div>
       </div>
-      <div class="method-info">
-        <div class="method-title">Impostazioni</div>
-        <div class="method-sub">Tema, dati dell'account e uscita</div>
-      </div>
-      <span class="chev">
-        <lucide-icon name="chevron-right" [size]="13"></lucide-icon>
-      </span>
-    </div>
+    </ion-item>
   </div>
 </ion-content>

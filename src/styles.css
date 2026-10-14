@@ -385,6 +385,19 @@ ion-button.delete-btn:active{--background:var(--state-danger);--border-color:var
 ion-item-sliding.cardrow{border:1px solid var(--border-line);border-radius:var(--r-xl);background:var(--surface-card);box-shadow:var(--shadow-card);}
 ion-item-sliding.cardrow ion-item{--background:transparent;--background-activated:var(--surface-press);--background-activated-opacity:1;--background-focused:var(--surface-press);--padding-start:16px;--inner-padding-end:12px;--min-height:64px;--border-width:0;--inner-border-width:0;--detail-icon-color:var(--label-3);--detail-icon-opacity:1;--detail-icon-font-size:20px;--color:var(--label);}
 .cardrow .cardrow-body{display:flex;align-items:center;gap:12px;flex:1;min-width:0;padding:16px 0;}
+/* La stessa card senza swipe: l'ion-item e' la card (fondo, bordo, angoli, ombra
+   sul suo host: il bordo e' traslucido e deve posare sul fondo della card, non
+   su quello della pagina), dentro una ion-list che ne e' la lista per gli screen reader. La
+   lista di Ionic ha contain:content, che taglierebbe le ombre delle card, e un
+   fondo suo: qui senza l'uno e senza l'altro. */
+ion-list.grouplist{background:transparent;contain:none;}
+ion-item.cardrow{--background:var(--surface-card);--background-activated:var(--surface-press);--background-activated-opacity:1;--background-focused:var(--surface-press);--padding-start:16px;--inner-padding-end:12px;--min-height:64px;--border-width:0;--inner-border-width:0;--border-radius:calc(var(--r-xl) - 1px);--detail-icon-color:var(--label-3);--detail-icon-opacity:1;--detail-icon-font-size:20px;--color:var(--label);background:var(--surface-card);border:1px solid var(--border-line);border-radius:var(--r-xl);box-shadow:var(--shadow-card);overflow:hidden;-webkit-user-select:none;user-select:none;}
+/* Le card "come vuoi procedere" (Account, nuovo protocollo): riquadro con
+   l'icona al posto del numero. */
+ion-item.method-row{margin-bottom:12px;}
+ion-list.method-list{gap:0;}
+.method-row .cardrow-body{gap:14px;}
+.method-row .method-pending{color:var(--label-3);font-size:var(--text-xl);}
 ion-item-sliding.cardrow ion-item-option{--background:var(--state-danger);--color:#fff;font-weight:700;font-size:var(--text-md);}
 .schedafoot{margin-top:16px;padding:13px 15px;border:1px dashed var(--border-line);border-radius:var(--r-xl);background:var(--surface-card);font-size:var(--text-xs);color:var(--label-3);font-family:'IBM Plex Mono',monospace;line-height:1.55;}
 .daymeta{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 16px;margin-bottom:14px;background:var(--surface-card);border:1px solid var(--border-line);border-radius:var(--r-xl);box-shadow:var(--shadow-card);font-family:'IBM Plex Mono',monospace;font-size:var(--text-xs);color:var(--label-2);letter-spacing:.04em;text-transform:uppercase;}
@@ -828,7 +841,6 @@ ion-button.authlink.quiet{margin-top:6px;--color:var(--label-3);text-decoration:
 .protocol-status.ps-archived{color:var(--label-3);background:var(--surface-raise);}
 .protocol-activatebtn{flex-shrink:0;}
 
-.method-card{display:flex;align-items:center;gap:14px;margin-bottom:14px;cursor:pointer;}
 .method-icon{width:46px;height:46px;border-radius:var(--r-md);background:var(--accent-dim);color:var(--accent);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 .method-info{flex:1;min-width:0;}
 .method-title{font-weight:700;font-size:var(--text-md);color:var(--label);}
