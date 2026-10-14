@@ -9,7 +9,7 @@ import { todayLocalISO } from '../../core/utils/date.util';
 import { Protocol } from '../../models/protocol.model';
 import { Diet, NamedMeal, newNamedMeal, SupplementItem } from '../../models/diet.model';
 import { IONIC_PAGE } from '../../core/ionic-page';
-import { IonLoading, NavController } from '@ionic/angular';
+import { IonLoading, NavController, IonButton } from '@ionic/angular';
 
 /** Tempo massimo per ciascuna fase prima di rinunciare e segnalare un errore
  *  invece di restare bloccati a tempo indeterminato senza alcun feedback
@@ -19,7 +19,7 @@ const STEP_TIMEOUT_MS = 25000;
 @Component({
   selector: 'app-protocollo-import',
   standalone: true,
-  imports: [...IONIC_PAGE, IonLoading, CommonModule],
+  imports: [IonButton, ...IONIC_PAGE, IonLoading, CommonModule],
   templateUrl: './protocollo-import.component.html'
 })
 export class ProtocolloImportComponent implements OnInit, OnDestroy {

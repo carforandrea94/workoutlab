@@ -4,11 +4,12 @@ import { WorkoutStateService } from '../../services/workout-state.service';
 import { WorkoutDataService } from '../../services/workout-data.service';
 import { WorkoutSessionsService } from '../../services/workout-sessions.service';
 import { IONIC_PAGE, IONIC_LINKS } from '../../core/ionic-page';
+import { IonButton } from '@ionic/angular';
 
 @Component({
   selector: 'app-scheda-info',
   standalone: true,
-  imports: [...IONIC_PAGE, ...IONIC_LINKS, CommonModule],
+  imports: [IonButton, ...IONIC_PAGE, ...IONIC_LINKS, CommonModule],
   templateUrl: './scheda-info.component.html'
 })
 export class SchedaInfoComponent implements OnInit {

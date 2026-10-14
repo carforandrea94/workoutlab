@@ -83,11 +83,11 @@
         <div class="account-row" *ngIf="percentualeAttiva">
           <span class="account-row-label">Quanto</span>
           <div class="percentstep">
-            <button class="rest-stepbtn" (click)="cambiaPercentuale(-passoPercentuale)"
-                    aria-label="Abbassa la percentuale">–2,5</button>
+            <ion-button class="rest-stepbtn" (click)="cambiaPercentuale(-passoPercentuale)"
+                    aria-label="Abbassa la percentuale">–2,5</ion-button>
             <span class="percentval">{{ percentualeLabel }}</span>
-            <button class="rest-stepbtn" (click)="cambiaPercentuale(passoPercentuale)"
-                    aria-label="Alza la percentuale">+2,5</button>
+            <ion-button class="rest-stepbtn" (click)="cambiaPercentuale(passoPercentuale)"
+                    aria-label="Alza la percentuale">+2,5</ion-button>
           </div>
         </div>
       </div>
@@ -129,7 +129,7 @@
 
     <p class="sectiontitle">Uscita</p>
     <div class="infocard">
-      <button type="button" class="confirmbtn cancel w-full" (click)="logout()">Esci</button>
+      <ion-button type="button" class="confirmbtn cancel w-full" (click)="logout()">Esci</ion-button>
       <p class="settings-hint">
         Uscire non cancella niente: rientri con la stessa email e ritrovi tutto.
       </p>
@@ -142,10 +142,10 @@
         protocolli.
         Non si annulla.
       </p>
-      <button type="button" class="dangerbtn" (click)="openDeleteSheet()">
+      <ion-button type="button" class="dangerbtn" (click)="openDeleteSheet()">
         <lucide-icon name="trash-2" [size]="17"></lucide-icon>
         Elimina account
-      </button>
+      </ion-button>
     </div>
 
     <!-- La password si riscrive per due motivi: Firebase rifiuta di chiudere un
@@ -178,10 +178,10 @@
         <p class="sheet-err" id="del-err" role="alert" *ngIf="deleteError">{{ deleteError }}</p>
 
         <div class="confirmbtns">
-          <button class="confirmbtn cancel" (click)="closeDeleteSheet()" [disabled]="deleting">Annulla</button>
-          <button class="dangerbtn" (click)="confirmDelete()" [disabled]="deleting || (usaPassword && !deletePassword)">
+          <ion-button class="confirmbtn cancel" (click)="closeDeleteSheet()" [disabled]="deleting">Annulla</ion-button>
+          <ion-button class="dangerbtn" (click)="confirmDelete()" [disabled]="deleting || (usaPassword && !deletePassword)">
             {{ deleting ? 'Chiudo…' : 'Elimina' }}
-          </button>
+          </ion-button>
         </div>
       </div>
      </ng-template>
@@ -202,10 +202,10 @@
         </ion-picker>
 
         <div class="confirmbtns">
-          <button class="confirmbtn cancel" (click)="closeHeightModal()">Annulla</button>
-          <button class="confirmbtn confirm" (click)="saveHeightModal()" [disabled]="saving">
+          <ion-button class="confirmbtn cancel" (click)="closeHeightModal()">Annulla</ion-button>
+          <ion-button class="confirmbtn confirm" (click)="saveHeightModal()" [disabled]="saving">
             {{ saving ? 'Salvo…' : 'Salva' }}
-          </button>
+          </ion-button>
         </div>
       </div>
      </ng-template>

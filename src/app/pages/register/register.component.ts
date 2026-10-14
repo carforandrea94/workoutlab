@@ -5,14 +5,14 @@ import { ActivatedRoute } from '@angular/router';
 import { LucideAngularModule } from 'lucide-angular';
 import { AuthService } from '../../core/services/auth.service';
 import { IONIC_PAGE, IONIC_LINKS } from '../../core/ionic-page';
-import { NavController, IonInput, IonCheckbox } from '@ionic/angular';
+import { NavController, IonInput, IonCheckbox, IonButton } from '@ionic/angular';
 import { RequiredTrueDirective } from '../../core/directives/required-true.directive';
 
 
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [IonInput, IonCheckbox, RequiredTrueDirective, ...IONIC_PAGE, CommonModule, FormsModule, ...IONIC_LINKS, LucideAngularModule],
+  imports: [IonButton, IonInput, IonCheckbox, RequiredTrueDirective, ...IONIC_PAGE, CommonModule, FormsModule, ...IONIC_LINKS, LucideAngularModule],
   templateUrl: './register.component.html'
 })
 export class RegisterComponent {

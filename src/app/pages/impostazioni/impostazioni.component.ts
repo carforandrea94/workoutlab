@@ -19,12 +19,12 @@ import {
   heightOptions, toWheelValue, formatHeightCm
 } from '../../core/utils/height.util';
 import { IONIC_PAGE } from '../../core/ionic-page';
-import { IonModal, IonInput, IonSegment, IonSegmentButton, IonToggle, IonPicker, IonPickerColumn, IonPickerColumnOption } from '@ionic/angular';
+import { IonModal, IonInput, IonSegment, IonSegmentButton, IonToggle, IonPicker, IonPickerColumn, IonPickerColumnOption, IonButton } from '@ionic/angular';
 
 @Component({
   selector: 'app-impostazioni',
   standalone: true,
-  imports: [IonSegment, IonSegmentButton, IonToggle, IonPicker, IonPickerColumn, IonPickerColumnOption, IonInput, ...IONIC_PAGE, IonModal, CommonModule, FormsModule, LucideAngularModule],
+  imports: [IonButton, IonSegment, IonSegmentButton, IonToggle, IonPicker, IonPickerColumn, IonPickerColumnOption, IonInput, ...IONIC_PAGE, IonModal, CommonModule, FormsModule, LucideAngularModule],
   templateUrl: './impostazioni.component.html',
   styles: [`
     .account-row {
@@ -92,7 +92,7 @@ import { IonModal, IonInput, IonSegment, IonSegmentButton, IonToggle, IonPicker,
       font-weight: 700; color: var(--label); font-variant-numeric: tabular-nums;
       min-width: 56px; text-align: center;
     }
-    .percentstep .rest-stepbtn { min-width: 52px; padding: 8px 10px; font-size: var(--text-xs); }
+    .percentstep ion-button.rest-stepbtn { min-width: 52px; font-size: var(--text-xs); }
     .settings-hint {
       font-size: var(--text-xs); line-height: 1.5; color: var(--label-3);
       margin: 10px 0 0;
@@ -100,18 +100,16 @@ import { IonModal, IonInput, IonSegment, IonSegmentButton, IonToggle, IonPicker,
     /* Chiudere l'account non e' un'impostazione fra le altre: sta in fondo,
        da sola, e non porta il colore dell'accento - che nell'app vuol dire
        "fai questo". */
-    .dangerbtn {
-      width: 100%; min-height: 48px; display: flex; align-items: center;
-      justify-content: center; gap: 8px; border-radius: var(--r-md);
-      background: var(--state-danger-soft); border: 1px solid var(--state-danger-soft-border);
-      color: var(--state-danger-text); font-family: 'Inter', sans-serif;
-      font-weight: 600; font-size: var(--text-md); cursor: pointer;
+    ion-button.dangerbtn {
+      --background: var(--state-danger-soft); --border-color: var(--state-danger-soft-border);
+      --color: var(--state-danger-text); --border-radius: var(--r-md); --box-shadow: none;
+      --padding-start: 16px; --padding-end: 16px; --padding-top: 0; --padding-bottom: 0;
+      width: 100%; min-height: 48px; font-weight: 600; font-size: var(--text-md);
     }
-    .dangerbtn:disabled { opacity: .55; cursor: default; }
     /* Dentro la riga di due, il tasto sta al passo con "Annulla": il 100% di
        larghezza se lo prenderebbe tutto, e i due tasti di una scelta devono
        pesare uguale. */
-    .confirmbtns .dangerbtn { flex: 1; width: auto; }
+    .confirmbtns ion-button.dangerbtn { flex: 1; width: auto; }
     .sheet-err {
       font-size: var(--text-sm); line-height: 1.45; color: var(--state-danger-text);
       background: rgba(var(--state-danger-rgb), .10);

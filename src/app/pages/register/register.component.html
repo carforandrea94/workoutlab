@@ -105,16 +105,16 @@
              chi usa un lettore di schermo preme il tasto e non succede niente. -->
         <p class="autherror" role="alert" *ngIf="errorMsg">{{ errorMsg }}</p>
 
-        <button class="savebtn" type="submit" [disabled]="loading">
+        <ion-button class="savebtn" type="submit" [disabled]="loading">
           <ng-container *ngIf="!completa">{{ loading ? 'Creazione account…' : 'Crea account' }}</ng-container>
           <ng-container *ngIf="completa">{{ loading ? 'Un attimo…' : 'Completa l\'iscrizione' }}</ng-container>
-        </button>
+        </ion-button>
       </form>
 
       <a class="authlink" *ngIf="!completa" routerLink="/login" routerDirection="root">Hai gia' un account? Accedi</a>
 
       <ng-container *ngIf="completa">
-        <button type="button" class="authlink quiet" (click)="annulla()">Annulla ed esci</button>
+        <ion-button type="button" class="authlink quiet" (click)="annulla()">Annulla ed esci</ion-button>
       </ng-container>
     </div>
   </div>

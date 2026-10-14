@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { NavController, IonInput, IonContent, IonSegment, IonSegmentButton } from '@ionic/angular';
+import { NavController, IonInput, IonContent, IonSegment, IonSegmentButton, IonButton } from '@ionic/angular';
 import { AuthService } from '../../core/services/auth.service';
 import { Sex } from '../../core/models/user.model';
 import { dividiNome, componiNome } from '../../core/utils/nome.util';
@@ -25,7 +25,7 @@ import { validaProfilo, ErroriProfilo, NASCITA_MIN } from '../../core/utils/prof
 @Component({
   selector: 'app-benvenuto',
   standalone: true,
-  imports: [IonContent, IonInput, IonSegment, IonSegmentButton, CommonModule, FormsModule],
+  imports: [IonButton, IonContent, IonInput, IonSegment, IonSegmentButton, CommonModule, FormsModule],
   templateUrl: './benvenuto.component.html'
 })
 export class BenvenutoComponent {

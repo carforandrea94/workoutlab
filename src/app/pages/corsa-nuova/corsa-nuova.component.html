@@ -60,12 +60,12 @@
 
     <p class="autherror" *ngIf="errorMsg">{{ errorMsg }}</p>
 
-    <button class="runsave tap44 press-fx" [disabled]="!canSave" (click)="save()">
+    <ion-button class="runsave tap44 press-fx" [disabled]="!canSave" (click)="save()">
       {{ saving ? 'Salvataggio…' : (editId ? 'Salva modifiche' : 'Salva uscita') }}
-    </button>
+    </ion-button>
 
-    <button class="runremove tap44" *ngIf="editId" [disabled]="saving" (click)="remove()">
+    <ion-button class="runremove tap44" *ngIf="editId" [disabled]="saving" (click)="remove()">
       Elimina questa uscita
-    </button>
+    </ion-button>
   </div>
 </ion-content>

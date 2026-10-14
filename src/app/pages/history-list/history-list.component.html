@@ -19,7 +19,7 @@
 
     <div *ngIf="!loading && errorMsg" class="history-empty">
       {{ errorMsg }}<br>
-      <button class="savebtn mt-3" (click)="loadSessions()">Riprova</button>
+      <ion-button class="savebtn mt-3" (click)="loadSessions()">Riprova</ion-button>
     </div>
 
     <div *ngIf="!loading && !errorMsg && sessions.length === 0" class="history-empty">

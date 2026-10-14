@@ -15,7 +15,7 @@
 
     <div *ngIf="!loading && errorMsg" class="history-empty">
       {{ errorMsg }}<br>
-      <button class="savebtn mt-3" (click)="load()">Riprova</button>
+      <ion-button class="savebtn mt-3" (click)="load()">Riprova</ion-button>
     </div>
 
     <div *ngIf="!loading && !errorMsg && !entry" class="history-empty">Misurazione non trovata.</div>
@@ -39,7 +39,7 @@
               </span>
             </span>
           </div>
-          <button class="savebtn mt-3" (click)="editCategory('peso')">Modifica peso</button>
+          <ion-button class="savebtn mt-3" (click)="editCategory('peso')">Modifica peso</ion-button>
         </div>
       </ng-container>
 
@@ -56,7 +56,7 @@
               </span>
             </span>
           </div>
-          <button class="savebtn mt-3" (click)="editCategory('pliche')">Modifica pliche</button>
+          <ion-button class="savebtn mt-3" (click)="editCategory('pliche')">Modifica pliche</ion-button>
         </div>
       </ng-container>
 
@@ -73,14 +73,14 @@
               </span>
             </span>
           </div>
-          <button class="savebtn mt-3" (click)="editCategory('centimetri')">Modifica centimetri</button>
+          <ion-button class="savebtn mt-3" (click)="editCategory('centimetri')">Modifica centimetri</ion-button>
         </div>
       </ng-container>
 
       <div class="savebar">
-        <button class="savebtn delete-session-btn" (click)="deleteEntry()">
+        <ion-button class="savebtn delete-session-btn" (click)="deleteEntry()">
           Elimina questa misurazione
-        </button>
+        </ion-button>
       </div>
     </ng-container>
   </div>

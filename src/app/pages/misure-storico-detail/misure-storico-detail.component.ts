@@ -12,7 +12,7 @@ import {
   CENTIMETRI_FIELDS
 } from '../../models/measurement.model';
 import { IONIC_PAGE } from '../../core/ionic-page';
-import { NavController, IonSpinner } from '@ionic/angular';
+import { NavController, IonSpinner, IonButton } from '@ionic/angular';
 
 interface FieldRow {
   field: MeasureField;
@@ -24,7 +24,7 @@ interface FieldRow {
 @Component({
   selector: 'app-misure-storico-detail',
   standalone: true,
-  imports: [IonSpinner, ...IONIC_PAGE, CommonModule],
+  imports: [IonButton, IonSpinner, ...IONIC_PAGE, CommonModule],
   templateUrl: './misure-storico-detail.component.html'
 })
 export class MisureStoricoDetailComponent implements OnInit {

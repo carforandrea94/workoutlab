@@ -10,7 +10,7 @@ import { WorkoutSessionStateService } from '../../services/workout-session-state
 import { IONIC_PAGE } from '../../core/ionic-page';
 import { IONIC_REFRESH, completaRefresh } from '../../core/ionic-refresh';
 import { IONIC_SLIDING } from '../../core/ionic-sliding';
-import { NavController, IonSpinner } from '@ionic/angular';
+import { NavController, IonSpinner, IonButton } from '@ionic/angular';
 
 interface SessionEntry {
   key: string;
@@ -28,7 +28,7 @@ interface WeekGroup {
 @Component({
   selector: 'app-history-list',
   standalone: true,
-  imports: [IonSpinner, ...IONIC_PAGE, ...IONIC_REFRESH, ...IONIC_SLIDING, CommonModule, LucideAngularModule],
+  imports: [IonButton, IonSpinner, ...IONIC_PAGE, ...IONIC_REFRESH, ...IONIC_SLIDING, CommonModule, LucideAngularModule],
   templateUrl: './history-list.component.html'
 })
 export class HistoryListComponent implements OnInit {

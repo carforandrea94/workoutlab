@@ -8,7 +8,8 @@ import { FoodItem } from '../../models/diet.model';
 import { IONIC_PAGE } from '../../core/ionic-page';
 import { IONIC_SLIDING } from '../../core/ionic-sliding';
 import {
-  IonAccordion, IonAccordionGroup, IonCheckbox, IonInput, IonLabel, IonProgressBar, IonSearchbar, IonSpinner
+  IonAccordion, IonAccordionGroup, IonCheckbox, IonInput, IonLabel, IonProgressBar, IonSearchbar, IonSpinner,
+  IonButton
 } from '@ionic/angular';
 
 /** Il macro sotto cui l'alimento compare nella dieta. */
@@ -54,7 +55,7 @@ const MACRO: { key: Macro; label: string }[] = [
 @Component({
   selector: 'app-lista-spesa',
   standalone: true,
-  imports: [
+  imports: [IonButton, 
     IonAccordion, IonAccordionGroup, IonCheckbox, IonInput, IonLabel, IonProgressBar, IonSearchbar, IonSpinner,
     ...IONIC_PAGE, ...IONIC_SLIDING, CommonModule, FormsModule, LucideAngularModule],
   templateUrl: './lista-spesa.component.html'

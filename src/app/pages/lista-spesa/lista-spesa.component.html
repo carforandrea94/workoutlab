@@ -15,7 +15,7 @@
 
     <div *ngIf="!loading && errorMsg" class="history-empty">
       {{ errorMsg }}<br>
-      <button class="savebtn mt-3" (click)="load()">Riprova</button>
+      <ion-button class="savebtn mt-3" (click)="load()">Riprova</ion-button>
     </div>
 
     <ng-container *ngIf="!loading && !errorMsg">
@@ -25,7 +25,7 @@
       <div class="shop-top" *ngIf="totalCount > 0">
         <span class="shop-count">{{ checkedCount }} / {{ totalCount }}</span>
         <ion-progress-bar class="shop-bar" [value]="progress / 100" aria-label="Spesa fatta"></ion-progress-bar>
-        <button class="shop-clear" (click)="resetAll()" *ngIf="checkedCount > 0">Svuota</button>
+        <ion-button class="shop-clear" (click)="resetAll()" *ngIf="checkedCount > 0">Svuota</ion-button>
       </div>
 
       <!-- Cercare e aggiungere restano due campi distinti: in uno solo, battere
@@ -38,7 +38,7 @@
 
       <div class="shop-addrow">
         <ion-input type="text" [(ngModel)]="newItemName" (keydown.enter)="addCustomItem()" placeholder="Aggiungi alimento…"></ion-input>
-        <button class="shop-addbtn" (click)="addCustomItem()">+</button>
+        <ion-button class="shop-addbtn" (click)="addCustomItem()">+</ion-button>
       </div>
 
       <!-- Il carrello, in cima e chiuso: quello che e' gia' dentro esce dalla
@@ -59,9 +59,9 @@
             <ion-item-sliding class="shop-item ok" *ngFor="let item of customPresi" #riga>
               <ion-item lines="none">
                 <ion-checkbox labelPlacement="end" justify="start" [checked]="true" (ionChange)="toggleCustom(item)">{{ item.name }}</ion-checkbox>
-                <button slot="end" class="delete-btn" (click)="removeCustom(item, $event)" title="Elimina" aria-label="Elimina">
+                <ion-button slot="end" class="delete-btn" (click)="removeCustom(item, $event)" title="Elimina" aria-label="Elimina">
                   <lucide-icon name="trash-2" [size]="14"></lucide-icon>
-                </button>
+                </ion-button>
               </ion-item>
               <ion-item-options side="end">
                 <ion-item-option (click)="riga.close(); removeCustom(item, $event)">Elimina</ion-item-option>
@@ -80,7 +80,7 @@
            d'uscita e' li': aggiungerlo. -->
       <div *ngIf="nessunRisultato" class="history-empty">
         Nessun alimento per «{{ query.trim() }}».<br>
-        <button class="savebtn mt-3" (click)="aggiungiCercato()">Aggiungilo alla lista</button>
+        <ion-button class="savebtn mt-3" (click)="aggiungiCercato()">Aggiungilo alla lista</ion-button>
       </div>
 
       <!-- I reparti. Dentro c'e' solo quello che manca: il preso scende nel
@@ -108,9 +108,9 @@
           <ion-item-sliding class="shop-item" *ngFor="let item of customDaPrendere" #riga>
             <ion-item lines="none">
               <ion-checkbox labelPlacement="end" justify="start" [checked]="false" (ionChange)="toggleCustom(item)">{{ item.name }}</ion-checkbox>
-              <button slot="end" class="delete-btn" (click)="removeCustom(item, $event)" title="Elimina" aria-label="Elimina">
+              <ion-button slot="end" class="delete-btn" (click)="removeCustom(item, $event)" title="Elimina" aria-label="Elimina">
                 <lucide-icon name="trash-2" [size]="14"></lucide-icon>
-              </button>
+              </ion-button>
             </ion-item>
             <ion-item-options side="end">
               <ion-item-option (click)="riga.close(); removeCustom(item, $event)">Elimina</ion-item-option>
