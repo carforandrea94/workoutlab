@@ -17,7 +17,14 @@
   </ion-toolbar>
 </ion-header>
 
-<ion-content>
+<ion-content [fullscreen]="true">
+  <ion-header collapse="condense" class="ion-no-border">
+    <ion-toolbar>
+      <ion-title size="large">
+        <div class="navtitle">{{ titolo }}</div>
+      </ion-title>
+    </ion-toolbar>
+  </ion-header>
   <div class="wrap">
     <ng-container *ngIf="days.length > 0">
       <div class="weekpicker">
@@ -32,23 +39,25 @@
 
       <p class="sectiontitle">Allenamenti</p>
 
-      <div class="grouplist">
-        <div class="daycard press-fx" *ngFor="let day of days; let i = index" (click)="goToDay(i)">
-          <div class="badge">{{ i + 1 }}</div>
-          <div class="info">
-            <div class="lbl">{{ day.label }}</div>
-            <div class="meta">{{ getExCount(i) }} esercizi &nbsp;·&nbsp; rec {{ day.rec }}
-              <span *ngIf="hasDraft(day.id)" style="color:var(--accent);margin-left:6px">● bozza</span>
+      <ion-list class="grouplist">
+        <ion-item class="cardrow press-fx" lines="none" [button]="true"
+          *ngFor="let day of days; let i = index" (click)="goToDay(i)">
+          <div class="cardrow-body">
+            <div class="badge">{{ i + 1 }}</div>
+            <div class="info">
+              <div class="lbl">{{ day.label }}</div>
+              <div class="meta">{{ getExCount(i) }} esercizi &nbsp;·&nbsp; rec {{ day.rec }}
+                <span *ngIf="hasDraft(day.id)" style="color:var(--accent);margin-left:6px">● bozza</span>
+              </div>
             </div>
+            <span class="daycheck" *ngIf="isDoneThisWeek(day.id)"
+              title="Allenamento gia' fatto questa settimana"
+              aria-label="Allenamento gia' fatto questa settimana">
+              <lucide-icon name="check" [size]="14"></lucide-icon>
+            </span>
           </div>
-          <span class="daycheck" *ngIf="isDoneThisWeek(day.id)"
-            title="Allenamento gia' fatto questa settimana"
-            aria-label="Allenamento gia' fatto questa settimana">
-            <lucide-icon name="check" [size]="14"></lucide-icon>
-          </span>
-          <span class="chev">›</span>
-        </div>
-      </div>
+        </ion-item>
+      </ion-list>
     </ng-container>
 
     <div *ngIf="days.length === 0" class="history-empty">

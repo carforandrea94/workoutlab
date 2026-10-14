@@ -11,7 +11,14 @@
   </ion-toolbar>
 </ion-header>
 
-<ion-content>
+<ion-content [fullscreen]="true">
+  <ion-header collapse="condense" class="ion-no-border">
+    <ion-toolbar>
+      <ion-title size="large">
+        <div class="navtitle">Dieta</div>
+      </ion-title>
+    </ion-toolbar>
+  </ion-header>
   <div class="wrap">
     <div *ngIf="!hasAnyDietData" class="history-empty">
       Non hai ancora un protocollo attivo.<br>
@@ -24,20 +31,20 @@
     <ng-container *ngIf="hasAnyDietData">
       <p class="sectiontitle">Piani alimentari</p>
 
-      <div class="grouplist">
-        <div class="daycard press-fx diet-card" *ngFor="let card of cards" (click)="openCard(card)">
-          <div class="badge">
-            <lucide-icon name="circle-plus" [size]="18"></lucide-icon>
+      <ion-list class="grouplist">
+        <ion-item class="cardrow press-fx diet-card" lines="none" [button]="true"
+          *ngFor="let card of cards" (click)="openCard(card)">
+          <div class="cardrow-body">
+            <div class="badge">
+              <lucide-icon name="circle-plus" [size]="18"></lucide-icon>
+            </div>
+            <div class="info">
+              <div class="lbl">{{ card.plan.name }}</div>
+              <div class="meta">{{ card.itemCount }} alimenti</div>
+            </div>
           </div>
-          <div class="info">
-            <div class="lbl">{{ card.plan.name }}</div>
-            <div class="meta">{{ card.itemCount }} alimenti</div>
-          </div>
-          <span class="chev">
-            <lucide-icon name="chevron-right" [size]="13"></lucide-icon>
-          </span>
-        </div>
-      </div>
+        </ion-item>
+      </ion-list>
     </ng-container>
   </div>
 </ion-content>

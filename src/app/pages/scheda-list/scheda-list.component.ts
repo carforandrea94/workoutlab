@@ -7,12 +7,13 @@ import { WorkoutStateService } from '../../services/workout-state.service';
 import { AppStateService } from '../../services/app-state.service';
 import { WeeklyProgressService } from '../../services/weekly-progress.service';
 import { IONIC_PAGE, IONIC_LINKS } from '../../core/ionic-page';
+import { IONIC_LIST } from '../../core/ionic-list';
 import { NavController, IonButton } from '@ionic/angular';
 
 @Component({
   selector: 'app-scheda-list',
   standalone: true,
-  imports: [IonButton, ...IONIC_PAGE, ...IONIC_LINKS, CommonModule, LucideAngularModule],
+  imports: [IonButton, ...IONIC_LIST, ...IONIC_PAGE, ...IONIC_LINKS, CommonModule, LucideAngularModule],
   templateUrl: './scheda-list.component.html'
 })
 export class SchedaListComponent implements OnInit {

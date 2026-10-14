@@ -30,6 +30,7 @@ import {
 } from '../../core/utils/extra-sets.util';
 
 import { IONIC_PAGE } from '../../core/ionic-page';
+import { vibra } from '../../core/utils/vibrazione.util';
 import { IonModal, NavController, IonSegment, IonSegmentButton, IonSelect, IonSelectOption, IonSpinner, IonButton } from '@ionic/angular';
 
 interface ExerciseVM {
@@ -871,7 +872,7 @@ export class SchedaDetailComponent implements OnInit, OnDestroy {
         this.fermaTicker();
         // Una vibrazione alla fine del minimo, come per il recupero lungo: il
         // telefono e' in tasca o sulla panca, non davanti agli occhi.
-        if (navigator.vibrate) navigator.vibrate(200);
+        vibra('fine-pausa');
         return;
       }
       this.pauseElapsed.set(passati);

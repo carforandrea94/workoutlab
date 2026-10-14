@@ -76,19 +76,18 @@
           Nessun giorno ancora.<br>Aggiungine uno per iniziare a scrivere la scheda.
         </div>
 
-        <div class="grouplist" *ngIf="protocol.workout.days.length > 0">
-          <div class="daycard press-fx" *ngFor="let day of protocol.workout.days; let di = index"
-               (click)="openDay(day, di)">
-            <div class="badge">{{ di + 1 }}</div>
-            <div class="info">
-              <div class="lbl">{{ day.label || 'Giorno senza nome' }}</div>
-              <div class="meta">{{ dayCount(day) }} &nbsp;·&nbsp; rec {{ day.rec }}</div>
+        <ion-list class="grouplist" *ngIf="protocol.workout.days.length > 0">
+          <ion-item class="cardrow press-fx" lines="none" [button]="true"
+            *ngFor="let day of protocol.workout.days; let di = index" (click)="openDay(day, di)">
+            <div class="cardrow-body">
+              <div class="badge">{{ di + 1 }}</div>
+              <div class="info">
+                <div class="lbl">{{ day.label || 'Giorno senza nome' }}</div>
+                <div class="meta">{{ dayCount(day) }} &nbsp;·&nbsp; rec {{ day.rec }}</div>
+              </div>
             </div>
-            <span class="chev">
-              <lucide-icon name="chevron-right" [size]="13"></lucide-icon>
-            </span>
-          </div>
-        </div>
+          </ion-item>
+        </ion-list>
 
         <div class="savebar">
           <ion-button class="savebtn" (click)="addDay()">+ Aggiungi giorno</ion-button>
@@ -125,21 +124,20 @@
           Nessun esercizio ancora.
         </div>
 
-        <div class="grouplist mb-3" *ngIf="ed.day.ex.length > 0">
-          <div class="daycard press-fx protocol-row" *ngFor="let ex of ed.day.ex; let ei = index"
-               (click)="editExercise(ed.day, ex)">
-            <!-- Il numero di riferimento, come lo vede il cliente: e' con quello
-                 che ci si dice a che esercizio si e' arrivati. -->
-            <div class="badge">{{ ei + 1 }}</div>
-            <div class="info">
-              <div class="lbl">{{ ex.name || 'Esercizio senza nome' }}</div>
-              <div class="meta">{{ ex.muscle }} &nbsp;·&nbsp; {{ exerciseSummary(ex) }}</div>
+        <ion-list class="grouplist mb-3" *ngIf="ed.day.ex.length > 0">
+          <ion-item class="cardrow press-fx" lines="none" [button]="true"
+            *ngFor="let ex of ed.day.ex; let ei = index" (click)="editExercise(ed.day, ex)">
+            <div class="cardrow-body protocol-row">
+              <!-- Il numero di riferimento, come lo vede il cliente: e' con quello
+                   che ci si dice a che esercizio si e' arrivati. -->
+              <div class="badge">{{ ei + 1 }}</div>
+              <div class="info">
+                <div class="lbl">{{ ex.name || 'Esercizio senza nome' }}</div>
+                <div class="meta">{{ ex.muscle }} &nbsp;·&nbsp; {{ exerciseSummary(ex) }}</div>
+              </div>
             </div>
-            <span class="chev">
-              <lucide-icon name="chevron-right" [size]="13"></lucide-icon>
-            </span>
-          </div>
-        </div>
+          </ion-item>
+        </ion-list>
 
         <div class="savebar mt-4">
           <ion-button class="savebtn" [disabled]="saving" (click)="saveDay()">

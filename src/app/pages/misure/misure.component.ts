@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 
 import { MeasureCategory, CATEGORY_LABELS, CATEGORY_UNIT_BADGE } from '../../models/measurement.model';
 import { IONIC_PAGE, IONIC_LINKS } from '../../core/ionic-page';
+import { IONIC_LIST } from '../../core/ionic-list';
 import { NavController, IonButton } from '@ionic/angular';
 import { LucideAngularModule } from 'lucide-angular';
 
@@ -15,7 +16,7 @@ interface CategoryTile {
 @Component({
   selector: 'app-misure',
   standalone: true,
-  imports: [IonButton, ...IONIC_PAGE, ...IONIC_LINKS, LucideAngularModule, CommonModule],
+  imports: [IonButton, ...IONIC_LIST, ...IONIC_PAGE, ...IONIC_LINKS, LucideAngularModule, CommonModule],
   templateUrl: './misure.component.html'
 })
 export class MisureComponent {

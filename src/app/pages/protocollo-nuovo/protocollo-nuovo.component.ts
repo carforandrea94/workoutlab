@@ -3,12 +3,13 @@ import { LucideAngularModule } from 'lucide-angular';
 import { CommonModule } from '@angular/common';
 import { ProtocolService } from '../../services/protocol.service';
 import { IONIC_PAGE } from '../../core/ionic-page';
+import { IONIC_LIST } from '../../core/ionic-list';
 import { NavController } from '@ionic/angular';
 
 @Component({
   selector: 'app-protocollo-nuovo',
   standalone: true,
-  imports: [...IONIC_PAGE, CommonModule, LucideAngularModule],
+  imports: [...IONIC_LIST, ...IONIC_PAGE, CommonModule, LucideAngularModule],
   templateUrl: './protocollo-nuovo.component.html'
 })
 export class ProtocolloNuovoComponent {
