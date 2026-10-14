@@ -254,8 +254,9 @@ a { color: inherit; text-decoration: none; }
 
 /* ===== TESTATA (ion-header / ion-toolbar) =====
    Tre blocchi in fila: freccia (slot start), titolo, azioni (slot end). La
-   barra ha un'altezza sola per tutte le pagine, con o senza sottotitolo, cosi'
-   il contenuto non salta di qualche pixel passando da una all'altra.
+   barra ha un'altezza sola per tutte le pagine, con o senza freccia e azioni
+   (52px: il pulsante da 38 piu' il respiro sopra e sotto), cosi' il contenuto
+   non salta di qualche pixel passando da una all'altra.
 
    Il titolo sta nel flusso. In modalita' iOS ion-title e' invece un livello
    assoluto largo quanto la barra, con 90px di padding per girare attorno ai
@@ -266,7 +267,7 @@ a { color: inherit; text-decoration: none; }
    translateZ(0) che Ionic gli mette: su un livello a se' WebKit posiziona il
    testo a mezzo pixel e lo sfoca. */
 ion-header{background:var(--bg);}
-ion-toolbar{--background:var(--bg);--color:var(--label);--border-width:0;--min-height:60px;--padding-start:16px;--padding-end:16px;--padding-top:8px;--padding-bottom:6px;}
+ion-toolbar{--background:var(--bg);--color:var(--label);--border-width:0;--min-height:52px;--padding-start:16px;--padding-end:16px;--padding-top:8px;--padding-bottom:6px;}
 ion-toolbar ion-title{position:static;width:auto;height:auto;padding:0;transform:none;text-align:left;pointer-events:auto;}
 /* Distanza fissa fra titolo e pulsanti, e nessun margine di Ionic sui gruppi:
    freccia e azioni stanno sullo stesso filo delle card (16px dal bordo). */
@@ -274,8 +275,6 @@ ion-toolbar ion-buttons{margin:0;}
 ion-toolbar ion-buttons[slot=start]{margin-right:12px;}
 ion-toolbar ion-buttons[slot=end]{margin-left:10px;}
 .navtitle{font-weight:800;font-size:var(--text-title);letter-spacing:-.015em;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.navsubtitle{font-family:'IBM Plex Mono',monospace;font-size:var(--text-xs);font-weight:400;letter-spacing:.04em;color:var(--label-3);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.navsubtitle:empty{display:none;}
 /* Solo la freccia: il testo lo toglie la configurazione (backButtonText in
    app.config.ts), qui il riquadro e il segno. Stessa forma dei .navicon. */
 ion-back-button{--color:var(--label);--background:var(--surface-raise);--border-radius:var(--r-md);--min-width:38px;--min-height:38px;--padding-start:0;--padding-end:0;--icon-margin-start:0;--icon-margin-end:0;--icon-font-size:24px;width:38px;height:38px;border:1px solid var(--border-line);border-radius:var(--r-md);}

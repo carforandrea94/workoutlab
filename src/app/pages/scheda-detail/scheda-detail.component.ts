@@ -87,10 +87,6 @@ export class SchedaDetailComponent implements OnInit, OnDestroy {
     return this.day ? `Giorno ${this.dayIndex + 1}` : 'Allenamento';
   }
 
-  get sottotitolo(): string {
-    return !this.isStorico && this.day ? `${this.day.label} · rec ${this.day.rec}` : '';
-  }
-
   /** Storico: l'id del documento della seduta aperta. */
   sessionKey = '';
   /** Storico: la seduta com'e' adesso su Firestore. */
