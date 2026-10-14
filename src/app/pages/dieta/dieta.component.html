@@ -11,7 +11,14 @@
   </ion-toolbar>
 </ion-header>
 
-<ion-content>
+<ion-content [fullscreen]="true">
+  <ion-header collapse="condense" class="ion-no-border">
+    <ion-toolbar>
+      <ion-title size="large">
+        <div class="navtitle">Dieta</div>
+      </ion-title>
+    </ion-toolbar>
+  </ion-header>
   <div class="wrap">
     <div *ngIf="!hasAnyDietData" class="history-empty">
       Non hai ancora un protocollo attivo.<br>

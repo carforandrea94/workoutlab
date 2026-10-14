@@ -140,6 +140,8 @@
      pulsanti (a 430px restano ~250px) il nome di un protocollo scritto
      dall'utente deve starci senza puntini piu' spesso possibile. */
   --text-title:24px;
+  /* Il titolo grande delle pagine radice, che si comprime scorrendo. */
+  --text-large-title:32px;
   --text-3xl:26px;
   /* Raggi. --r-pill e' per gli elementi la cui forma E' una pillola: un raggio
      enorme resta corretto anche se l'altezza cambia, un numero fisso no. */
@@ -268,13 +270,22 @@ a { color: inherit; text-decoration: none; }
    testo a mezzo pixel e lo sfoca. */
 ion-header{background:var(--bg);}
 ion-toolbar{--background:var(--bg);--color:var(--label);--border-width:0;--min-height:52px;--padding-start:16px;--padding-end:16px;--padding-top:8px;--padding-bottom:6px;}
-ion-toolbar ion-title{position:static;width:auto;height:auto;padding:0;transform:none;text-align:left;pointer-events:auto;}
+ion-toolbar ion-title:not(.title-large){position:static;width:auto;height:auto;padding:0;transform:none;text-align:left;pointer-events:auto;}
 /* Distanza fissa fra titolo e pulsanti, e nessun margine di Ionic sui gruppi:
    freccia e azioni stanno sullo stesso filo delle card (16px dal bordo). */
 ion-toolbar ion-buttons{margin:0;}
 ion-toolbar ion-buttons[slot=start]{margin-right:12px;}
 ion-toolbar ion-buttons[slot=end]{margin-left:10px;}
 .navtitle{font-weight:800;font-size:var(--text-title);letter-spacing:-.015em;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+/* Il titolo grande delle cinque pagine radice (ion-header collapse="condense"):
+   sta sotto alla barra, a tutta larghezza, e scorrendo lascia il posto al
+   titolo piccolo della barra - che e' quello di sempre. Ionic gestisce da se'
+   lo scambio e lo stiramento quando si tira giu'; qui solo il disegno. Il
+   padding di Ionic (12px) e' azzerato: i 16px di lato li da' la barra, come
+   per le card. */
+ion-header[collapse=condense] ion-toolbar{--min-height:0;--padding-top:0;--padding-bottom:8px;}
+ion-toolbar ion-title.title-large{padding:0;}
+ion-title.title-large .navtitle{font-size:var(--text-large-title);letter-spacing:-.02em;line-height:1.1;}
 /* Solo la freccia: il testo lo toglie la configurazione (backButtonText in
    app.config.ts), qui il riquadro e il segno. Stessa forma dei .navicon. */
 ion-back-button{--color:var(--label);--background:var(--surface-raise);--border-radius:var(--r-md);--min-width:38px;--min-height:38px;--padding-start:0;--padding-end:0;--icon-margin-start:0;--icon-margin-end:0;--icon-font-size:24px;width:38px;height:38px;border:1px solid var(--border-line);border-radius:var(--r-md);}
