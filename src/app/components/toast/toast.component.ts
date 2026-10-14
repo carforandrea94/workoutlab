@@ -17,6 +17,7 @@ export class ToastComponent {
     const restbar = document.querySelector<HTMLElement>('.restbar');
     if (restbar) return restbar;
     const tabbar = document.querySelector<HTMLElement>('ion-tab-bar.tabbar');
-    return tabbar && tabbar.offsetParent !== null ? tabbar : undefined;
+    // Nelle pagine interne la barra e' scivolata via: il toast non la prende come ancora.
+    return tabbar && !tabbar.classList.contains('tabbar-nascosta') && tabbar.offsetParent !== null ? tabbar : undefined;
   }
 }

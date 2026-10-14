@@ -334,6 +334,17 @@ ion-content{--background:var(--bg);--color:var(--label);--padding-bottom:calc(va
    i figli negativi vengono subito dopo — la sfumatura finiva sopra la
    pillola e la cancellava. */
 .tabfade{position:fixed;left:0;right:0;bottom:0;z-index:55;height:calc(var(--tabbar-h) + var(--tabbar-gap) + 70px);pointer-events:none;background:linear-gradient(to top, var(--bg) 0%, var(--bg) 55%, transparent 100%);}
+/* Nelle pagine interne la barra scivola via (TabsPage mette .tabbar-nascosta, e
+   senza-tabbar sulla radice, che rende al contenuto lo spazio che teneva per
+   lei). La curva e' quella delle transizioni di pagina (vedi page-transition.ts):
+   la barra parte e arriva insieme alla pagina. visibility la toglie dall'ordine
+   del Tab e dallo screen reader a fine corsa. */
+.tabbar{transition:transform .42s cubic-bezier(0.32,0.72,0,1),opacity .3s ease,visibility 0s;}
+.tabbar.tabbar-nascosta{transform:translateY(calc(var(--tabbar-h) + var(--tabbar-gap) + 28px));opacity:0;visibility:hidden;pointer-events:none;transition:transform .42s cubic-bezier(0.32,0.72,0,1),opacity .25s ease,visibility 0s .42s;}
+.tabfade{transition:opacity .3s ease,visibility 0s;}
+.tabfade.tabbar-nascosta{opacity:0;visibility:hidden;transition:opacity .3s ease,visibility 0s .3s;}
+:root.senza-tabbar ion-content{--padding-bottom:calc(var(--safe-b) + 28px);}
+@media (prefers-reduced-motion:reduce){.tabbar,.tabbar.tabbar-nascosta,.tabfade,.tabfade.tabbar-nascosta{transition:none;}}
 /* HIG iOS, Accessibility: dimensione predefinita dei controlli 44x44 pt,
    minimo assoluto 28x28. Oggi il bersaglio e' 48x119, ma nasce dalla
    sottrazione fra due token: senza questo pavimento, abbassare --tabbar-h o
