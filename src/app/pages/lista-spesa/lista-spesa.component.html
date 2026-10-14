@@ -25,7 +25,7 @@
       <div class="shop-top" *ngIf="totalCount > 0">
         <span class="shop-count">{{ checkedCount }} / {{ totalCount }}</span>
         <ion-progress-bar class="shop-bar" [value]="progress / 100" aria-label="Spesa fatta"></ion-progress-bar>
-        <button class="shop-clear" (click)="resetAll()" *ngIf="checkedCount > 0">Svuota</button>
+        <ion-button class="shop-clear" (click)="resetAll()" *ngIf="checkedCount > 0">Svuota</ion-button>
       </div>
 
       <!-- Cercare e aggiungere restano due campi distinti: in uno solo, battere
@@ -38,7 +38,7 @@
 
       <div class="shop-addrow">
         <ion-input type="text" [(ngModel)]="newItemName" (keydown.enter)="addCustomItem()" placeholder="Aggiungi alimento…"></ion-input>
-        <button class="shop-addbtn" (click)="addCustomItem()">+</button>
+        <ion-button class="shop-addbtn" (click)="addCustomItem()">+</ion-button>
       </div>
 
       <!-- Il carrello, in cima e chiuso: quello che e' gia' dentro esce dalla

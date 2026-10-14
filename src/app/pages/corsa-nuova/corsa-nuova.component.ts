@@ -13,12 +13,12 @@ import {
 import { parseMinutes, formatMinutes } from '../../core/utils/run-math.util';
 import { todayLocalISO } from '../../core/utils/date.util';
 import { IONIC_PAGE } from '../../core/ionic-page';
-import { NavController, IonInput, IonSegment, IonSegmentButton } from '@ionic/angular';
+import { NavController, IonInput, IonSegment, IonSegmentButton, IonButton } from '@ionic/angular';
 
 @Component({
   selector: 'app-corsa-nuova',
   standalone: true,
-  imports: [IonInput, IonSegment, IonSegmentButton, ...IONIC_PAGE, CommonModule, FormsModule],
+  imports: [IonButton, IonInput, IonSegment, IonSegmentButton, ...IONIC_PAGE, CommonModule, FormsModule],
   templateUrl: './corsa-nuova.component.html'
 })
 export class CorsaNuovaComponent implements OnInit, OnDestroy {

@@ -141,43 +141,43 @@
                 (valueChange)="setBlockLoad(vm, j, $event)"></app-number-wheel>
             </div>
 
-            <button type="button" class="setdone" *ngIf="!row.done && !isCluster(vm, row)" [disabled]="setsLocked"
-              (click)="confirmSet(vm, j)">Fatta</button>
+            <ion-button type="button" class="setdone" *ngIf="!row.done && !isCluster(vm, row)" [disabled]="setsLocked"
+              (click)="confirmSet(vm, j)">Fatta</ion-button>
 
             <!-- A esaurimento, dopo ogni blocco le scelte sono due e sono pari:
                  un altro, oppure basta. Stanno affiancate e dello stesso peso,
                  perche' prima il "chiudo" era un tasto tratteggiato sotto a uno
                  rosso, e non si capiva che la serie si poteva finire. -->
             <div class="clusterfork" *ngIf="!row.done && isCluster(vm, row) && canCloseCluster(vm, row)">
-              <button type="button" class="setdone" [disabled]="setsLocked"
-                (click)="doneBlock(vm, j)">Fatto il {{ blockLabel(vm, row).toLowerCase() }}</button>
-              <button type="button" class="setdone calmo" [disabled]="setsLocked"
+              <ion-button type="button" class="setdone" [disabled]="setsLocked"
+                (click)="doneBlock(vm, j)">Fatto il {{ blockLabel(vm, row).toLowerCase() }}</ion-button>
+              <ion-button type="button" class="setdone calmo" [disabled]="setsLocked"
                 (click)="closeClusterSet(vm, j)"
-                aria-label="Non ne escono altri, chiudi la serie">Chiudo la serie</button>
+                aria-label="Non ne escono altri, chiudi la serie">Chiudo la serie</ion-button>
             </div>
 
             <!-- A blocchi contati non c'e' niente da decidere: la serie si chiude
                  da sola quando sono tutti fatti. -->
-            <button type="button" class="setdone"
+            <ion-button type="button" class="setdone"
               *ngIf="!row.done && isCluster(vm, row) && !canCloseCluster(vm, row)" [disabled]="setsLocked"
-              (click)="doneBlock(vm, j)">Fatto il {{ blockLabel(vm, row).toLowerCase() }}</button>
+              (click)="doneBlock(vm, j)">Fatto il {{ blockLabel(vm, row).toLowerCase() }}</ion-button>
 
             <!-- A esaurimento i blocchi li aggiunge chi si allena, quindi deve
                  poterne togliere uno: un tocco di troppo su "fatto il blocco"
                  altrimenti non si disfa. Sta qui in fondo, con le altre cose che
                  si disfano, non in mezzo alle due scelte. -->
-            <button type="button" class="clusterundo" *ngIf="canRemoveBlock(vm, row)"
+            <ion-button type="button" class="clusterundo" *ngIf="canRemoveBlock(vm, row)"
               [disabled]="setsLocked" (click)="removeBlock(vm, j)">
               Togli l'ultimo blocco
-            </button>
+            </ion-button>
 
-            <button type="button" class="setundo" *ngIf="row.done && !isCluster(vm, row)" [disabled]="setsLocked"
-              (click)="undoSet(vm, j)">Togli la spunta</button>
-            <button type="button" class="setundo" *ngIf="row.done && isCluster(vm, row)" [disabled]="setsLocked"
-              (click)="reopenClusterSet(vm, j)">Riapri questa serie</button>
+            <ion-button type="button" class="setundo" *ngIf="row.done && !isCluster(vm, row)" [disabled]="setsLocked"
+              (click)="undoSet(vm, j)">Togli la spunta</ion-button>
+            <ion-button type="button" class="setundo" *ngIf="row.done && isCluster(vm, row)" [disabled]="setsLocked"
+              (click)="reopenClusterSet(vm, j)">Riapri questa serie</ion-button>
 
-            <button type="button" class="setremove" *ngIf="canRemove(vm, j)" [disabled]="setsLocked"
-              (click)="removeSet(vm, j)">Togli questa serie</button>
+            <ion-button type="button" class="setremove" *ngIf="canRemove(vm, j)" [disabled]="setsLocked"
+              (click)="removeSet(vm, j)">Togli questa serie</ion-button>
           </div>
 
         </ng-container>
@@ -185,11 +185,11 @@
 
       <!-- Una serie in piu' di quelle scritte dal coach: quelle del piano restano
            dove sono, questa la si toglie quando si vuole. -->
-      <button type="button" class="setadd" *ngIf="canAdd(vm)" [disabled]="setsLocked"
+      <ion-button type="button" class="setadd" *ngIf="canAdd(vm)" [disabled]="setsLocked"
         (click)="addSet(vm)">
         <lucide-icon name="plus" [size]="16"></lucide-icon>
         Aggiungi una serie
-      </button>
+      </ion-button>
 
       <!-- Insights -->
       <div class="ex-insights" [class.show]="vm.insightVisible && vm.insight">
@@ -297,8 +297,8 @@
         {{ state.saveStatus() === 'saving' ? 'Salvo…' : 'Chiudi e salva' }}
       </ion-button>
 
-      <button type="button" class="closing-discard" [disabled]="!canCancelSession"
-        (click)="cancelSession()">Butta via questa sessione</button>
+      <ion-button type="button" class="closing-discard" [disabled]="!canCancelSession"
+        (click)="cancelSession()">Butta via questa sessione</ion-button>
     </ng-template>
 
     <!-- Il resoconto: quando c'e', ha preso il posto dell'allenamento, che e'
@@ -455,9 +455,9 @@
           <div class="rest-value">{{ formatRest(restModalValue) }}</div>
           <ion-button class="rest-stepbtn" (click)="adjustRestModalValue(15)">+15</ion-button>
         </div>
-        <button class="rest-defaultbtn" (click)="resetRestModalToDefault()">
+        <ion-button class="rest-defaultbtn" (click)="resetRestModalToDefault()">
           Usa il default del protocollo ({{ formatRest(parseRecSecondsPublic()) }})
-        </button>
+        </ion-button>
         <div class="confirmbtns">
           <ion-button class="confirmbtn cancel" (click)="closeRestModal()">Annulla</ion-button>
           <ion-button class="confirmbtn danger restsave" (click)="saveRestModal()">Salva</ion-button>
