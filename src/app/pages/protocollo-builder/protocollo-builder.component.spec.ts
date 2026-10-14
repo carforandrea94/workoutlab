@@ -85,7 +85,7 @@ describe('ProtocolloBuilderComponent', () => {
       cdr,
       new ProtocolBuilderStateService(),
       new ToastService(),
-      new ConfirmDialogService({} as any)
+      new ConfirmDialogService({} as any, {} as any)
     );
     component.protocolId = 'proto1';
     component.protocol = buildProtocol();
@@ -158,7 +158,7 @@ describe('ProtocolloBuilderComponent', () => {
       cdr,
       new ProtocolBuilderStateService(),
       new ToastService(),
-      new ConfirmDialogService({} as any)
+      new ConfirmDialogService({} as any, {} as any)
     );
     component.protocolId = 'proto2';
     component.protocol = protocolNoWave;
@@ -307,7 +307,7 @@ describe('ProtocolloBuilderComponent — spostare un alimento', () => {
     return new ProtocolloBuilderComponent(
       {} as any, {} as any, {} as any, new PdfImportService(), new WorkoutDataService(),
       { detectChanges: () => {} } as any,
-      new ProtocolBuilderStateService(), new ToastService(), new ConfirmDialogService({} as any)
+      new ProtocolBuilderStateService(), new ToastService(), new ConfirmDialogService({} as any, {} as any)
     );
   }
 

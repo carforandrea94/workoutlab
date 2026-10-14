@@ -652,9 +652,6 @@ ion-content{--background:var(--bg);--color:var(--label);--padding-bottom:calc(va
 .runremove{display:block;width:100%;margin-top:10px;padding:13px 16px;border:1px solid var(--border-line);border-radius:var(--r-lg);background:transparent;color:var(--state-danger-text);font-size:var(--text-sm);font-weight:600;cursor:pointer;}
 .runremove:disabled{opacity:.45;cursor:default;}
 
-.runseg{display:flex;gap:6px;}
-.runseg-btn{flex:1;min-width:0;min-height:40px;padding:9px 6px;border:1px solid var(--border-line);border-radius:var(--r-sm);background:var(--surface-raise);color:var(--label-2);font-size:var(--text-sm);font-weight:600;cursor:pointer;-webkit-user-select:none;user-select:none;transition:background .18s ease,border-color .18s ease,color .18s ease;}
-.runseg-btn.on{border-color:var(--accent);background:var(--accent-dim);color:var(--label);}
 
 .runsave{display:block;width:100%;padding:14px 16px;border:none;border-radius:var(--r-lg);background:var(--accent);color:var(--accent-contrast);font-size:var(--text-md);font-weight:700;cursor:pointer;-webkit-user-select:none;user-select:none;}
 .runsave:disabled{opacity:.45;cursor:default;}
@@ -849,8 +846,6 @@ lucide-icon svg.filled{fill:currentColor;}
 .diet-card.disabled{opacity:.5;cursor:default;}
 .diet-card .badge{font-size:var(--text-xs);letter-spacing:.02em;}
 
-.builder-tabs{margin-bottom:16px;}
-.builder-tabs button{flex:1;text-align:center;}
 
 .weekplan-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
 .weekplan-num{font-family:'IBM Plex Mono',monospace;font-size:var(--text-xs);color:var(--label-3);width:24px;flex-shrink:0;}
@@ -1195,8 +1190,11 @@ ion-modal.sheet-modal .ion-page{position:relative;display:block;contain:content;
    margine anche dove l'icona e' minuta. Da applicare SOLO dove l'area
    allargata non copre qualcosa di cliccabile con un'altra azione: meglio un
    bersaglio piccolo che un tocco che fa la cosa sbagliata. */
-.tap44{position:relative;}
-.tap44::after{content:"";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:44px;height:44px;}
+/* I pulsanti della testata sono riquadri da 38px: il bersaglio da 44 lo
+   prendono da qui, senza cambiare il disegno. Fra due pulsanti ci sono 8px, e
+   il bersaglio cresce di 3px per lato: non si pestano. */
+.tap44,.navicon,ion-back-button{position:relative;}
+.tap44::after,.navicon::after,ion-back-button::after{content:"";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:44px;height:44px;}
 /* Per i bottoni affiancati il bersaglio cresce solo in verticale: in
    orizzontale ruberebbe i tocchi al vicino. */
 .tap44.tap44-v::after{width:100%;}
@@ -1295,7 +1293,13 @@ ion-modal.sheet-modal .ion-page{position:relative;display:block;contain:content;
 ion-toast.apptoast{--background:var(--accent);--color:var(--accent-contrast);--border-radius:var(--r-pill);--box-shadow:var(--shadow-float);--max-width:calc(100vw - 32px);--button-color:var(--accent-contrast);font-weight:600;font-size:var(--text-md);text-align:center;}
 ion-toast.apptoast.error{--background:var(--state-danger);--color:#fff;}
 ion-toast.apptoast::part(container){justify-content:center;}
-/* Conferme: ion-alert con i colori dell'app. */
+/* Conferme di eliminazione: ion-action-sheet con i colori dell'app. Il rosso
+   del tasto lo mette Ionic da --ion-color-danger, gia' mappato sui token. */
+ion-action-sheet.confirm-sheet{--background:var(--surface-card);--backdrop-opacity:.55;--color:var(--label-2);--button-color:var(--accent);--max-width:608px;}
+ion-action-sheet.confirm-sheet .action-sheet-title{font-size:var(--text-sm);line-height:1.45;}
+ion-action-sheet.confirm-sheet .action-sheet-button{font-weight:600;}
+
+/* Conferme che non fanno perdere niente: ion-alert con i colori dell'app. */
 ion-alert.confirm-alert{--background:var(--surface-card);--max-width:320px;--backdrop-opacity:.55;--ion-text-color:var(--label);--ion-color-primary:var(--accent);}
 ion-alert.confirm-alert .alert-message{color:var(--label);font-size:var(--text-md);line-height:1.5;}
 ion-alert.confirm-alert .alert-button{font-weight:700;}
@@ -1339,6 +1343,10 @@ ion-select.rmpick-sel{width:112px;min-height:40px;--padding-start:10px;--padding
 ion-segment.seg{--background:var(--surface-raise);flex-shrink:0;width:auto;min-height:0;padding:3px;gap:3px;border:1px solid var(--border-line);border-radius:var(--r-md);}
 ion-segment.seg ion-segment-button{--color:var(--label-3);--color-checked:var(--accent-contrast);--indicator-color:var(--accent);--indicator-box-shadow:none;--border-radius:var(--r-sm);--padding-start:0;--padding-end:0;--padding-top:0;--padding-bottom:0;margin:0;min-width:30px;width:30px;min-height:26px;}
 ion-segment.seg.labelseg ion-segment-button{width:auto;min-width:0;padding:0 14px;min-height:30px;font-family:'IBM Plex Mono',monospace;font-size:var(--text-xs);font-weight:600;}
+/* A tutta larghezza, per i campi di una scheda (tipo di uscita, sezioni del protocollo): le voci si dividono la riga. */
+ion-segment.seg.fullseg{width:100%;}
+ion-segment.seg.fullseg ion-segment-button{flex:1;max-width:none;padding:0 6px;min-height:36px;}
+ion-segment.builder-tabs{margin-bottom:16px;}
 /* Accedi / Crea un account */
 ion-segment.authtabs{--background:transparent;min-height:0;}
 ion-segment.authtabs ion-segment-button{flex:1;min-width:0;max-width:none;--color:var(--label-3);--color-checked:var(--label);--indicator-color:var(--surface-raise-2);--indicator-box-shadow:none;--border-radius:var(--r-md);--padding-top:0;--padding-bottom:0;margin:0;min-height:40px;font-family:'Inter',sans-serif;font-size:var(--text-md);font-weight:600;}

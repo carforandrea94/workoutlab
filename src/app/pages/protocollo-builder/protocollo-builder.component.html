@@ -45,12 +45,12 @@
           </div>
         </div>
 
-        <div class="variant-tabs builder-tabs">
-          <button [class.active]="tab === 'scheda'" (click)="tab = 'scheda'">Scheda</button>
-          <button [class.active]="tab === 'dieta'" (click)="tab = 'dieta'">Dieta</button>
-          <button [class.active]="tab === 'corsa'" (click)="tab = 'corsa'">Corsa</button>
-          <button [class.active]="tab === 'info'" (click)="tab = 'info'">Info</button>
-        </div>
+        <ion-segment class="seg labelseg fullseg builder-tabs" [value]="tab" aria-label="Sezione del protocollo">
+          <ion-segment-button value="scheda" (click)="tab = 'scheda'">Scheda</ion-segment-button>
+          <ion-segment-button value="dieta" (click)="tab = 'dieta'">Dieta</ion-segment-button>
+          <ion-segment-button value="corsa" (click)="tab = 'corsa'">Corsa</ion-segment-button>
+          <ion-segment-button value="info" (click)="tab = 'info'">Info</ion-segment-button>
+        </ion-segment>
       </ng-container>
 
       <!-- ===================== SCHEDA ===================== -->
