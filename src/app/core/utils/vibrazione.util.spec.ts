@@ -1,80 +1,59 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-
-const nativa = vi.hoisted(() => ({ valore: false }));
-const aptico = vi.hoisted(() => ({
-  notification: vi.fn(async () => {}),
-  impact: vi.fn(async () => {})
-}));
-
-// Il sistema di test di Angular non ammette vi.mock su import relativi: si finge il
-// pacchetto che platform.util interroga, non platform.util.
-vi.mock('@capacitor/core', () => ({ Capacitor: { isNativePlatform: () => nativa.valore } }));
-vi.mock('@capacitor/haptics', () => ({
-  Haptics: aptico,
-  ImpactStyle: { Medium: 'MEDIUM' },
-  NotificationType: { Success: 'SUCCESS' }
-}));
-
-import { vibra } from './vibrazione.util';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { ImpactStyle, NotificationType } from '@capacitor/haptics';
+import { Ambiente, vibra } from './vibrazione.util';
 
 /**
  * Su iPhone navigator.vibrate non esiste: il segnale di fine recupero passa
- * dall'aptico nell'app nativa e dal browser altrove.
+ * dall'aptico nell'app nativa e dal browser altrove. L'ambiente si passa a
+ * mano: niente mock di moduli, che nel sistema di test di Angular non reggono.
  */
 describe('vibra', () => {
-  const originale = Object.getOwnPropertyDescriptor(Navigator.prototype, 'vibrate');
-  const vibrate = vi.fn(() => true);
+  let aptico: { notification: ReturnType<typeof vi.fn>; impact: ReturnType<typeof vi.fn> };
+  let vibrate: ReturnType<typeof vi.fn>;
+
+  const ambiente = (parti: Partial<Ambiente>): Ambiente =>
+    ({ nativa: false, aptico: aptico as any, vibrate: vibrate as any, ...parti });
 
   beforeEach(() => {
-    vi.clearAllMocks();
-    Object.defineProperty(navigator, 'vibrate', { value: vibrate, configurable: true });
-  });
-
-  afterEach(() => {
-    delete (navigator as any).vibrate;
-    if (originale) Object.defineProperty(Navigator.prototype, 'vibrate', originale);
+    aptico = { notification: vi.fn(async () => {}), impact: vi.fn(async () => {}) };
+    vibrate = vi.fn(() => true);
   });
 
   describe('nel browser', () => {
-    beforeEach(() => { nativa.valore = false; });
-
     it('a fine recupero fa la vibrazione doppia', () => {
-      vibra('fine-recupero');
+      vibra('fine-recupero', ambiente({}));
       expect(vibrate).toHaveBeenCalledWith([200, 100, 200]);
       expect(aptico.notification).not.toHaveBeenCalled();
     });
 
     it('a fine pausa fa una vibrazione sola', () => {
-      vibra('fine-pausa');
+      vibra('fine-pausa', ambiente({}));
       expect(vibrate).toHaveBeenCalledWith(200);
     });
 
     it('dove navigator.vibrate non c\'e\' (iPhone) non fa niente e non si rompe', () => {
-      delete (navigator as any).vibrate;
-      expect(() => vibra('fine-recupero')).not.toThrow();
+      expect(() => vibra('fine-recupero', ambiente({ vibrate: null }))).not.toThrow();
       expect(aptico.notification).not.toHaveBeenCalled();
       expect(aptico.impact).not.toHaveBeenCalled();
     });
   });
 
   describe('nell\'app nativa', () => {
-    beforeEach(() => { nativa.valore = true; });
-
     it('a fine recupero manda la notifica di successo', () => {
-      vibra('fine-recupero');
-      expect(aptico.notification).toHaveBeenCalledWith({ type: 'SUCCESS' });
+      vibra('fine-recupero', ambiente({ nativa: true }));
+      expect(aptico.notification).toHaveBeenCalledWith({ type: NotificationType.Success });
       expect(vibrate).not.toHaveBeenCalled();
     });
 
     it('a fine pausa manda un colpo medio', () => {
-      vibra('fine-pausa');
-      expect(aptico.impact).toHaveBeenCalledWith({ style: 'MEDIUM' });
+      vibra('fine-pausa', ambiente({ nativa: true }));
+      expect(aptico.impact).toHaveBeenCalledWith({ style: ImpactStyle.Medium });
       expect(vibrate).not.toHaveBeenCalled();
     });
 
     it('se l\'aptico rifiuta non e\' un errore per chi chiama', async () => {
       aptico.notification.mockRejectedValueOnce(new Error('non disponibile'));
-      expect(() => vibra('fine-recupero')).not.toThrow();
+      expect(() => vibra('fine-recupero', ambiente({ nativa: true }))).not.toThrow();
       await Promise.resolve();
     });
   });

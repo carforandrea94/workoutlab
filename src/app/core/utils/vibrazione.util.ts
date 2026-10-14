@@ -13,19 +13,35 @@ import { isNativeApp } from './platform.util';
  */
 export type Vibrazione = 'fine-recupero' | 'fine-pausa';
 
-const PATTERN_WEB: Record<Vibrazione, number | number[]> = {
+/** Cio' da cui dipende la scelta: passato a mano nei test, preso dal dispositivo altrove. */
+export interface Ambiente {
+  nativa: boolean;
+  aptico: Pick<typeof Haptics, 'notification' | 'impact'>;
+  /** navigator.vibrate, dove c'e'. */
+  vibrate: ((schema: number | number[]) => boolean) | null;
+}
+
+const SCHEMA_WEB: Record<Vibrazione, number | number[]> = {
   'fine-recupero': [200, 100, 200],
   'fine-pausa': 200
 };
 
-export function vibra(tipo: Vibrazione): void {
-  if (isNativeApp()) {
+function ambienteReale(): Ambiente {
+  return {
+    nativa: isNativeApp(),
+    aptico: Haptics,
+    vibrate: typeof navigator !== 'undefined' && navigator.vibrate ? navigator.vibrate.bind(navigator) : null
+  };
+}
+
+export function vibra(tipo: Vibrazione, ambiente: Ambiente = ambienteReale()): void {
+  if (ambiente.nativa) {
     // Nessuno aspetta l'esito: se l'aptico non c'e' (iPad, simulatore) non e' un errore.
     const effetto = tipo === 'fine-recupero'
-      ? Haptics.notification({ type: NotificationType.Success })
-      : Haptics.impact({ style: ImpactStyle.Medium });
+      ? ambiente.aptico.notification({ type: NotificationType.Success })
+      : ambiente.aptico.impact({ style: ImpactStyle.Medium });
     effetto.catch(() => {});
     return;
   }
-  if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(PATTERN_WEB[tipo]);
+  ambiente.vibrate?.(SCHEMA_WEB[tipo]);
 }
