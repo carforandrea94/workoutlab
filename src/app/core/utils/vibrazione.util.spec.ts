@@ -6,7 +6,9 @@ const aptico = vi.hoisted(() => ({
   impact: vi.fn(async () => {})
 }));
 
-vi.mock('./platform.util', () => ({ isNativeApp: () => nativa.valore }));
+// Il sistema di test di Angular non ammette vi.mock su import relativi: si finge il
+// pacchetto che platform.util interroga, non platform.util.
+vi.mock('@capacitor/core', () => ({ Capacitor: { isNativePlatform: () => nativa.valore } }));
 vi.mock('@capacitor/haptics', () => ({
   Haptics: aptico,
   ImpactStyle: { Medium: 'MEDIUM' },
