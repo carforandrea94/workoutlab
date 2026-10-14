@@ -1,0 +1,52 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button [defaultHref]="isEdit ? '/misure/storico' : '/misure'"></ion-back-button>
+    </ion-buttons>
+    <ion-title>
+      <div class="navtitle">{{ title }}</div>
+      <div class="navsubtitle">{{ isEdit ? 'Modifica misurazione' : 'Nuova misurazione' }}</div>
+    </ion-title>
+    <ion-buttons slot="end">
+      <button class="navicon" (click)="save()" [disabled]="measureState.saving()" aria-label="Salva misurazione" title="Salva misurazione">
+        <lucide-icon name="check" [size]="18"></lucide-icon>
+      </button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <div class="wrap">
+    <div *ngIf="loading" class="history-empty"><ion-spinner name="crescent" aria-label="Caricamento"></ion-spinner></div>
+
+    <ng-container *ngIf="!loading">
+      <p class="sectiontitle">{{ title }}</p>
+
+      <div class="infocard measure-card" *ngIf="isEdit">
+        <div class="measure-field">
+          <label>Data</label>
+          <div class="measure-input-wrap">
+            <input type="date" [(ngModel)]="dateValue" [max]="maxDate" />
+          </div>
+        </div>
+      </div>
+
+      <div class="infocard measure-card">
+        <div class="measure-grid cols-2">
+          <div class="measure-field" *ngFor="let f of fields">
+            <label>{{ f.label }}</label>
+            <div class="measure-input-wrap">
+              <ion-input type="text" inputmode="decimal"
+                [(ngModel)]="values[f.key]"
+                [placeholder]="placeholders[f.key] ?? '—'"
+                (ionInput)="onInput()"></ion-input>
+              <span class="unit">{{ f.unit }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <p class="autherror" *ngIf="errorMsg">{{ errorMsg }}</p>
+    </ng-container>
+  </div>
+</ion-content>

@@ -1,0 +1,71 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/scheda"></ion-back-button>
+    </ion-buttons>
+    <ion-title>
+      <div class="navtitle">Info</div>
+      <div class="navsubtitle">Il programma</div>
+    </ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <div class="wrap">
+    <div *ngIf="!workoutData.hasCustomProtocol" class="history-empty">
+      Non hai ancora un protocollo attivo.<br>
+      Creane uno per avere il tuo programma.
+      <div class="mt-3">
+        <button class="savebtn" routerLink="/scheda/protocolli" routerDirection="forward">Vai ai protocolli</button>
+      </div>
+    </div>
+
+    <ng-container *ngIf="workoutData.hasCustomProtocol">
+
+      <div class="infocard" *ngIf="workoutData.infoNote">
+        <h3>Note del programma</h3>
+        <p style="white-space:pre-wrap">{{ workoutData.infoNote }}</p>
+      </div>
+
+      <div class="infocard" *ngIf="weekPlan.length > 0">
+        <h3>Onda di carico (Wave Loading)</h3>
+        <p>Gli esercizi <b>wave</b> seguono questa progressione:</p>
+        <div class="infowave" *ngFor="let wp of weekPlan; let i = index">
+          S{{ i + 1 }} → {{ wp.sets }}×{{ wp.reps }} reps
+          <span *ngIf="i + 1 === currentWeek" style="margin-left:8px;color:var(--state-success)">← sei qui</span>
+        </div>
+      </div>
+
+      <div class="infocard">
+        <h3>Settimana automatica</h3>
+        <p>La settimana corrente viene calcolata automaticamente dalla data di inizio del tuo programma.</p>
+        <p>Settimana attuale: <b>S{{ currentWeek }}</b></p>
+      </div>
+
+      <div class="infocard">
+        <h3>Storico e carichi</h3>
+        <p *ngIf="loadingHistory">Caricamento storico...</p>
+        <p *ngIf="!loadingHistory && totalWorkouts === 0">
+          Non hai ancora registrato allenamenti. Il tuo storico apparirà qui dopo il primo allenamento completato.
+        </p>
+        <ng-container *ngIf="!loadingHistory && totalWorkouts > 0">
+          <p>Allenamenti completati: <b>{{ totalWorkouts }}</b></p>
+          <p>Ultimo allenamento: <b>{{ lastWorkoutDate }}</b></p>
+          <p>Nella scheda dettaglio puoi vedere, per ogni esercizio: l'ultimo carico usato, il grafico della progressione e un suggerimento di carico per gli esercizi wave.</p>
+        </ng-container>
+      </div>
+
+      <div class="consigli">
+        <h3>Consigli generali</h3>
+        <ul>
+          <li>Recupero tra le serie: segui i tempi indicati (timer automatico)</li>
+          <li>Progressione: aumenta il carico quando completi tutte le serie con buona tecnica</li>
+          <li *ngIf="hasWaveExercises">Per gli esercizi wave: aumenta di 2.5–5 kg quando completi tutte le serie</li>
+          <li>Bevi almeno 2L di acqua al giorno, di più nei giorni di allenamento</li>
+          <li>Assicurati di dormire almeno 7–8 ore per ottimizzare il recupero</li>
+        </ul>
+      </div>
+
+    </ng-container>
+  </div>
+</ion-content>

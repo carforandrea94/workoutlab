@@ -1,0 +1,50 @@
+{
+  "name": "workoutlab",
+  "version": "0.0.0",
+  "scripts": {
+    "ng": "ng",
+    "start": "ng serve",
+    "build": "ng build",
+    "watch": "ng build --watch --configuration development",
+    "test": "ng test",
+    "test:rules": "npx --yes firebase-tools@13 emulators:exec --only firestore --project prova-regole \"node test/firestore-rules.mjs\"",
+    "deploy:rules": "npx --yes firebase-tools@13 deploy --only firestore:rules,firestore:indexes",
+    "deploy:hosting": "npm run build -- --configuration production && npx --yes firebase-tools@13 deploy --only hosting",
+    "cap:sync": "npm run build -- --configuration production && npx cap sync"
+  },
+  "private": true,
+  "packageManager": "npm@10.9.7",
+  "dependencies": {
+    "@angular/common": "^21.2.0",
+    "@angular/compiler": "^21.2.0",
+    "@angular/core": "^21.2.0",
+    "@angular/forms": "^21.2.0",
+    "@angular/platform-browser": "^21.2.0",
+    "@angular/router": "^21.2.0",
+    "rxjs": "~7.8.0",
+    "tslib": "^2.3.0",
+    "@angular/cdk": "^21.2.0",
+    "@angular/service-worker": "^21.2.0",
+    "@capacitor/app": "^8.0.0",
+    "@capacitor/core": "^8.0.0",
+    "@capacitor/haptics": "^8.0.0",
+    "@capacitor/keyboard": "^8.0.0",
+    "@capacitor/status-bar": "^8.0.0",
+    "@ionic/angular": "^9.0.7",
+    "ionicons": "^8.0.0",
+    "firebase": "^12.15.0",
+    "lucide-angular": "^1.0.0",
+    "pdfjs-dist": "^6.1.200"
+  },
+  "devDependencies": {
+    "@angular/build": "^21.2.18",
+    "@angular/cli": "^21.2.18",
+    "@angular/compiler-cli": "^21.2.0",
+    "jsdom": "^27.1.0",
+    "prettier": "^3.8.1",
+    "typescript": "~5.9.2",
+    "vitest": "~4.1.10",
+    "@capacitor/cli": "^8.0.0",
+    "@firebase/rules-unit-testing": "^5.0.2"
+  }
+}

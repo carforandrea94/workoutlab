@@ -1,0 +1,43 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/scheda/protocolli"></ion-back-button>
+    </ion-buttons>
+    <ion-title>
+      <div class="navtitle">Nuovo protocollo</div>
+    </ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <div class="wrap">
+    <p class="sectiontitle">Nuovo protocollo</p>
+
+    <div class="infocard method-card" (click)="goToPdfImport()">
+      <div class="method-icon">
+        <lucide-icon name="file-text" [size]="24"></lucide-icon>
+      </div>
+      <div class="method-info">
+        <div class="method-title">Carica 3 PDF</div>
+        <div class="method-sub">Scheda allenamento, dieta e integrazione — l'app prova a leggerli e precompila il protocollo</div>
+      </div>
+      <span class="chev">
+        <lucide-icon name="chevron-right" [size]="13"></lucide-icon>
+      </span>
+    </div>
+
+    <div class="infocard method-card" (click)="createManual()">
+      <div class="method-icon">
+        <lucide-icon name="square-pen" [size]="24"></lucide-icon>
+      </div>
+      <div class="method-info">
+        <div class="method-title">Crea manualmente</div>
+        <div class="method-sub">Costruisci scheda e dieta da zero con le schermate guidate</div>
+      </div>
+      <span class="chev" *ngIf="!creating">
+        <lucide-icon name="chevron-right" [size]="13"></lucide-icon>
+      </span>
+      <span class="chev" *ngIf="creating">…</span>
+    </div>
+  </div>
+</ion-content>

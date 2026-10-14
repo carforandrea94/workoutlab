@@ -1,0 +1,87 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/misure/storico"></ion-back-button>
+    </ion-buttons>
+    <ion-title>
+      <div class="navtitle">Dettaglio misurazione</div>
+    </ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <div class="wrap">
+    <div *ngIf="loading" class="history-empty"><ion-spinner name="crescent" aria-label="Caricamento"></ion-spinner></div>
+
+    <div *ngIf="!loading && errorMsg" class="history-empty">
+      {{ errorMsg }}<br>
+      <button class="savebtn mt-3" (click)="load()">Riprova</button>
+    </div>
+
+    <div *ngIf="!loading && !errorMsg && !entry" class="history-empty">Misurazione non trovata.</div>
+
+    <ng-container *ngIf="!loading && !errorMsg && entry">
+      <div class="daymeta">
+        <span>Misurazione</span>
+        <span class="rec">{{ displayDate }}</span>
+      </div>
+
+      <ng-container *ngIf="hasValue(rows1)">
+        <p class="sectiontitle">Peso</p>
+        <div class="infocard measure-card">
+          <div class="measure-readrow" *ngFor="let r of rows1">
+            <span class="mr-label">{{ r.field.label }}</span>
+            <span class="mr-value">
+              <ng-container *ngIf="r.value">{{ r.value }} {{ r.field.unit }}</ng-container>
+              <ng-container *ngIf="!r.value">—</ng-container>
+              <span *ngIf="r.delta !== null" [class]="r.delta < 0 ? 'delta down' : (r.delta > 0 ? 'delta up' : 'delta')">
+                {{ r.deltaText }}
+              </span>
+            </span>
+          </div>
+          <button class="savebtn mt-3" (click)="editCategory('peso')">Modifica peso</button>
+        </div>
+      </ng-container>
+
+      <ng-container *ngIf="hasValue(rows2)">
+        <p class="sectiontitle">Pliche</p>
+        <div class="infocard measure-card">
+          <div class="measure-readrow" *ngFor="let r of rows2">
+            <span class="mr-label">{{ r.field.label }}</span>
+            <span class="mr-value">
+              <ng-container *ngIf="r.value">{{ r.value }} {{ r.field.unit }}</ng-container>
+              <ng-container *ngIf="!r.value">—</ng-container>
+              <span *ngIf="r.delta !== null" [class]="r.delta < 0 ? 'delta down' : (r.delta > 0 ? 'delta up' : 'delta')">
+                {{ r.deltaText }}
+              </span>
+            </span>
+          </div>
+          <button class="savebtn mt-3" (click)="editCategory('pliche')">Modifica pliche</button>
+        </div>
+      </ng-container>
+
+      <ng-container *ngIf="hasValue(rows3)">
+        <p class="sectiontitle">Centimetri</p>
+        <div class="infocard measure-card">
+          <div class="measure-readrow" *ngFor="let r of rows3">
+            <span class="mr-label">{{ r.field.label }}</span>
+            <span class="mr-value">
+              <ng-container *ngIf="r.value">{{ r.value }} {{ r.field.unit }}</ng-container>
+              <ng-container *ngIf="!r.value">—</ng-container>
+              <span *ngIf="r.delta !== null" [class]="r.delta < 0 ? 'delta down' : (r.delta > 0 ? 'delta up' : 'delta')">
+                {{ r.deltaText }}
+              </span>
+            </span>
+          </div>
+          <button class="savebtn mt-3" (click)="editCategory('centimetri')">Modifica centimetri</button>
+        </div>
+      </ng-container>
+
+      <div class="savebar">
+        <button class="savebtn delete-session-btn" (click)="deleteEntry()">
+          Elimina questa misurazione
+        </button>
+      </div>
+    </ng-container>
+  </div>
+</ion-content>

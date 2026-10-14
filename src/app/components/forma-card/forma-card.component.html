@@ -1,0 +1,145 @@
+<p class="sectiontitle mt-0">Il corpo</p>
+
+<div class="formagrid">
+  <div class="formatile">
+    <div class="formatile-cap">Peso</div>
+    <div class="formatile-val" *ngIf="weightKg() !== null; else noWeight">
+      <span class="n">{{ weightLabel }}</span><span class="u">kg</span>
+    </div>
+    <ng-template #noWeight>
+      <div class="formatile-val"><span class="n empty">—</span></div>
+    </ng-template>
+    <div class="formatile-note" *ngIf="weightKg() !== null && weightDelta !== null">{{ weightDeltaLabel }}</div>
+    <div class="formatile-note" *ngIf="weightKg() !== null && weightDelta === null">prima pesata</div>
+    <a class="formatile-link" *ngIf="weightKg() === null" routerLink="/misure/peso" routerDirection="forward">Pesati</a>
+  </div>
+
+  <div class="formatile">
+    <div class="formatile-cap">BMI</div>
+    <div class="formatile-val" *ngIf="bmi !== null; else noBmi">
+      <span class="n">{{ bmiLabel }}</span>
+    </div>
+    <ng-template #noBmi>
+      <div class="formatile-val"><span class="n empty">—</span></div>
+    </ng-template>
+    <div class="formatile-note" *ngIf="bmi !== null">{{ bmiNote }}</div>
+    <a class="formatile-link" *ngIf="bmi === null && !heightCm" routerLink="/account/impostazioni" routerDirection="forward">Metti l'altezza</a>
+    <div class="formatile-note" *ngIf="bmi === null && heightCm">serve una pesata</div>
+  </div>
+
+  <div class="formatile">
+    <div class="formatile-cap">Altezza</div>
+    <div class="formatile-val" *ngIf="heightCm !== null; else noHeight">
+      <span class="n">{{ heightLabel }}</span><span class="u">cm</span>
+    </div>
+    <ng-template #noHeight>
+      <div class="formatile-val"><span class="n empty">—</span></div>
+    </ng-template>
+    <a class="formatile-link" *ngIf="heightCm === null" routerLink="/account/impostazioni" routerDirection="forward">Dichiarala</a>
+  </div>
+
+  <div class="formatile">
+    <div class="formatile-cap">Sesso</div>
+    <div class="formatile-val" *ngIf="sex !== null; else noSex">
+      <span class="n word">{{ sexLabel }}</span>
+    </div>
+    <ng-template #noSex>
+      <div class="formatile-val"><span class="n empty">—</span></div>
+    </ng-template>
+    <a class="formatile-link" *ngIf="sex === null" routerLink="/account/impostazioni" routerDirection="forward">Dichiaralo</a>
+  </div>
+
+  <!-- Massa grassa e FFMI stanno in riga con le altre: sono due numeri del
+       corpo come il peso e il BMI, e avevano una card larga per uno solo
+       perche' sotto ci stava la spiegazione di cosa fossero. -->
+  <div class="formatile">
+    <div class="formatile-cap">Massa grassa</div>
+    <div class="formatile-val" *ngIf="bodyFat.pct !== null; else noFat">
+      <span class="n">{{ bodyFatLabel }}</span><span class="u">%</span>
+    </div>
+    <ng-template #noFat>
+      <div class="formatile-val"><span class="n empty">—</span></div>
+    </ng-template>
+    <div class="formatile-note" *ngIf="bodyFat.pct !== null && plicheDate">pliche del {{ plicheDate }}</div>
+    <div class="formatile-note" *ngIf="bodyFat.pct === null">{{ bodyFatMissing }}</div>
+    <a class="formatile-link" *ngIf="bodyFat.pct === null && bodyFatNeedsProfile"
+       routerLink="/account/impostazioni" routerDirection="forward">Completa il profilo</a>
+    <a class="formatile-link" *ngIf="bodyFat.pct === null && !bodyFatNeedsProfile"
+       routerLink="/misure/pliche" routerDirection="forward">Vai alle pliche</a>
+  </div>
+
+  <div class="formatile">
+    <div class="formatile-cap">FFMI</div>
+    <div class="formatile-val" *ngIf="ffmiValue !== null; else noFfmi">
+      <span class="n">{{ ffmiLabel }}</span>
+    </div>
+    <ng-template #noFfmi>
+      <div class="formatile-val"><span class="n empty">—</span></div>
+    </ng-template>
+    <div class="formatile-note" *ngIf="ffmiValue !== null">{{ ffmiNote }}</div>
+    <div class="formatile-note" *ngIf="ffmiValue === null">{{ ffmiMissing }}</div>
+  </div>
+</div>
+
+<p class="sectiontitle">Il lavoro</p>
+
+<div class="formagrid">
+  <div class="formatile">
+    <div class="formatile-cap">Questa settimana</div>
+    <div class="formatile-val" *ngIf="daysPlanned > 0; else noProgram">
+      <span class="n">{{ daysDone }}</span><span class="u">/{{ daysPlanned }}</span>
+    </div>
+    <ng-template #noProgram>
+      <div class="formatile-val"><span class="n empty">—</span></div>
+    </ng-template>
+    <div class="formatile-note" *ngIf="daysPlanned > 0">{{ daysLeftLabel }}</div>
+    <div class="formatile-note" *ngIf="daysPlanned === 0">nessun programma attivo</div>
+  </div>
+
+  <div class="formatile">
+    <div class="formatile-cap">Sedute</div>
+    <div class="formatile-val" *ngIf="sessionCount() !== null; else noCount">
+      <span class="n">{{ sessionCount() }}</span><span class="u">tot.</span>
+    </div>
+    <ng-template #noCount>
+      <div class="formatile-val"><span class="n empty">—</span></div>
+    </ng-template>
+    <div class="formatile-note" *ngIf="sessionCount() === 0">la prima e&rsquo; quella che costa</div>
+  </div>
+
+  <div class="formatile" style="grid-column: 1 / -1">
+    <div class="formatile-cap">Corsa</div>
+    <div class="formatile-val">
+      <span class="n">{{ runMinutes }}</span><span class="u">min questa settimana</span>
+    </div>
+    <div class="formatile-note">{{ runNote }}</div>
+  </div>
+</div>
+
+<div class="grassocard" *ngIf="rotation() as giro">
+  <div class="grassocard-head">
+    <div class="formatile-cap">Tonnellaggio</div>
+    <div class="formatile-val" *ngIf="giro.days.length; else noRotation">
+      <span class="n">{{ tonnageTotal }}</span><span class="u">kg</span>
+    </div>
+    <ng-template #noRotation>
+      <div class="formatile-val"><span class="n empty">—</span></div>
+    </ng-template>
+  </div>
+
+  <div class="tonnrows" *ngIf="giro.days.length">
+    <div class="tonnrow" *ngFor="let d of giro.days">
+      <span class="tonnrow-lbl">{{ d.label }}</span>
+      <span class="tonnrow-bar"><span [style.width.%]="tonnagePct(d.kg)"></span></span>
+      <span class="tonnrow-kg" [class.empty]="d.kg === null">{{ tonnageKg(d.kg) }}</span>
+      <span class="tonnrow-date">{{ tonnageDate(d.date) }}</span>
+    </div>
+  </div>
+
+  <p class="grassocard-foot" *ngIf="giro.days.length">
+    Un giro completo del programma: ogni giorno porta la sua ultima seduta, quindi il totale si
+    muove a ogni salvataggio senza mai contare due volte lo stesso giorno.<ng-container *ngIf="giro.missing"> Restano
+    {{ giro.missing }} giorni da allenare almeno una volta.</ng-container>
+  </p>
+  <div class="formatile-note" *ngIf="!giro.days.length">nessun programma attivo</div>
+</div>

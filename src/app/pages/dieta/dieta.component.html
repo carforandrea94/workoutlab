@@ -1,0 +1,44 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-title>
+      <div class="navtitle">Dieta</div>
+      <div class="navsubtitle">Piano alimentare</div>
+    </ion-title>
+    <ion-buttons slot="end">
+      <button class="navicon" routerLink="/dieta/lista-spesa" routerDirection="forward" aria-label="Lista della spesa" title="Lista della spesa">
+        <lucide-icon name="shopping-cart" [size]="18"></lucide-icon>
+      </button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <div class="wrap">
+    <div *ngIf="!hasAnyDietData" class="history-empty">
+      Non hai ancora un protocollo attivo.<br>
+      Creane uno per avere il tuo piano alimentare.
+      <div class="mt-3">
+        <button class="savebtn" routerLink="/scheda/protocolli" routerDirection="forward">Vai ai protocolli</button>
+      </div>
+    </div>
+
+    <ng-container *ngIf="hasAnyDietData">
+      <p class="sectiontitle">Piani alimentari</p>
+
+      <div class="grouplist">
+        <div class="daycard press-fx diet-card" *ngFor="let card of cards" (click)="openCard(card)">
+          <div class="badge">
+            <lucide-icon name="circle-plus" [size]="18"></lucide-icon>
+          </div>
+          <div class="info">
+            <div class="lbl">{{ card.plan.name }}</div>
+            <div class="meta">{{ card.itemCount }} alimenti</div>
+          </div>
+          <span class="chev">
+            <lucide-icon name="chevron-right" [size]="13"></lucide-icon>
+          </span>
+        </div>
+      </div>
+    </ng-container>
+  </div>
+</ion-content>

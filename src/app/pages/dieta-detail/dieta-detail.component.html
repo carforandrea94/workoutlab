@@ -1,0 +1,138 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/dieta"></ion-back-button>
+    </ion-buttons>
+    <ion-title>
+      <div class="navtitle">Piano alimentare</div>
+    </ion-title>
+    <ion-buttons slot="end">
+      <ion-segment class="seg" [value]="state.viewMode()">
+        <ion-segment-button value="list" (click)="state.setViewMode('list')" aria-label="Vista elenco" title="Elenco"><lucide-icon name="list" [size]="16"></lucide-icon></ion-segment-button>
+        <ion-segment-button value="slider" (click)="state.setViewMode('slider')" aria-label="Vista slider" title="Slider"><lucide-icon name="gallery-horizontal" [size]="16"></lucide-icon></ion-segment-button>
+      </ion-segment>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <div class="wrap">
+    <p class="sectiontitle">{{ plan?.name }}</p>
+
+    <ng-template #mealDetail let-vm="vm">
+      <!-- La combinazione si sceglie da un menu: le pastiglie erano una fila di
+           bersagli da 38 px che andava a capo appena le etichette del coach si
+           allungavano, e occupavano una riga intera per una scelta sola. -->
+      <p class="fooditem-category" *ngIf="hasMultipleCombinations(vm)">Combinazioni</p>
+      <div class="combo-select" *ngIf="hasMultipleCombinations(vm)">
+        <ion-select interface="popover" [(ngModel)]="vm.selectedComboId" [attr.aria-label]="'Combinazione per ' + vm.meal.name">
+          <ion-select-option *ngFor="let combo of getCombinations(vm)" [value]="combo.id">{{ combo.label }}</ion-select-option>
+        </ion-select>
+      </div>
+
+      <!-- Un alimento per macro nella combinazione selezionata -->
+      <ng-container *ngFor="let cat of foodCategories">
+        <ng-container *ngIf="comboItem(vm, cat) as item">
+          <p class="fooditem-category" [class.fat]="cat === 'fat'" [class.carb]="cat === 'carb'" [class.protein]="cat === 'protein'">{{ foodCategoryLabels[cat] }}</p>
+          <div class="fooditem">
+            <div class="row">
+              <span class="fname">{{ item.name }}</span>
+              <span class="fqty">{{ item.qty }}</span>
+            </div>
+
+            <ng-container *ngIf="item.alt && item.alt.length > 0">
+              <div class="altwrap" [class.open]="isItemAltOpen(vm, cat)">
+                <div class="altwrap-header" (click)="toggleItemAlt(vm, cat)">
+                  <span>{{ isItemAltOpen(vm, cat) ? 'Nascondi alternative' : 'Alternative (' + item.alt.length + ')' }}</span>
+                  <span class="chevron">
+                    <lucide-icon name="chevron-down" [size]="10"></lucide-icon>
+                  </span>
+                </div>
+                <div class="altlist" *ngIf="isItemAltOpen(vm, cat)">
+                  <div class="row" *ngFor="let alt of item.alt">
+                    <span>{{ alt.name }}</span>
+                    <span>{{ alt.qty }}</span>
+                  </div>
+                </div>
+              </div>
+            </ng-container>
+          </div>
+        </ng-container>
+      </ng-container>
+
+      <!-- Integrazione: lista piatta per pasto, non legata alla combinazione selezionata -->
+      <ng-container *ngIf="vm.meal.supplements as supplements">
+        <p class="fooditem-category integration" *ngIf="supplements.length > 0">Integrazione</p>
+        <div class="fooditem" *ngFor="let s of supplements">
+          <div class="row">
+            <span class="fname">{{ s.name }}</span>
+            <span class="fqty">{{ s.qty }}</span>
+          </div>
+        </div>
+      </ng-container>
+
+      <!-- Alternative per macro, un unico accordion -->
+      <ng-container *ngIf="totalAlternatives(vm) > 0">
+        <div class="altwrap mt-4" [class.open]="isMacroAltExpanded(vm)">
+          <div class="altwrap-header" (click)="toggleMacroAltExpanded(vm)">
+            <span>{{ isMacroAltExpanded(vm) ? 'Nascondi alternative' : 'Alternative (' + totalAlternatives(vm) + ')' }}</span>
+            <span class="chevron">
+              <lucide-icon name="chevron-down" [size]="10"></lucide-icon>
+            </span>
+          </div>
+        </div>
+        <div class="altlist" *ngIf="isMacroAltExpanded(vm)">
+          <ng-container *ngFor="let cat of foodCategories">
+            <ng-container *ngIf="macroAlternatives(vm, cat).length > 0">
+              <p class="fooditem-category mt-3" [class.fat]="cat === 'fat'" [class.carb]="cat === 'carb'" [class.protein]="cat === 'protein'">{{ foodCategoryLabels[cat] }}</p>
+              <div class="row" *ngFor="let alt of macroAlternatives(vm, cat)">
+                <span>{{ alt.name }}</span>
+                <span>{{ alt.qty }}</span>
+              </div>
+            </ng-container>
+          </ng-container>
+        </div>
+      </ng-container>
+    </ng-template>
+
+    <!-- Vista lista (accordion) -->
+    <div *ngIf="plan && state.viewMode() === 'list'">
+      <div *ngFor="let vm of meals">
+        <div class="meal" [class.open]="vm.open">
+          <div class="meal-summary" (click)="toggleMeal(vm)">
+            <span>{{ vm.meal.name }}</span>
+            <span class="chevron">
+              <lucide-icon name="chevron-down" [size]="12"></lucide-icon>
+            </span>
+          </div>
+
+          <div class="content-inner" *ngIf="vm.open">
+            <ng-container *ngTemplateOutlet="mealDetail; context: { vm: vm }"></ng-container>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Vista slider (card scorrevoli, una per volta) -->
+    <div class="exslider-wrap" *ngIf="plan && state.viewMode() === 'slider'">
+      <div class="exslider-dashes" *ngIf="meals.length > 1">
+        <span *ngFor="let vm of meals; let i = index"
+          class="exslider-dash" [class.active]="i === sliderIndex" [class.done]="vm.completed"
+          (click)="scrollToIndex(i)"></span>
+      </div>
+
+      <div class="exslider" #sliderEl (scroll)="onSliderScroll()">
+        <div class="meal mealslide exslide" *ngFor="let vm of meals">
+          <div class="meal-summary noclick">
+            <span>{{ vm.meal.name }}</span>
+            <div class="meal-check" [class.done]="vm.completed" (click)="toggleMealCompleted(vm)">✓</div>
+          </div>
+
+          <div class="content-inner">
+            <ng-container *ngTemplateOutlet="mealDetail; context: { vm: vm }"></ng-container>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</ion-content>

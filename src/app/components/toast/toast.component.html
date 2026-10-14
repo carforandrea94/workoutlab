@@ -1,0 +1,12 @@
+<!-- Il messaggio resta a schermo finche' ToastService non lo azzera (2,5 s): la
+     durata la decide il servizio, ion-toast si limita a mostrarlo. Si ancora
+     alla barra in fondo (tab o recupero) invece di coprirla. -->
+<ion-toast
+  [isOpen]="!!toast.toast()"
+  [message]="toast.toast()?.message ?? ''"
+  [cssClass]="toast.toast()?.kind === 'error' ? 'apptoast error' : 'apptoast'"
+  [duration]="0"
+  position="bottom"
+  [positionAnchor]="anchor()"
+  [swipeGesture]="'vertical'">
+</ion-toast>

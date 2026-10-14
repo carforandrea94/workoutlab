@@ -1,0 +1,31 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-title>
+      <div class="navtitle">Misure</div>
+      <div class="navsubtitle">Le tue misurazioni</div>
+    </ion-title>
+    <ion-buttons slot="end">
+      <button class="navicon" routerLink="/misure/analytics" routerDirection="forward" aria-label="Andamento" title="Andamento">
+        <lucide-icon name="chart-line" [size]="18"></lucide-icon>
+      </button>
+      <button class="navicon" routerLink="/misure/storico" routerDirection="forward" aria-label="Storico" title="Storico">
+        <lucide-icon name="history" [size]="18"></lucide-icon>
+      </button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <div class="wrap">
+    <p class="sectiontitle">Misure</p>
+    <div class="grouplist">
+      <div class="daycard press-fx" *ngFor="let c of categories" (click)="goTo(c.id)">
+        <div class="badge">{{ c.badge }}</div>
+        <div class="info">
+          <div class="lbl">{{ c.label }}</div>
+        </div>
+        <span class="chev">›</span>
+      </div>
+    </div>
+  </div>
+</ion-content>

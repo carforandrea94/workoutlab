@@ -1,0 +1,99 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-title>
+      <div class="navtitle">Corsa</div>
+      <div class="navsubtitle">Le tue uscite</div>
+    </ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <div class="wrap">
+    <!-- Obiettivo della settimana: c'e' solo se il coach ne ha impostato uno. -->
+    <ng-container *ngIf="hasGoal()">
+      <p class="sectiontitle">Questa settimana · {{ weekLabel }}</p>
+
+      <div class="infocard runcard">
+        <div class="rungoal" *ngIf="(state.goal()?.weeklyMinutes ?? 0) > 0">
+          <div class="rungoal-head">
+            <span class="rungoal-lbl">Minuti</span>
+            <span class="rungoal-val">{{ minutesDone }}<span class="of">/{{ state.goal()?.weeklyMinutes }} min</span></span>
+          </div>
+          <div class="runbar"><div class="runbar-fill" [style.width.%]="minutesPct"></div></div>
+        </div>
+
+        <div class="rungoal" *ngIf="(state.goal()?.weeklyRuns ?? 0) > 0">
+          <div class="rungoal-head">
+            <span class="rungoal-lbl">Uscite</span>
+            <span class="rungoal-val">{{ state.thisWeek().runs }}<span class="of">/{{ state.goal()?.weeklyRuns }}</span></span>
+          </div>
+          <div class="runbar"><div class="runbar-fill" [style.width.%]="runsPct"></div></div>
+        </div>
+
+        <p class="rungoal-note" *ngIf="state.goal()?.note">{{ state.goal()?.note }}</p>
+      </div>
+    </ng-container>
+
+    <!--
+      Lo storico, una riga per SETTIMANA invece di una per uscita. Prima era un
+      elenco piatto che cresceva per sempre: dopo tre mesi erano quaranta righe
+      uguali, senza totali e senza un modo di vedere se si stesse correndo di piu'
+      o di meno.
+    -->
+    <p class="sectiontitle">Le settimane</p>
+
+    <div class="weeklist">
+      <div class="week" *ngFor="let w of history().weeks"
+        [class.current]="w.isCurrent" [class.open]="isOpen(w)">
+
+        <!-- La settimana in corso e' sempre aperta: e' quella su cui si lavora. -->
+        <button type="button" class="week-head" *ngIf="!w.isCurrent" (click)="toggle(w)"
+          [attr.aria-expanded]="isOpen(w)">
+          <span class="week-info">
+            <span class="week-label">{{ w.label }}</span>
+            <span class="week-sub">{{ runsLabel(w) }}</span>
+          </span>
+          <span class="week-bar" *ngIf="goalMinutes > 0" aria-hidden="true">
+            <span class="week-bar-fill" [class.full]="reached(w)" [style.width.%]="pct(w)"></span>
+          </span>
+          <span class="week-min" [class.empty]="!w.minutes">{{ w.minutes || '—' }}</span>
+        </button>
+
+        <div class="week-head static" *ngIf="w.isCurrent">
+          <span class="week-info">
+            <span class="week-label">Questa settimana</span>
+            <span class="week-sub">{{ w.label }} · {{ runsLabel(w) }}</span>
+          </span>
+          <span class="week-min" [class.empty]="!w.minutes">{{ w.minutes || '—' }}</span>
+        </div>
+
+        <div class="week-body" *ngIf="isOpen(w)">
+          <button type="button" class="runline" *ngFor="let r of w.runs" (click)="editRun(r.id)">
+            <span class="runline-dot" [style.background]="effortColor(r.run.effort)"
+              [style.width.px]="effortSize(r.run.effort)" [style.height.px]="effortSize(r.run.effort)"
+              aria-hidden="true"></span>
+            <span class="runline-txt">{{ runLineLabel(r.run) }}<span class="runline-effort">{{ effortLabel(r.run.effort) }}</span></span>
+            <span class="runline-min">{{ r.run.durationMin }} min</span>
+          </button>
+
+          <!-- Il tasto sta DENTRO la settimana, che e' dove l'uscita andra' a
+               finire; in una settimana passata porta con se' la sua data, cosi'
+               recuperare un'uscita dimenticata non costa di girare il calendario
+               all'indietro. -->
+          <button type="button" class="runadd-inline" (click)="addRun(w)">
+            <lucide-icon name="plus" [size]="17"></lucide-icon>
+            Registra un'uscita
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <button type="button" class="week-more" *ngIf="history().hidden && !showAll()" (click)="showAll.set(true)">
+      Mostra le altre {{ history().hidden }} settimane
+    </button>
+
+    <div class="history-empty" *ngIf="state.loaded() && !state.runs().length">
+      Nessuna uscita registrata. I minuti si contano da qui.
+    </div>
+  </div>
+</ion-content>

@@ -1,0 +1,34 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-title>
+      <div class="navtitle">Account</div>
+    </ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <div class="wrap">
+    <div class="infocard account-header">
+      <div class="badge account-avatar">{{ initial }}</div>
+      <div class="info">
+        <div class="lbl">{{ auth.currentUser()?.displayName }}</div>
+        <div class="meta">{{ auth.currentUser()?.email }}</div>
+      </div>
+    </div>
+
+    <app-forma-card></app-forma-card>
+
+    <div class="infocard method-card" (click)="goToImpostazioni()">
+      <div class="method-icon">
+        <lucide-icon name="settings" [size]="24"></lucide-icon>
+      </div>
+      <div class="method-info">
+        <div class="method-title">Impostazioni</div>
+        <div class="method-sub">Tema, dati dell'account e uscita</div>
+      </div>
+      <span class="chev">
+        <lucide-icon name="chevron-right" [size]="13"></lucide-icon>
+      </span>
+    </div>
+  </div>
+</ion-content>

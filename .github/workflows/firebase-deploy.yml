@@ -1,0 +1,73 @@
+name: Deploy to Firebase Hosting
+
+# Prima di attivarlo servono, nelle impostazioni della repo (Settings →
+# Secrets and variables → Actions):
+#   - secret   FIREBASE_SERVICE_ACCOUNT  il JSON di un service account del
+#              progetto Firebase nuovo (lo crea `firebase init hosting:github`)
+#   - variable FIREBASE_PROJECT_ID       l'id del progetto Firebase nuovo
+# Finche' la variabile manca, il deploy non parte: build e test si'.
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build_and_test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build -- --configuration production
+
+      - name: Test
+        run: npm test -- --no-watch
+
+  deploy:
+    needs: build_and_test
+    if: github.event_name == 'push' && vars.FIREBASE_PROJECT_ID != ''
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build -- --configuration production
+
+      - name: Deploy to Firebase Hosting
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: '${{ secrets.GITHUB_TOKEN }}'
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}'
+          channelId: live
+          projectId: '${{ vars.FIREBASE_PROJECT_ID }}'
+
+      - name: Deploy Firestore rules
+        run: |
+          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > /tmp/gcp-key.json
+          export GOOGLE_APPLICATION_CREDENTIALS=/tmp/gcp-key.json
+          npx firebase-tools deploy --only firestore:rules,firestore:indexes --project '${{ vars.FIREBASE_PROJECT_ID }}' --non-interactive
+          rm -f /tmp/gcp-key.json

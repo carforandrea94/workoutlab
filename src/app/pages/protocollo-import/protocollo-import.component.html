@@ -1,0 +1,61 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button [defaultHref]="isUpdateMode ? '/scheda/protocolli/builder/' + protocolId : '/scheda/protocolli/nuovo'"></ion-back-button>
+    </ion-buttons>
+    <ion-title>
+      <div class="navtitle">{{ isUpdateMode ? 'Aggiorna da PDF' : 'Importa da PDF' }}</div>
+    </ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <div class="wrap">
+    <p class="sectiontitle">{{ isUpdateMode ? 'Aggiorna da PDF' : 'Carica i PDF' }}</p>
+
+    <div class="infocard mb-4">
+      <p class="bacheca-text mb-4" *ngIf="!isUpdateMode">
+        L'app prova a leggere i PDF ed estrarre esercizi e alimenti automaticamente.
+        E' un'estrazione best-effort: funziona meglio se il PDF ha un formato semplice
+        (una riga per esercizio/alimento). Rivedi sempre la bozza nel builder prima di attivarla.
+      </p>
+      <p class="bacheca-text mb-4" *ngIf="!isUpdateMode">
+        Serve solo la scheda. Senza il PDF della dieta il protocollo nasce senza piani
+        alimentari e la dieta si scrive a mano nel builder — dove si puo' anche caricarla
+        piu' tardi, con "Aggiorna da PDF".
+      </p>
+      <p class="bacheca-text mb-4" *ngIf="isUpdateMode">
+        Carica almeno uno dei PDF per aggiornare le parti corrispondenti del
+        protocollo. Ricaricare la dieta o l'integrazione da sola non cancella le
+        note dell'altra.
+      </p>
+
+      <div class="authfield">
+        <label>{{ isUpdateMode ? 'Scheda allenamento' : 'Scheda allenamento (obbligatorio)' }}</label>
+        <input type="file" accept="application/pdf" (change)="onFile($event, 'scheda')" />
+      </div>
+
+      <div class="authfield">
+        <label>{{ isUpdateMode ? 'Dieta' : 'Dieta (opzionale)' }}</label>
+        <input type="file" accept="application/pdf" (change)="onFile($event, 'dieta')" />
+      </div>
+
+      <div class="authfield mb-0">
+        <label>Integrazione (opzionale — finisce nella scheda Info)</label>
+        <input type="file" accept="application/pdf" (change)="onFile($event, 'integrazione')" />
+      </div>
+    </div>
+
+    <p class="autherror" *ngIf="errorMsg">{{ errorMsg }}</p>
+
+    <div class="savebar">
+      <button class="savebtn" [disabled]="!canProcess" (click)="process()">
+        {{ processing ? 'Elaborazione in corso…' : (loadingExisting ? 'Caricamento protocollo…' : (isUpdateMode ? 'Aggiorna protocollo' : 'Elabora e crea bozza')) }}
+      </button>
+    </div>
+
+    <!-- L'elaborazione del PDF blocca la pagina: ion-loading con la fase e la percentuale. -->
+    <ion-loading [isOpen]="processing" [backdropDismiss]="false" spinner="crescent"
+      [message]="(stage || 'Elaborazione…') + ' · ' + progressPercent + '%'"></ion-loading>
+  </div>
+</ion-content>

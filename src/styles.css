@@ -1,0 +1,1314 @@
+/* ===== CSS VARIABLES & THEME (iOS 26 dark) ===== */
+:root {
+  --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --spring-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --bg:#0D0E10;
+  --bg-card-2:#23272D;
+  --separator:rgba(84,84,88,0.65);
+  --label:#FFFFFF;
+  --label-2:rgba(255,255,255,0.92);
+  --label-3:rgba(255,255,255,0.80);
+  /* ===== Workout Lab — palette "Scala" su fondo grafite =====
+     Tre colori con un significato — ciano azione, verde conferma, rosso errore
+     — e una rampa per i macro. I tre macro non sono tre tinte diverse ma tre
+     gradini di luce dello stesso ambra: cosi' la tinta resta libera per cio'
+     che deve dire qualcosa, e l'ordine dei macro si legge dalla luminosita'. */
+  --brand:#35C6F0;                     /* ciano — accento primario */
+  --brand-dim:rgba(53,198,240,0.15);
+  --brand-2:#4ADE80;                   /* verde — conferma */
+  /* Rampa dei macro, dal piu' chiaro al piu' scuro. Non sono tre scelte
+     indipendenti: cambiarne una sola rompe la scala. */
+  --macro-carb:#F2D68C;
+  --macro-protein:#CFA34E;
+  --macro-fat:#A87A28;
+  --macro-supp:#C08CF0;                /* viola — etichetta "Integrazione" */
+  /* Inchiostro sulle pastiglie dei gruppi muscolari. Quei colori sono costanti
+     fra i temi (vivono in TypeScript, non qui), quindi non deve cambiare
+     nemmeno lui: un token che si ridefinisce in chiaro li renderebbe
+     illeggibili meta' delle volte. */
+  --ink-on-vivid:#08131A;
+  /* Inchiostro di secondo piano per la grafica, non per il testo: la parte di
+     un segno che deve stare sotto all'accento senza sparire. Vale 3,4:1 sulla
+     card in entrambi i temi — la soglia degli elementi non testuali — mentre
+     l'accento sta a 8,6:1, cosi' la gerarchia si vede. Non puo' essere
+     un'opacita' sola: quella che va bene sul fondo scuro (0,34) in chiaro
+     scende a 2,2:1. */
+  --ink-subdued:#6B6E72;
+  --restbar-off:rgba(255,255,255,0.16); /* tacchetta gia' consumata nella fascia del recupero */
+  /* La fatica di un'uscita di corsa: facile, giusta, dura. Le prime due
+     riusano verde e accento; la terza ha un token suo perche' nella palette
+     non c'era un caldo libero — la rampa ambra dice i macro, e prestarla
+     significherebbe far dire due cose allo stesso colore.
+     Il colore da solo non basta: chi confonde le tinte leggerebbe tre pallini
+     uguali, visto che le tre luminosita' sono quasi identiche. La misura del
+     pallino e' il secondo canale, e cresce con la fatica. */
+  --effort-hard:#FF9F0A;                /* 8,4:1 sulla card scura */
+  --accent: var(--brand);
+  --accent-dim: var(--brand-dim);
+  /* La conferma parla con il verde secondario, non con l'accento.
+     Prima era --brand, cioe' lo stesso identico blu di tutto il resto: un
+     allenamento salvato aveva lo stesso colore di un bottone qualsiasi, e il
+     verde della palette veniva usato in un punto solo di tutta l'app
+     (l'etichetta "Grassi"). Ora il verde ha un mestiere e la conferma si
+     riconosce a colpo d'occhio. */
+  --state-success: var(--brand-2);
+  --state-success-deep: #2F7A4A;
+  --state-danger: #5C2B39;
+  --state-danger-rgb: 92,43,57;
+  --state-danger-text: #FF7A7A;  /* rosso pieno: in "Scala" l'errore non cerca armonia, cerca di farsi capire. 6,3:1 sul fondo tenue. */
+  --state-danger-soft:#271F26;         /* fondo dei bottoni "elimina" */
+  --state-danger-soft-border:#3F2731;
+  /* Superfici piene. Prima erano traslucide, con un backdrop-filter dietro:
+     la card lasciava passare il fondo, quindi il contrasto del testo dipendeva
+     da cosa ci scorreva sotto e cambiava mentre la pagina scorreva. Ora sono
+     colori pieni e i rapporti valgono sempre gli stessi. */
+  --surface-chrome:#1A1D22;            /* tabbar e rocker: galleggiano sopra la pagina */
+  --surface-card:#181B20;
+  --border-line:rgba(255,255,255,0.11);
+  /* Due sole ombre in tutta l'app: --shadow-card posa una superficie sul
+     fondo, --shadow-float stacca cio' che galleggia davvero (tabbar, dialog,
+     sheet). Niente inset chiari: quelli simulavano lo spessore del vetro. */
+  --shadow-card:0 1px 2px rgba(0,0,0,0.30);
+  --shadow-float:0 10px 28px rgba(0,0,0,0.45);
+  /* Superfici sopraelevate: nel tema scuro si ottengono aggiungendo luce, nel
+     chiaro togliendola. Ogni regola che vuole "un gradino sopra la card" usa
+     questi, mai un rgba(255,255,255,..) diretto, che in chiaro non fa nulla. */
+  --surface-raise: rgba(255,255,255,0.055);
+  --surface-raise-2: rgba(255,255,255,0.095);
+  --surface-press: rgba(255,255,255,0.04);
+  --press-brightness: 1.08;
+  /* Inchiostro sugli sfondi pieni e accesi: accento ciano E verde di conferma.
+     9,2:1 sul ciano, 12,4:1 sul verde. */
+  --accent-contrast:#031620;
+  --safe-t: max(env(safe-area-inset-top, 0px), 24px);
+  /*
+   * L'inset di sistema in fondo, con un tetto.
+   *
+   * Su iPhone vale 34px: e' l'indicatore di home, l'unica cosa che c'e'
+   * davvero li' sotto. Ma su alcune schermate il browser ci mette dentro
+   * anche l'altezza della propria barra - oltre ottanta pixel - e la barra
+   * poi non la disegna: sotto la pillola restava sfondo dell'app, e la
+   * tabbar galleggiava 54 px piu' in alto che in Corsa o in Account. Non
+   * cambiava la tabbar, cambiava il numero che arriva dal sistema.
+   *
+   * Il tetto e' quanto serve davvero a stare sopra l'indicatore, ed e' lo
+   * stesso su ogni schermata, qualunque cosa riporti il browser.
+   */
+  --safe-b-sys: min(env(safe-area-inset-bottom, 0px), 34px);
+  --safe-b: max(var(--safe-b-sys), 14px);
+  /* Le HIG non danno un'altezza per la tab bar iOS: la sezione iOS descrive
+     solo il comportamento, e l'altezza in UIKit non si imposta. L'unico
+     numero da rispettare e' la dimensione del bersaglio (vedi .tabbtn), che
+     da qui si ricava come --tabbar-h meno due volte --tabbar-pad. Sotto
+     56 px il bersaglio scende sotto i 44 pt predefiniti. */
+  --tabbar-h: 60px;
+  /* Aria fra il bordo della barra e i tasti. La pastiglia che scorre ci si
+     appoggia: era ripetuta a mano in quattro punti (5 qui, 10 nelle larghezze)
+     e bastava cambiarne uno per vederla sbordare. */
+  --tabbar-pad: 6px;
+  /*
+   * Quanto la tabbar sta staccata dal fondo: ventidue pixel, scritti.
+   *
+   * Era env(safe-area-inset-bottom) - 12, cioe' 22 su iPhone: il bordo
+   * inferiore della pillola cade appena sopra l'indicatore di home (21 pt),
+   * che e' dove il sistema si prende lo swipe. Il numero e' quello giusto;
+   * il problema era da dove veniva. L'inset non e' una costante del
+   * dispositivo: lo stesso iPhone lo riporta diverso da una schermata
+   * all'altra - sopra gli ottanta pixel dove il browser ci infila la propria
+   * barra - e la tabbar finiva a tre altezze diverse in cinque sezioni.
+   *
+   * Un tetto non basta, perche' l'inset puo' sbagliare anche verso il basso
+   * (0 invece di 34 fa una barra 12 px piu' giu'). Qui serve una cosa sola:
+   * che la barra stia sempre dove sta. Quindi la distanza dal fondo non la
+   * chiede piu' a nessuno.
+   *
+   * --safe-b continua a leggere l'inset, con il tetto: i bottom sheet sono
+   * larghi quanto lo schermo e arrivano a filo del bordo, quindi la' l'area
+   * dell'indicatore va tenuta davvero.
+   */
+  --tabbar-gap: 22px;
+  /* Scala tipografica: ogni componente aggancia un gradino, cosi' la prossima
+     aggiunta non inventa un valore nuovo. */
+  --text-2xs:10px;
+  --text-xs:11.5px;
+  --text-sm:13px;
+  --text-md:14.5px;
+  --text-lg:16px;
+  --text-xl:18px;
+  --text-2xl:20px;
+  --text-3xl:26px;
+  /* Raggi. --r-pill e' per gli elementi la cui forma E' una pillola: un raggio
+     enorme resta corretto anche se l'altezza cambia, un numero fisso no. */
+  --r-xs:6px;
+  --r-sm:10px;
+  --r-md:12px;
+  --r-lg:14px;
+  --r-xl:20px;
+  --r-pill:999px;
+  /* Spaziature: multipli di 4, con un gradino largo per gli stacchi di sezione. */
+  --space-1:4px;
+  --space-2:8px;
+  --space-3:12px;
+  --space-4:16px;
+  --space-5:24px;
+}
+
+/* ===== Tema chiaro (data-theme="light") ===== */
+:root[data-theme="light"] {
+  --bg:#F5F4F2;
+  --bg-card-2:#ECEBE9;
+  --separator:rgba(22,26,28,0.12);
+  --label:#161A1C;
+  --label-2:rgba(22,26,28,0.72);
+  --label-3:rgba(22,26,28,0.62);   /* 5,04:1 su card bianca: sotto 0,58 il testo piccolo non arriva a 4,5:1 */
+  --brand:#0A6E91;
+  --brand-dim:rgba(10,110,145,0.11);
+  --brand-2:#157C46;
+  /* Qui la rampa dei macro non e' piu' testo ma il pallino accanto
+     all'etichetta, quindi le basta 3:1 invece di 4,5:1 — ed e' proprio quel
+     margine a renderla possibile in chiaro. Con la rampa sul testo i tre
+     gradini finivano fra luce 38 e 25: passi di 8 e 5 punti, indistinguibili.
+     Cosi' i passi sono 11 e 12. */
+  --macro-carb:#B08A3A;            /* 3,21:1 — pallino, non testo */
+  --macro-protein:#8A6A28;         /* 5,03:1 */
+  --macro-fat:#5F4818;             /* 8,65:1 */
+  --macro-supp:#6B3FA0;
+  --restbar-off:rgba(22,26,28,0.16);
+  --ink-subdued:#8A8C8E;
+  --effort-hard:#A65C00;           /* 5,1:1 su card bianca: l'arancio acceso si ferma a 2,1 */
+  --accent-contrast:#FFFFFF;
+  --state-success-deep: #A8CDB8;
+  --state-danger: #A32E3E;
+  --state-danger-rgb: 163,46,62;
+  --state-danger-text: #C0392B;
+  --state-danger-soft:#F9F2F3;     /* 4,9:1 per --state-danger-text */
+  --state-danger-soft-border:#E5C4C8;
+  --surface-chrome:#FFFFFF;
+  --surface-card:#FFFFFF;
+  --border-line:rgba(22,26,28,0.10);
+  --shadow-card:0 1px 2px rgba(22,26,28,0.07);
+  --shadow-float:0 10px 28px rgba(22,26,28,0.16);
+  --surface-raise: rgba(22,26,28,0.045);
+  --surface-raise-2: rgba(22,26,28,0.085);
+  --surface-press: rgba(22,26,28,0.055);
+  --press-brightness: 0.95;
+}
+
+/* ===== Variabili Ionic mappate sui token dell'app (scuro e chiaro) =====
+   Le definisco sui token, non sui valori: cambiando tema cambiano da sole. */
+:root,:root[data-theme="light"]{
+  --ion-font-family:'Inter',sans-serif;
+  --ion-background-color:var(--bg);
+  --ion-text-color:var(--label);
+  --ion-color-primary:var(--brand);
+  --ion-color-primary-contrast:var(--accent-contrast);
+  --ion-color-success:var(--brand-2);
+  --ion-color-danger:var(--state-danger-text);
+  --ion-item-background:var(--surface-card);
+  --ion-border-color:var(--border-line);
+  --ion-toolbar-background:var(--bg);
+  --ion-toolbar-color:var(--label);
+  --ion-tab-bar-background:var(--surface-chrome);
+  --ion-safe-area-top:env(safe-area-inset-top,0px);
+}
+:root[data-theme="light"]{color-scheme:light;}
+:root:not([data-theme="light"]){color-scheme:dark;}
+
+/* La barra a tab di Ionic e' una pillola fissa: tolgo il suo layout standard. */
+ion-tab-bar.tabbar{--background:var(--surface-chrome);--border:1px solid var(--border-line);contain:none;}
+ion-tab-button.tabbtn{--color:var(--label-3);--color-selected:var(--accent);--padding-top:0;--padding-bottom:0;background:transparent;}
+ion-tab-button.tabbtn.tab-selected,ion-tab-button.tabbtn.active{color:var(--accent);}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* A scorrere e' ion-content, non il documento: html e body restano fermi
+   (lo fa Ionic con ion-app) e le correzioni per il viewport iOS non servono. */
+html { height: 100%; }
+
+body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--label);
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* Il fondo e' un colore pieno, non piu' un blob sfocato in movimento: i blob
+   esistevano per dare "materia" da rifrangere dietro il vetro, e senza vetro
+   restavano solo una macchia che scorreva dietro superfici opache. */
+
+input, button, textarea, select {
+  font-family: inherit;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+button { border: none; background: transparent; cursor: pointer; }
+
+a { color: inherit; text-decoration: none; }
+
+/* ===== TESTATA (ion-header / ion-toolbar) ===== */
+ion-header{background:var(--bg);}
+ion-toolbar{--background:var(--bg);--color:var(--label);--border-width:0;--min-height:0;--padding-start:16px;--padding-end:16px;--padding-top:8px;--padding-bottom:6px;}
+ion-toolbar ion-title{padding:0 8px;text-align:left;overflow:visible;}
+.navtitle{font-weight:800;font-size:var(--text-3xl);letter-spacing:-.01em;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.navsubtitle{font-family:'IBM Plex Mono',monospace;font-size:var(--text-xs);font-weight:400;letter-spacing:.04em;color:var(--label-3);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.navsubtitle:empty{display:none;}
+ion-back-button{--color:var(--label);--padding-start:0;--padding-end:0;--background:var(--surface-raise);--border-radius:var(--r-md);width:38px;height:38px;border:1px solid var(--border-line);border-radius:var(--r-md);}
+.navicon{width:38px;height:38px;border-radius:var(--r-md);border:1px solid var(--border-line);background:var(--surface-raise);color:var(--label);display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.navicon:disabled{opacity:.5;cursor:not-allowed;}
+ion-buttons[slot=end] .navicon + .navicon,ion-buttons[slot=end] ion-segment + .navicon{margin-left:8px;}
+ion-content{--background:var(--bg);--color:var(--label);--padding-bottom:calc(var(--tabbar-h) + var(--tabbar-gap) + 28px);}
+.wrap{position:relative;z-index:1;max-width:640px;margin:0 auto;padding:0 16px;}
+
+/* ===== BOTTOM TAB BAR ===== */
+.tabbar{position:fixed;left:16px;right:16px;bottom:var(--tabbar-gap);z-index:60;height:var(--tabbar-h);background:var(--surface-chrome);border:1px solid var(--border-line);border-radius:var(--r-pill);box-shadow:var(--shadow-float);display:flex;align-items:center;padding:var(--tabbar-pad);max-width:608px;margin:0 auto;}
+/* Sfumatura in fondo, speculare a quella della navbar: cio' che scorre non si
+   taglia di netto contro la pillola, si spegne nel fondo della pagina.
+   Deve stare FRA il contenuto (z-index 1) e la tabbar (60), quindi e' un
+   elemento a se' e non uno pseudo-elemento della tabbar: dentro la tabbar
+   nemmeno z-index:-1 la manderebbe dietro, perche' lo sfondo e il bordo
+   dell'elemento che apre il contesto di impilamento si dipingono per primi e
+   i figli negativi vengono subito dopo — la sfumatura finiva sopra la
+   pillola e la cancellava. */
+.tabfade{position:fixed;left:0;right:0;bottom:0;z-index:55;height:calc(var(--tabbar-h) + var(--tabbar-gap) + 70px);pointer-events:none;background:linear-gradient(to top, var(--bg) 0%, var(--bg) 55%, transparent 100%);}
+/* HIG iOS, Accessibility: dimensione predefinita dei controlli 44x44 pt,
+   minimo assoluto 28x28. Oggi il bersaglio e' 48x119, ma nasce dalla
+   sottrazione fra due token: senza questo pavimento, abbassare --tabbar-h o
+   allargare --tabbar-pad lo porterebbe sotto i 44 senza che si veda. */
+.tabbar .tabbtn{flex:1;height:100%;min-height:44px;min-width:44px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border:none;background:transparent;color:var(--label-3);cursor:pointer;border-radius:var(--r-pill);position:relative;-webkit-user-select:none;user-select:none;transition:color .18s ease;}
+.tabbar .tabbtn .ic{display:block;color:currentColor;}
+/* L'etichetta sotto l'icona, come chiedono le HIG ("Include tab labels to
+   help with navigation... Use single words whenever possible"). Prende il
+   colore dal tasto, quindi segue da sola lo stato attivo. Il piu' stretto dei
+   quattro casi e' 4,63:1, sopra la soglia 4,5 del testo piccolo. */
+.tabbar .tablabel{font-size:var(--text-2xs);font-weight:600;letter-spacing:.01em;line-height:1.1;white-space:nowrap;}
+.tabbar .tabbtn.active{color:var(--accent);}
+.tabbar .pill{position:absolute;top:var(--tabbar-pad);left:var(--tabbar-pad);height:calc(100% - var(--tabbar-pad) * 2);width:calc(50% - var(--tabbar-pad));background:var(--bg-card-2);border:1px solid var(--border-line);border-radius:var(--r-pill);z-index:0;transition:transform .4s var(--spring);}
+.tabbar .pill.p1{transform:translateX(100%);}
+.tabbar-3 .pill{width:calc((100% - var(--tabbar-pad) * 2) / 3);}
+.tabbar-3 .pill.p1{transform:translateX(100%);}
+.tabbar-3 .pill.p2{transform:translateX(200%);}
+.tabbar-4 .pill{width:calc((100% - var(--tabbar-pad) * 2) / 4);}
+.tabbar-4 .pill.p1{transform:translateX(100%);}
+.tabbar-4 .pill.p2{transform:translateX(200%);}
+.tabbar-4 .pill.p3{transform:translateX(300%);}
+.tabbar-5 .pill{width:calc((100% - var(--tabbar-pad) * 2) / 5);}
+.tabbar-5 .pill.p1{transform:translateX(100%);}
+.tabbar-5 .pill.p2{transform:translateX(200%);}
+.tabbar-5 .pill.p3{transform:translateX(300%);}
+.tabbar-5 .pill.p4{transform:translateX(400%);}
+.tabbar .tabbtn span{position:relative;z-index:1;}
+
+/* ===== SCHEDA ===== */
+.sectiontitle{font-family:'IBM Plex Mono',monospace;font-size:var(--text-xs);letter-spacing:.1em;text-transform:uppercase;color:var(--label-3);margin:6px 4px 10px;}
+.weekpicker{display:flex;align-items:center;justify-content:center;padding:14px;margin-bottom:8px;border-radius:var(--r-xl);background:var(--surface-card);border:1px solid var(--border-line);box-shadow:var(--shadow-card);}
+.weekpicker .wk-info{text-align:center;}
+.weekpicker .wk-label{font-weight:700;font-size:var(--text-md);letter-spacing:-.005em;color:var(--label);}
+.weekpicker .wk-sub{font-family:'IBM Plex Mono',monospace;font-size:var(--text-2xs);color:var(--label-3);margin-top:2px;}
+.weekdots{display:flex;justify-content:center;gap:5px;margin-top:8px;}
+.weekdots span{width:12px;height:3px;border-radius:var(--r-pill);background:var(--border-line);transition:background .2s ease,width .2s ease;}
+.weekdots span.completed{background:var(--accent);}
+.weekdots span.active{background:var(--accent);width:22px;}
+.grouplist{display:flex;flex-direction:column;gap:12px;}
+.daycard{display:flex;align-items:center;gap:12px;padding:16px;min-height:64px;border:1px solid var(--border-line);border-radius:var(--r-xl);background:var(--surface-card);box-shadow:var(--shadow-card);cursor:pointer;-webkit-user-select:none;user-select:none;}
+/* Spunta dell'allenamento gia' fatto in questa settimana. Sta accanto al
+   chevron e non al posto del numero del giorno, che serve sempre. */
+.daycheck{width:26px;height:26px;flex-shrink:0;border-radius:var(--r-pill);background:var(--accent);color:var(--accent-contrast);display:flex;align-items:center;justify-content:center;}
+.daycheck svg{display:block;}
+.daycard .badge{width:42px;height:42px;border-radius:var(--r-md);background:var(--accent-dim);color:var(--label);border:1px solid var(--border-line);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:var(--text-lg);flex-shrink:0;}
+.daycard .info{flex:1;min-width:0;}
+.daycard .info .lbl{font-weight:700;font-size:var(--text-lg);letter-spacing:-.005em;line-height:1.25;}
+.daycard .info .meta{font-family:'IBM Plex Mono',monospace;font-size:var(--text-xs);color:var(--label-2);margin-top:3px;}
+.daycard .chev{color:var(--label-3);font-size:var(--text-xl);flex-shrink:0;}
+.delete-btn{width:38px;height:38px;border-radius:var(--r-sm);flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.delete-btn:active{background:var(--state-danger);border-color:var(--state-danger);color:#fff;}
+.daycard:active{background:var(--surface-press);}
+.schedafoot{margin-top:16px;padding:13px 15px;border:1px dashed var(--border-line);border-radius:var(--r-xl);background:var(--surface-card);font-size:var(--text-xs);color:var(--label-3);font-family:'IBM Plex Mono',monospace;line-height:1.55;}
+.daymeta{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 16px;margin-bottom:14px;background:var(--surface-card);border:1px solid var(--border-line);border-radius:var(--r-xl);box-shadow:var(--shadow-card);font-family:'IBM Plex Mono',monospace;font-size:var(--text-xs);color:var(--label-2);letter-spacing:.04em;text-transform:uppercase;}
+.exlist{display:flex;flex-direction:column;gap:12px;}
+.exslider-wrap{display:flex;flex-direction:column;}
+.exslider{display:flex;gap:12px;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:2px;}
+.exslider::-webkit-scrollbar{display:none;}
+.exslide{flex:0 0 100%;width:100%;scroll-snap-align:center;scroll-snap-stop:always;}
+.ex-summary.noclick{cursor:default;}
+.exslider-dashes{display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:14px;}
+.exslider-dash{width:12px;height:3px;border-radius:var(--r-pill);background:var(--border-line);cursor:pointer;transition:all .18s ease;}
+.exslider-dash.done{background:var(--accent);}
+.exslider-dash.active{width:24px;background:var(--accent);}
+/* L'ultima slide non e' un esercizio ma la chiusura: il suo segno e' un
+   tondo vuoto, cosi' si vede che la fila di trattini e' finita. */
+.exslider-dash.finish{width:9px;height:9px;border-radius:50%;background:none;border:1.5px solid var(--border-line);}
+.exslider-dash.finish.active{width:9px;background:var(--accent);border-color:var(--accent);}
+.ex{background:var(--surface-card);border:1px solid var(--border-line);border-radius:var(--r-xl);overflow:hidden;-webkit-mask-image:-webkit-radial-gradient(white,black);mask-image:radial-gradient(white,black);position:relative;box-shadow:var(--shadow-card);}
+.ex-summary{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;cursor:pointer;-webkit-user-select:none;user-select:none;}
+.ex-icon{width:44px;height:44px;border-radius:var(--r-md);flex-shrink:0;font-size:var(--text-xl);display:flex;align-items:center;justify-content:center;border:1px solid var(--border-line);}
+.ex-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px;}
+/* Gruppo muscolare e tempo di recupero sulla stessa riga: `align-self:flex-start`
+   di .ex-muscle/.ex-chip serve nella colonna .ex-info, ma qui li tirerebbe in alto
+   con altezze diverse, da cui l'override a center. Se non ci stanno (nomi lunghi,
+   schermi stretti) vanno a capo restando allineati a sinistra. */
+.ex-tags{display:flex;flex-wrap:wrap;align-items:center;gap:6px;}
+.ex-tags > *{align-self:center;}
+.ex-name{font-weight:700;font-size:var(--text-lg);letter-spacing:-.005em;line-height:1.3;}
+/* Inchiostro scuro, non bianco: i colori dei gruppi muscolari sono chiari e
+   saturi, e col bianco sopra sei pastiglie su sette stavano sotto contrasto —
+   "Core" arrivava a 1,41:1. Col nero bluastro la peggiore e' a 5,05:1. */
+/* I quattro distintivi della testata erano quattro geometrie diverse: due
+   corpi di carattere (10 e 11,5), tre imbottiture, e la pastiglia del muscolo
+   senza bordo — quindi piu' bassa di 2 px delle altre a parita' di padding.
+   Qui la forma si fissa una volta sola e ogni regola qui sotto tiene soltanto
+   il proprio colore. L'altezza e' dichiarata invece che risultare dalla
+   somma di imbottitura, interlinea e bordo: cosi' resta la stessa anche se
+   un domani cambia il corpo del carattere o il bordo di una sola di loro. */
+.ex-muscle,.ex-chip,.ex-schemebadge,.ex-counter{
+  display:inline-flex;align-items:center;min-height:24px;padding:0 8px;
+  font-family:'IBM Plex Mono',monospace;font-size:var(--text-xs);font-weight:600;
+  border-radius:var(--r-xs);white-space:nowrap;}
+.ex-muscle{letter-spacing:.04em;color:var(--ink-on-vivid);}
+.ex-chip{color:var(--label);background:var(--surface-raise);border:1px solid var(--border-line);}
+.ex-meta{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;}
+.ex-schemebadge{letter-spacing:.06em;text-transform:uppercase;color:var(--label-2);background:var(--surface-raise);border:1px solid var(--border-line);}
+.ex-chevron{display:flex;align-items:center;justify-content:center;color:var(--label-3);transition:transform .35s var(--spring);}
+.ex-chevron svg{display:block;}
+.ex.open .ex-chevron{transform:rotate(180deg);color:var(--accent);}
+/* Unica differenza di forma che resta, e voluta: la pastiglia distingue lo
+   stato vivo dalle etichette, che sono proprieta' dell'esercizio. */
+.ex-counter{color:var(--label-2);background:var(--surface-raise);border:1px solid var(--border-line);border-radius:var(--r-pill);transition:color .2s ease,border-color .2s ease;}
+.ex-counter.complete{color:var(--accent-contrast);background:var(--accent);border-color:var(--accent);}
+/* Il chip del recupero e' un bottone, non un'etichetta: mostra il valore e lo
+   apre in modifica. Prima l'emoji ⏱ lo disegnava il sistema operativo, quindi
+   non seguiva ne' il colore ne' il tratto delle altre icone — ora e' Lucide
+   come tutto il resto. */
+.ex-chip.rest{color:var(--label-2);gap:5px;cursor:pointer;}
+.ex-chip.rest:active{transform:scale(0.95);}
+.ex-chip.rest:hover{color:var(--label);background:var(--surface-raise-2);}
+.sheet-title{font-weight:700;margin-bottom:16px;}
+.rest-stepper{display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:14px;}
+.rest-stepbtn{width:44px;height:44px;border-radius:var(--r-lg);border:1px solid var(--border-line);background:var(--surface-raise);color:var(--label);font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:var(--text-sm);cursor:pointer;}
+.rest-stepbtn:active{transform:scale(0.92);}
+.rest-value{font-family:'IBM Plex Mono',monospace;font-size:var(--text-3xl);font-weight:700;color:var(--label);min-width:88px;text-align:center;}
+.rest-defaultbtn{width:100%;padding:10px;margin-bottom:16px;border-radius:var(--r-md);border:1px dashed var(--border-line);background:transparent;color:var(--label-2);font-family:'Inter',sans-serif;font-size:var(--text-sm);font-weight:600;cursor:pointer;}
+.rest-defaultbtn:hover{color:var(--label);border-color:var(--label-2);}
+.ex .content-inner{padding:0 16px 16px;border-top:1px solid var(--separator);}
+.ex .note{font-size:var(--text-xs);color:var(--label-3);margin-top:10px;line-height:1.4;}
+.settable-head{display:grid;grid-template-columns:38px 1fr 1fr 32px;gap:8px;align-items:center;padding:12px 2px 8px;font-family:'IBM Plex Mono',monospace;font-size:var(--text-2xs);letter-spacing:.08em;text-transform:uppercase;color:var(--label-3);}
+.settable-head span:last-child,.settable-row .set-check{justify-self:center;}
+.settable-row{display:grid;grid-template-columns:38px 1fr 1fr 32px;gap:8px;align-items:center;padding:5px 2px;}
+.serie-badge{width:36px;height:36px;border-radius:var(--r-sm);background:var(--accent-dim);color:var(--label);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:var(--text-md);}
+.rip-input,.load-input{width:100%;text-align:center;padding:8px 6px;font-size:var(--text-sm);font-family:'IBM Plex Mono',monospace;font-weight:600;color:var(--label);background:var(--surface-raise);border:1px solid var(--border-line);border-radius:var(--r-sm);}
+.rip-input:focus,.load-input:focus{outline:none;border-color:var(--accent);background:var(--surface-raise-2);}
+.rip-input::placeholder,.load-input::placeholder{color:var(--label-3);font-weight:500;}
+.set-check{width:28px;height:28px;border-radius:50%;border:2px solid var(--label-3);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:transparent;font-size:var(--text-md);font-weight:700;transition:background .18s ease,border-color .18s ease;flex-shrink:0;}
+.set-check.done{background:var(--accent);border-color:var(--accent);color:var(--accent-contrast);}
+
+/* Scheda bloccata finche' la sessione non e' avviata. I campi restano LEGGIBILI
+   (i suggerimenti del protocollo servono a decidere se iniziare): cambia il
+   contorno, non il contenuto. */
+.rip-input:disabled,.load-input:disabled{opacity:.55;cursor:not-allowed;background:transparent;border-style:dashed;}
+.set-check.locked{opacity:.35;cursor:not-allowed;border-style:dashed;}
+/* La serie corrente. Le righe gia' fatte e quelle ancora da fare stanno in una
+   riga sola; solo quella aperta porta i comandi, grandi abbastanza da usarli
+   con le mani sudate e il telefono su una panca. */
+.setlist{display:flex;flex-direction:column;gap:6px;margin-top:12px;}
+.setline{display:flex;align-items:center;gap:10px;width:100%;min-height:44px;padding:0 12px;border:none;border-radius:var(--r-md);background:var(--surface-raise);color:var(--label-3);font-family:'Inter',sans-serif;font-size:var(--text-sm);text-align:left;cursor:pointer;}
+.setline:disabled{cursor:not-allowed;opacity:.55;}
+.setline-n{font-family:'IBM Plex Mono',monospace;font-size:var(--text-xs);width:14px;flex-shrink:0;}
+.setline-val{flex:1;min-width:0;font-family:'IBM Plex Mono',monospace;font-size:var(--text-sm);}
+.setline.done{color:var(--label-2);}
+.setline.done .setline-val{color:var(--label);}
+.setline-tick{color:var(--accent);flex-shrink:0;}
+/* Le serie aggiunte durante l'allenamento: la riga chiusa lo dice a parole,
+   perche' sono anche le uniche che si possono togliere. */
+.setline-extra{font-family:'IBM Plex Mono',monospace;font-size:var(--text-2xs);color:var(--label-3);flex-shrink:0;}
+
+.setcard{display:flex;flex-direction:column;gap:11px;padding:14px;border-radius:var(--r-lg);background:var(--accent-dim);border:1px solid var(--accent);}
+.setcard-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;}
+.setcard-title{font-family:'IBM Plex Mono',monospace;font-size:var(--text-2xs);font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);}
+.setcard-hint{font-family:'IBM Plex Mono',monospace;font-size:var(--text-2xs);color:var(--label-3);}
+
+.stepper{display:flex;align-items:center;gap:10px;}
+.setdone{width:100%;min-height:52px;border-radius:var(--r-lg);border:none;background:var(--accent);color:var(--accent-contrast);font-family:'Inter',sans-serif;font-size:var(--text-lg);font-weight:700;cursor:pointer;}
+.setdone:disabled{opacity:.5;cursor:not-allowed;}
+.setundo{width:100%;min-height:44px;border-radius:var(--r-md);border:1px solid var(--border-line);background:transparent;color:var(--label-2);font-family:'Inter',sans-serif;font-size:var(--text-sm);font-weight:600;cursor:pointer;}
+/* La pausa dentro una serie a cluster. Il conto scende fino a zero e poi
+   sale col segno +: la pausa del coach e' un minimo, e un timer che dice
+   "scaduto" spingerebbe a ripartire prima di essere pronti. */
+.clusterpause{display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 0 6px;}
+.clusterpause-val{font-family:'IBM Plex Mono',monospace;font-size:44px;font-weight:700;line-height:1;letter-spacing:-.02em;color:var(--accent);}
+.clusterpause-cap{font-family:'IBM Plex Mono',monospace;font-size:var(--text-2xs);letter-spacing:.06em;color:var(--label-3);}
+.clusterpause.over .clusterpause-val{color:var(--label-2);}
+/* I blocchi della serie: dove sei, cosa hai chiuso, cosa resta. */
+.blockstrip{display:flex;flex-wrap:wrap;gap:7px;}
+.blockchip{flex:1;min-width:68px;padding:0;cursor:pointer;font-family:inherit;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;min-height:52px;border-radius:var(--r-md);background:var(--surface-card);border:1px solid var(--border-line);}
+.blockchip-top{display:flex;align-items:center;gap:5px;}
+/* Il peso del blocco sotto le sue ripetizioni: un cluster che scende non si
+   distingue da uno piatto se il carico e' scritto una volta sola. */
+.blockchip-kg{font-family:'IBM Plex Mono',monospace;font-size:var(--text-2xs);color:var(--label-3);}
+.blockchip-v{font-family:'IBM Plex Mono',monospace;font-size:var(--text-lg);font-weight:700;color:var(--label-2);}
+/* Fatto e corrente non si distinguono solo per colore: il primo porta la
+   spunta, il secondo un anello. Due tinte di uguale luminosita' sarebbero
+   lo stesso blocco per chi le confonde. */
+.blockchip-tick{color:var(--state-success);flex-shrink:0;}
+.blockchip.done{border-color:var(--state-success);}
+.blockchip.done .blockchip-v{color:var(--state-success);}
+.blockchip.now{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent);}
+/* Solo un blocco fatto si puo' toccare, per togliergli la spunta. */
+.blockchip:disabled{cursor:default;}
+.blockchip.now .blockchip-v{color:var(--accent);}
+/* Chiudere una serie a esaurimento: e' una decisione, non un comando
+   primario - quello resta "fatto il blocco". */
+/* Togliere un blocco e' un'azione che distrugge: sta sotto i comandi, in
+   rosso, mentre chiudere la serie e' una decisione e resta neutra. */
+.clusterundo{width:100%;min-height:44px;border:none;border-radius:var(--r-md);background:transparent;color:var(--state-danger-text);font-family:'Inter',sans-serif;font-size:var(--text-sm);font-weight:600;cursor:pointer;}
+.clusterundo:disabled{opacity:.45;cursor:not-allowed;}
+/* Le due scelte a esaurimento: un altro blocco, oppure basta. Affiancate e
+   della stessa misura, perche' sono pari - non c'e' quella "giusta", dipende
+   da cosa esce. Il testo si stringe su schermi piccoli invece di andare a capo
+   dentro un tasto alto 52. */
+.clusterfork{display:flex;gap:10px;}
+.clusterfork .setdone{flex:1;min-width:0;font-size:var(--text-md);padding:0 10px;}
+/* Il gemello calmo del tasto pieno: stessa forma e stessa altezza, colore
+   della superficie. Chiudere la serie non e' meno legittimo che farne un
+   altro, quindi non puo' sembrare un ripensamento. */
+.setdone.calmo{background:var(--surface-card);color:var(--label);border:1px solid var(--border-line);}
+/* Togliere sta dentro la card aperta, sotto ai comandi: e' un'azione che
+   distrugge, non deve stare a portata di pollice mentre si scorre l'elenco. */
+.setremove{width:100%;min-height:44px;border:none;border-radius:var(--r-md);background:transparent;color:var(--state-danger-text);font-family:'Inter',sans-serif;font-size:var(--text-sm);font-weight:600;cursor:pointer;}
+.setremove:disabled{opacity:.45;cursor:not-allowed;}
+/* Tratteggiato e spento: aggiungere una serie e' possibile sempre, ma non e'
+   l'azione della card - quella resta "Fatta". */
+.setadd{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;min-height:44px;margin-top:8px;border:1px dashed var(--border-line);border-radius:var(--r-md);background:transparent;color:var(--label-2);font-family:'Inter',sans-serif;font-size:var(--text-sm);font-weight:600;cursor:pointer;}
+.setadd:disabled{opacity:.45;cursor:not-allowed;}
+
+/* La chiusura dell'allenamento: un posto solo, in fondo. */
+/* Da sola (vista elenco) la chiusura sta in fondo alla pagina; dentro lo
+   slider e' l'ultima card, larga come le altre ma alta quanto il suo
+   contenuto invece di stirarsi fino alla piu' alta. */
+.closing{margin-top:14px;padding:16px;border-radius:var(--r-xl);background:var(--surface-card);border:1px solid var(--accent);box-shadow:var(--shadow-card);display:flex;flex-direction:column;gap:14px;}
+.closing-title{font-size:var(--text-lg);font-weight:800;letter-spacing:-.01em;}
+.closing-stats{display:grid;grid-template-columns:repeat(3, minmax(0, 1fr));gap:10px;padding:13px 0;border-top:1px solid var(--border-line);border-bottom:1px solid var(--border-line);}
+.closing-stat{display:flex;flex-direction:column;gap:4px;min-width:0;}
+.closing-cap{font-family:'IBM Plex Mono',monospace;font-size:var(--text-2xs);font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--label-3);}
+.closing-val{font-family:'IBM Plex Mono',monospace;font-size:var(--text-lg);font-weight:700;color:var(--label);}
+.closing-of{font-size:var(--text-xs);font-weight:500;color:var(--label-3);margin-left:2px;}
+.closing-discard{align-self:center;min-height:44px;padding:0 12px;border:none;background:none;color:var(--label-3);font-family:'Inter',sans-serif;font-size:var(--text-sm);font-weight:600;cursor:pointer;}
+.closing-discard:disabled{opacity:.4;cursor:not-allowed;}
+.exslide.closing{margin-top:0;align-self:flex-start;}
+
+/* Il resoconto di fine allenamento. */
+.wrapup{display:flex;flex-direction:column;gap:12px;animation:fade .4s var(--spring-soft);}
+.wrapup-head{display:flex;flex-direction:column;gap:5px;margin-bottom:2px;}
+.wrapup-eyebrow{font-family:'IBM Plex Mono',monospace;font-size:var(--text-2xs);font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);}
+.wrapup-title{font-size:var(--text-2xl);font-weight:800;letter-spacing:-.01em;line-height:1.15;}
+.wrapup-sub{font-family:'IBM Plex Mono',monospace;font-size:var(--text-xs);color:var(--label-3);}
+.wrapup-grid{display:grid;grid-template-columns:repeat(2, minmax(0, 1fr));gap:10px;}
+.wrapup-tile,.wrapup-card{padding:15px;border-radius:var(--r-lg);background:var(--surface-card);border:1px solid var(--border-line);box-shadow:var(--shadow-card);}
+.wrapup-tile{display:flex;flex-direction:column;}
+.wrapup-cap{font-family:'IBM Plex Mono',monospace;font-size:var(--text-2xs);font-weight:600;letter-spacing:.13em;text-transform:uppercase;color:var(--label-3);}
+.wrapup-val{display:flex;align-items:baseline;gap:4px;margin-top:8px;}
+.wrapup-val .n{font-family:'IBM Plex Mono',monospace;font-size:var(--text-2xl);font-weight:700;letter-spacing:-.02em;line-height:1;color:var(--label);}
+.wrapup-val .u{font-family:'IBM Plex Mono',monospace;font-size:var(--text-xs);color:var(--label-3);}
+.wrapup-note{font-family:'IBM Plex Mono',monospace;font-size:var(--text-2xs);font-weight:600;color:var(--label-3);margin-top:6px;line-height:1.35;}
+.wrapup-note.up{color:var(--state-success);}
+.wrapup-card{display:flex;flex-direction:column;gap:12px;}
+.wrapup-rec{display:flex;align-items:center;gap:11px;}
+.wrapup-rec-ic{width:34px;height:34px;flex-shrink:0;border-radius:var(--r-md);background:var(--surface-raise);color:var(--state-success);display:flex;align-items:center;justify-content:center;}
+.wrapup-rec-txt{display:flex;flex-direction:column;gap:2px;min-width:0;}
+.wrapup-rec-txt .nm{font-size:var(--text-sm);font-weight:600;color:var(--label);}
+.wrapup-rec-txt .dt{font-family:'IBM Plex Mono',monospace;font-size:var(--text-2xs);color:var(--label-3);}
+
+.setslocked-hint{display:flex;align-items:center;gap:7px;margin-top:12px;padding:9px 11px;border:1px solid var(--border-line);border-radius:var(--r-sm);background:var(--surface-raise);font-size:var(--text-xs);line-height:1.35;color:var(--label-2);}
+.setslocked-hint svg{flex-shrink:0;color:var(--accent);}
+
+/* Nello storico non c'e' un tasto salva: la seduta esiste gia' e ogni
+   correzione si scrive da sola. Questa riga e' l'unica cosa che lo dice, per
+   questo sta sotto il campo e non dentro la card. */
+/* La data lunga sta a destra e, se va a capo, resta a destra: allineata a
+   sinistra sembrerebbe la continuazione del nome del giorno. */
+.daymeta .rec{text-align:right;}
+.seduta-when{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.seduta-when label{flex-shrink:0;font-family:'IBM Plex Mono',monospace;font-size:var(--text-2xs);letter-spacing:.04em;text-transform:uppercase;color:var(--label-3);}
+.seduta-when .measure-input-wrap{flex:0 1 auto;}
+.autosave{margin:0 0 14px;padding:0 4px;font-family:'IBM Plex Mono',monospace;font-size:var(--text-2xs);letter-spacing:.03em;color:var(--label-3);}
+.autosave.err{color:var(--state-danger-text);}
+.meal-check{width:18px;height:18px;border-radius:50%;border:2px solid var(--label-3);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:transparent;font-size:var(--text-2xs);font-weight:700;transition:background .18s ease,border-color .18s ease;flex-shrink:0;}
+.meal-check.done{background:var(--accent);border-color:var(--accent);color:var(--accent-contrast);}
+.lastsession{font-size:var(--text-xs);color:var(--label-3);margin-top:10px;font-family:'IBM Plex Mono',monospace;line-height:1.5;}
+.ex-insights{display:none;}
+.ex-insights.show{display:flex;flex-direction:column;gap:8px;margin-top:12px;}
+
+/* ===================== MISURE ===================== */
+.measure-card{margin-bottom:12px;overflow:hidden;}
+.measure-grid{display:grid;gap:14px 10px;min-width:0;}
+.measure-grid.cols-2{grid-template-columns:minmax(0,1fr) minmax(0,1fr);}
+.measure-field{display:flex;flex-direction:column;gap:6px;min-width:0;}
+.measure-field label{font-family:'IBM Plex Mono',monospace;font-size:var(--text-2xs);letter-spacing:.04em;color:var(--label-3);}
+.measure-input-wrap{display:flex;align-items:center;gap:6px;min-width:0;background:var(--surface-raise);border:1px solid var(--border-line);border-radius:var(--r-sm);padding:9px 10px;}
+.measure-input-wrap input{flex:1;min-width:0;background:none;border:none;outline:none;font-family:'IBM Plex Mono',monospace;font-size:var(--text-md);font-weight:600;color:var(--label);padding:0;}
+.measure-input-wrap input::placeholder{color:var(--label-3);font-weight:500;}
+.measure-input-wrap:focus-within{border-color:var(--accent);background:var(--surface-raise-2);}
+.measure-input-wrap .unit{font-family:'IBM Plex Mono',monospace;font-size:var(--text-xs);color:var(--label-3);flex-shrink:0;}
+
+.measure-readrow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 2px;border-bottom:1px solid var(--border-line);}
+.measure-readrow:last-child{border-bottom:none;}
+.mr-label{font-size:var(--text-sm);color:var(--label-2);}
+.mr-value{font-family:'IBM Plex Mono',monospace;font-size:var(--text-md);font-weight:600;color:var(--label);display:flex;align-items:center;gap:8px;}
+
+.delta{font-family:'IBM Plex Mono',monospace;font-size:var(--text-xs);font-weight:600;color:var(--label-3);}
+.delta.up{color:var(--state-danger-text);}
+.delta.down{color:var(--state-success);}
+
+/* ===================== CORSA ===================== */
+.runcard{margin-bottom:14px;}
+
+/* Obiettivo settimanale: etichetta, numeri, barra. Il rapporto fatto/obiettivo
+   sta tutto sulla stessa riga perche' e' un numero solo, non due. */
+.rungoal{margin-bottom:14px;}
+.rungoal:last-of-type{margin-bottom:16px;}
+.rungoal-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:7px;}
+.rungoal-lbl{font-family:'IBM Plex Mono',monospace;font-size:var(--text-2xs);letter-spacing:.06em;text-transform:uppercase;color:var(--label-3);}
+.rungoal-val{font-family:'IBM Plex Mono',monospace;font-size:var(--text-lg);font-weight:700;color:var(--label);font-variant-numeric:tabular-nums;}
+.rungoal-val .of{font-size:var(--text-xs);font-weight:600;color:var(--label-3);margin-left:2px;}
+.rungoal-note{font-size:var(--text-sm);color:var(--label-2);line-height:1.5;margin-top:14px;padding-top:12px;border-top:1px solid var(--border-line);}
+
+.runbar{height:7px;border-radius:var(--r-pill);background:var(--surface-raise);overflow:hidden;}
+.runbar-fill{height:100%;border-radius:var(--r-pill);background:var(--accent);transition:width .5s var(--spring);}
+
+
+/* Lo storico per settimana. Una riga chiusa dice il periodo, quante uscite e
+   quanti minuti; aperta mostra le sue uscite e il tasto per aggiungerne una.
+   L'elenco piatto che c'era prima cresceva per sempre. */
+.weeklist{display:flex;flex-direction:column;gap:10px;margin-bottom:14px;}
+.week{border-radius:var(--r-xl);background:var(--surface-card);border:1px solid var(--border-line);box-shadow:var(--shadow-card);overflow:hidden;}
+.week.current{border-color:var(--accent);}
+.week-head{display:flex;align-items:center;gap:12px;width:100%;min-height:62px;padding:12px 15px;border:none;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer;}
+.week-head.static{cursor:default;}
+.week-info{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0;}
+.week-label{font-weight:600;font-size:var(--text-md);color:var(--label);}
+.week.current .week-label{font-weight:700;}
+.week-sub{font-family:'IBM Plex Mono',monospace;font-size:var(--text-2xs);color:var(--label-3);}
+.week-bar{display:block;width:74px;height:6px;flex-shrink:0;border-radius:var(--r-pill);background:var(--surface-raise);overflow:hidden;}
+.week-bar-fill{display:block;height:100%;border-radius:var(--r-pill);background:var(--accent);transition:width .4s var(--spring);}
+.week-bar-fill.full{background:var(--state-success);}
+.week-min{width:52px;flex-shrink:0;text-align:right;font-family:'IBM Plex Mono',monospace;font-size:var(--text-md);font-weight:700;color:var(--label);font-variant-numeric:tabular-nums;}
+.week-min.empty{color:var(--label-3);font-weight:600;}
+.week-body{display:flex;flex-direction:column;gap:6px;padding:0 15px 14px;border-top:1px solid var(--separator);padding-top:12px;}
+
+.runline{display:flex;align-items:center;gap:10px;width:100%;min-height:44px;padding:0 11px;border:none;border-radius:var(--r-md);background:var(--surface-raise);color:inherit;font:inherit;text-align:left;cursor:pointer;}
+.runline-dot{flex-shrink:0;border-radius:50%;}
+.runline-txt{flex:1;min-width:0;font-family:'IBM Plex Mono',monospace;font-size:var(--text-sm);color:var(--label);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.runline-effort{color:var(--label-3);margin-left:8px;}
+.runline-min{flex-shrink:0;font-family:'IBM Plex Mono',monospace;font-size:var(--text-sm);font-weight:600;color:var(--label-2);font-variant-numeric:tabular-nums;}
+
+.runadd-inline{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:48px;border:1px dashed var(--accent);border-radius:var(--r-md);background:var(--accent-dim);color:var(--accent);font-family:'Inter',sans-serif;font-size:var(--text-sm);font-weight:700;cursor:pointer;}
+
+.week-more{display:block;width:100%;min-height:48px;margin-bottom:18px;border:1px solid var(--border-line);border-radius:var(--r-lg);background:transparent;color:var(--label-2);font-family:'Inter',sans-serif;font-size:var(--text-sm);font-weight:600;cursor:pointer;}
+.week-more:hover{color:var(--label);border-color:var(--label-3);}
+
+.runremove{display:block;width:100%;margin-top:10px;padding:13px 16px;border:1px solid var(--border-line);border-radius:var(--r-lg);background:transparent;color:var(--state-danger-text);font-size:var(--text-sm);font-weight:600;cursor:pointer;}
+.runremove:disabled{opacity:.45;cursor:default;}
+
+.runseg{display:flex;gap:6px;}
+.runseg-btn{flex:1;min-width:0;min-height:40px;padding:9px 6px;border:1px solid var(--border-line);border-radius:var(--r-sm);background:var(--surface-raise);color:var(--label-2);font-size:var(--text-sm);font-weight:600;cursor:pointer;-webkit-user-select:none;user-select:none;transition:background .18s ease,border-color .18s ease,color .18s ease;}
+.runseg-btn.on{border-color:var(--accent);background:var(--accent-dim);color:var(--label);}
+
+.runsave{display:block;width:100%;padding:14px 16px;border:none;border-radius:var(--r-lg);background:var(--accent);color:var(--accent-contrast);font-size:var(--text-md);font-weight:700;cursor:pointer;-webkit-user-select:none;user-select:none;}
+.runsave:disabled{opacity:.45;cursor:default;}
+
+/* ===================== MISURE — ANALYTICS ===================== */
+.chart-card{margin-bottom:18px;overflow:hidden;}
+.chart-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:14px;}
+.chart-title{font-weight:700;font-size:var(--text-lg);color:var(--label);}
+.chart-sub{font-family:'IBM Plex Mono',monospace;font-size:var(--text-xs);color:var(--label-3);margin-top:3px;}
+.chart-wrap{width:100%;line-height:0;}
+.chart-wrap svg{width:100%;height:auto;display:block;}
+.chart-empty{padding:24px 4px;text-align:center;font-size:var(--text-sm);color:var(--label-3);}
+
+.measure-selectlist{margin-bottom:16px;}
+.measure-selectrow{padding:12px 14px;min-height:0;}
+.measure-selectrow .lbl{font-weight:600;font-size:var(--text-md);color:var(--label);}
+.measure-selectrow .meta{font-family:'IBM Plex Mono',monospace;font-size:var(--text-xs);color:var(--label-3);margin-top:2px;}
+.measure-selectrow.selected{border-color:var(--accent);background:var(--accent-dim);}
+.ms-dot{width:18px;height:18px;border-radius:50%;border:2px solid var(--border-line);flex-shrink:0;transition:border-color .2s ease,background .2s ease;}
+.ms-dot.on{border-color:var(--accent);background:var(--accent);box-shadow:inset 0 0 0 3px var(--surface-card);}
+
+/* ===================== AUTH (login / registrazione coach) ===================== */
+/* 100dvh e non 100vh: sul telefono vh conta anche la barra degli indirizzi,
+   quindi la card nasce piu' in basso di dove si vede e salta quando la barra
+   si ritira. 100vh resta come ripiego per i browser che dvh non ce l'hanno. */
+.authscreen{min-height:100vh;min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:24px;}
+.authcard{width:100%;max-width:380px;}
+/* Testata dell'accesso: marchio, nome e sottotitolo centrati. I campi sotto
+   restano allineati a sinistra (si leggono in colonna) e i link in fondo erano
+   gia' centrati, quindi la card si chiude come si apre. */
+.authhead{text-align:center;}
+.authlogo{display:block;width:72px;height:72px;margin:0 auto 16px;}
+app-logo svg{display:block;width:100%;height:100%;}
+/* Il componente di Lucide infila un elemento host fra il contenitore e l'svg.
+   Lasciato in linea si porta dietro lo spazio della riga di testo, che e'
+   esattamente cio' che i display:block qui sopra tolgono all'svg. */
+lucide-icon{display:inline-flex;flex-shrink:0;}
+/* Play e pausa erano pieni prima di passare a Lucide, che disegna a contorno.
+   Riempire il tracciato e tenere anche il tratto mantiene l'ingombro esterno
+   uguale alle altre icone: togliendo il tratto la forma rimpicciolirebbe di
+   un paio di px rispetto alla spunta e alla X che le stanno accanto.
+   Il selettore e' svg.filled e non lucide-icon.filled: `class` e' un input
+   del componente, che la applica all'<svg> che genera, non al proprio host. */
+lucide-icon svg.filled{fill:currentColor;}
+.authtitle{font-weight:800;font-size:var(--text-3xl);color:var(--label);margin-bottom:4px;}
+.authsub{font-size:var(--text-sm);color:var(--label-3);margin-bottom:22px;}
+.authfield{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;}
+.authfield label{font-family:'IBM Plex Mono',monospace;font-size:var(--text-2xs);letter-spacing:.04em;color:var(--label-3);}
+.authfield input{width:100%;}
+/* La riga del campo era alta 36 px: sotto i 44 che l'app tiene ovunque, e
+   su una schermata di accesso i campi sono il bersaglio principale. Vale
+   qui e non su .measure-input-wrap in generale, che vive anche in form
+   fitti dove la riga e' stretta apposta. */
+.authfield .measure-input-wrap{min-height:44px;}
+.authfield .fielderr,.fielderr{font-size:var(--text-xs);color:var(--state-danger-text);margin-top:5px;line-height:1.4;}
+.autherror{font-size:var(--text-sm);color:var(--state-danger-text);background:rgba(var(--state-danger-rgb),.10);border:1px solid rgba(var(--state-danger-rgb),.25);border-radius:var(--r-sm);padding:10px 12px;margin-bottom:14px;line-height:1.4;}
+/* I link erano alti quanto la loro riga di testo, una ventina di px: sotto i
+   44 che l'app tiene ovunque, e sono gli unici tre bersagli della schermata
+   oltre al tasto. */
+.authlink{display:flex;align-items:center;justify-content:center;width:100%;min-height:44px;text-align:center;font-family:'Inter',sans-serif;font-size:var(--text-sm);color:var(--label-2);text-decoration:underline;text-underline-offset:3px;background:none;border:none;cursor:pointer;}
+/* Quello sotto al tasto e' un ripiego, non una destinazione: resta piu' spento. */
+.authlink.quiet{margin-top:6px;color:var(--label-3);text-decoration:none;}
+.authlink.quiet:disabled{opacity:.55;cursor:default;}
+/* Il messaggio che non e' un errore: l'email per reimpostare la password e'
+   partita, e un fondo rosso direbbe il contrario. */
+.authinfo{font-size:var(--text-sm);color:var(--label-2);background:var(--surface-raise);border:1px solid var(--border-line);border-radius:var(--r-sm);padding:10px 12px;margin-bottom:14px;line-height:1.45;}
+/* L'occhio dentro il campo: tocca 44 senza allargare la riga, perche' esce
+   dal padding del contenitore invece di aggiungersi. */
+.pwtoggle{width:44px;height:44px;margin:-9px -10px -9px 0;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:var(--label-3);background:none;border:none;cursor:pointer;}
+.pwtoggle:active{color:var(--accent);}
+.pwtoggle svg{display:block;}
+
+/* ---------- L'accesso a tutto schermo ----------
+   Le altre due schermate di questo blocco (le due registrazioni) restano
+   una card al centro: hanno dentro campi, spiegazioni e un codice da
+   incollare, e la card li tiene insieme. L'accesso no: dentro non c'e'
+   nessuna informazione, solo due campi, quindi la card non separava niente
+   da niente. Qui la pagina e' il modulo, e .authfull e' l'interruttore che
+   lo dice — .authscreen da sola continua a valere per le altre due. */
+/* Il margine negativo annulla il corridoio di .wrap (16px per lato): senza,
+   "a tutto schermo" sarebbe a tutto schermo meno 32px, e il modulo tornerebbe
+   largo quanto la card che ha sostituito. Non trabocca: quei 32px sono
+   esattamente il padding che .wrap toglie. */
+.authscreen.authfull{align-items:stretch;padding:0;margin-inline:-16px;}
+.authflow{width:100%;max-width:420px;margin:0 auto;min-height:100dvh;display:flex;flex-direction:column;
+  justify-content:center;padding:28px 20px calc(28px + var(--safe-b-sys));}
+.authfull .authlogo{width:76px;height:76px;margin-bottom:14px;}
+.authfull .authtitle{font-size:30px;letter-spacing:-.018em;}
+/* Il sottotitolo chiude la testata e basta: sotto ci sono le due tacche, che
+   dicono gia' che si sta accedendo. Il margine lo mette la tacchiera. */
+.authfull .authsub{margin-bottom:0;}
+
+/* Le due strade, dette una volta sola. Prima erano tre link sotto al tasto,
+   due dei quali dicevano quasi la stessa cosa, e la parola "account"
+   compariva tre volte in quattro righe. */
+.authtabs{display:flex;gap:4px;padding:4px;margin:26px 0 22px;border:1px solid var(--border-line);border-radius:var(--r-lg);}
+/* La tacca scelta si stacca salendo di un gradino, non accendendosi: il pieno
+   d'accento qui competerebbe con il tasto "Accedi", che e' l'azione vera. */
+
+/* Il posto dell'azione e' sempre alto uguale. Senza, passando da "Accedi" a
+   "Crea un account" il modulo si accorcia di una trentina di px e le due
+   tacche scivolano via da sotto il dito che le ha appena toccate. */
+.authfoot{padding-top:26px;min-height:148px;}
+
+/* Le due vie della registrazione: una riga per ciascuna, con scritto a chi
+   serve. Portano alle stesse due pagine di prima. */
+.authrole{display:flex;align-items:center;gap:12px;width:100%;min-height:68px;padding:13px 15px;margin-bottom:10px;
+  text-align:left;cursor:pointer;background:var(--surface-raise);border:1px solid var(--border-line);
+  border-radius:var(--r-lg);font-family:'Inter',sans-serif;color:var(--label);text-decoration:none;}
+.authrole:active{background:var(--surface-raise-2);}
+.authrole .rn{flex:1;min-width:0;}
+.authrole .rt{display:block;font-weight:700;font-size:var(--text-lg);letter-spacing:-.005em;}
+.authrole .rs{display:block;font-size:var(--text-sm);color:var(--label-3);margin-top:3px;line-height:1.35;}
+.authrole .rc{flex-shrink:0;display:flex;color:var(--label-3);}
+/* Il codice del coach si chiede nella pagina dopo: dirlo qui evita di
+   arrivarci, scoprirlo e tornare indietro. */
+.authnote{font-size:var(--text-sm);color:var(--label-3);line-height:1.5;text-align:center;padding:0 6px;}
+
+
+/* ===================== COACH — BACHECA ===================== */
+.bacheca-item{margin-bottom:12px;}
+.bacheca-text{font-size:var(--text-md);color:var(--label);line-height:1.5;white-space:pre-wrap;}
+.bacheca-footer{display:flex;align-items:center;justify-content:space-between;margin-top:12px;}
+.bacheca-date{font-family:'IBM Plex Mono',monospace;font-size:var(--text-xs);color:var(--label-3);}
+
+/* ===================== COACH — CLIENTI ===================== */
+.client-status{font-family:'IBM Plex Mono',monospace;font-size:var(--text-2xs);font-weight:600;letter-spacing:.03em;text-transform:uppercase;color:var(--label-3);background:var(--surface-raise);border:1px solid var(--border-line);border-radius:var(--r-xs);padding:5px 9px;flex-shrink:0;}
+.client-status.on{color:var(--accent);border-color:var(--accent);background:var(--accent-dim);}
+.credrow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 2px;border-bottom:1px solid var(--border-line);}
+.credrow:last-of-type{border-bottom:none;}
+.credlabel{font-size:var(--text-sm);color:var(--label-2);}
+.credvalue{font-size:var(--text-md);font-weight:600;color:var(--label);text-align:right;}
+.credvalue.mono{font-family:'IBM Plex Mono',monospace;letter-spacing:.03em;}
+
+.protocol-row{gap:10px;}
+.protocol-status{font-family:'IBM Plex Mono',monospace;font-size:var(--text-2xs);font-weight:700;letter-spacing:.03em;text-transform:uppercase;padding:2px 7px;border-radius:var(--r-xs);}
+.protocol-status.ps-active{color:var(--accent-contrast);background:var(--accent);}
+.protocol-status.ps-draft{color:var(--label-2);background:var(--surface-raise-2);}
+.protocol-status.ps-archived{color:var(--label-3);background:var(--surface-raise);}
+.protocol-activatebtn{flex-shrink:0;padding:9px 14px;font-size:var(--text-sm);min-height:0;}
+
+.method-card{display:flex;align-items:center;gap:14px;margin-bottom:14px;cursor:pointer;}
+.method-icon{width:46px;height:46px;border-radius:var(--r-md);background:var(--accent-dim);color:var(--accent);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.method-info{flex:1;min-width:0;}
+.method-title{font-weight:700;font-size:var(--text-md);color:var(--label);}
+.method-sub{font-size:var(--text-xs);color:var(--label-3);margin-top:3px;line-height:1.4;}
+
+/* ===================== LISTA DELLA SPESA =====================
+   Una riga, un nome. Grammature, pasti di provenienza e note stavano qui e
+   non ci stanno piu': la lista si legge in piedi al supermercato, dove le
+   uniche domande sono cosa prendere e cosa e' gia' nel carrello. */
+.shop-top{display:flex;align-items:center;gap:12px;margin-bottom:14px;}
+.shop-count{font-family:'IBM Plex Mono',monospace;font-size:var(--text-sm);color:var(--label-2);flex-shrink:0;}
+.shop-bar{flex:1;min-width:0;height:5px;border-radius:var(--r-pill);background:var(--surface-raise);overflow:hidden;}
+.shop-bar i{display:block;height:100%;background:var(--accent);border-radius:var(--r-pill);transition:width .3s ease;}
+.shop-clear{flex-shrink:0;min-height:36px;padding:7px 13px;border:1px solid var(--border-line);border-radius:var(--r-pill);background:var(--surface-raise);color:var(--label-2);font-family:'IBM Plex Mono',monospace;font-size:var(--text-2xs);white-space:nowrap;cursor:pointer;}
+
+/* La ricerca. Il bordo e' della RIGA, non del campo, e lente, testo e croce ci
+   stanno dentro affiancati - lo stesso schema di .measure-input-wrap.
+   Prima la lente era appoggiata sopra con position:absolute, contando su un
+   margine di 40px dentro il campo: sul telefono non si e' messa dove doveva e
+   e' finita a cavallo del testo. Qui non c'e' niente da appoggiare: sono tre
+   elementi in fila, e sovrapporsi non possono. */
+.shop-searchrow{display:flex;align-items:center;gap:10px;min-height:46px;margin-bottom:8px;padding:0 6px 0 14px;border-radius:var(--r-lg);border:1px solid var(--border-line);background:var(--surface-card);}
+.shop-searchrow:focus-within{border-color:var(--accent);}
+.shop-searchic{display:flex;flex-shrink:0;color:var(--label-3);}
+.shop-searchx{flex-shrink:0;width:38px;height:38px;display:flex;align-items:center;justify-content:center;border-radius:var(--r-md);background:none;color:var(--label-3);cursor:pointer;}
+
+.shop-group{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:18px 2px 8px;}
+.shop-group-tit{font-family:'IBM Plex Mono',monospace;font-size:var(--text-2xs);letter-spacing:.14em;text-transform:uppercase;color:var(--label-3);}
+.shop-group-n{font-family:'IBM Plex Mono',monospace;font-size:var(--text-2xs);color:var(--label-3);}
+
+.shop-list{display:flex;flex-direction:column;gap:8px;}
+.shop-row{display:flex;align-items:center;gap:12px;width:100%;min-height:56px;padding:12px 14px;border:1px solid var(--border-line);border-radius:var(--r-lg);background:var(--surface-card);text-align:left;cursor:pointer;-webkit-user-select:none;user-select:none;}
+.shop-name{flex:1;min-width:0;font-family:'Inter',sans-serif;font-weight:700;font-size:var(--text-md);color:var(--label);line-height:1.3;}
+.shop-row.ok{opacity:.5;}
+.shop-row.ok .shop-name{text-decoration:line-through;}
+
+/* Il carrello sta in cima e nasce chiuso: a meta' spesa si scorre quello che
+   manca, non venti righe barrate. */
+.shop-cart{display:flex;align-items:center;gap:8px;width:100%;min-height:44px;padding:13px 14px;border:1px dashed var(--border-line);border-radius:var(--r-lg);background:none;color:var(--label-3);font-family:'IBM Plex Mono',monospace;font-size:var(--text-xs);cursor:pointer;}
+.shop-cart-chev{transition:transform .2s ease;flex-shrink:0;}
+.shop-cart.open .shop-cart-chev{transform:rotate(180deg);}
+.shop-list-cart{margin-top:8px;}
+
+.shop-check{width:24px;height:24px;border-radius:var(--r-xs);border:2px solid var(--border-line);flex-shrink:0;display:flex;align-items:center;justify-content:center;color:var(--accent-contrast);transition:border-color .2s ease,background .2s ease;}
+.shop-check.on{border-color:var(--accent);background:var(--accent);}
+.shop-addrow{display:flex;gap:8px;margin-bottom:16px;}
+.shop-addbtn{width:46px;height:46px;border-radius:var(--r-lg);border:1px solid var(--border-line);background:var(--brand);color:var(--accent-contrast);font-size:var(--text-2xl);font-weight:700;cursor:pointer;flex-shrink:0;}
+.shop-addbtn:active{filter:brightness(0.92);}
+
+.diet-card.disabled{opacity:.5;cursor:default;}
+.diet-card .badge{font-size:var(--text-xs);letter-spacing:.02em;}
+
+.builder-tabs{margin-bottom:16px;}
+.builder-tabs button{flex:1;text-align:center;}
+
+.weekplan-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.weekplan-num{font-family:'IBM Plex Mono',monospace;font-size:var(--text-xs);color:var(--label-3);width:24px;flex-shrink:0;}
+.weekplan-input{flex:1;}
+.weekplan-input input{width:100%;text-align:center;}
+
+.builder-exercise{border-top:1px solid var(--border-line);padding-top:14px;margin-top:14px;}
+.builder-row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+/* Il riquadro del cluster nell'editor del coach. Sta dentro la scheda
+   dell'esercizio ma si stacca, perche' descrive una cosa sola: com'e' fatta
+   UNA serie. Il numero di serie resta il suo campo, sopra. */
+.clusterbox{margin:12px 0;padding:14px;border-radius:var(--r-lg);background:var(--accent-dim);border:1px solid var(--accent);}
+.cluster-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:11px;}
+.cluster-cap{font-family:'IBM Plex Mono',monospace;font-size:var(--text-2xs);font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);}
+.cluster-scheme{font-family:'IBM Plex Mono',monospace;font-size:var(--text-sm);font-weight:700;color:var(--label);}
+.cluster-blocks{display:flex;flex-wrap:wrap;align-items:center;gap:8px;}
+.cluster-block{display:flex;align-items:center;gap:6px;}
+.cluster-block .measure-input-wrap{width:104px;}
+.cluster-plus{font-family:'IBM Plex Mono',monospace;font-size:var(--text-lg);font-weight:700;color:var(--label-3);}
+.cluster-note{margin:11px 0 0;font-size:var(--text-xs);line-height:1.45;color:var(--label-2);}
+
+.builder-meal{margin-bottom:14px;}
+
+.meal-preview-card{margin-bottom:12px;cursor:pointer;}
+.meal-preview-header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;}
+.meal-preview-header .lbl{font-weight:700;font-size:var(--text-md);}
+.meal-preview-empty{font-size:var(--text-sm);color:var(--label-3);}
+.meal-preview-cat{padding-top:10px;border-top:1px solid var(--border-line);margin-top:10px;}
+.meal-preview-cat:first-of-type{padding-top:0;border-top:none;margin-top:0;}
+.meal-preview-catlabel{font-family:'IBM Plex Mono',monospace;font-size:var(--text-2xs);font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--label-3);}
+.meal-preview-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:4px 0;font-size:var(--text-sm);color:var(--label);}
+.meal-preview-item .fqty{color:var(--label-3);font-family:'IBM Plex Mono',monospace;font-size:var(--text-xs);flex-shrink:0;}
+.builder-meal-header{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.builder-meal-name input{font-weight:700;font-size:var(--text-md);}
+.builder-item{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.builder-item .measure-input-wrap{flex:1.6;}
+.builder-item .builder-qty{flex:1;}
+
+/* --- Trascinare una riga del builder ---
+   La presa e' un elemento suo e non tutta la riga: la riga e' fatta di campi
+   di testo, e prenderla dal campo vorrebbe dire non poterci piu' scrivere.
+   Ed e' anche l'unica difesa contro le prese per sbaglio: un ritardo
+   all'avvio non servirebbe, perche' la CDK - se il dito si muove prima che
+   scada - annulla la presa invece di rinviarla, e col dito ci si muove quasi
+   sempre subito.
+   La lista tiene un'altezza minima anche da vuota, se no un macro senza
+   alimenti non avrebbe dove ricevere quello che arriva dagli altri. */
+.draglist{min-height:14px;}
+/* La casella di un macro della combinazione: un posto solo, che pero' deve
+   poter ricevere anche quando e' vuoto - e' li' che si lascia l'alimento che
+   arriva da un altro macro. */
+.slotdrop{min-height:44px;}
+.draghandle{flex-shrink:0;display:flex;align-items:center;justify-content:center;width:34px;height:44px;margin-left:-6px;border:none;background:none;color:var(--label-3);cursor:grab;touch-action:none;}
+.draghandle:active{cursor:grabbing;}
+.builder-item.cdk-drag-dragging .draghandle{color:var(--accent);}
+/* La riga che segue il dito: staccata dal foglio, con l'ombra che lo dice. */
+.cdk-drag-preview{box-shadow:var(--shadow-float);border-radius:var(--r-sm);background:var(--surface-raise);opacity:.96;}
+.cdk-drag-preview .delete-btn{visibility:hidden;}
+/* Il posto che la riga lascia: un ingombro vuoto, non un buco che si chiude
+   di colpo - senza, le righe sotto saltano e si perde di vista dove si sta
+   lasciando quella in mano. */
+.dragghost{height:44px;margin-bottom:8px;border:1px dashed var(--border-line);border-radius:var(--r-sm);background:var(--surface-raise);}
+.cdk-drag-animating{transition:transform .22s var(--spring-soft);}
+.draglist.cdk-drop-list-dragging .builder-item:not(.cdk-drag-placeholder){transition:transform .22s var(--spring-soft);}
+/* Il macro che sta per ricevere: si accende, cosi' si vede dove si lascia, e
+   da vuoto cresce - quattordici pixel bastano al browser per registrare la
+   lista, non al pollice per centrarla. Cresce solo durante il trascinamento:
+   il resto del tempo un macro senza alimenti non deve lasciare un buco. */
+.draglist.cdk-drop-list-receiving{min-height:40px;outline:1px dashed var(--accent);outline-offset:4px;border-radius:var(--r-sm);}
+.slotdrop.cdk-drop-list-receiving{outline:1px dashed var(--accent);outline-offset:4px;border-radius:var(--r-sm);}
+
+/* La riga con "rimuovi" accanto a "salva". I due tasti erano di due famiglie
+   diverse - .confirmbtn ha raggio, altezza, corpo e ombra tutti piu' piccoli
+   di .savebtn - e affiancati si vedeva: uno squadrato e uno a pastiglia. Ora
+   sono lo stesso tasto in due colori, che e' quello per cui .savebtn.cancel
+   esiste. Larghezze uguali: nessuno dei due e' "quello giusto" da spingere. */
+.builder-savebar{display:flex;gap:10px;}
+.builder-savebar .savebtn{width:auto;flex:1;}
+
+/* L'uscita da un editor. Stessa famiglia del tasto primario - stesso raggio,
+   stessa altezza, stessa ombra - ma larga quanto il suo testo, perche' e' una
+   via d'uscita e non l'azione della pagina. Prima era .confirmbtn, con un
+   raggio piu' stretto di tutto il resto della schermata. */
+.editorback{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 18px;border-radius:var(--r-xl);background:var(--surface-card);border:1px solid var(--border-line);box-shadow:var(--shadow-card);font-family:'Inter',sans-serif;font-weight:700;font-size:var(--text-md);color:var(--label);cursor:pointer;transition:filter .2s ease;}
+.editorback:active{filter:brightness(0.92);}
+
+.authfield input[type="file"]{font-family:'Inter',sans-serif;font-size:var(--text-sm);color:var(--label-2);background:var(--surface-raise);border:1px dashed var(--border-line);border-radius:var(--r-sm);padding:10px;width:100%;}
+.authfield input[type="file"]::file-selector-button{font-family:'Inter',sans-serif;font-weight:600;font-size:var(--text-xs);color:var(--label);background:var(--surface-raise-2);border:1px solid var(--border-line);border-radius:var(--r-xs);padding:6px 10px;margin-right:10px;cursor:pointer;}
+
+.suggestion-chip{font-size:var(--text-sm);line-height:1.45;color:var(--label);padding:10px 12px;border-radius:var(--r-md);background:var(--accent-dim);border:1px solid var(--accent);}
+.suggestion-chip b{color:var(--accent);font-weight:700;}
+/* Il massimale stimato: stessa forma del consiglio, voce piu' bassa. Il
+   consiglio dice cosa fare adesso, la stima racconta com'e' andata - se
+   fossero uguali di tono, la cosa da fare si perderebbe fra le altre. */
+.suggestion-chip.stima{background:var(--surface-raise);border-color:var(--border-line);color:var(--label-2);font-size:var(--text-xs);font-family:'IBM Plex Mono',monospace;line-height:1.5;}
+.suggestion-chip.stima b{color:var(--label);}
+
+/* Il peso da caricare, dentro la serie e subito sotto le ripetizioni. Si
+   sceglie per quante ripetizioni lo si vuole e il numero cambia: e' la stessa
+   domanda che ci si fa davanti al bilanciere, nello stesso posto.
+   La freccia e' disegnata qui perche' l'app azzera l'appearance dei controlli
+   nativi, quindi il menu non ne avrebbe nessuna. */
+.rmpick{margin-top:2px;display:flex;flex-direction:column;gap:6px;}
+.rmpick-row{display:flex;align-items:center;gap:10px;min-width:0;}
+/* Da dove viene il numero. Prima erano due righe sopra il menu - "Ultimo
+   (24/09): 80 kg" e il massimale - che dicevano la stessa cosa due volte: la
+   data e il peso stanno gia' qui dentro. */
+.rmpick-from{margin:0;font-family:'IBM Plex Mono',monospace;font-size:var(--text-2xs);color:var(--label-3);line-height:1.5;}
+.rmpick-from b{color:var(--label);font-weight:700;}
+.rmpick-selwrap{position:relative;display:flex;align-items:center;flex-shrink:0;}
+/* Larghezza ferma: il menu e' largo quanto la voce piu' lunga, altrimenti la
+   riga si sposta ogni volta che si cambia numero. */
+.rmpick-out{font-family:'IBM Plex Mono',monospace;font-size:var(--text-lg);font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums;margin-left:auto;white-space:nowrap;}
+.rmpick-pct{font-family:'IBM Plex Mono',monospace;font-size:var(--text-xs);color:var(--label-3);font-variant-numeric:tabular-nums;}
+.rmpick-soft{margin:8px 0 0;font-size:var(--text-2xs);color:var(--label-3);line-height:1.45;}
+/* La percentuale del programma: si legge accanto al menu, non al posto suo.
+   Stessa riga tipografica della provenienza, col peso in evidenza. */
+.rmpick-prog{margin:0;font-family:'IBM Plex Mono',monospace;font-size:var(--text-2xs);color:var(--label-2);line-height:1.5;}
+.rmpick-prog b{color:var(--accent);font-weight:700;font-size:var(--text-xs);}
+/* Quando la percentuale e il piano del giorno non dicono la stessa cosa. */
+.rmpick-nota{margin:2px 0 0;padding-left:8px;border-left:2px solid var(--border-line);font-family:'IBM Plex Mono',monospace;font-size:var(--text-2xs);color:var(--label-2);line-height:1.5;}
+.savebar{margin-top:16px;}
+.savebar.dual{display:flex;gap:10px;}
+.savebar.dual .savebtn{width:auto;flex:1;}
+.savebtn.cancel{background:var(--surface-card);color:var(--label);box-shadow:none;border-color:var(--border-line);}
+.savebtn.cancel-accent{background:var(--brand-dim);color:var(--brand);border-color:var(--brand);box-shadow:none;}
+.savebtn{width:100%;padding:16px;min-height:52px;border-radius:var(--r-xl);border:1px solid var(--border-line);font-family:'Inter',sans-serif;font-weight:700;letter-spacing:-.005em;font-size:var(--text-lg);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:var(--shadow-card);transition:filter .2s ease;}
+.savebtn:active{filter:brightness(0.92);}
+.savebtn:disabled{opacity:.5;cursor:not-allowed;filter:none;}
+.history-empty{font-size:var(--text-sm);color:var(--label-2);line-height:1.5;padding:20px 18px;text-align:center;background:var(--surface-card);border:1px solid var(--border-line);border-radius:var(--r-xl);box-shadow:var(--shadow-card);}
+.history-session{padding:12px 0;border-bottom:1px solid var(--separator);}
+.history-session:last-child{border-bottom:none;}
+.history-date{font-family:'IBM Plex Mono',monospace;font-size:var(--text-xs);color:var(--label);font-weight:600;margin-bottom:6px;}
+.history-ex{font-size:var(--text-sm);color:var(--label-2);line-height:1.5;}
+.history-ex b{color:var(--label);font-weight:600;}
+.ro-value{width:100%;text-align:center;padding:8px 6px;font-size:var(--text-sm);font-family:'IBM Plex Mono',monospace;font-weight:600;color:var(--label-2);background:var(--surface-press);border:1px solid var(--border-line);border-radius:var(--r-sm);}
+.ex.readonly .ex-chip,.ex.readonly .ex-meta{display:none;}
+
+/* ===== Card sessione di allenamento (avvio / chiusura) =====
+   I margini sono qualificati con .infocard (specificita' 0-2-0) perche' la
+   regola .infocard piu' sotto nel file imposta margin-bottom:12px: a pari
+   specificita' vincerebbe lei, essendo dichiarata dopo, e questi margini non
+   avrebbero alcun effetto. Classe dedicata per la card finale invece di
+   :last-of-type, che guarda il tipo di elemento (div) e non la classe. */
+/* Barra sessione: cronometro e comandi. E' una card come le altre e sta nel
+   flusso con loro: restava appiccicata sotto la navbar, e scorrendo le card
+   le passavano sotto - un pannello sospeso sopra la pagina invece di una
+   delle sue parti. */
+.session-bar{display:flex;align-items:center;gap:8px;padding:8px 8px 8px 13px;margin-bottom:12px;border-radius:var(--r-xl);background:var(--surface-card);border:1px solid var(--border-line);box-shadow:var(--shadow-card);}
+.session-bar-dot{width:7px;height:7px;border-radius:50%;background:var(--label-3);opacity:.45;flex-shrink:0;transition:background .25s ease,opacity .25s ease;}
+.session-bar-dot.live{background:var(--accent);opacity:1;}
+/* L'etichetta e' l'unico elemento comprimibile: su schermi stretti cede spazio
+   a cronometro e comandi invece di mandarli a capo. */
+.session-bar-label{flex:1;min-width:0;font-family:'IBM Plex Mono',monospace;font-size:var(--text-2xs);letter-spacing:.1em;text-transform:uppercase;color:var(--label-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left;}
+.session-bar-label.link{background:none;border:none;padding:0;cursor:pointer;text-decoration:underline;text-underline-offset:3px;color:var(--accent);}
+.session-bar-time{font-family:'IBM Plex Mono',monospace;font-size:var(--text-2xl);font-weight:600;letter-spacing:.02em;color:var(--accent);font-variant-numeric:tabular-nums;flex-shrink:0;transition:color .25s ease,opacity .25s ease;}
+.session-bar-time.idle{color:var(--label-3);opacity:.5;}
+.session-bar-time.paused{opacity:.55;}
+/* Comandi solo icona: pieno il comando principale (avvia/pausa), a vetro gli
+   altri due, in rosso quello che butta via la sessione. Disabilitato = spento. */
+.session-bar-btn{width:34px;height:34px;flex-shrink:0;border-radius:50%;border:1px solid transparent;background:var(--accent);color:var(--accent-contrast);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform .18s ease,background .2s ease,opacity .2s ease;}
+.session-bar-btn:active{transform:scale(0.92);}
+.session-bar-btn.ghost{background:var(--surface-raise);border-color:var(--border-line);color:var(--accent);}
+.session-bar-btn.ghost.danger{color:var(--state-danger-text);border-color:rgba(var(--state-danger-rgb),0.35);}
+.session-bar-btn:disabled{background:var(--surface-raise);border-color:var(--border-line);color:var(--label-3);opacity:.4;cursor:not-allowed;}
+.session-bar-btn.saved{background:var(--state-success);border-color:transparent;color:var(--accent-contrast);}
+.session-bar-btn.err{background:var(--state-danger);border-color:transparent;color:#fff;}
+.session-bar-btn svg{display:block;}
+
+/* ===== DIETA ===== */
+.rocker{display:flex;align-items:center;justify-content:center;margin:2px auto 20px;width:236px;height:52px;background:var(--surface-chrome);border:1px solid var(--border-line);border-radius:var(--r-pill);padding:4px;box-shadow:var(--shadow-card);position:relative;cursor:pointer;-webkit-user-select:none;user-select:none;}
+.rocker .knob{position:absolute;top:4px;left:4px;width:114px;height:44px;border-radius:var(--r-pill);background:var(--accent);transition:left .4s var(--spring),background .22s ease;box-shadow:var(--shadow-card);}
+.rocker.off .knob{left:118px;}
+.rocker .lbl{flex:1;text-align:center;z-index:1;font-weight:700;font-size:var(--text-md);letter-spacing:.02em;color:var(--label);transition:color .2s ease;}
+.rocker .lbl.active{color:var(--accent-contrast);}
+.meal{border:1px solid var(--border-line);border-radius:var(--r-xl);background:var(--surface-card);box-shadow:var(--shadow-card);margin-bottom:12px;overflow:hidden;-webkit-mask-image:-webkit-radial-gradient(white,black);mask-image:radial-gradient(white,black);}
+.meal-summary{cursor:pointer;padding:15px 16px;min-height:44px;display:flex;align-items:center;justify-content:space-between;font-weight:700;letter-spacing:-.005em;font-size:var(--text-lg);-webkit-user-select:none;user-select:none;}
+.meal .chevron{display:flex;align-items:center;justify-content:center;color:var(--label-3);transition:transform .35s var(--spring);}
+.meal .chevron svg{display:block;}
+.meal.open > .meal-summary .chevron{transform:rotate(180deg);color:var(--accent);}
+.meal .content-inner{padding:0 16px 15px;border-top:1px solid var(--separator);}
+.meal.mealslide{margin-bottom:0;}
+.meal-summary.noclick{cursor:default;}
+.variant-tabs{display:flex;gap:6px;margin:13px 0 10px;flex-wrap:wrap;}
+.variant-tabs button{font-family:'IBM Plex Mono',monospace;font-size:var(--text-xs);padding:8px 12px;min-height:38px;border-radius:var(--r-sm);border:1px solid var(--border-line);background:var(--surface-raise);color:var(--label-2);cursor:pointer;}
+.variant-tabs button.active{border-color:var(--accent);color:var(--accent);background:var(--accent-dim);}
+/* La scelta della combinazione, lato cliente: un menu invece di una fila di
+   pastiglie. Le etichette le scrive il coach e sono libere, quindi una fila
+   andava a capo appena si allungavano; il menu e' alto 44 comunque, e quello
+   che hai scelto si legge anche da chiuso. La freccia e' disegnata a mano:
+   l'app azzera l'appearance nativa di tutti i controlli. */
+.combo-select{position:relative;display:flex;align-items:center;margin:13px 0 10px;}
+.fooditem{padding:11px 0;border-bottom:1px solid var(--separator);}
+.fooditem-category{font-family:'IBM Plex Mono',monospace;font-size:var(--text-2xs);font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--label-3);margin:14px 0 4px;}
+/* I tre macro si distinguono per un PALLINO, non per il colore del testo.
+   Il motivo e' il tema chiaro: dovendo ogni etichetta superare 4,5:1 su
+   bianco, i tre gradini della rampa finivano schiacciati in tredici punti di
+   luminosita' e diventavano indistinguibili. Il pallino non e' testo, gli
+   basta 3:1, e con quel margine i gradini tornano separati. Stesso meccanismo
+   nei due temi: cambiano solo i valori dei token. */
+.fooditem-category.carb::before,
+.fooditem-category.protein::before,
+.fooditem-category.fat::before{content:'';display:inline-block;width:7px;height:7px;
+  border-radius:2px;margin-right:6px;vertical-align:baseline;}
+.fooditem-category.carb::before{background:var(--macro-carb);}
+.fooditem-category.protein::before{background:var(--macro-protein);}
+.fooditem-category.fat::before{background:var(--macro-fat);}
+.fooditem-category.integration{color:var(--macro-supp);}
+/* Stessa tinta dell'etichetta Integrazione lato cliente, per l'anteprima pasto nel builder coach. */
+.meal-preview-catlabel.integration{color:var(--macro-supp);}
+.fooditem:last-child{border-bottom:none;}
+.fooditem .row{display:flex;justify-content:space-between;align-items:baseline;gap:10px;}
+.fooditem .fname{font-size:var(--text-md);line-height:1.3;}
+.fooditem .fqty{font-family:'IBM Plex Mono',monospace;font-size:var(--text-sm);color:var(--label-2);font-weight:600;white-space:nowrap;}
+.altwrap-header{cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:var(--text-xs);color:var(--label-3);min-height:32px;display:flex;align-items:center;justify-content:space-between;gap:6px;}
+.altwrap-header .chevron{display:flex;align-items:center;justify-content:center;transition:transform .35s var(--spring);color:var(--label-3);}
+.altwrap-header .chevron svg{display:block;}
+.altwrap.open .altwrap-header{color:var(--accent);}
+.altwrap.open .altwrap-header .chevron{transform:rotate(180deg);color:var(--accent);}
+.altlist{margin-top:6px;display:flex;flex-direction:column;gap:5px;padding-left:11px;border-left:1px solid var(--separator);}
+.altlist .row{display:flex;justify-content:space-between;font-size:var(--text-sm);color:var(--label-2);}
+.altlist .row span:last-child{font-family:'IBM Plex Mono',monospace;color:var(--label-2);}
+
+/* ===== INFO ===== */
+.infocard{background:var(--surface-card);border:1px solid var(--border-line);border-radius:var(--r-xl);padding:16px;box-shadow:var(--shadow-card);margin-bottom:12px;}
+.infocard h3{font-weight:700;font-size:var(--text-md);letter-spacing:-.005em;margin-bottom:8px;color:var(--label);}
+.infocard p{font-size:var(--text-sm);color:var(--label-2);line-height:1.55;margin-bottom:6px;}
+.infocard p:last-child{margin-bottom:0;}
+.infocard b{color:var(--label);font-weight:700;}
+.infowave{font-family:'IBM Plex Mono',monospace;font-size:var(--text-sm);font-weight:600;color:var(--label-2);background:var(--surface-raise);border:1px solid var(--border-line);border-radius:var(--r-sm);padding:9px 12px;margin:8px 0;text-align:center;}
+.consigli{margin-top:24px;}
+.consigli h3{font-weight:700;font-size:var(--text-md);letter-spacing:-.005em;color:var(--label-2);margin-bottom:10px;}
+.consigli ul{list-style:none;display:flex;flex-direction:column;gap:8px;margin:0;padding:0;}
+.consigli li{font-size:var(--text-sm);color:var(--label-2);padding:11px 13px;background:var(--surface-card);border:1px solid var(--border-line);border-radius:var(--r-md);display:flex;gap:8px;align-items:flex-start;line-height:1.4;}
+.consigli li::before{content:"—";flex-shrink:0;}
+
+/* ===== REST TIMER — onda dentro la card dell'esercizio =====
+   Le tacchette hanno larghezza fissa in px (non elastica) per restare nitide:
+   e' `space-between` a distribuire l'aria sulla larghezza disponibile. Le
+   altezze arrivano dal componente e non cambiano mai durante il recupero:
+   scorre solo la soglia fra tacchette accese e spente. */
+/* La fascia del recupero prende la sagoma e il posto della tabbar: stessa
+   altezza, stessi margini, stesso raggio, cosi' l'imbottitura in fondo al
+   contenuto (--tabbar-h) resta buona e niente si sposta quando una sostituisce
+   l'altra. */
+.restbar{position:fixed;left:16px;right:16px;bottom:var(--tabbar-gap);z-index:60;height:var(--tabbar-h);background:var(--surface-chrome);border:1px solid var(--border-line);border-radius:var(--r-pill);box-shadow:var(--shadow-float);max-width:608px;margin:0 auto;padding:9px 18px;display:flex;flex-direction:column;justify-content:center;gap:6px;animation:fade .25s ease;}
+.restbar-row{display:flex;align-items:center;gap:10px;}
+.restbar-label{font-size:var(--text-xs);color:var(--label-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.restbar.running .restbar-label{color:var(--label-2);}
+.restbar-time{margin-left:auto;font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:var(--text-md);color:var(--accent);font-variant-numeric:tabular-nums;flex-shrink:0;}
+.restbar.finished .restbar-time{color:var(--state-success);}
+.restbar-x{width:24px;height:24px;border-radius:50%;border:1px solid var(--border-line);background:var(--surface-raise);color:var(--label-2);font-size:var(--text-xs);line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform .18s ease;}
+.restbar-x:active{transform:scale(0.9);}
+.restbar-bars{position:relative;height:16px;}
+.restbar-track{position:absolute;inset:0;display:flex;align-items:center;justify-content:space-between;}
+.restbar-track span{display:block;flex:none;width:1.5px;border-radius:var(--r-pill);background:var(--restbar-off);}
+.restbar-track.lit{transition:clip-path 1s linear;}
+.restbar-track.lit span{background:var(--accent);}
+/* A recupero finito l'onda e' tutta verde: lo strato acceso sparisce e a
+   cambiare colore e' la traccia, che a quel punto e' rimasta sola. */
+.restbar.finished .restbar-track.lit{display:none;}
+.restbar.finished .restbar-track span{background:var(--state-success);}
+
+/* ===== TESTI E BOTTONI DEI FOGLI (la conferma e' un ion-alert, vedi sotto) ===== */
+.confirmtext{font-size:var(--text-md);color:var(--label);line-height:1.5;text-align:center;margin-bottom:18px;}
+.confirmbtns{display:flex;gap:10px;}
+.confirmbtn{flex:1;padding:12px;border-radius:var(--r-lg);border:1px solid var(--border-line);font-family:'Inter',sans-serif;font-weight:700;font-size:var(--text-md);cursor:pointer;}
+
+/* ===== FOGLIO DAL BASSO (ion-modal.sheet-modal) =====
+   Ionic porta il modale sopra a tutto, tab comprese: non serve piu' spostare
+   il nodo in document.body a mano. Ancorato in fondo, alto quanto il contenuto. */
+ion-modal.sheet-modal{--width:100%;--max-width:608px;--height:auto;--background:transparent;--border-radius:0;--backdrop-opacity:.55;align-items:flex-end;}
+ion-modal.sheet-modal .ion-page{position:relative;display:block;contain:content;}
+.bottomsheet{position:relative;width:100%;border-top-left-radius:24px;border-top-right-radius:24px;padding:10px 20px calc(var(--safe-b) + 16px);background:var(--surface-card);border:1px solid var(--border-line);border-bottom:none;box-shadow:0 -10px 28px rgba(0,0,0,.45);}
+.bottomsheet .grabber{width:36px;height:4px;border-radius:var(--r-pill);background:var(--border-line);margin:0 auto 14px;}
+/* Ruota di selezione. Il valore scelto e' quello fermo al centro: lo scorrimento
+   si aggancia (scroll-snap) cosi' non esiste una posizione a meta' fra due
+   tacche, e il valore fuori scala non e' respinto — e' irraggiungibile.
+   Le tacche sono <button> veri, alti 44px: funzionano col tocco secco e con la
+   tastiera, non solo scorrendo. L'imbottitura sopra e sotto vale mezza ruota
+   meno mezza tacca, perche' anche il primo e l'ultimo valore devono poter
+   arrivare al centro. */
+.wheel-wrap{position:relative;margin-bottom:18px;}
+.wheel-band{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);height:44px;border-radius:var(--r-md);background:var(--surface-raise);border:1px solid var(--border-line);display:flex;align-items:center;justify-content:flex-end;padding-right:16px;pointer-events:none;}
+.wheel-band .unit{font-family:'IBM Plex Mono',monospace;font-size:var(--text-sm);color:var(--label-3);}
+.wheel{position:relative;height:220px;overflow-y:auto;overscroll-behavior-y:contain;scroll-snap-type:y mandatory;padding:88px 0;scrollbar-width:none;-webkit-overflow-scrolling:touch;}
+.wheel::-webkit-scrollbar{display:none;}
+.wheel-item{display:flex;align-items:center;justify-content:center;width:100%;height:44px;scroll-snap-align:center;border:none;background:none;cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:var(--text-lg);font-weight:600;color:var(--label-3);opacity:.45;transition:color .15s ease,opacity .15s ease;}
+.wheel-item.on{color:var(--label);opacity:1;font-size:var(--text-2xl);font-weight:700;}
+.wheel-item:focus-visible{outline:2px solid var(--accent);outline-offset:-4px;border-radius:var(--r-sm);}
+@media (prefers-reduced-motion: reduce){.wheel-item{transition:none;}}
+
+/* La ruota corta, quella dentro la serie: tre tacche invece di cinque e
+   nessuna scatola - la banda sono due righe accese, non un rettangolo grigio.
+   L'unita' sta dentro la banda, cosi' sparisce l'intestazione sopra.
+   Il padding del .wheel fa parte della zona che scorre: e' lui a lasciare lo
+   spazio perche' la prima e l'ultima tacca arrivino al centro, e vale
+   (altezza finestra - altezza tacca) / 2. */
+.wheel-wrap.corta{margin-bottom:0;}
+.wheel-wrap.corta .wheel{height:108px;padding:36px 0;
+  -webkit-mask-image:linear-gradient(transparent,#000 30%,#000 70%,transparent);
+  mask-image:linear-gradient(transparent,#000 30%,#000 70%,transparent);}
+.wheel-wrap.corta .wheel-item{height:36px;font-size:var(--text-md);}
+.wheel-wrap.corta .wheel-item.on{font-size:var(--text-xl);}
+.wheel-wrap.corta .wheel-band{height:36px;border-radius:0;background:none;border:none;border-top:1px solid var(--accent);border-bottom:1px solid var(--accent);padding:0 10px 0 0;}
+.wheel-wrap.corta .wheel-band .unit{font-size:var(--text-2xs);}
+.wheel-wrap.corta.disabled{opacity:.5;}
+
+/* Il campo per scrivere sta esattamente dove sta il numero: stessa riga,
+   stesso corpo, cosi' non c'e' niente da cercare quando si passa da una via
+   all'altra. */
+.wheel-write{position:absolute;left:0;right:0;top:36px;height:36px;z-index:2;width:100%;
+  text-align:center;border:none;background:none;outline:none;
+  font-family:'IBM Plex Mono',monospace;font-size:var(--text-xl);font-weight:700;color:var(--label);}
+/* Mentre si scrive, il numero della ruota si leva di mezzo: il campo e'
+   trasparente - un fondo pieno coprirebbe le due righe della banda, e la
+   ruota sembrerebbe sparita - quindi i due numeri si sovrapporrebbero. */
+.wheel-wrap.corta.writing .wheel-item.on{visibility:hidden;}
+
+/* Le due ruote della serie, una accanto all'altra e della stessa larghezza:
+   con colonne diverse i due numeri non stanno sullo stesso asse. */
+.wheelduo{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+/* ===== UTILS ===== */
+/* Scala delle spaziature: gli stacchi verticali fra blocchi si prendono da qui,
+   invece di essere ricalcolati a occhio dentro ogni template. I pareggi si
+   risolvono verso l'alto (10 -> 12, 14 -> 16): fra due valori equidistanti,
+   quello che lascia respirare e' il male minore. */
+.mt-0{margin-top:0;} .mb-0{margin-bottom:0;}
+.mt-1{margin-top:var(--space-1);} .mb-1{margin-bottom:var(--space-1);}
+.mt-2{margin-top:var(--space-2);} .mb-2{margin-bottom:var(--space-2);}
+.mt-3{margin-top:var(--space-3);} .mb-3{margin-bottom:var(--space-3);}
+.mt-4{margin-top:var(--space-4);} .mb-4{margin-bottom:var(--space-4);}
+.mt-5{margin-top:var(--space-5);} .mb-5{margin-bottom:var(--space-5);}
+.w-full{width:100%;}
+/* Testo che esiste solo per chi legge con lo screen reader: un <input>
+   senza etichetta visibile non e' senza etichetta. */
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0;}
+
+/* Bersaglio di tocco a 44px (minimo iOS) senza toccare il disegno: lo
+   pseudo-elemento e' invisibile e centrato sul bottone, cosi' il dito ha
+   margine anche dove l'icona e' minuta. Da applicare SOLO dove l'area
+   allargata non copre qualcosa di cliccabile con un'altra azione: meglio un
+   bersaglio piccolo che un tocco che fa la cosa sbagliata. */
+.tap44{position:relative;}
+.tap44::after{content:"";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:44px;height:44px;}
+/* Per i bottoni affiancati il bersaglio cresce solo in verticale: in
+   orizzontale ruberebbe i tocchi al vicino. */
+.tap44.tap44-v::after{width:100%;}
+
+.press-fx{transition:transform .35s var(--spring),filter .15s ease;}
+/* Schiarire e' un ritorno visivo che esiste solo su fondo scuro: in tema
+   chiaro la card e' gia' bianca, quindi li' la pressione scurisce. */
+.press-fx:active{transform:scale(.96);filter:brightness(var(--press-brightness));}
+
+@keyframes fade {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===================================================================
+   SUPERFICI E BADGE
+   Qui viveva il "liquid glass": uno strato con backdrop-filter e filtro di
+   displacement SVG che piegava la luce dello sfondo, piu' un gloss sul bordo
+   superiore. E' stato rimosso — superfici piene, un bordo, un'ombra sola — e
+   di quel blocco restano solo le regole che non c'entravano con il vetro.
+   =================================================================== */
+
+/* Icone muscolo SVG lineari dentro il badge esercizio */
+/* Badge numerico esercizio (al posto dell'icona) */
+/* Il numero prende l'inchiostro del tema, non il colore del gruppo muscolare.
+   Quel colore resta nella tinta del riquadro e nel bordo, dove fa da codice
+   senza doversi leggere: come TESTO non reggeva il tema chiaro — sette casi su
+   sette sotto contrasto, "Core" a 1,32:1 su fondo quasi bianco. */
+.ex-num { font-weight: 800; font-size:var(--text-lg); color: var(--label); }
+/* Il badge col numero fa anche da indicatore: il bordo CSS lascia il posto
+   all'anello, cosi' traccia e avanzamento sono lo stesso tracciato e non si
+   disallineano. La percentuale si scrive tale e quale perche' pathLength=100
+   normalizza la lunghezza: nessun perimetro da ricalcolare se un domani
+   cambia la misura del badge o il suo raggio. Il badge dello storico resta
+   senza anello — li' la seduta e' chiusa, sarebbe pieno sempre. */
+.ex-num.ring{position:relative;border-color:transparent;}
+.ex-ring{position:absolute;inset:0;width:100%;height:100%;fill:none;stroke-width:3;}
+.ex-ring .done{stroke:var(--accent);transition:stroke-dasharray .4s var(--spring-soft);}
+.ex-num.ring > span{position:relative;}
+
+/* I tab stanno SOPRA la pastiglia che scorre (.pill, z-index 0): senza questo
+   la pastiglia coprirebbe l'icona del tab attivo. Non e' una regola di stile,
+   e' l'ordine di impilamento del componente. */
+.tabbar .tabbtn { z-index: 1; }
+
+/* Contesto di posizionamento per cio' che le card piazzano in assoluto. */
+.daycard, .meal, .infocard, .weekpicker { position: relative; }
+
+/* ===================================================================
+   PULSANTI
+   Anche i bottoni avevano fill traslucido, backdrop blur e gloss superiore.
+   Ora sono fondi pieni: il colore dice cosa fa il bottone, il bordo lo
+   delimita, nient'altro.
+   =================================================================== */
+.savebtn,
+.confirmbtn,
+.variant-tabs button,
+.navicon,
+.backbtn,
+.delete-btn,
+.delete-session-btn {
+  border: 1px solid var(--border-line);
+  box-shadow: var(--shadow-card);
+}
+
+/* Pulsante primario "Completa allenamento" */
+.savebtn {
+  background: var(--brand);
+  color: var(--accent-contrast);
+}
+/* Stati di feedback: fondo pieno, non piu' tinta traslucida sulla card.
+   Al 85% di opacita' il verde di conferma in tema chiaro scendeva a 3,9:1
+   contro l'inchiostro bianco; pieno sta a 5,3:1 e non dipende da cosa c'e'
+   sotto. */
+.savebtn.saved { background: var(--state-success); color: var(--accent-contrast); }
+.savebtn.err   { background: var(--state-danger); color: #fff; }
+
+/* Dialog */
+.confirmbtn.cancel { background:var(--surface-raise-2); color: var(--label); }
+.confirmbtn.danger { background: var(--state-danger); color: #fff; }
+/* Il salvataggio del timer di recupero non e' un'azione distruttiva: deve vincere sul rosso di .danger nonostante condivida il bottone. */
+.confirmbtn.restsave { background: var(--accent); color: var(--accent-contrast); }
+/* Conferme non distruttive (es. "Continua" per l'import/aggiornamento da PDF): stesso accento di .restsave, mai applicata insieme a .danger. */
+.confirmbtn.confirm { background: var(--accent); color: var(--accent-contrast); }
+
+/* Le due varianti "elimina": fondo rosso tenue, gia' calcolato per tema in
+   --state-danger-soft, invece di un gradiente traslucido steso sulla card. */
+.delete-btn,
+.delete-session-btn {
+  background: var(--state-danger-soft);
+  color: var(--state-danger-text);
+  border-color: var(--state-danger-soft-border);
+}
+
+/* Il toast e' un ion-toast: qui solo l'aspetto, la posizione la dà positionAnchor. */
+ion-toast.apptoast{--background:var(--accent);--color:var(--accent-contrast);--border-radius:var(--r-pill);--box-shadow:var(--shadow-float);--max-width:calc(100vw - 32px);--button-color:var(--accent-contrast);font-weight:600;font-size:var(--text-md);text-align:center;}
+ion-toast.apptoast.error{--background:var(--state-danger);--color:#fff;}
+ion-toast.apptoast::part(container){justify-content:center;}
+/* Conferme: ion-alert con i colori dell'app. */
+ion-alert.confirm-alert{--background:var(--surface-card);--max-width:320px;--backdrop-opacity:.55;--ion-text-color:var(--label);--ion-color-primary:var(--accent);}
+ion-alert.confirm-alert .alert-message{color:var(--label);font-size:var(--text-md);line-height:1.5;}
+ion-alert.confirm-alert .alert-button{font-weight:700;}
+ion-alert.confirm-alert .alert-button-role-cancel{color:var(--label-2);}
+
+/* La spunta dell'informativa. La riga intera e' il bersaglio, etichetta
+   compresa: una casella di 16px da sola sarebbe un quarto dei 44 che l'app
+   tiene ovunque. */
+.authcheck{display:flex;align-items:flex-start;gap:10px;min-height:44px;padding:6px 0;}
+/* La casella e' disegnata qui, non dal browser: l'app azzera l'appearance
+   nativa di tutti i controlli (vedi il reset in cima), quindi una checkbox
+   lasciata a se' non si vede proprio - e anche riaccendendola avrebbe la
+   faccia del sistema, diversa fra iPhone e Android, unica in tutta l'app. */
+/* La spunta e' due segmenti ruotati, non un glifo: cosi' non dipende da quale
+   font ha risolto il sistema. */
+.authcheck a{color:var(--accent);text-decoration:underline;text-underline-offset:3px;}
+
+/* ===== COMPONENTI IONIC DI FORM =====
+   I wrapper dell'app (.measure-input-wrap, .authfield, .combo-select) restano:
+   danno bordo, fondo e fuoco. Dentro, i campi Ionic perdono il loro. */
+ion-spinner{color:var(--label-3);}
+.history-empty ion-spinner{display:block;margin:0 auto;}
+
+.measure-input-wrap ion-input,.measure-input-wrap ion-select{--background:transparent;--color:var(--label);--placeholder-color:var(--label-3);--placeholder-opacity:1;--padding-start:0;--padding-end:0;--padding-top:0;--padding-bottom:0;flex:1;min-width:0;min-height:0;font-family:'IBM Plex Mono',monospace;font-size:var(--text-md);font-weight:600;}
+.authfield ion-input{width:100%;}
+.builder-row2 ion-select{font-family:'Inter',sans-serif;font-size:var(--text-sm);font-weight:400;}
+
+ion-textarea.bacheca-textarea{--background:transparent;--color:var(--label);--placeholder-color:var(--label-3);--placeholder-opacity:1;--padding-start:12px;--padding-end:12px;--padding-top:12px;--padding-bottom:12px;width:100%;min-height:80px;padding:0;background:var(--surface-raise);border:1px solid var(--border-line);border-radius:var(--r-md);font-family:'Inter',sans-serif;font-size:var(--text-md);}
+
+.shop-searchrow ion-input{--padding-start:0;--padding-end:0;--padding-top:12px;--padding-bottom:12px;--background:transparent;--color:var(--label);--placeholder-color:var(--label-3);--placeholder-opacity:1;flex:1;min-width:0;min-height:0;font-family:'Inter',sans-serif;font-size:var(--text-md);}
+.shop-addrow ion-input{--padding-start:14px;--padding-end:14px;--padding-top:12px;--padding-bottom:12px;--background:var(--surface-card);--color:var(--label);--placeholder-color:var(--label-3);--placeholder-opacity:1;flex:1;min-width:0;min-height:0;border-radius:var(--r-lg);border:1px solid var(--border-line);font-family:'Inter',sans-serif;font-size:var(--text-md);}
+
+.combo-select ion-select{width:100%;min-height:44px;--padding-start:13px;--padding-end:13px;--padding-top:0;--padding-bottom:0;--color:var(--label);--placeholder-color:var(--label);border:1px solid var(--border-line);border-radius:var(--r-md);background:var(--surface-raise);font-family:'IBM Plex Mono',monospace;font-size:var(--text-sm);font-weight:600;}
+ion-select.rmpick-sel{width:112px;min-height:40px;--padding-start:10px;--padding-end:10px;--padding-top:8px;--padding-bottom:8px;--color:var(--label);--placeholder-color:var(--label);border:1px solid var(--border-line);border-radius:var(--r-sm);background:var(--surface-card);font-family:'IBM Plex Mono',monospace;font-size:var(--text-sm);font-weight:600;}
+
+/* Casella da spuntare (privacy): ion-checkbox con i colori dell'app. */
+.authcheck ion-checkbox{--size:22px;--border-width:1.5px;--border-radius:var(--r-xs);--border-color:var(--border-line);--border-color-checked:var(--accent);--background:var(--surface-raise);--background-checked:var(--accent);--checkmark-color:var(--accent-contrast);--checkmark-width:2px;min-height:44px;font-size:var(--text-sm);line-height:1.45;color:var(--label-2);}
+.authcheck ion-checkbox::part(label){white-space:normal;}
+
+/* Toggle segmentati (vista elenco/slider, tema, sesso, ...): ion-segment con l'aspetto di prima. */
+ion-segment.seg{--background:var(--surface-raise);flex-shrink:0;width:auto;min-height:0;padding:3px;gap:3px;border:1px solid var(--border-line);border-radius:var(--r-md);}
+ion-segment.seg ion-segment-button{--color:var(--label-3);--color-checked:var(--accent-contrast);--indicator-color:var(--accent);--indicator-box-shadow:none;--border-radius:var(--r-sm);--padding-start:0;--padding-end:0;--padding-top:0;--padding-bottom:0;margin:0;min-width:30px;width:30px;min-height:26px;}
+ion-segment.seg.labelseg ion-segment-button{width:auto;min-width:0;padding:0 14px;min-height:30px;font-family:'IBM Plex Mono',monospace;font-size:var(--text-xs);font-weight:600;}
+/* Accedi / Crea un account */
+ion-segment.authtabs{--background:transparent;min-height:0;}
+ion-segment.authtabs ion-segment-button{flex:1;min-width:0;max-width:none;--color:var(--label-3);--color-checked:var(--label);--indicator-color:var(--surface-raise-2);--indicator-box-shadow:none;--border-radius:var(--r-md);--padding-top:0;--padding-bottom:0;margin:0;min-height:40px;font-family:'Inter',sans-serif;font-size:var(--text-md);font-weight:600;}
+
+/* ===== ACCESSO CON GOOGLE ===== */
+.authdivider{display:flex;align-items:center;gap:12px;margin:22px 0 14px;font-family:'IBM Plex Mono',monospace;font-size:var(--text-xs);letter-spacing:.06em;text-transform:uppercase;color:var(--label-3);}
+.authdivider::before,.authdivider::after{content:"";flex:1;height:1px;background:var(--border-line);}
+.googlebtn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:48px;padding:0 16px;border:1px solid var(--border-line);border-radius:var(--r-lg);background:var(--surface-raise);color:var(--label);font-family:'Inter',sans-serif;font-weight:600;font-size:var(--text-md);cursor:pointer;}
+.googlebtn:active{background:var(--surface-raise-2);}
+.googlebtn:disabled{opacity:.6;cursor:default;}
+.googlebtn .googlelogo{flex-shrink:0;display:block;}
+
+/* Schermata dei dati mancanti: il sesso occupa tutta la riga, come gli altri campi. */
+.authfield ion-segment.obseg{width:100%;}
+.authfield ion-segment.obseg ion-segment-button{flex:1;max-width:none;}

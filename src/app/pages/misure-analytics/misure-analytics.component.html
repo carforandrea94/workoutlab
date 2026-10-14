@@ -1,0 +1,93 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/misure"></ion-back-button>
+    </ion-buttons>
+    <ion-title>
+      <div class="navtitle">Andamento</div>
+      <div class="navsubtitle">Analisi misure</div>
+    </ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <div class="wrap">
+    <div *ngIf="loading" class="history-empty"><ion-spinner name="crescent" aria-label="Caricamento"></ion-spinner></div>
+
+    <div *ngIf="!loading && errorMsg" class="history-empty">
+      {{ errorMsg }}<br>
+      <button class="savebtn mt-3" (click)="load()">Riprova</button>
+    </div>
+
+    <div *ngIf="!loading && !errorMsg && !hasAnyHistory" class="history-empty">
+      Nessuna misurazione salvata.<br>Inserisci le tue misure per vedere qui l'andamento nel tempo.
+    </div>
+
+    <ng-container *ngIf="!loading && !errorMsg && hasAnyHistory">
+
+      <!-- Grafico unico -->
+      <div class="infocard chart-card">
+        <div class="chart-head">
+          <div>
+            <div class="chart-title">{{ selectedField?.label }}</div>
+            <div class="chart-sub" *ngIf="hasEnoughData">
+              {{ firstValue }} → {{ lastValue }} {{ selectedField?.unit }}
+            </div>
+            <div class="chart-sub" *ngIf="!hasEnoughData">Servono almeno 2 misurazioni per il grafico</div>
+          </div>
+          <span *ngIf="delta !== null" [class]="getDeltaClass()">
+            {{ deltaText }} {{ selectedField?.unit }}
+          </span>
+        </div>
+
+        <div class="chart-wrap" *ngIf="hasEnoughData">
+          <div [innerHTML]="chartSvg"></div>
+        </div>
+        <div class="chart-empty" *ngIf="!hasEnoughData">
+          <span *ngIf="lastValue">Ultimo valore: {{ lastValue }} {{ selectedField?.unit }}</span>
+        </div>
+      </div>
+
+      <!-- Lista misure selezionabili -->
+      <p class="sectiontitle">Peso</p>
+      <div class="grouplist measure-selectlist">
+        <div class="daycard press-fx measure-selectrow" *ngFor="let o of group1"
+          [class.selected]="isSelected(o.field)" (click)="selectField(o.field)">
+          <div class="ms-dot" [class.on]="isSelected(o.field)"></div>
+          <div class="info">
+            <div class="lbl">{{ o.field.label }}</div>
+            <div class="meta" *ngIf="o.lastValue">{{ o.lastValue }} {{ o.field.unit }}</div>
+            <div class="meta" *ngIf="!o.lastValue">Nessun dato</div>
+          </div>
+        </div>
+      </div>
+
+      <p class="sectiontitle">Pliche</p>
+      <div class="grouplist measure-selectlist">
+        <div class="daycard press-fx measure-selectrow" *ngFor="let o of group2"
+          [class.selected]="isSelected(o.field)" (click)="selectField(o.field)">
+          <div class="ms-dot" [class.on]="isSelected(o.field)"></div>
+          <div class="info">
+            <div class="lbl">{{ o.field.label }}</div>
+            <div class="meta" *ngIf="o.lastValue">{{ o.lastValue }} {{ o.field.unit }}</div>
+            <div class="meta" *ngIf="!o.lastValue">Nessun dato</div>
+          </div>
+        </div>
+      </div>
+
+      <p class="sectiontitle">Centimetri</p>
+      <div class="grouplist measure-selectlist">
+        <div class="daycard press-fx measure-selectrow" *ngFor="let o of group3"
+          [class.selected]="isSelected(o.field)" (click)="selectField(o.field)">
+          <div class="ms-dot" [class.on]="isSelected(o.field)"></div>
+          <div class="info">
+            <div class="lbl">{{ o.field.label }}</div>
+            <div class="meta" *ngIf="o.lastValue">{{ o.lastValue }} {{ o.field.unit }}</div>
+            <div class="meta" *ngIf="!o.lastValue">Nessun dato</div>
+          </div>
+        </div>
+      </div>
+
+    </ng-container>
+  </div>
+</ion-content>

@@ -1,0 +1,98 @@
+# See https://docs.github.com/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
+
+# Compiled output
+/dist
+/tmp
+/out-tsc
+/bazel-out
+
+# Node
+/node_modules
+npm-debug.log
+yarn-error.log
+
+# Firebase
+firebase-debug.log
+*-debug.log
+.firebase/
+.runtimeconfig.json
+
+# Credenziali: non vanno MAI nel repo. La configurazione web di Firebase in
+# src/environments/ si committa apposta (finisce comunque nel bundle, la
+# proteggono le regole di Firestore): qui si escludono le chiavi vere, cioe'
+# quelle di un service account (admin) e i file .env.
+*-firebase-adminsdk-*.json
+service-account*.json
+serviceAccount*.json
+.env
+.env.*
+!.env.example
+
+# IDEs and editors
+.idea/
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# Visual Studio Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/mcp.json
+.history/*
+
+# Capacitor: ios/ e android/ (create con `npx cap add`) sono codice nativo e si
+# committano. Si escludono solo le build, le dipendenze e la copia del sito web
+# che `npx cap sync` rigenera ogni volta da dist/.
+android/.gradle/
+android/build/
+android/app/build/
+android/captures/
+android/local.properties
+android/.idea/
+android/app/src/main/assets/public/
+android/app/src/main/assets/capacitor.config.json
+android/app/src/main/assets/capacitor.plugins.json
+android/capacitor-cordova-android-plugins/
+ios/App/build/
+ios/App/Pods/
+ios/App/output/
+ios/App/App/public/
+ios/App/App/capacitor.config.json
+ios/App/App/config.xml
+ios/DerivedData/
+ios/capacitor-cordova-ios-plugins/
+xcuserdata/
+*.xcuserstate
+
+# Claude Code: le impostazioni locali sono di chi le ha, .claude/launch.json
+# (come avviare l'app per l'anteprima) invece si condivide.
+.claude/settings.local.json
+
+# Miscellaneous
+/.angular/cache
+.sass-cache/
+/connect.lock
+/coverage
+/libpeerconnection.log
+testem.log
+*.log
+*.tsbuildinfo
+.eslintcache
+.vite/
+/typings
+__screenshots__/
+
+# System files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Superpowers scratch (SDD ledger, brainstorming mockups)
+.superpowers/
+firestore-debug.log

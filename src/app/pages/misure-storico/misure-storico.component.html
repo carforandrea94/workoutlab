@@ -1,0 +1,52 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/misure"></ion-back-button>
+    </ion-buttons>
+    <ion-title>
+      <div class="navtitle">Storico misure</div>
+      <div class="navsubtitle">Misurazioni salvate</div>
+    </ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <div class="wrap">
+    <p class="sectiontitle">Misurazioni salvate</p>
+
+    <div *ngIf="loading" class="history-empty"><ion-spinner name="crescent" aria-label="Caricamento"></ion-spinner></div>
+
+    <div *ngIf="!loading && errorMsg" class="history-empty">
+      {{ errorMsg }}<br>
+      <button class="savebtn mt-3" (click)="load()">Riprova</button>
+    </div>
+
+    <div *ngIf="!loading && !errorMsg && rows.length === 0" class="history-empty">
+      Nessuna misurazione salvata.<br>Inserisci le tue misure nella sezione Misure per vederle qui.
+    </div>
+
+    <div *ngIf="!loading && rows.length > 0" class="grouplist">
+      <div class="daycard press-fx" *ngFor="let r of rows" (click)="goToDetail(r.entry.date)">
+        <div class="badge" style="font-size:var(--text-xs)">{{ r.entry.date.slice(8,10) }}/{{ r.entry.date.slice(5,7) }}</div>
+        <div class="info">
+          <div class="lbl">{{ r.displayDate }}</div>
+          <div class="meta">
+            <ng-container *ngIf="r.entry.peso">{{ r.entry.peso }} kg</ng-container>
+            <ng-container *ngIf="r.pesoDelta !== null">
+              &nbsp;·&nbsp;<span [class]="r.pesoDelta! < 0 ? 'delta down' : (r.pesoDelta! > 0 ? 'delta up' : 'delta')">
+                {{ r.pesoDeltaText }} kg
+              </span>
+            </ng-container>
+            <ng-container *ngIf="!r.entry.peso">Misurazione salvata</ng-container>
+          </div>
+        </div>
+        <button class="delete-btn" (click)="deleteEntry(r.entry.date, $event)" title="Elimina">
+          <lucide-icon name="trash-2" [size]="14"></lucide-icon>
+        </button>
+        <span class="chev">
+          <lucide-icon name="chevron-right" [size]="13"></lucide-icon>
+        </span>
+      </div>
+    </div>
+  </div>
+</ion-content>

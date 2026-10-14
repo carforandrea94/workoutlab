@@ -1,0 +1,47 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/scheda"></ion-back-button>
+    </ion-buttons>
+    <ion-title>
+      <div class="navtitle">Storico</div>
+      <div class="navsubtitle">Sedute salvate</div>
+    </ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <div class="wrap">
+    <div *ngIf="loading" class="history-empty"><ion-spinner name="crescent" aria-label="Caricamento"></ion-spinner></div>
+
+    <div *ngIf="!loading && errorMsg" class="history-empty">
+      {{ errorMsg }}<br>
+      <button class="savebtn mt-3" (click)="loadSessions()">Riprova</button>
+    </div>
+
+    <div *ngIf="!loading && !errorMsg && sessions.length === 0" class="history-empty">
+      Nessuna seduta salvata.<br>Completa il primo allenamento per vedere lo storico qui.
+    </div>
+
+    <ng-container *ngIf="!loading && sessions.length > 0">
+      <ng-container *ngFor="let g of weekGroups">
+        <p class="sectiontitle">{{ g.label }}</p>
+        <div class="grouplist">
+          <div class="daycard press-fx" *ngFor="let s of g.entries" (click)="goToDetail(s.key)">
+            <div class="badge" style="font-size:var(--text-xs)">{{ s.session.dayId.replace('day','G') }}</div>
+            <div class="info">
+              <div class="lbl">{{ s.session.dayLabel }}</div>
+              <div class="meta">
+                {{ s.displayDate }} &nbsp;·&nbsp; {{ s.completedSets }} serie<ng-container *ngIf="s.session.durationSec"> &nbsp;·&nbsp; {{ sessionState.formatDuration(s.session.durationSec) }}</ng-container>
+              </div>
+            </div>
+            <button class="delete-btn" (click)="deleteSession(s.key, $event)" title="Elimina">
+              <lucide-icon name="trash-2" [size]="14"></lucide-icon>
+            </button>
+            <span class="chev">›</span>
+          </div>
+        </div>
+      </ng-container>
+    </ng-container>
+  </div>
+</ion-content>

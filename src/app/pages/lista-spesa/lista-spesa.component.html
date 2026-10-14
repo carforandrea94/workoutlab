@@ -1,0 +1,122 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/dieta"></ion-back-button>
+    </ion-buttons>
+    <ion-title>
+      <div class="navtitle">Lista della spesa</div>
+    </ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <div class="wrap">
+    <div *ngIf="loading" class="history-empty"><ion-spinner name="crescent" aria-label="Caricamento"></ion-spinner></div>
+
+    <div *ngIf="!loading && errorMsg" class="history-empty">
+      {{ errorMsg }}<br>
+      <button class="savebtn mt-3" (click)="load()">Riprova</button>
+    </div>
+
+    <ng-container *ngIf="!loading && !errorMsg">
+      <!-- Quanta spesa manca. La barra sta in mezzo e si stringe da sola: prima
+           qui c'era un tasto con flex:1, ereditato da .confirmbtn, che si prendeva
+           tutta la riga e scorreva sopra il contatore. -->
+      <div class="shop-top" *ngIf="totalCount > 0">
+        <span class="shop-count">{{ checkedCount }} / {{ totalCount }}</span>
+        <span class="shop-bar"><i [style.width.%]="progress"></i></span>
+        <button class="shop-clear" (click)="resetAll()" *ngIf="checkedCount > 0">Svuota</button>
+      </div>
+
+      <!-- Cercare e aggiungere restano due campi distinti: in uno solo, battere
+           "cala" per trovare il Calamaro e premere invio avrebbe aggiunto "cala"
+           alla lista. Qui la ricerca viene prima perche' e' quello che si fa piu'
+           spesso: la lista ha cinquanta voci, e se ne aggiunge una ogni tanto. -->
+      <div class="shop-searchrow" *ngIf="totalCount > 0">
+        <lucide-icon name="search" [size]="16" class="shop-searchic"></lucide-icon>
+        <ion-input type="text" [(ngModel)]="query" placeholder="Cerca nella lista…"
+          aria-label="Cerca un alimento nella lista"></ion-input>
+        <button type="button" class="shop-searchx" *ngIf="filtroAttivo"
+          (click)="pulisciRicerca()" aria-label="Annulla la ricerca">
+          <lucide-icon name="x" [size]="15"></lucide-icon>
+        </button>
+      </div>
+
+      <div class="shop-addrow">
+        <ion-input type="text" [(ngModel)]="newItemName" (keydown.enter)="addCustomItem()" placeholder="Aggiungi alimento…"></ion-input>
+        <button class="shop-addbtn" (click)="addCustomItem()">+</button>
+      </div>
+
+      <!-- Il carrello, in cima e chiuso: quello che e' gia' dentro esce dalla
+           lista, cosi' a meta' spesa si scorre quello che manca e non venti righe
+           barrate. Si riapre per togliere una spunta sbagliata. -->
+      <ng-container *ngIf="checkedCount > 0 && (!filtroAttivo || itemsPresi.length + customPresi.length > 0)">
+        <button type="button" class="shop-cart" [class.open]="carrelloAperto" (click)="toggleCart()"
+          [attr.aria-expanded]="carrelloAperto">
+          <lucide-icon name="chevron-down" [size]="14" class="shop-cart-chev"></lucide-icon>
+          Nel carrello ({{ checkedCount }})
+        </button>
+        <div class="shop-list shop-list-cart" *ngIf="carrelloAperto">
+          <button type="button" class="shop-row ok press-fx" *ngFor="let item of itemsPresi" (click)="toggle(item)">
+            <span class="shop-check on">
+              <lucide-icon name="check" [size]="13" [strokeWidth]="3"></lucide-icon>
+            </span>
+            <span class="shop-name">{{ item.name }}</span>
+          </button>
+          <div class="shop-row ok press-fx" *ngFor="let item of customPresi" (click)="toggleCustom(item)">
+            <span class="shop-check on">
+              <lucide-icon name="check" [size]="13" [strokeWidth]="3"></lucide-icon>
+            </span>
+            <span class="shop-name">{{ item.name }}</span>
+            <button class="delete-btn" (click)="removeCustom(item, $event)" title="Elimina">
+              <lucide-icon name="trash-2" [size]="14"></lucide-icon>
+            </button>
+          </div>
+        </div>
+      </ng-container>
+
+      <div *ngIf="totalCount === 0" class="history-empty">
+        Nessun alimento trovato nei tuoi piani alimentari.<br>
+        Aggiungi alimenti alla dieta per vederli qui, oppure aggiungine uno qui sopra.
+      </div>
+
+      <!-- Cercato, e non c'e'. E' un caso diverso dalla lista vuota, e la via
+           d'uscita e' li': aggiungerlo. -->
+      <div *ngIf="nessunRisultato" class="history-empty">
+        Nessun alimento per «{{ query.trim() }}».<br>
+        <button class="savebtn mt-3" (click)="aggiungiCercato()">Aggiungilo alla lista</button>
+      </div>
+
+      <!-- I reparti. Dentro c'e' solo quello che manca: il preso scende nel
+           carrello, qui sopra. -->
+      <ng-container *ngFor="let g of groups">
+        <div class="shop-group" *ngIf="g.daPrendere.length > 0">
+          <span class="shop-group-tit">{{ g.label }}</span>
+          <span class="shop-group-n">{{ g.presi }} / {{ g.totale }}</span>
+        </div>
+        <div class="shop-list" *ngIf="g.daPrendere.length > 0">
+          <button type="button" class="shop-row press-fx" *ngFor="let item of g.daPrendere" (click)="toggle(item)">
+            <span class="shop-check"></span>
+            <span class="shop-name">{{ item.name }}</span>
+          </button>
+        </div>
+      </ng-container>
+
+      <ng-container *ngIf="customDaPrendere.length > 0">
+        <div class="shop-group">
+          <span class="shop-group-tit">Aggiunti da te</span>
+        </div>
+        <div class="shop-list">
+          <div class="shop-row press-fx" *ngFor="let item of customDaPrendere" (click)="toggleCustom(item)">
+            <span class="shop-check"></span>
+            <span class="shop-name">{{ item.name }}</span>
+            <button class="delete-btn" (click)="removeCustom(item, $event)" title="Elimina">
+              <lucide-icon name="trash-2" [size]="14"></lucide-icon>
+            </button>
+          </div>
+        </div>
+      </ng-container>
+
+    </ng-container>
+  </div>
+</ion-content>

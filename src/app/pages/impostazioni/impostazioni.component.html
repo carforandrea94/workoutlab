@@ -1,0 +1,218 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/account"></ion-back-button>
+    </ion-buttons>
+    <ion-title>
+      <div class="navtitle">Impostazioni</div>
+    </ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <div class="wrap">
+    <p class="sectiontitle mt-0">Aspetto</p>
+    <div class="infocard">
+      <div class="account-row">
+        <span class="account-row-label">Tema</span>
+        <ion-segment class="seg labelseg" [value]="theme.mode()">
+        <ion-segment-button value="dark" (click)="theme.setMode('dark')">Notte</ion-segment-button>
+        <ion-segment-button value="light" (click)="theme.setMode('light')">Giorno</ion-segment-button>
+      </ion-segment>
+      </div>
+    </div>
+
+    <div class="infocard mb-3" *ngIf="showIosNotificationHint">
+      <p class="bacheca-text">
+        📲 Su iPhone le notifiche (es. fine recupero) funzionano solo se l'app è installata sulla schermata Home:
+        da Safari tocca <b>Condividi</b> e poi <b>Aggiungi a Home</b>.
+      </p>
+    </div>
+
+    <!-- Nome, cognome, data di nascita e sesso: sono dell'account. -->
+    <p class="sectiontitle">Dati personali</p>
+    <div class="infocard">
+      <div class="rows">
+        <div class="account-row">
+          <label class="account-row-label" for="nome">Nome</label>
+          <!-- Si salva quando il campo perde il fuoco, come la data: senza un
+               tasto "salva" il riscontro e' che il valore resta li' tornando. -->
+          <ion-input id="nome" class="textrow ion-text-end" type="text" autocomplete="given-name"
+                 [value]="nome" placeholder="Il tuo nome" maxlength="80"
+                 (ionChange)="setNome($event)"></ion-input>
+        </div>
+
+        <div class="account-row">
+          <label class="account-row-label" for="cognome">Cognome</label>
+          <ion-input id="cognome" class="textrow ion-text-end" type="text" autocomplete="family-name"
+                 [value]="cognome" [class.unset]="!cognome" placeholder="Da impostare" maxlength="80"
+                 (ionChange)="setCognome($event)"></ion-input>
+        </div>
+
+        <div class="account-row">
+          <label class="account-row-label" for="nascita">Data di nascita</label>
+          <input id="nascita" class="daterow" type="date" [class.unset]="!birthDate"
+                 [value]="birthDate ?? ''" [max]="maxBirthDate" [min]="minBirthDate"
+                 (change)="setBirthDate($event)" />
+        </div>
+
+        <div class="account-row">
+          <span class="account-row-label" id="sesso-lbl">Sesso</span>
+          <ion-segment class="seg labelseg" [value]="sex ?? ''" aria-labelledby="sesso-lbl">
+        <ion-segment-button value="m" (click)="setSex('m')">Uomo</ion-segment-button>
+        <ion-segment-button value="f" (click)="setSex('f')">Donna</ion-segment-button>
+      </ion-segment>
+        </div>
+      </div>
+    </div>
+
+    <!-- La percentuale del massimale: vale per tutto il programma, e si legge
+         dentro ogni esercizio. E' una preferenza di chi si
+         allena, come la vista o il recupero. -->
+    <p class="sectiontitle">Allenamento</p>
+    <div class="infocard">
+      <div class="rows">
+        <div class="account-row">
+          <span class="account-row-label">Percentuale del massimale</span>
+          <ion-segment class="seg labelseg" [value]="percentualeAttiva ? 'on' : 'off'">
+      <ion-segment-button value="off" (click)="spegniPercentuale()">Spenta</ion-segment-button>
+      <ion-segment-button value="on" (click)="accendiPercentuale()">Attiva</ion-segment-button>
+    </ion-segment>
+        </div>
+
+        <div class="account-row" *ngIf="percentualeAttiva">
+          <span class="account-row-label">Quanto</span>
+          <div class="percentstep">
+            <button class="rest-stepbtn" (click)="cambiaPercentuale(-passoPercentuale)"
+                    aria-label="Abbassa la percentuale">–2,5</button>
+            <span class="percentval">{{ percentualeLabel }}</span>
+            <button class="rest-stepbtn" (click)="cambiaPercentuale(passoPercentuale)"
+                    aria-label="Alza la percentuale">+2,5</button>
+          </div>
+        </div>
+      </div>
+      <p class="settings-hint">
+        Sotto a ogni esercizio comparirà quanto pesa questa percentuale del suo massimale stimato,
+        e quante ripetizioni ne escono. Il peso nel campo non cambia: lì resta quello
+        dell'ultima volta, che è l'unico numero che hai davvero sollevato.
+      </p>
+    </div>
+
+    <!-- L'altezza invece serve alle formule di composizione corporea, che vivono
+         nelle Misure. -->
+    <p class="sectiontitle">Corpo</p>
+    <div class="infocard">
+      <button type="button" class="account-row heightrow" (click)="openHeightModal()">
+        <span class="account-row-label">Altezza</span>
+        <span class="heightrow-right">
+          <span class="account-row-value" [class.unset]="!heightSet">{{ heightLabel }}</span>
+          <lucide-icon name="chevron-right" [size]="13"></lucide-icon>
+        </span>
+      </button>
+      <p class="settings-hint">
+        Si dichiara una volta e resta qui, non fra le rilevazioni: peso e pliche cambiano a
+        ogni controllo, l'altezza no.
+      </p>
+    </div>
+
+    <p class="sectiontitle">Il tuo account</p>
+    <div class="infocard">
+      <div class="account-row">
+        <span class="account-row-label">Email</span>
+        <span class="account-row-value">{{ auth.currentUser()?.email }}</span>
+      </div>
+      <div class="account-row" *ngIf="memberSince">
+        <span class="account-row-label">Membro dal</span>
+        <span class="account-row-value">{{ memberSince }}</span>
+      </div>
+    </div>
+
+    <p class="sectiontitle">Uscita</p>
+    <div class="infocard">
+      <button type="button" class="confirmbtn cancel w-full" (click)="logout()">Esci</button>
+      <p class="settings-hint">
+        Uscire non cancella niente: rientri con la stessa email e ritrovi tutto.
+      </p>
+    </div>
+
+    <p class="sectiontitle">Chiudere l'account</p>
+    <div class="infocard">
+      <p class="settings-hint" style="margin:0 0 12px">
+        Se ne vanno il tuo profilo, le sedute salvate, le uscite di corsa, le misurazioni e i tuoi
+        protocolli.
+        Non si annulla.
+      </p>
+      <button type="button" class="dangerbtn" (click)="openDeleteSheet()">
+        <lucide-icon name="trash-2" [size]="17"></lucide-icon>
+        Elimina account
+      </button>
+    </div>
+
+    <!-- La password si riscrive per due motivi: Firebase rifiuta di chiudere un
+         account la cui sessione e' vecchia, e un'azione che non si annulla merita
+         piu' di un tocco. -->
+    <ion-modal class="sheet-modal" [isOpen]="deleteSheetOpen" [backdropDismiss]="!deleting"
+               (didDismiss)="deleteSheetOpen = false">
+     <ng-template>
+      <div class="bottomsheet">
+        <div class="grabber"></div>
+        <p class="confirmtext sheet-title">Chiudere l'account?</p>
+
+        <p class="sheet-text">
+          Stai per chiudere <b>{{ auth.currentUser()?.email }}</b> e cancellare quello che
+          contiene. Non si torna indietro.
+          <ng-container *ngIf="usaPassword">Scrivi la tua password per confermare.</ng-container>
+          <ng-container *ngIf="!usaPassword">Per confermare, ti chiederemo di accedere di nuovo con Google.</ng-container>
+        </p>
+
+        <div class="authfield" *ngIf="usaPassword">
+          <label for="del-pw">Password</label>
+          <div class="measure-input-wrap">
+            <ion-input id="del-pw" type="password" autocomplete="current-password"
+              [(ngModel)]="deletePassword" name="deletePassword"
+              placeholder="La tua password"
+              aria-describedby="del-err"></ion-input>
+          </div>
+        </div>
+
+        <p class="sheet-err" id="del-err" role="alert" *ngIf="deleteError">{{ deleteError }}</p>
+
+        <div class="confirmbtns">
+          <button class="confirmbtn cancel" (click)="closeDeleteSheet()" [disabled]="deleting">Annulla</button>
+          <button class="dangerbtn" (click)="confirmDelete()" [disabled]="deleting || (usaPassword && !deletePassword)">
+            {{ deleting ? 'Chiudo…' : 'Elimina' }}
+          </button>
+        </div>
+      </div>
+     </ng-template>
+    </ion-modal>
+
+    <!-- Lo apre la sezione Corpo. -->
+    <ion-modal class="sheet-modal" [isOpen]="heightModalOpen" (willPresent)="onHeightPresent()"
+               (didDismiss)="heightModalOpen = false">
+     <ng-template>
+      <div class="bottomsheet">
+        <div class="grabber"></div>
+        <p class="confirmtext sheet-title">Quanto sei alto</p>
+
+        <div class="wheel-wrap">
+          <div class="wheel-band" aria-hidden="true"><span class="unit">cm</span></div>
+          <div class="wheel" #heightWheel (scroll)="onWheelScroll()">
+            <button type="button" class="wheel-item" *ngFor="let cm of options"
+                    [class.on]="cm === pick()"
+                    [attr.aria-current]="cm === pick() ? 'true' : null"
+                    (click)="centreOn(cm)">{{ cm }}</button>
+          </div>
+        </div>
+
+        <div class="confirmbtns">
+          <button class="confirmbtn cancel" (click)="closeHeightModal()">Annulla</button>
+          <button class="confirmbtn confirm" (click)="saveHeightModal()" [disabled]="saving">
+            {{ saving ? 'Salvo…' : 'Salva' }}
+          </button>
+        </div>
+      </div>
+     </ng-template>
+    </ion-modal>
+  </div>
+</ion-content>

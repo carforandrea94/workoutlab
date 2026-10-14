@@ -1,0 +1,470 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button [defaultHref]="isStorico ? '/scheda/storico' : '/scheda'"></ion-back-button>
+    </ion-buttons>
+    <ion-title>
+      <div class="navtitle">{{ titolo }}</div>
+      <div class="navsubtitle">{{ sottotitolo }}</div>
+    </ion-title>
+    <ion-buttons slot="end">
+      <ion-segment class="seg" [value]="state.viewMode()">
+        <ion-segment-button value="list" (click)="state.setViewMode('list')" aria-label="Vista elenco" title="Elenco"><lucide-icon name="list" [size]="16"></lucide-icon></ion-segment-button>
+        <ion-segment-button value="slider" (click)="state.setViewMode('slider')" aria-label="Vista slider" title="Slider"><lucide-icon name="gallery-horizontal" [size]="16"></lucide-icon></ion-segment-button>
+      </ion-segment>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <div class="wrap">
+    <div *ngIf="loading" class="history-empty"><ion-spinner name="crescent" aria-label="Caricamento"></ion-spinner></div>
+
+    <div *ngIf="!loading && errorMsg" class="history-empty">
+      {{ errorMsg }}<br>
+      <button class="savebtn mt-3" (click)="loadAll()">Riprova</button>
+    </div>
+
+    <div *ngIf="!loading && !errorMsg && notFound" class="history-empty">Seduta non trovata.</div>
+
+    <!-- Lo storico: la seduta e' gia' salvata, quindi qui non c'e' niente da
+         avviare e niente da chiudere. Sopra c'e' quando e' stata fatta, con la
+         data che si puo' correggere; sotto ci sono le stesse serie
+         dell'allenamento, con gli stessi comandi. -->
+    <ng-container *ngIf="isStorico && day && !loading && !errorMsg">
+      <div class="daymeta">
+        <span>{{ day.label }}</span>
+        <span class="rec">
+          {{ displayDate }}<ng-container *ngIf="sedutaDurata"> &nbsp;·&nbsp; ⏱ {{ formatDuration(sedutaDurata) }}</ng-container>
+        </span>
+      </div>
+
+      <!-- La data e' l'unica cosa che non si corregge in place: l'id della seduta
+           la porta dentro, quindi cambiarla la sposta. Sta in una riga e non in
+           una card sua, che su una schermata di serie costava novanta pixel per
+           un campo solo. -->
+      <div class="seduta-when">
+        <label for="seduta-data">Data</label>
+        <div class="measure-input-wrap">
+          <input id="seduta-data" type="date" [(ngModel)]="storicoDate" [max]="maxDate"
+            (ngModelChange)="onDateChange()" />
+        </div>
+      </div>
+
+      <p class="autosave" [class.err]="statoSalvataggio === 'errore'">{{ testoSalvataggio }}</p>
+    </ng-container>
+
+    <ng-template #exDetail let-vm="vm">
+      <p class="note" *ngIf="vm.ex.note">{{ vm.ex.note }}</p>
+
+      <!-- Finche' la sessione non parte i campi sono spenti: senza una riga che lo
+           dica, sembrerebbero rotti. -->
+      <p class="setslocked-hint" *ngIf="setsLocked">
+        <lucide-icon name="play" [size]="13"></lucide-icon>
+        Avvia la sessione per registrare ripetizioni e carichi.
+      </p>
+
+      <div class="setlist">
+        <ng-container *ngFor="let row of vm.rows; let j = index">
+
+          <!-- Chiusa: una riga sola. Toccarla la riapre, che e' come si corregge. -->
+          <button type="button" class="setline" *ngIf="vm.activeRow !== j"
+            [class.done]="row.done" [disabled]="setsLocked" (click)="setActive(vm, j)">
+            <span class="setline-n">{{ j + 1 }}</span>
+            <span class="setline-val">{{ rowSummary(row) }}</span>
+            <span class="setline-extra" *ngIf="row.extra">in più</span>
+            <lucide-icon *ngIf="row.done" name="check" [size]="14" class="setline-tick"></lucide-icon>
+          </button>
+
+          <!-- Aperta: l'unica coi comandi grandi. -->
+          <div class="setcard" *ngIf="vm.activeRow === j">
+            <div class="setcard-head">
+              <span class="setcard-title">Serie {{ j + 1 }} di {{ vm.rows.length }}</span>
+              <span class="setcard-hint" *ngIf="isCluster(vm, row)">{{ clusterHint(vm) }}</span>
+              <span class="setcard-hint" *ngIf="!isCluster(vm, row) && row.extra">aggiunta da te</span>
+              <span class="setcard-hint" *ngIf="!isCluster(vm, row) && !row.extra && !row.load && row.loadPlaceholder">suggerito</span>
+            </div>
+
+            <!-- La serie a cluster: i blocchi, e la pausa che li separa.
+                 La pausa e' un MINIMO, quindi il conto scende fino a zero e poi
+                 sale: "tempo scaduto" spingerebbe a ripartire prima di essere
+                 pronti, che e' l'opposto di perche' il coach l'ha scritta. -->
+            <ng-container *ngIf="isCluster(vm, row)">
+              <div class="clusterpause" *ngIf="isPausing(vm, j)" [class.over]="pauseOver(vm)">
+                <span class="clusterpause-val">{{ pauseText(vm) }}</span>
+                <span class="clusterpause-cap">{{ pauseOver(vm) ? 'pausa passata, quando vuoi' : 'pausa dentro la serie' }}</span>
+              </div>
+
+              <div class="blockstrip">
+                <button type="button" class="blockchip" *ngFor="let b of row.blocks; let k = index"
+                  [class.done]="b.done" [class.now]="!b.done && blockIndex(row) === k"
+                  [disabled]="setsLocked || !b.done" (click)="undoBlock(vm, j, k)"
+                  [attr.aria-label]="b.done ? 'Togli la spunta al blocco ' + (k + 1) : null">
+                  <span class="blockchip-top">
+                    <span class="blockchip-v">{{ b.reps || b.ripPlaceholder || '—' }}</span>
+                    <lucide-icon *ngIf="b.done" name="check" [size]="13" class="blockchip-tick"></lucide-icon>
+                  </span>
+                  <span class="blockchip-kg" *ngIf="b.load || b.loadPlaceholder">{{ b.load || b.loadPlaceholder }} kg</span>
+                </button>
+              </div>
+            </ng-container>
+
+            <!-- Ripetizioni e carico, due ruote affiancate - in quest'ordine,
+                 come si dice una serie: dodici per trenta. Si scorre per i cambi
+                 piccoli e si tocca il numero al centro per scriverlo: senza la
+                 scrittura, con un passo da mezzo chilo, arrivare a un carico
+                 lontano sarebbero sessanta tacche. -->
+            <div class="wheelduo">
+              <app-number-wheel *ngIf="!isCluster(vm, row)"
+                [value]="numero(row.reps)" [placeholder]="numero(row.ripPlaceholder)"
+                [min]="1" [max]="100" [step]="1" unit="rip." [disabled]="setsLocked"
+                [label]="'Ripetizioni della serie ' + (j + 1)"
+                (valueChange)="setReps(vm, j, $event)"></app-number-wheel>
+
+              <app-number-wheel *ngIf="isCluster(vm, row) && block(row) as b"
+                [value]="numero(b.reps)" [placeholder]="numero(b.ripPlaceholder)"
+                [min]="1" [max]="100" [step]="1" unit="rip." [disabled]="setsLocked"
+                label="Ripetizioni del blocco in corso"
+                (valueChange)="setBlockReps(vm, j, $event)"></app-number-wheel>
+
+              <app-number-wheel *ngIf="!isCluster(vm, row)"
+                [value]="numero(row.load)" [placeholder]="numero(row.loadPlaceholder)"
+                [min]="0" [max]="1000" [step]="0.5" unit="kg" [disabled]="setsLocked"
+                [label]="'Carico della serie ' + (j + 1) + ', in chili'"
+                (valueChange)="setLoad(vm, j, $event)"></app-number-wheel>
+
+              <!-- In un cluster il carico e' del BLOCCO: di solito e' lo stesso in
+                   tutti, ma al terzo si cala, e la serie deve poterlo dire. -->
+              <app-number-wheel *ngIf="isCluster(vm, row) && block(row) as b"
+                [value]="numero(b.load)" [placeholder]="numero(b.loadPlaceholder)"
+                [min]="0" [max]="1000" [step]="0.5" unit="kg" [disabled]="setsLocked"
+                label="Carico del blocco in corso, in chili"
+                (valueChange)="setBlockLoad(vm, j, $event)"></app-number-wheel>
+            </div>
+
+            <button type="button" class="setdone" *ngIf="!row.done && !isCluster(vm, row)" [disabled]="setsLocked"
+              (click)="confirmSet(vm, j)">Fatta</button>
+
+            <!-- A esaurimento, dopo ogni blocco le scelte sono due e sono pari:
+                 un altro, oppure basta. Stanno affiancate e dello stesso peso,
+                 perche' prima il "chiudo" era un tasto tratteggiato sotto a uno
+                 rosso, e non si capiva che la serie si poteva finire. -->
+            <div class="clusterfork" *ngIf="!row.done && isCluster(vm, row) && canCloseCluster(vm, row)">
+              <button type="button" class="setdone" [disabled]="setsLocked"
+                (click)="doneBlock(vm, j)">Fatto il {{ blockLabel(vm, row).toLowerCase() }}</button>
+              <button type="button" class="setdone calmo" [disabled]="setsLocked"
+                (click)="closeClusterSet(vm, j)"
+                aria-label="Non ne escono altri, chiudi la serie">Chiudo la serie</button>
+            </div>
+
+            <!-- A blocchi contati non c'e' niente da decidere: la serie si chiude
+                 da sola quando sono tutti fatti. -->
+            <button type="button" class="setdone"
+              *ngIf="!row.done && isCluster(vm, row) && !canCloseCluster(vm, row)" [disabled]="setsLocked"
+              (click)="doneBlock(vm, j)">Fatto il {{ blockLabel(vm, row).toLowerCase() }}</button>
+
+            <!-- A esaurimento i blocchi li aggiunge chi si allena, quindi deve
+                 poterne togliere uno: un tocco di troppo su "fatto il blocco"
+                 altrimenti non si disfa. Sta qui in fondo, con le altre cose che
+                 si disfano, non in mezzo alle due scelte. -->
+            <button type="button" class="clusterundo" *ngIf="canRemoveBlock(vm, row)"
+              [disabled]="setsLocked" (click)="removeBlock(vm, j)">
+              Togli l'ultimo blocco
+            </button>
+
+            <button type="button" class="setundo" *ngIf="row.done && !isCluster(vm, row)" [disabled]="setsLocked"
+              (click)="undoSet(vm, j)">Togli la spunta</button>
+            <button type="button" class="setundo" *ngIf="row.done && isCluster(vm, row)" [disabled]="setsLocked"
+              (click)="reopenClusterSet(vm, j)">Riapri questa serie</button>
+
+            <button type="button" class="setremove" *ngIf="canRemove(vm, j)" [disabled]="setsLocked"
+              (click)="removeSet(vm, j)">Togli questa serie</button>
+          </div>
+
+        </ng-container>
+      </div>
+
+      <!-- Una serie in piu' di quelle scritte dal coach: quelle del piano restano
+           dove sono, questa la si toglie quando si vuole. -->
+      <button type="button" class="setadd" *ngIf="canAdd(vm)" [disabled]="setsLocked"
+        (click)="addSet(vm)">
+        <lucide-icon name="plus" [size]="16"></lucide-icon>
+        Aggiungi una serie
+      </button>
+
+      <!-- Insights -->
+      <div class="ex-insights" [class.show]="vm.insightVisible && vm.insight">
+        <ng-container *ngIf="vm.insight">
+          <div *ngIf="vm.insight.lastText" class="lastsession">{{ vm.insight.lastText }}</div>
+
+          <!-- Che peso mettere: si sceglie per quante ripetizioni lo si vuole e il
+               numero cambia. Sotto, in piccolo, da dove viene. -->
+          <div class="rmpick" *ngIf="vm.insight.rmRows">
+            <div class="rmpick-row">
+              <span class="rmpick-selwrap">
+                <ion-select interface="popover" class="rmpick-sel" [(ngModel)]="vm.rmPick"
+                  [ngModelOptions]="{ standalone: true }"
+                  aria-label="Per quante ripetizioni vuoi il carico">
+                  <ion-select-option *ngFor="let r of vm.insight.rmRows" [value]="r.reps">{{ r.reps }} rip.</ion-select-option>
+                </ion-select>
+              </span>
+              <span class="rmpick-out">{{ rmLoad(vm) }} kg</span>
+              <span class="rmpick-pct" *ngIf="rmRow(vm) as r">{{ r.percent }}%</span>
+            </div>
+            <!-- La percentuale scelta per tutto il programma. Non tocca il campo
+                 del peso: li' resta quello che hai sollevato l'ultima volta. -->
+            <p class="rmpick-prog" *ngIf="vm.insight.programLoad as pl">
+              Al {{ pl.percent }}% del massimale: <b>{{ kg(pl.load) }} kg</b> · circa {{ pl.reps }} rip.
+            </p>
+            <p class="rmpick-nota" *ngIf="notaScostamento(vm) as nota">{{ nota }}</p>
+
+            <p class="rmpick-from" *ngIf="vm.insight.oneRmText" [innerHTML]="vm.insight.oneRmText"></p>
+            <p class="rmpick-soft" *ngIf="vm.rmPick > rmSoftOver">
+              Sopra le {{ rmSoftOver }} ripetizioni la stima si allarga: prendilo
+              come indicazione, non come numero.
+            </p>
+          </div>
+          <div class="suggestion-chip" *ngIf="vm.isFirst && vm.warmup" [innerHTML]="vm.warmup"></div>
+        </ng-container>
+      </div>
+    </ng-template>
+
+    <!-- La testata dell'esercizio, una sola volta per due viste: elenco e slider
+         la disegnavano identica ciascuna per conto suo, quindi potevano divergere
+         senza che niente lo segnalasse. -->
+    <ng-template #exHeader let-vm="vm" let-i="i">
+      <!-- Il numero porta anche l'avanzamento: l'anello segue il contorno del
+           badge e si chiude man mano che spunti le serie. Segue la forma del
+           badge invece di essere un cerchio dentro un quadrato smussato. -->
+      <div class="ex-icon ex-num ring" [style.background]="getMuscleInfo(vm.ex.muscle).dim">
+        <svg class="ex-ring" viewBox="0 0 44 44" aria-hidden="true" focusable="false">
+          <path d="M22 1.5 H32 A10.5 10.5 0 0 1 42.5 12 V32 A10.5 10.5 0 0 1 32 42.5 H12 A10.5 10.5 0 0 1 1.5 32 V12 A10.5 10.5 0 0 1 12 1.5 H22" [style.stroke]="getMuscleInfo(vm.ex.muscle).color + '44'"></path>
+          <path class="done" d="M22 1.5 H32 A10.5 10.5 0 0 1 42.5 12 V32 A10.5 10.5 0 0 1 32 42.5 H12 A10.5 10.5 0 0 1 1.5 32 V12 A10.5 10.5 0 0 1 12 1.5 H22" pathLength="100"
+            [attr.stroke-dasharray]="donePct(vm) + ' 100'"></path>
+        </svg>
+        <span>{{ i + 1 }}</span>
+      </div>
+      <div class="ex-info">
+        <div class="ex-name">{{ vm.ex.name }}</div>
+        <div class="ex-tags">
+          <span class="ex-muscle" *ngIf="vm.ex.muscle" [style.background]="getMuscleInfo(vm.ex.muscle).color">
+            {{ vm.ex.muscle }}
+          </span>
+          <!-- Il recupero si mostra e si cambia con lo stesso elemento: prima il
+               valore stava in un chip e il bottone per modificarlo era un tondo
+               dall'altra parte dell'header, e nulla diceva che fossero la stessa
+               cosa. -->
+          <button class="ex-chip rest" *ngIf="!isStorico" (click)="openRestModal(vm, $event)"
+            [attr.aria-label]="'Recupero ' + formatRest(vm.restSeconds) + ', tocca per cambiarlo'">
+            <lucide-icon name="timer" [size]="12"></lucide-icon>{{ formatRest(vm.restSeconds) }}
+          </button>
+          <!-- Solo quando e' WAVE: "FISSO" e' il caso normale e occupava una riga
+               per non distinguere niente. -->
+          <span class="ex-schemebadge" *ngIf="vm.ex.scheme === 'wave'">WAVE</span>
+        </div>
+      </div>
+    </ng-template>
+
+    <ng-template #exCounter let-vm="vm">
+      <span class="ex-counter" [class.complete]="isComplete(vm)">
+        {{ getDoneCount(vm) }}/{{ vm.rows.length }}
+      </span>
+    </ng-template>
+
+    <!-- Chiudere l'allenamento: un posto solo, dove si arriva quando si ha finito
+         - in fondo all'elenco, ultima card dello slider. Prima erano due tondi
+         nella barra in alto, e quello che butta via il lavoro stava accanto a
+         quello che lo salva. -->
+    <ng-template #closingBody>
+      <div class="closing-title">{{ closingTitle }}</div>
+
+      <div class="closing-stats">
+        <div class="closing-stat">
+          <span class="closing-cap">Durata</span>
+          <span class="closing-val">{{ formatDuration(sessionState.elapsedSec()) }}</span>
+        </div>
+        <div class="closing-stat">
+          <span class="closing-cap">Serie</span>
+          <span class="closing-val">{{ doneSets }}<span class="closing-of">/{{ totalSets }}</span></span>
+        </div>
+        <div class="closing-stat">
+          <span class="closing-cap">Volume</span>
+          <span class="closing-val">{{ liveVolumeKg }}<span class="closing-of">kg</span></span>
+        </div>
+      </div>
+
+      <button type="button" class="confirmbtn confirm w-full" [disabled]="!canSaveSession"
+        (click)="saveWorkout()" [attr.aria-label]="saveButtonLabel">
+        {{ state.saveStatus() === 'saving' ? 'Salvo…' : 'Chiudi e salva' }}
+      </button>
+
+      <button type="button" class="closing-discard" [disabled]="!canCancelSession"
+        (click)="cancelSession()">Butta via questa sessione</button>
+    </ng-template>
+
+    <!-- Il resoconto: quando c'e', ha preso il posto dell'allenamento, che e'
+         finito. Non e' una schermata a parte perche' nasce dai dati che questa
+         pagina ha gia' in mano. -->
+    <ng-container *ngIf="summary as s">
+      <div class="wrapup">
+        <div class="wrapup-head">
+          <div class="wrapup-eyebrow">Allenamento salvato</div>
+          <div class="wrapup-title">{{ day.label }}</div>
+          <div class="wrapup-sub">{{ formatDuration(s.durationSec) }} · {{ s.setsDone }} serie su {{ s.setsTotal }}</div>
+        </div>
+
+        <div class="wrapup-grid">
+          <div class="wrapup-tile">
+            <div class="wrapup-cap">Volume</div>
+            <div class="wrapup-val"><span class="n">{{ summaryVolume(s.volumeKg) }}</span><span class="u">kg</span></div>
+            <div class="wrapup-note" *ngIf="s.volumeDeltaKg !== null"
+              [class.up]="s.volumeDeltaKg > 0">{{ summaryDelta(s.volumeDeltaKg) }} sul {{ summaryPrevDate(s.previousDate) }}</div>
+            <div class="wrapup-note" *ngIf="s.volumeDeltaKg === null">prima volta su questo giorno</div>
+          </div>
+          <div class="wrapup-tile">
+            <div class="wrapup-cap">Serie</div>
+            <div class="wrapup-val"><span class="n">{{ s.setsDone }}</span><span class="u">/{{ s.setsTotal }}</span></div>
+            <div class="wrapup-note" *ngIf="s.setsDone === s.setsTotal">nessuna saltata</div>
+            <div class="wrapup-note" *ngIf="s.setsDone !== s.setsTotal">{{ s.setsTotal - s.setsDone }} lasciate indietro</div>
+          </div>
+        </div>
+
+        <div class="wrapup-card" *ngIf="s.records.length">
+          <div class="wrapup-cap">Hai alzato l'asticella</div>
+          <div class="wrapup-rec" *ngFor="let r of s.records">
+            <span class="wrapup-rec-ic"><lucide-icon name="check" [size]="16"></lucide-icon></span>
+            <span class="wrapup-rec-txt">
+              <span class="nm">{{ r.exercise }}</span>
+              <span class="dt">{{ r.now }} — prima {{ r.before }}</span>
+            </span>
+          </div>
+        </div>
+
+        <button type="button" class="confirmbtn cancel w-full" (click)="backToScheda()">Torna alla scheda</button>
+      </div>
+    </ng-container>
+
+    <!-- Sessione: unico posto da cui si comanda, sopra i pallini e nel flusso con
+         le card, non sospesa sopra di loro. Vale per entrambe le viste; lo storico
+         usa un altro componente e non la mostra. -->
+    <div class="session-bar" *ngIf="day && !loading && !summary && !isStorico">
+      <span class="session-bar-dot" [class.live]="isSessionOnThisDay"></span>
+
+      <!-- Se la sessione e' su un altro giorno l'etichetta ci porta: senza card non
+           ci sarebbe piu' modo di raggiungerla. -->
+      <button class="session-bar-label link" *ngIf="otherSessionDayIndex !== null" (click)="goToOtherSession()">
+        Giorno {{ otherSessionDayIndex + 1 }}
+      </button>
+      <span class="session-bar-label" *ngIf="otherSessionDayIndex === null">{{ sessionBarLabel }}</span>
+
+      <span class="session-bar-time"
+        [class.idle]="!isSessionOnThisDay"
+        [class.paused]="sessionState.isPaused()">
+        {{ isSessionOnThisDay ? sessionState.formatDuration(sessionState.elapsedSec()) : '0:00' }}
+      </span>
+
+      <!-- Avvia / metti in pausa / riprendi: un solo tasto, l'icona dice cosa fara'.
+           Salvare e buttare via non stanno piu' qui: erano due tondi identici uno
+           accanto all'altro, e uno dei due distrugge il lavoro. -->
+      <button class="session-bar-btn tap44 tap44-v" [disabled]="hasOtherSession"
+        (click)="onPlayPause()" [attr.aria-label]="playPauseLabel">
+        <lucide-icon *ngIf="!isSessionRunning" name="play" [size]="18" class="filled"></lucide-icon>
+        <lucide-icon *ngIf="isSessionRunning" name="pause" [size]="18" class="filled"></lucide-icon>
+      </button>
+    </div>
+
+    <!-- Vista elenco (accordion) -->
+    <ng-container *ngIf="day && !loading && !errorMsg && !summary && state.viewMode() === 'list'">
+    <div class="exlist">
+      <div class="ex" *ngFor="let vm of exercises; let i = index" [class.open]="vm.open">
+
+        <div class="ex-summary" (click)="toggleEx(vm)">
+          <ng-container *ngTemplateOutlet="exHeader; context: { vm: vm, i: i }"></ng-container>
+          <div class="ex-meta">
+            <ng-container *ngTemplateOutlet="exCounter; context: { vm: vm }"></ng-container>
+            <span class="ex-chevron">
+              <lucide-icon name="chevron-down" [size]="13"></lucide-icon>
+            </span>
+          </div>
+        </div>
+
+        <!-- Fuori da .ex-summary: cosi' la ✕ del timer non fa aprire/chiudere l'accordion. -->
+
+        <div class="content-inner" *ngIf="vm.open">
+          <ng-container *ngTemplateOutlet="exDetail; context: { vm: vm }"></ng-container>
+        </div>
+      </div>
+    </div>
+
+    <div class="closing" *ngIf="isSessionOnThisDay">
+      <ng-container *ngTemplateOutlet="closingBody"></ng-container>
+    </div>
+    </ng-container>
+
+    <!-- Vista slider (card scorrevoli, una per volta) -->
+    <div class="exslider-wrap" *ngIf="day && !loading && !errorMsg && !summary && state.viewMode() === 'slider'">
+      <div class="exslider-dashes" *ngIf="slideCount > 1">
+        <span *ngFor="let vm of exercises; let i = index"
+          class="exslider-dash" [class.active]="i === sliderIndex" [class.done]="isComplete(vm)"
+          (click)="scrollToIndex(i)"></span>
+        <!-- Tondo invece che trattino: quella slide non e' un esercizio. -->
+        <span class="exslider-dash finish" *ngIf="isSessionOnThisDay"
+          [class.active]="sliderIndex === exercises.length"
+          (click)="scrollToIndex(exercises.length)"></span>
+      </div>
+
+      <div class="exslider" #sliderEl (scroll)="onSliderScroll()">
+        <div class="ex exslide" *ngFor="let vm of exercises; let i = index">
+          <div class="ex-summary noclick">
+            <ng-container *ngTemplateOutlet="exHeader; context: { vm: vm, i: i }"></ng-container>
+            <div class="ex-meta">
+              <ng-container *ngTemplateOutlet="exCounter; context: { vm: vm }"></ng-container>
+            </div>
+          </div>
+
+
+          <div class="content-inner">
+            <ng-container *ngTemplateOutlet="exDetail; context: { vm: vm }"></ng-container>
+          </div>
+        </div>
+
+        <!-- L'ultima slide non e' un esercizio: e' la fine. Si arriva scorrendo,
+             com'e' l'ordine in cui si allena, invece di dover uscire dallo slider
+             per trovare il tasto che salva. -->
+        <div class="exslide closing" *ngIf="isSessionOnThisDay">
+          <ng-container *ngTemplateOutlet="closingBody"></ng-container>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- Buttare via la seduta: in fondo, dopo averla vista tutta. -->
+    <div class="savebar" *ngIf="isStorico && day && !loading && !errorMsg">
+      <button class="savebtn delete-session-btn" (click)="deleteSession()">Elimina questa seduta</button>
+    </div>
+
+    <ion-modal class="sheet-modal" *ngIf="day && !isStorico" [isOpen]="restModalOpen"
+               (didDismiss)="restModalOpen = false">
+     <ng-template>
+      <div class="bottomsheet">
+        <div class="grabber"></div>
+        <p class="confirmtext sheet-title">
+          Recupero — {{ restModalVm?.ex?.name }}
+        </p>
+        <div class="rest-stepper">
+          <button class="rest-stepbtn" (click)="adjustRestModalValue(-15)">–15</button>
+          <div class="rest-value">{{ formatRest(restModalValue) }}</div>
+          <button class="rest-stepbtn" (click)="adjustRestModalValue(15)">+15</button>
+        </div>
+        <button class="rest-defaultbtn" (click)="resetRestModalToDefault()">
+          Usa il default del protocollo ({{ formatRest(parseRecSecondsPublic()) }})
+        </button>
+        <div class="confirmbtns">
+          <button class="confirmbtn cancel" (click)="closeRestModal()">Annulla</button>
+          <button class="confirmbtn danger restsave" (click)="saveRestModal()">Salva</button>
+        </div>
+      </div>
+     </ng-template>
+    </ion-modal>
+  </div>
+</ion-content>

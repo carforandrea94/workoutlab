@@ -1,0 +1,659 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/scheda/protocolli"></ion-back-button>
+    </ion-buttons>
+    <ion-title>
+      <div class="navtitle">Protocollo</div>
+    </ion-title>
+    <ion-buttons slot="end">
+      @if (!protocolBuilderState.editingSubform()) {
+      <button class="navicon" (click)="save(false)" [disabled]="protocolBuilderState.saving()" aria-label="Salva bozza" title="Salva bozza">
+        <lucide-icon name="save" [size]="18"></lucide-icon>
+      </button>
+      <button class="navicon" (click)="save(true)" [disabled]="protocolBuilderState.saving()" aria-label="Salva e attiva" title="Salva e attiva">
+        <lucide-icon name="check" [size]="18"></lucide-icon>
+      </button>
+      }
+      <button class="navicon" [routerLink]="['/scheda/protocolli/aggiorna-pdf', protocolId]" routerDirection="forward" aria-label="Aggiorna da PDF" title="Aggiorna da PDF">
+        <lucide-icon name="file-up" [size]="18"></lucide-icon>
+      </button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <div class="wrap">
+    <div *ngIf="loading" class="history-empty"><ion-spinner name="crescent" aria-label="Caricamento"></ion-spinner></div>
+
+    <!-- Senza questo la pagina restava su "Caricamento..." per sempre: nessun
+         messaggio, nessuna uscita, e il protocollo intanto era salvato. -->
+    <div *ngIf="!loading && errorMsg" class="history-empty">
+      {{ errorMsg }}
+      <div class="mt-3">
+        <button class="confirmbtn cancel" (click)="load()">Riprova</button>
+      </div>
+    </div>
+
+    <ng-container *ngIf="!loading && !errorMsg && protocol">
+
+      <ng-container *ngIf="!editingExercise && !editingMeal && !editingDay">
+        <div class="authfield mb-4">
+          <label>Nome protocollo</label>
+          <div class="measure-input-wrap">
+            <ion-input type="text" [(ngModel)]="protocol.name" placeholder="Es. Protocollo Settembre"></ion-input>
+          </div>
+        </div>
+
+        <div class="variant-tabs builder-tabs">
+          <button [class.active]="tab === 'scheda'" (click)="tab = 'scheda'">Scheda</button>
+          <button [class.active]="tab === 'dieta'" (click)="tab = 'dieta'">Dieta</button>
+          <button [class.active]="tab === 'corsa'" (click)="tab = 'corsa'">Corsa</button>
+          <button [class.active]="tab === 'info'" (click)="tab = 'info'">Info</button>
+        </div>
+      </ng-container>
+
+      <!-- ===================== SCHEDA ===================== -->
+      <!-- L'ELENCO DEI GIORNI: la stessa forma che vede il cliente in Scheda.
+           Prima erano tutti aperti uno sotto l'altro, nomi e recuperi e esercizi
+           compresi: su sei giorni si scorrevano decine di schermate per arrivare
+           all'ultimo. -->
+      <ng-container *ngIf="tab === 'scheda' && !editingExercise && !editingDay">
+
+        <p class="sectiontitle">Programma</p>
+        <div class="infocard mb-4">
+          <div class="authfield mb-0">
+            <label for="prog-start">Data inizio programma</label>
+            <div class="measure-input-wrap">
+              <input id="prog-start" type="date" [(ngModel)]="protocol.workout.programStart" />
+            </div>
+          </div>
+        </div>
+
+        <p class="sectiontitle">Giorni di allenamento</p>
+
+        <div *ngIf="protocol.workout.days.length === 0" class="history-empty mb-3">
+          Nessun giorno ancora.<br>Aggiungine uno per iniziare a scrivere la scheda.
+        </div>
+
+        <div class="grouplist" *ngIf="protocol.workout.days.length > 0">
+          <div class="daycard press-fx" *ngFor="let day of protocol.workout.days; let di = index"
+               (click)="openDay(day, di)">
+            <div class="badge">{{ di + 1 }}</div>
+            <div class="info">
+              <div class="lbl">{{ day.label || 'Giorno senza nome' }}</div>
+              <div class="meta">{{ dayCount(day) }} &nbsp;·&nbsp; rec {{ day.rec }}</div>
+            </div>
+            <span class="chev">
+              <lucide-icon name="chevron-right" [size]="13"></lucide-icon>
+            </span>
+          </div>
+        </div>
+
+        <div class="savebar">
+          <button class="savebtn" (click)="addDay()">+ Aggiungi giorno</button>
+        </div>
+      </ng-container>
+
+      <!-- ===================== IL SINGOLO GIORNO ===================== -->
+      <ng-container *ngIf="tab === 'scheda' && !editingExercise && editingDay as ed">
+        <button class="editorback mb-4" (click)="closeDay()">← Giorni</button>
+
+        <div class="authfield">
+          <label for="day-label">Nome giorno</label>
+          <div class="measure-input-wrap">
+            <ion-input id="day-label" type="text" [(ngModel)]="ed.day.label"
+                   placeholder="Es. Petto · Spalle · Tricipiti"></ion-input>
+          </div>
+        </div>
+        <div class="authfield">
+          <label for="day-rec">Recupero (testo mostrato, es. 60-90")</label>
+          <div class="measure-input-wrap">
+            <ion-input id="day-rec" type="text" [(ngModel)]="ed.day.rec" placeholder='60-90"'></ion-input>
+          </div>
+        </div>
+
+        <p class="sectiontitle mt-4">Esercizi</p>
+
+        <!-- Il tasto sta sopra l'elenco, non sotto: in un giorno da sette esercizi
+             bisognava attraversarli tutti per arrivare ad aggiungere l'ottavo. -->
+        <button type="button" class="confirmbtn cancel w-full mb-3" (click)="addExercise(ed.day)">
+          + Aggiungi esercizio
+        </button>
+
+        <div *ngIf="ed.day.ex.length === 0" class="history-empty mb-3">
+          Nessun esercizio ancora.
+        </div>
+
+        <div class="grouplist mb-3" *ngIf="ed.day.ex.length > 0">
+          <div class="daycard press-fx protocol-row" *ngFor="let ex of ed.day.ex; let ei = index"
+               (click)="editExercise(ed.day, ex)">
+            <!-- Il numero di riferimento, come lo vede il cliente: e' con quello
+                 che ci si dice a che esercizio si e' arrivati. -->
+            <div class="badge">{{ ei + 1 }}</div>
+            <div class="info">
+              <div class="lbl">{{ ex.name || 'Esercizio senza nome' }}</div>
+              <div class="meta">{{ ex.muscle }} &nbsp;·&nbsp; {{ exerciseSummary(ex) }}</div>
+            </div>
+            <span class="chev">
+              <lucide-icon name="chevron-right" [size]="13"></lucide-icon>
+            </span>
+          </div>
+        </div>
+
+        <div class="savebar mt-4">
+          <button class="savebtn" [disabled]="saving" (click)="saveDay()">
+            {{ saving ? 'Salvo…' : 'Salva giorno' }}
+          </button>
+        </div>
+
+        <p class="autherror" role="alert" *ngIf="saveMsg">{{ saveMsg }}</p>
+
+        <button class="savebtn delete-session-btn mt-4" (click)="removeDay(ed.index)">Rimuovi giorno</button>
+      </ng-container>
+
+      <!-- ===================== EDITOR ESERCIZIO ===================== -->
+      <ng-container *ngIf="tab === 'scheda' && editingExercise as ee">
+        <button class="editorback mb-4" (click)="cancelExercise()">← Annulla</button>
+
+        <div class="authfield">
+          <label>Nome esercizio</label>
+          <div class="measure-input-wrap">
+            <ion-input type="text" [(ngModel)]="ee.ex.name" placeholder="Es. Panca piana"></ion-input>
+          </div>
+        </div>
+
+        <div class="builder-row2">
+          <div class="authfield">
+            <label>Gruppo muscolare</label>
+            <div class="measure-input-wrap">
+              <ion-select interface="popover" [(ngModel)]="ee.ex.muscle">
+                <ion-select-option *ngFor="let m of muscles" [value]="m">{{ m }}</ion-select-option>
+              </ion-select>
+            </div>
+          </div>
+          <div class="authfield">
+            <label>Schema</label>
+            <div class="measure-input-wrap">
+              <ion-select interface="popover" [(ngModel)]="ee.ex.scheme" (ngModelChange)="onSchemeChange(ee.ex)">
+                <ion-select-option value="wave">Wave (progressione settimanale)</ion-select-option>
+                <ion-select-option value="plain">Fisso (serie/rip. manuali)</ion-select-option>
+              </ion-select>
+            </div>
+          </div>
+        </div>
+
+        <ng-container *ngIf="ee.ex.scheme === 'plain'">
+          <div class="builder-row2">
+            <div class="authfield">
+              <label>N. serie</label>
+              <div class="measure-input-wrap">
+                <ion-input type="number" [ngModel]="ee.ex.sets" (ngModelChange)="ee.ex.sets = $event; onSetsChange(ee.ex)"></ion-input>
+              </div>
+            </div>
+            <div class="authfield">
+              <label>Tipo di serie</label>
+              <div class="measure-input-wrap">
+                <ion-select interface="popover" [ngModel]="serieType(ee.ex)" (ngModelChange)="setSerieType(ee.ex, $event)">
+                  <ion-select-option value="normale">Normale</ion-select-option>
+                  <ion-select-option value="cluster">Cluster (blocchi dentro la serie)</ion-select-option>
+                </ion-select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Il cluster descrive com'e' fatta UNA serie: "4x8+8" sono quattro
+               serie di due blocchi da otto. Il quattro sta gia' in "N. serie". -->
+          <div class="clusterbox" *ngIf="ee.ex.cluster as c">
+            <div class="cluster-head">
+              <span class="cluster-cap">Com'è fatta una serie</span>
+              <span class="cluster-scheme">{{ clusterScheme(ee.ex) }}</span>
+            </div>
+
+            <div class="cluster-blocks">
+              <div class="cluster-block" *ngFor="let b of c.blocks; let i = index">
+                <div class="measure-input-wrap">
+                  <ion-input type="number" inputmode="numeric" [ngModel]="b"
+                    (ngModelChange)="onBlockReps(ee.ex, i, $event)"
+                    [attr.aria-label]="'Ripetizioni del blocco ' + (i + 1)"></ion-input>
+                  <span class="unit">rip</span>
+                </div>
+                <button type="button" class="delete-btn" *ngIf="c.end === 'fixed' && c.blocks.length > 2"
+                  (click)="removeBlock(ee.ex, i)" [attr.aria-label]="'Togli il blocco ' + (i + 1)">✕</button>
+                <span class="cluster-plus" *ngIf="i < c.blocks.length - 1" aria-hidden="true">+</span>
+              </div>
+            </div>
+
+            <button type="button" class="confirmbtn cancel w-full mt-2"
+              *ngIf="c.end === 'fixed' && c.blocks.length < maxBlocks" (click)="addBlock(ee.ex)">
+              + Aggiungi un blocco
+            </button>
+
+            <div class="builder-row2 mt-3">
+              <div class="authfield">
+                <label>Pausa minima</label>
+                <div class="measure-input-wrap">
+                  <ion-input type="number" inputmode="numeric" [ngModel]="c.restSec"
+                    (ngModelChange)="onClusterRest(ee.ex, $event)" [min]="minClusterRest"></ion-input>
+                  <span class="unit">sec</span>
+                </div>
+              </div>
+              <div class="authfield">
+                <label>Fine della serie</label>
+                <div class="measure-input-wrap">
+                  <ion-select interface="popover" [ngModel]="c.end" (ngModelChange)="setClusterEnd(ee.ex, $event)">
+                    <ion-select-option value="fixed">A blocchi finiti</ion-select-option>
+                    <ion-select-option value="open">A esaurimento</ion-select-option>
+                  </ion-select>
+                </div>
+              </div>
+            </div>
+
+            <p class="cluster-note" *ngIf="c.end === 'open'">
+              Un blocco da {{ c.blocks[0] }} con {{ clusterRestLabel(c) }} di pausa, ripetuto finché ne escono:
+              quanti siano lo decide chi si allena.
+            </p>
+            <p class="cluster-note" *ngIf="c.end === 'fixed'">
+              {{ clusterRestLabel(c) }} di pausa dentro la serie, poi il blocco dopo. Il recupero lungo arriva a serie finita.
+            </p>
+          </div>
+
+          <div class="authfield">
+            <label>Testo mostrato (es. 3x12-10-8)</label>
+            <div class="measure-input-wrap">
+              <ion-input type="text" [(ngModel)]="ee.ex.text" [placeholder]="ee.ex.cluster ? clusterScheme(ee.ex) : '3x12-10-8'"></ion-input>
+            </div>
+          </div>
+
+          <div class="authfield" *ngIf="!ee.ex.cluster">
+            <label>Ripetizioni per serie (separate da virgola)</label>
+            <div class="measure-input-wrap">
+              <ion-input type="text" [ngModel]="repsAsString(ee.ex)" (ngModelChange)="setRepsFromString(ee.ex, $event)" placeholder="12, 10, 8"></ion-input>
+            </div>
+          </div>
+        </ng-container>
+
+        <ng-container *ngIf="ee.ex.scheme === 'wave'">
+          <p class="sectiontitle">Progressione settimanale di questo esercizio</p>
+          <div class="infocard mb-4">
+            <div class="weekplan-row" *ngFor="let wp of ee.ex.weekPlan; let i = index">
+              <span class="weekplan-num">S{{ i + 1 }}</span>
+              <div class="measure-input-wrap weekplan-input">
+                <ion-input type="number" [(ngModel)]="wp.sets" placeholder="serie"></ion-input>
+                <span class="unit">serie</span>
+              </div>
+              <div class="measure-input-wrap weekplan-input">
+                <ion-input type="number" [(ngModel)]="wp.reps" placeholder="rip"></ion-input>
+                <span class="unit">rip</span>
+              </div>
+              <button class="delete-btn" (click)="removeExWeek(ee.ex, i)" title="Rimuovi settimana">✕</button>
+            </div>
+            <button class="confirmbtn cancel mt-2 w-full" (click)="addExWeek(ee.ex)">+ Aggiungi settimana</button>
+          </div>
+        </ng-container>
+
+        <div class="authfield">
+          <label>Nota (opzionale)</label>
+          <div class="measure-input-wrap">
+            <ion-input type="text" [(ngModel)]="ee.ex.note" placeholder="Es. ultima serie in strip"></ion-input>
+          </div>
+        </div>
+
+        <div class="savebar builder-savebar">
+          <button class="savebtn cancel" (click)="removeExerciseFromEditor()">Rimuovi</button>
+          <button class="savebtn" (click)="saveExercise()">Salva esercizio</button>
+        </div>
+      </ng-container>
+
+      <!-- ===================== DIETA ===================== -->
+      <ng-container *ngIf="tab === 'dieta'">
+
+        <!-- Lista piani -->
+        <ng-container *ngIf="!editingPlan">
+          <p class="sectiontitle mt-0">Piani alimentari</p>
+
+          <div *ngIf="protocol.diet.length === 0" class="history-empty">
+            Nessun piano ancora.<br>Aggiungine uno (es. "Giorno ON", "Giorno OFF", "Rifeed"...).
+          </div>
+
+          <div class="grouplist" *ngIf="protocol.diet.length > 0">
+            <div class="daycard press-fx protocol-row" *ngFor="let plan of protocol.diet" (click)="openPlan(plan)">
+              <div class="info">
+                <div class="lbl">{{ plan.name }}</div>
+                <div class="meta">{{ countPlanItems(plan) }} alimenti</div>
+              </div>
+              <button class="delete-btn" (click)="removePlan(plan, $event)" title="Elimina">
+                <lucide-icon name="trash-2" [size]="14"></lucide-icon>
+              </button>
+              <span class="chev">
+                <lucide-icon name="chevron-right" [size]="13"></lucide-icon>
+              </span>
+            </div>
+          </div>
+
+          <div class="savebar">
+            <button class="savebtn" (click)="addDietPlan()">+ Aggiungi piano alimentare</button>
+          </div>
+        </ng-container>
+
+        <!-- Editor del piano selezionato -->
+        <ng-container *ngIf="editingPlan && !editingMeal">
+          <button class="editorback mb-4" (click)="closePlan()">← Torna ai piani</button>
+
+          <div class="authfield mb-4">
+            <label>Nome del piano</label>
+            <div class="measure-input-wrap">
+              <ion-input type="text" [(ngModel)]="editingPlan.name" placeholder='Es. "Giorno ON"'></ion-input>
+            </div>
+          </div>
+
+          <p class="sectiontitle mt-0">Pasti</p>
+
+          <div *ngIf="editingPlan.meals.length === 0" class="history-empty">
+            Nessun pasto ancora.
+          </div>
+
+          <div class="infocard meal-preview-card" *ngFor="let meal of editingPlan.meals" (click)="openMeal(meal)">
+            <div class="meal-preview-header">
+              <div class="lbl">{{ meal.name || 'Pasto senza nome' }}</div>
+              <button class="delete-btn" (click)="removeMeal(meal, $event)" title="Elimina pasto">
+                <lucide-icon name="trash-2" [size]="14"></lucide-icon>
+              </button>
+            </div>
+
+            <span class="meal-preview-catlabel mb-2" *ngIf="meal.combinations.length > 1" style="display:block">Combinazioni</span>
+            <div class="variant-tabs" *ngIf="meal.combinations.length > 1" (click)="$event.stopPropagation()">
+              <button *ngFor="let combo of meal.combinations"
+                [class.active]="getActiveCombo(meal).id === combo.id"
+                (click)="setActiveCombo(meal, combo, $event)">
+                {{ combo.label }}
+              </button>
+            </div>
+
+            <div *ngIf="countMealItems(meal) === 0" class="meal-preview-empty">Nessun alimento ancora</div>
+
+            <ng-container *ngFor="let cat of foodCategories">
+              <div class="meal-preview-cat" *ngIf="getActiveCombo(meal)[cat] as it">
+                <span class="meal-preview-catlabel">{{ foodCategoryLabels[cat] }}</span>
+                <div class="meal-preview-item">
+                  <span class="fname">{{ it.name }}</span>
+                  <span class="fqty">{{ it.qty }}</span>
+                </div>
+
+                <ng-container *ngIf="itemAlt(it).length > 0">
+                  <div class="altwrap-header" (click)="toggleItemAltExpanded(getActiveCombo(meal), cat, $event)">
+                    <span>Alternative ({{ itemAlt(it).length }})</span>
+                    <span class="chevron">
+                      <lucide-icon name="chevron-down" [size]="10"></lucide-icon>
+                    </span>
+                  </div>
+                  <div class="altlist" *ngIf="isItemAltExpanded(getActiveCombo(meal), cat)" (click)="$event.stopPropagation()">
+                    <div class="row" *ngFor="let a of itemAlt(it)">
+                      <span>{{ a.name }}</span>
+                      <span>{{ a.qty }}</span>
+                    </div>
+                  </div>
+                </ng-container>
+              </div>
+            </ng-container>
+
+            <!-- Integrazione: come nella vista cliente, e' una lista piatta del pasto e non
+                 dipende dalla combinazione selezionata. Qui in anteprima e' di sola lettura;
+                 si modifica aprendo il pasto nell'editor. -->
+            <div class="meal-preview-cat" *ngIf="meal.supplements?.length">
+              <span class="meal-preview-catlabel integration">Integrazione</span>
+              <div class="meal-preview-item" *ngFor="let s of meal.supplements">
+                <span class="fname">{{ s.name }}</span>
+                <span class="fqty">{{ s.qty }}</span>
+              </div>
+            </div>
+
+            <ng-container *ngIf="totalAlternatives(meal) > 0">
+              <div class="altwrap-header" (click)="toggleAltExpanded(meal, $event)">
+                <span>Alternative ({{ totalAlternatives(meal) }})</span>
+                <span class="chevron">
+                  <lucide-icon name="chevron-down" [size]="10"></lucide-icon>
+                </span>
+              </div>
+              <div class="altlist" *ngIf="isAltExpanded(meal)" (click)="$event.stopPropagation()">
+                <ng-container *ngFor="let cat of foodCategories">
+                  <ng-container *ngIf="altItems(meal, cat).length > 0">
+                    <span class="meal-preview-catlabel" style="display:block;margin:6px 0 2px">{{ foodCategoryLabels[cat] }}</span>
+                    <div class="row" *ngFor="let it of altItems(meal, cat)">
+                      <span>{{ it.name }}</span>
+                      <span>{{ it.qty }}</span>
+                    </div>
+                  </ng-container>
+                </ng-container>
+              </div>
+            </ng-container>
+          </div>
+
+          <div class="savebar">
+            <button class="savebtn" (click)="addMeal()">+ Aggiungi pasto</button>
+          </div>
+        </ng-container>
+
+        <!-- Editor del pasto selezionato -->
+        <ng-container *ngIf="editingPlan && editingMeal as em">
+          <button class="editorback mb-4" (click)="closeMeal()">← Torna ai pasti</button>
+
+          <div class="authfield mb-4">
+            <label>Nome pasto</label>
+            <div class="measure-input-wrap">
+              <ion-input type="text" [(ngModel)]="em.name" placeholder="Es. Colazione"></ion-input>
+            </div>
+          </div>
+
+          <p class="sectiontitle mt-0">Combinazioni</p>
+          <div class="variant-tabs">
+            <button *ngFor="let combo of em.combinations"
+              [class.active]="getActiveCombo(em).id === combo.id"
+              (click)="setActiveCombo(em, combo)">
+              {{ combo.label }}
+            </button>
+            <button (click)="addCombination(em)" title="Aggiungi combinazione alternativa">+ Alternativa</button>
+          </div>
+
+          <ng-container *ngIf="em.combinations.length > 1">
+            <div class="authfield">
+              <label>Nome combinazione</label>
+              <div class="measure-input-wrap" style="display:flex;gap:8px">
+                <ion-input type="text" [ngModel]="getActiveCombo(em).label" (ngModelChange)="getActiveCombo(em).label = $event" placeholder="Es. Alternativa 1" style="flex:1"></ion-input>
+              </div>
+            </div>
+            <button class="confirmbtn cancel w-full mb-4" (click)="removeCombination(em, getActiveCombo(em), $event)">
+              Rimuovi questa combinazione
+            </button>
+          </ng-container>
+
+          <!-- Un gruppo solo per tutti i posti dove un alimento puo' stare: le tre
+               caselle della combinazione, le alternative del pasto, quelle del
+               singolo alimento. Sono lo stesso alimento in tre posti diversi, e
+               spostarlo fra loro e' il mestiere di questa schermata. Gli
+               integratori restano fuori: non sono alimenti. -->
+          <ng-container cdkDropListGroup>
+          <ng-container *ngFor="let cat of foodCategories">
+            <p class="sectiontitle mt-4">{{ foodCategoryLabels[cat] }}</p>
+            <div class="infocard">
+              <!-- La casella accetta anche da vuota: e' li' che si lascia
+                   l'alimento che arriva da un altro macro o da una lista di
+                   alternative. -->
+              <div class="slotdrop" cdkDropList [cdkDropListData]="zonaCasella(cat)"
+                (cdkDropListDropped)="spostaAlimento(getActiveCombo(em), $event)">
+                <div class="builder-item" *ngIf="getActiveCombo(em)[cat] as item; else noComboItem"
+                  cdkDrag>
+                  <button type="button" class="draghandle" cdkDragHandle
+                    aria-label="Trascina per spostare in un altro macro">
+                    <lucide-icon name="grip-vertical" [size]="16"></lucide-icon>
+                  </button>
+                  <div class="measure-input-wrap">
+                    <ion-input type="text" [(ngModel)]="item.name" placeholder="Alimento"></ion-input>
+                  </div>
+                  <div class="measure-input-wrap builder-qty">
+                    <ion-input type="text" [(ngModel)]="item.qty" placeholder="Quantita'"></ion-input>
+                  </div>
+                  <button class="delete-btn" (click)="clearComboItem(getActiveCombo(em), cat, $event)">✕</button>
+                  <div class="dragghost" *cdkDragPlaceholder></div>
+                </div>
+              </div>
+
+              <ng-container *ngIf="getActiveCombo(em)[cat] as item2">
+                <div class="altwrap-header mt-3" (click)="toggleItemAltExpanded(getActiveCombo(em), cat)">
+                  <span>Alternative per questo alimento ({{ itemAlt(item2).length }})</span>
+                  <span class="chevron">
+                    <lucide-icon name="chevron-down" [size]="10"></lucide-icon>
+                  </span>
+                </div>
+                <ng-container *ngIf="isItemAltExpanded(getActiveCombo(em), cat)">
+                  <div class="draglist" cdkDropList [cdkDropListData]="zonaLista(itemAlt(item2))"
+                    (cdkDropListDropped)="spostaAlimento(getActiveCombo(em), $event)">
+                    <div class="builder-item mt-2" *ngFor="let a of itemAlt(item2)"
+                      cdkDrag>
+                    <button type="button" class="draghandle" cdkDragHandle
+                      aria-label="Trascina per spostare">
+                      <lucide-icon name="grip-vertical" [size]="16"></lucide-icon>
+                    </button>
+                      <div class="measure-input-wrap">
+                        <ion-input type="text" [(ngModel)]="a.name" placeholder="Alimento alternativo"></ion-input>
+                      </div>
+                      <div class="measure-input-wrap builder-qty">
+                        <ion-input type="text" [(ngModel)]="a.qty" placeholder="Quantita'"></ion-input>
+                      </div>
+                      <button class="delete-btn" (click)="removeItemAltEntry(item2, a)">✕</button>
+                      <div class="dragghost" *cdkDragPlaceholder></div>
+                    </div>
+                  </div>
+                  <button class="confirmbtn cancel w-full mt-2" (click)="addItemAltEntry(item2)">+ Alternativa</button>
+                </ng-container>
+              </ng-container>
+
+              <ng-template #noComboItem>
+                <div class="builder-item">
+                  <div class="measure-input-wrap">
+                    <ion-input type="text" [ngModel]="getComboItem(getActiveCombo(em), cat).name" (ngModelChange)="getComboItem(getActiveCombo(em), cat).name = $event" placeholder="Alimento"></ion-input>
+                  </div>
+                  <div class="measure-input-wrap builder-qty">
+                    <ion-input type="text" [ngModel]="getComboItem(getActiveCombo(em), cat).qty" (ngModelChange)="getComboItem(getActiveCombo(em), cat).qty = $event" placeholder="Quantita'"></ion-input>
+                  </div>
+                </div>
+              </ng-template>
+            </div>
+          </ng-container>
+
+          <p class="sectiontitle mt-5">Alternative</p>
+          <p class="bacheca-text mb-3">Alimenti sostitutivi validi per tutto il pasto, a prescindere dalla combinazione scelta.</p>
+
+          <div class="infocard mb-3">
+            <div class="altwrap-header" (click)="toggleAltExpanded(em)" style="padding:0 0 8px">
+              <span>Alternative ({{ totalAlternatives(em) }})</span>
+              <span class="chevron">
+                <lucide-icon name="chevron-down" [size]="12"></lucide-icon>
+              </span>
+            </div>
+            <!-- I tre macro stanno in un gruppo solo: dentro ognuno si riordina,
+                 e fra l'uno e l'altro si sposta. Un alimento finito sotto il
+                 macro sbagliato prima si poteva solo cancellare e riscrivere. -->
+            <ng-container *ngIf="isAltExpanded(em)">
+              <ng-container *ngFor="let cat of foodCategories">
+                <p class="meal-preview-catlabel" style="margin:14px 0 6px">{{ foodCategoryLabels[cat] }}</p>
+                <div class="draglist" cdkDropList [cdkDropListData]="zonaLista(altItems(em, cat))"
+                  (cdkDropListDropped)="spostaAlimento(getActiveCombo(em), $event)">
+                  <div class="builder-item" *ngFor="let item of altItems(em, cat)"
+                    cdkDrag>
+                    <button type="button" class="draghandle" cdkDragHandle
+                      aria-label="Trascina per spostare">
+                      <lucide-icon name="grip-vertical" [size]="16"></lucide-icon>
+                    </button>
+                    <div class="measure-input-wrap">
+                      <ion-input type="text" [(ngModel)]="item.name" placeholder="Alimento"></ion-input>
+                    </div>
+                    <div class="measure-input-wrap builder-qty">
+                      <ion-input type="text" [(ngModel)]="item.qty" placeholder="Quantita'"></ion-input>
+                    </div>
+                    <button class="delete-btn" (click)="removeAltItem(em, cat, item)">✕</button>
+                    <!-- Il posto dove la riga andrebbe a finire: la riga vera lo
+                         segue sotto il dito, e qui resta il suo ingombro. -->
+                    <div class="dragghost" *cdkDragPlaceholder></div>
+                  </div>
+                </div>
+                <button class="confirmbtn cancel w-full mt-2" (click)="addAltItem(em, cat)">+ Aggiungi {{ foodCategoryLabels[cat].toLowerCase() }}</button>
+              </ng-container>
+            </ng-container>
+          </div>
+          </ng-container>
+
+          <p class="sectiontitle mt-5">Integrazione</p>
+          <div class="infocard mb-3">
+            <div class="draglist" cdkDropList [cdkDropListData]="em.supplements ?? []"
+              (cdkDropListDropped)="riordina(em.supplements ?? [], $event)">
+              <div class="builder-item" *ngFor="let s of em.supplements ?? []"
+                cdkDrag>
+                <button type="button" class="draghandle" cdkDragHandle
+                  aria-label="Trascina per spostare">
+                  <lucide-icon name="grip-vertical" [size]="16"></lucide-icon>
+                </button>
+                <div class="measure-input-wrap">
+                  <ion-input type="text" [(ngModel)]="s.name" placeholder="Nome (es. Creatina)"></ion-input>
+                </div>
+                <div class="measure-input-wrap builder-qty">
+                  <ion-input type="text" [(ngModel)]="s.qty" placeholder="Dose (es. 5 g)"></ion-input>
+                </div>
+                <button class="delete-btn" (click)="removeSupplement(em, s)">✕</button>
+                <div class="dragghost" *cdkDragPlaceholder></div>
+              </div>
+            </div>
+            <button class="confirmbtn cancel w-full mt-2" (click)="addSupplement(em)">+ Aggiungi integratore</button>
+          </div>
+
+          <div class="savebar builder-savebar">
+            <button class="savebtn cancel" (click)="removeMealFromEditor()">Rimuovi pasto</button>
+            <button class="savebtn" (click)="closeMeal()">Fatto</button>
+          </div>
+        </ng-container>
+
+      </ng-container>
+
+      <!-- ===================== CORSA ===================== -->
+      <ng-container *ngIf="tab === 'corsa'">
+        <p class="sectiontitle">Obiettivo settimanale</p>
+        <div class="infocard mb-4">
+          <div class="measure-grid cols-2">
+            <div class="measure-field">
+              <label>Minuti a settimana</label>
+              <div class="measure-input-wrap">
+                <ion-input type="number" inputmode="numeric" min="0" step="5" [(ngModel)]="runGoal.weeklyMinutes" placeholder="0"></ion-input>
+                <span class="unit">min</span>
+              </div>
+            </div>
+            <div class="measure-field">
+              <label>Uscite a settimana</label>
+              <div class="measure-input-wrap">
+                <ion-input type="number" inputmode="numeric" min="0" step="1" [(ngModel)]="runGoal.weeklyRuns" placeholder="0"></ion-input>
+              </div>
+            </div>
+          </div>
+          <p class="mt-3">Lascia a 0 quello che non vuoi assegnare: nella sezione Corsa compaiono solo gli obiettivi impostati. Con entrambi a 0 la sezione Corsa resta un semplice registro delle uscite.</p>
+        </div>
+
+        <p class="sectiontitle">Indicazioni</p>
+        <div class="infocard">
+          <ion-textarea class="bacheca-textarea" [rows]="5" [autoGrow]="true" [(ngModel)]="runGoal.note"
+            placeholder="Es. una lunga lenta la domenica, ripetute il martedi'…"></ion-textarea>
+        </div>
+      </ng-container>
+
+      <!-- ===================== INFO ===================== -->
+      <ng-container *ngIf="tab === 'info'">
+        <p class="sectiontitle">Note del programma</p>
+        <div class="infocard">
+          <ion-textarea class="bacheca-textarea" [rows]="8" [autoGrow]="true" [(ngModel)]="protocol.infoNote"
+            placeholder="Indicazioni generali, note sul programma, avvertenze…"></ion-textarea>
+        </div>
+      </ng-container>
+
+      <p class="autherror" *ngIf="saveMsg && !editingExercise && !editingMeal">{{ saveMsg }}</p>
+
+    </ng-container>
+  </div>
+</ion-content>

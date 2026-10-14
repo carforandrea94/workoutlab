@@ -1,0 +1,63 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-title>
+      <div class="navtitle">{{ titolo }}</div>
+      <div class="navsubtitle">{{ sottotitolo }}</div>
+    </ion-title>
+    <ion-buttons slot="end">
+      <button class="navicon" routerLink="/scheda/protocolli" routerDirection="forward" aria-label="Protocolli" title="Protocolli">
+        <lucide-icon name="file-text" [size]="18"></lucide-icon>
+      </button>
+      <button class="navicon" routerLink="/scheda/storico" routerDirection="forward" aria-label="Storico" title="Storico">
+        <lucide-icon name="history" [size]="18"></lucide-icon>
+      </button>
+      <button class="navicon" routerLink="/scheda/info" routerDirection="forward" aria-label="Info" title="Info">
+        <lucide-icon name="info" [size]="18"></lucide-icon>
+      </button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <div class="wrap">
+    <ng-container *ngIf="days.length > 0">
+      <div class="weekpicker">
+        <div class="wk-info">
+          <div class="wk-label">Settimana {{ currentWeek }} di {{ weekPlan.length }} &nbsp;·&nbsp; {{ getWaveInfo() }}</div>
+          <div class="wk-sub">{{ todayWeekday }} &nbsp;·&nbsp; WAVE LOADING — S{{ currentWeek }}</div>
+          <div class="weekdots">
+            <span *ngFor="let w of weeks" [class.completed]="w < currentWeek" [class.active]="w === currentWeek"></span>
+          </div>
+        </div>
+      </div>
+
+      <p class="sectiontitle">Allenamenti</p>
+
+      <div class="grouplist">
+        <div class="daycard press-fx" *ngFor="let day of days; let i = index" (click)="goToDay(i)">
+          <div class="badge">{{ i + 1 }}</div>
+          <div class="info">
+            <div class="lbl">{{ day.label }}</div>
+            <div class="meta">{{ getExCount(i) }} esercizi &nbsp;·&nbsp; rec {{ day.rec }}
+              <span *ngIf="hasDraft(day.id)" style="color:var(--accent);margin-left:6px">● bozza</span>
+            </div>
+          </div>
+          <span class="daycheck" *ngIf="isDoneThisWeek(day.id)"
+            title="Allenamento gia' fatto questa settimana"
+            aria-label="Allenamento gia' fatto questa settimana">
+            <lucide-icon name="check" [size]="14"></lucide-icon>
+          </span>
+          <span class="chev">›</span>
+        </div>
+      </div>
+    </ng-container>
+
+    <div *ngIf="days.length === 0" class="history-empty">
+      Non hai ancora un protocollo attivo.<br>
+      Creane uno per avere la tua scheda di allenamento.
+      <div class="mt-3">
+        <button class="savebtn" routerLink="/scheda/protocolli" routerDirection="forward">Vai ai protocolli</button>
+      </div>
+    </div>
+  </div>
+</ion-content>

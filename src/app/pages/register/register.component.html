@@ -1,0 +1,121 @@
+<ion-content>
+  <div class="authscreen">
+    <div class="authcard infocard">
+      <ng-container *ngIf="!completa">
+        <div class="authtitle">Crea il tuo account</div>
+        <div class="authsub">Bastano nome, email e password</div>
+      </ng-container>
+
+      <!-- Chi arriva qui dall'accesso non sta iniziando: sta finendo. Dirgli
+           "crea il tuo account" lo manderebbe a cercare un account che ha gia'. -->
+      <ng-container *ngIf="completa && completaGoogle">
+        <div class="authtitle">Quasi fatto</div>
+        <div class="authsub">
+          Controlla il nome e accetta l'informativa per entrare con Google.
+        </div>
+        <p class="authinfo" *ngIf="emailInSospeso">Stai entrando come <b>{{ emailInSospeso }}</b></p>
+      </ng-container>
+
+      <ng-container *ngIf="completa && !completaGoogle">
+        <div class="authtitle">Manca un passaggio</div>
+        <div class="authsub">
+          Il tuo account esiste gia', ma l'iscrizione non si era conclusa.
+          Finiscila qui: non devi rifare nulla.
+        </div>
+        <p class="authinfo" *ngIf="emailInSospeso">Stai entrando come <b>{{ emailInSospeso }}</b></p>
+      </ng-container>
+
+      <form #f="ngForm" (ngSubmit)="submit(f)" novalidate>
+
+        <div class="authfield">
+          <label for="reg-nome">Nome</label>
+          <div class="measure-input-wrap">
+            <ion-input id="reg-nome" type="text" autocomplete="name" name="displayName"
+              [(ngModel)]="displayName" #nameCtrl="ngModel"
+              required minlength="2" placeholder="Il tuo nome"
+              [attr.aria-invalid]="nameCtrl.invalid && (nameCtrl.touched || f.submitted) ? 'true' : null"
+              aria-describedby="reg-nome-err"></ion-input>
+          </div>
+          <p class="fielderr" id="reg-nome-err" *ngIf="nameCtrl.invalid && (nameCtrl.touched || f.submitted)">
+            <span *ngIf="nameCtrl.errors?.['required']">Il nome e' obbligatorio.</span>
+            <span *ngIf="nameCtrl.errors?.['minlength']">Il nome deve avere almeno 2 caratteri.</span>
+          </p>
+        </div>
+
+        <div class="authfield" *ngIf="!completa">
+          <label for="reg-email">Email</label>
+          <div class="measure-input-wrap">
+            <!-- Senza autocapitalize la tastiera del telefono mette la maiuscola
+                 alla prima lettera, e l'indirizzo non e' piu' quello. -->
+            <ion-input id="reg-email" type="email" inputmode="email" autocomplete="email"
+              autocapitalize="none" autocorrect="off" [spellcheck]="false" name="email"
+              [(ngModel)]="email" #emailCtrl="ngModel"
+              required email placeholder="nome@esempio.com"
+              [attr.aria-invalid]="emailCtrl.invalid && (emailCtrl.touched || f.submitted) ? 'true' : null"
+              aria-describedby="reg-email-err"></ion-input>
+          </div>
+          <p class="fielderr" id="reg-email-err" *ngIf="emailCtrl.invalid && (emailCtrl.touched || f.submitted)">
+            <span *ngIf="emailCtrl.errors?.['required']">L'email e' obbligatoria.</span>
+            <span *ngIf="emailCtrl.errors?.['email']">Email non valida.</span>
+          </p>
+        </div>
+
+        <div class="authfield" *ngIf="!completa">
+          <label for="reg-password">Password</label>
+          <div class="measure-input-wrap">
+            <!-- Qui la password si sceglie, non si ricorda: scritta al buio, un
+                 refuso chiude fuori al primo accesso e l'unica uscita e' l'email
+                 di reimpostazione. -->
+            <ion-input id="reg-password" [type]="showPassword ? 'text' : 'password'"
+              autocomplete="new-password" name="password"
+              [(ngModel)]="password" #passCtrl="ngModel"
+              required minlength="6" placeholder="Almeno 6 caratteri"
+              [attr.aria-invalid]="passCtrl.invalid && (passCtrl.touched || f.submitted) ? 'true' : null"
+              aria-describedby="reg-password-err"></ion-input>
+            <button type="button" class="pwtoggle" (click)="togglePassword()"
+              [attr.aria-pressed]="showPassword"
+              [attr.aria-label]="showPassword ? 'Nascondi la password' : 'Mostra la password'">
+              <lucide-icon [name]="showPassword ? 'eye-off' : 'eye'" [size]="18"></lucide-icon>
+            </button>
+          </div>
+          <p class="fielderr" id="reg-password-err" *ngIf="passCtrl.invalid && (passCtrl.touched || f.submitted)">
+            <span *ngIf="passCtrl.errors?.['required']">La password e' obbligatoria.</span>
+            <span *ngIf="passCtrl.errors?.['minlength']">Almeno 6 caratteri.</span>
+          </p>
+        </div>
+
+        <!-- L'accettazione non e' una formalita': senza, non c'e' base per
+             trattare peso, pliche, eta' e sesso. Va chiesta prima, non dopo. -->
+        <div class="authcheck">
+          <ion-checkbox id="reg-privacy" labelPlacement="end" justify="start" alignment="start" name="privacyOk"
+            [(ngModel)]="privacyOk" #privacyCtrl="ngModel" requiredTrue
+            [attr.aria-invalid]="privacyCtrl.invalid && (privacyCtrl.touched || f.submitted) ? 'true' : null"
+            aria-describedby="reg-privacy-err">
+            Ho letto e accetto
+            <!-- In una scheda nuova: tornare indietro da qui svuoterebbe il
+                 modulo appena compilato. -->
+            <a (click)="$event.stopPropagation()" routerLink="/privacy" target="_blank" rel="noopener">l'informativa sulla privacy</a>.
+          </ion-checkbox>
+        </div>
+        <p class="fielderr" id="reg-privacy-err" *ngIf="privacyCtrl.invalid && (privacyCtrl.touched || f.submitted)">
+          Per iscriverti devi accettare l'informativa.
+        </p>
+
+        <!-- role="alert" perche' un errore che compare va anche DETTO: senza,
+             chi usa un lettore di schermo preme il tasto e non succede niente. -->
+        <p class="autherror" role="alert" *ngIf="errorMsg">{{ errorMsg }}</p>
+
+        <button class="savebtn" type="submit" [disabled]="loading">
+          <ng-container *ngIf="!completa">{{ loading ? 'Creazione account…' : 'Crea account' }}</ng-container>
+          <ng-container *ngIf="completa">{{ loading ? 'Un attimo…' : 'Completa l\'iscrizione' }}</ng-container>
+        </button>
+      </form>
+
+      <a class="authlink" *ngIf="!completa" routerLink="/login" routerDirection="root">Hai gia' un account? Accedi</a>
+
+      <ng-container *ngIf="completa">
+        <button type="button" class="authlink quiet" (click)="annulla()">Annulla ed esci</button>
+      </ng-container>
+    </div>
+  </div>
+</ion-content>

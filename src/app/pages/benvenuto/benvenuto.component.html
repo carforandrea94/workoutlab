@@ -1,0 +1,73 @@
+<ion-content>
+  <div class="authscreen">
+    <div class="authcard infocard">
+      <div class="authtitle">Completa il tuo profilo</div>
+      <div class="authsub">
+        Servono per calcolare massa grassa e altri indici dalle tue misure: li inserisci una volta sola.
+      </div>
+
+      <form (ngSubmit)="salva()" novalidate>
+
+        <div class="authfield">
+          <label for="ob-nome">Nome</label>
+          <div class="measure-input-wrap">
+            <ion-input id="ob-nome" type="text" autocomplete="given-name" name="nome"
+              [(ngModel)]="nome" (ionInput)="rivaluta()" maxlength="80" placeholder="Il tuo nome"
+              [attr.aria-invalid]="errori.nome ? 'true' : null" aria-describedby="ob-nome-err"></ion-input>
+          </div>
+          <p class="fielderr" id="ob-nome-err" *ngIf="errori.nome">{{ errori.nome }}</p>
+        </div>
+
+        <div class="authfield">
+          <label for="ob-cognome">Cognome</label>
+          <div class="measure-input-wrap">
+            <ion-input id="ob-cognome" type="text" autocomplete="family-name" name="cognome"
+              [(ngModel)]="cognome" (ionInput)="rivaluta()" maxlength="80" placeholder="Il tuo cognome"
+              [attr.aria-invalid]="errori.cognome ? 'true' : null" aria-describedby="ob-cognome-err"></ion-input>
+          </div>
+          <p class="fielderr" id="ob-cognome-err" *ngIf="errori.cognome">{{ errori.cognome }}</p>
+        </div>
+
+        <div class="authfield">
+          <label for="ob-nascita">Data di nascita</label>
+          <div class="measure-input-wrap">
+            <input id="ob-nascita" type="date" name="birthDate" [(ngModel)]="birthDate"
+              (ngModelChange)="rivaluta()" [min]="nascitaMin" [max]="oggi"
+              [attr.aria-invalid]="errori.birthDate ? 'true' : null" aria-describedby="ob-nascita-err" />
+          </div>
+          <p class="fielderr" id="ob-nascita-err" *ngIf="errori.birthDate">{{ errori.birthDate }}</p>
+        </div>
+
+        <div class="authfield">
+          <label id="ob-sesso-lbl">Sesso</label>
+          <!-- Sesso biologico: e' l'ingresso delle formule di composizione corporea, che hanno un coefficiente per l'uno e uno per l'altro. -->
+          <ion-segment class="seg labelseg obseg" [value]="sex ?? ''" aria-labelledby="ob-sesso-lbl">
+            <ion-segment-button value="m" (click)="setSex('m')">Uomo</ion-segment-button>
+            <ion-segment-button value="f" (click)="setSex('f')">Donna</ion-segment-button>
+          </ion-segment>
+          <p class="fielderr" *ngIf="errori.sex">{{ errori.sex }}</p>
+        </div>
+
+        <div class="authfield">
+          <label for="ob-altezza">Altezza</label>
+          <div class="measure-input-wrap">
+            <ion-input id="ob-altezza" type="number" inputmode="numeric" name="heightCm"
+              [(ngModel)]="heightCm" (ionInput)="rivaluta()" [min]="altezzaMin" [max]="altezzaMax"
+              placeholder="170"
+              [attr.aria-invalid]="errori.heightCm ? 'true' : null" aria-describedby="ob-altezza-err"></ion-input>
+            <span class="unit">cm</span>
+          </div>
+          <p class="fielderr" id="ob-altezza-err" *ngIf="errori.heightCm">{{ errori.heightCm }}</p>
+        </div>
+
+        <p class="autherror" role="alert" *ngIf="errorMsg">{{ errorMsg }}</p>
+
+        <button class="savebtn" type="submit" [disabled]="saving">
+          {{ saving ? 'Salvo…' : 'Salva e continua' }}
+        </button>
+      </form>
+
+      <button type="button" class="authlink quiet" (click)="piuTardi()" [disabled]="saving">Più tardi</button>
+    </div>
+  </div>
+</ion-content>

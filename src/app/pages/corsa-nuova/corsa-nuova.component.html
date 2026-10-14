@@ -1,0 +1,74 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/corsa"></ion-back-button>
+    </ion-buttons>
+    <ion-title>
+      <div class="navtitle">Corsa</div>
+      <div class="navsubtitle">Registra un'uscita</div>
+    </ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <div class="wrap">
+    <p class="sectiontitle">{{ title }}</p>
+
+    <div class="infocard measure-card">
+      <div class="measure-field">
+        <label>Data</label>
+        <div class="measure-input-wrap">
+          <input type="date" [(ngModel)]="date" [max]="maxDate" />
+        </div>
+      </div>
+
+      <div class="measure-field mt-3">
+        <label>Minuti corsi</label>
+        <div class="measure-input-wrap">
+          <ion-input type="text" inputmode="numeric" [(ngModel)]="minutes" placeholder="40"></ion-input>
+          <span class="unit">min</span>
+        </div>
+      </div>
+
+      <div class="runlive">
+        <span class="k">Durata</span>
+        <span class="v">{{ liveMinutes }}</span>
+      </div>
+    </div>
+
+    <div class="infocard measure-card">
+      <div class="measure-field">
+        <label>Tipo di uscita</label>
+        <div class="runseg">
+          <button type="button" class="runseg-btn" *ngFor="let t of types"
+            [class.on]="type === t.id" (click)="type = t.id">{{ t.label }}</button>
+        </div>
+      </div>
+
+      <div class="measure-field mt-3">
+        <label>Come e' andata</label>
+        <div class="runseg">
+          <button type="button" class="runseg-btn" *ngFor="let e of efforts"
+            [class.on]="effort === e.id" (click)="effort = e.id">{{ e.label }}</button>
+        </div>
+      </div>
+
+      <div class="measure-field mt-3">
+        <label>Note</label>
+        <div class="measure-input-wrap">
+          <ion-input type="text" [(ngModel)]="note" placeholder="Percorso, sensazioni, meteo…"></ion-input>
+        </div>
+      </div>
+    </div>
+
+    <p class="autherror" *ngIf="errorMsg">{{ errorMsg }}</p>
+
+    <button class="runsave tap44 press-fx" [disabled]="!canSave" (click)="save()">
+      {{ saving ? 'Salvataggio…' : (editId ? 'Salva modifiche' : 'Salva uscita') }}
+    </button>
+
+    <button class="runremove tap44" *ngIf="editId" [disabled]="saving" (click)="remove()">
+      Elimina questa uscita
+    </button>
+  </div>
+</ion-content>
