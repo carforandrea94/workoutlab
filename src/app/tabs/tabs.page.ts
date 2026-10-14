@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, signal } from '@angular/core';
+import { Component, ElementRef, OnDestroy, OnInit, effect, signal } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { filter } from 'rxjs/operators';
@@ -20,6 +20,17 @@ const TABS: Tab[] = [
 ];
 
 /**
+ * Sta su una pagina "radice" di una tab (/scheda, /dieta...) e non dentro una
+ * pagina interna? Con la barra visibile solo li'. Anche "/" conta: e' l'indirizzo
+ * di partenza che subito rimanda a /scheda, e li' la barra non deve fare in
+ * tempo a nascondersi.
+ */
+export function eRadiceDiTab(url: string, tabs: readonly { id: string }[] = TABS): boolean {
+  const percorso = url.split('?')[0].split('#')[0].replace(/\/+$/, '');
+  return percorso === '' || tabs.some(t => percorso === '/' + t.id);
+}
+
+/**
  * La barra in basso, una pila di navigazione per scheda.
  *
  * Ionic assegna la pila dal primo segmento dell'URL: /scheda/day/2 e
@@ -28,6 +39,12 @@ const TABS: Tab[] = [
  *
  * L'aspetto e' quello della pillola dell'app originale (le classi .tabbar,
  * .tabbtn e .pill di styles.css), non la barra standard di Ionic.
+ *
+ * La barra c'e' sulle cinque pagine radice e scivola via in quelle interne
+ * (come fa iOS quando una pagina "nasconde la barra inferiore"): dentro un
+ * giorno, un editor, uno storico serve lo spazio, e per cambiare sezione si
+ * torna indietro. Toccare di nuovo la tab gia' aperta, sulla radice, riporta
+ * in cima alla pagina.
  */
 @Component({
   selector: 'app-tabs',
@@ -35,11 +52,12 @@ const TABS: Tab[] = [
   imports: [IonTabs, IonTabBar, IonTabButton, LucideAngularModule, RestBarComponent],
   template: `
     <ion-tabs (ionTabsDidChange)="selected.set($event.tab)">
-      <div class="tabfade"></div>
-      <ion-tab-bar slot="bottom" class="tabbar tabbar-5" [style.display]="showRestBar ? 'none' : null">
+      <div class="tabfade" [class.tabbar-nascosta]="nascondiBarra"></div>
+      <ion-tab-bar slot="bottom" class="tabbar tabbar-5" [class.tabbar-nascosta]="nascondiBarra"
+        [style.display]="showRestBar ? 'none' : null">
         <div class="pill" [class]="'pill p' + selectedIndex()"></div>
         @for (t of tabs; track t.id) {
-          <ion-tab-button [tab]="t.id" class="tabbtn" [class.active]="selected() === t.id">
+          <ion-tab-button [tab]="t.id" class="tabbtn" [class.active]="selected() === t.id" (click)="alToccoTab(t.id)">
             <span class="ic"><lucide-icon [name]="t.icon" [size]="23"></lucide-icon></span>
             <span class="tablabel">{{ t.label }}</span>
           </ion-tab-button>
@@ -55,14 +73,23 @@ const TABS: Tab[] = [
 })
 export class TabsPage implements OnInit, OnDestroy {
   readonly selected = signal<string>('');
+  /** In una pagina dentro la tab, non sulla sua radice. */
+  readonly paginaInterna = signal(false);
   private dayIdOnScreen: string | null = null;
   private routeSub: Subscription | null = null;
 
   constructor(
     private router: Router,
     private workoutData: WorkoutDataService,
-    private sessionState: WorkoutSessionStateService
-  ) {}
+    private sessionState: WorkoutSessionStateService,
+    private host: ElementRef<HTMLElement>
+  ) {
+    // Il contenuto delle pagine tiene sotto uno spazio per la barra: senza barra
+    // (e senza la fascia del recupero, che ne prende il posto) lo rende.
+    effect(() => {
+      document.documentElement.classList.toggle('senza-tabbar', this.nascondiBarra);
+    });
+  }
 
   readonly tabs = TABS;
 
@@ -77,6 +104,20 @@ export class TabsPage implements OnInit, OnDestroy {
    */
   get showRestBar(): boolean {
     return this.dayIdOnScreen !== null && this.sessionState.isActiveForDay(this.dayIdOnScreen);
+  }
+
+  /** Dentro una pagina interna la barra sparisce, tranne dove ne fa le veci la fascia del recupero. */
+  get nascondiBarra(): boolean {
+    return this.paginaInterna() && !this.showRestBar;
+  }
+
+  /** Toccare la tab gia' aperta, quando si e' sulla sua radice, riporta in cima: e' il gesto che iOS insegna. */
+  alToccoTab(id: string): void {
+    if (this.selected() !== id || this.paginaInterna()) return;
+    const contenuto = this.host.nativeElement.querySelector<HTMLElement & { scrollToTop?: (ms?: number) => Promise<void> }>(
+      'ion-router-outlet > .ion-page:not(.ion-page-hidden):not(.ion-page-invisible) > ion-content'
+    );
+    void contenuto?.scrollToTop?.(350);
   }
 
   ngOnInit(): void {
@@ -94,5 +135,6 @@ export class TabsPage implements OnInit, OnDestroy {
     const u = url.split('?')[0];
     const giorno = u.match(/^\/scheda\/day\/(\d+)$/);
     this.dayIdOnScreen = giorno ? (this.workoutData.days[+giorno[1]]?.id ?? null) : null;
+    this.paginaInterna.set(!eRadiceDiTab(u));
   }
 }

@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, Optional } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
@@ -9,7 +9,9 @@ import { MeasureCategory, MeasureField, CATEGORY_FIELDS, CATEGORY_LABELS } from 
 import { MeasureCategoryStateService } from '../../services/measure-category-state.service';
 import { ToastService } from '../../services/toast.service';
 import { IONIC_PAGE } from '../../core/ionic-page';
-import { NavController, IonInput, IonSpinner, IonButton } from '@ionic/angular';
+import { NavController, IonInput, IonSpinner, IonButton, IonRouterOutlet } from '@ionic/angular';
+import { ConModificheNonSalvate } from '../../core/guards/modifiche-non-salvate.guard';
+import { senzaSwipeIndietro } from '../../core/swipe-indietro';
 import { LucideAngularModule } from 'lucide-angular';
 
 @Component({
@@ -18,7 +20,7 @@ import { LucideAngularModule } from 'lucide-angular';
   imports: [IonButton, IonInput, IonSpinner, ...IONIC_PAGE, LucideAngularModule, CommonModule, FormsModule],
   templateUrl: './misura-categoria.component.html'
 })
-export class MisuraCategoriaComponent implements OnInit, OnDestroy {
+export class MisuraCategoriaComponent implements OnInit, OnDestroy, ConModificheNonSalvate {
   category!: MeasureCategory;
   fields: MeasureField[] = [];
   title = '';
@@ -37,13 +39,24 @@ export class MisuraCategoriaComponent implements OnInit, OnDestroy {
   private draftTimer: ReturnType<typeof setTimeout> | null = null;
   private paramSub: Subscription | null = null;
 
+  /**
+   * Una misura nuova ha la sua bozza, che si salva da sola mentre si scrive e
+   * riappare all'apertura: uscire non fa perdere niente. Una in modifica no -
+   * i valori cambiati restano a schermo finche' non si salva - e per quella
+   * c'e' la guardia, con quello che c'era all'apertura come termine di confronto.
+   */
+  private baseline = '';
+  private uscitaConsentita = false;
+  private get swipe() { return senzaSwipeIndietro(this.outlet); }
+
   constructor(
     private route: ActivatedRoute,
     private nav: NavController,
     private data: MeasurementDataService,
     private cdr: ChangeDetectorRef,
     public measureState: MeasureCategoryStateService,
-    private toast: ToastService
+    private toast: ToastService,
+    @Optional() private outlet: IonRouterOutlet | null = null
   ) {}
 
   ngOnInit(): void {
@@ -62,8 +75,33 @@ export class MisuraCategoriaComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.paramSub?.unsubscribe();
-    if (this.draftTimer) clearTimeout(this.draftTimer);
+    // Chi scrive e se ne va entro mezzo secondo non ha ancora la bozza
+    // salvata: si scrive adesso, o l'ultimo pezzo andrebbe perso.
+    if (this.draftTimer) {
+      clearTimeout(this.draftTimer);
+      this.draftTimer = null;
+      if (!this.isEdit && this.hasAnyValue()) this.data.saveDraft(this.category, this.values);
+    }
     this.measureState.registerSaveHandler(null);
+  }
+
+  ionViewWillEnter(): void {
+    this.uscitaConsentita = false;
+    // La guardia c'e' solo in modifica (vedi baseline): li' lo swipe va spento.
+    if (this.route.snapshot.queryParamMap.get('date')) this.swipe.spegni();
+  }
+
+  ionViewWillLeave(): void {
+    this.swipe.riaccendi();
+  }
+
+  private fotografia(): string {
+    return JSON.stringify([this.dateValue, this.values]);
+  }
+
+  /** Valori o data cambiati in una misura in modifica: vedi uscitaSenzaPerdite. */
+  haModificheNonSalvate(): boolean {
+    return this.isEdit && !this.uscitaConsentita && this.baseline !== '' && this.fotografia() !== this.baseline;
   }
 
   private emptyValues(): Record<string, string | null> {
@@ -94,6 +132,7 @@ export class MisuraCategoriaComponent implements OnInit, OnDestroy {
           this.data.getCategoryValues(this.category, dateParam!),
           timeout
         ]);
+        this.baseline = this.fotografia();
       } else {
         this.dateValue = todayLocalISO();
         this.values = this.emptyValues();
@@ -119,7 +158,7 @@ export class MisuraCategoriaComponent implements OnInit, OnDestroy {
   onInput(): void {
     if (this.isEdit) return;
     if (this.draftTimer) clearTimeout(this.draftTimer);
-    this.draftTimer = setTimeout(() => this.data.saveDraft(this.category, this.values), 500);
+    this.draftTimer = setTimeout(() => { this.draftTimer = null; this.data.saveDraft(this.category, this.values); }, 500);
   }
 
   hasAnyValue(): boolean {
@@ -154,6 +193,7 @@ export class MisuraCategoriaComponent implements OnInit, OnDestroy {
     this.measureState.saving.set(false);
     if (result === 'ok') {
       this.toast.success('Misurazione aggiornata ✓');
+      this.uscitaConsentita = true;
       this.nav.navigateBack(['/misure/storico', this.dateValue]);
     } else if (result === 'collision') {
       this.errorMsg = 'Esiste gia\' una misurazione di questo tipo in questa data.';
