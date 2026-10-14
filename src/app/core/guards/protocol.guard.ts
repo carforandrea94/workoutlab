@@ -11,9 +11,16 @@ import { ProtocolBootstrapService } from '../../services/protocol-bootstrap.serv
  * Aspetta da se' che l'autenticazione sia pronta: le guardie della stessa
  * rotta partono insieme, e senza questa attesa il protocollo verrebbe cercato
  * quando ancora non si sa chi e' l'utente.
+ *
+ * Le inject() vanno TUTTE prima del primo await: dopo, la funzione non e' piu'
+ * nel contesto di iniezione e Angular lancia NG0203 (la navigazione fallisce e
+ * l'app resta vuota).
  */
 export const protocolGuard: CanActivateFn = async () => {
-  await inject(AuthService).ready;
-  await inject(ProtocolBootstrapService).ensureLoaded();
+  const auth = inject(AuthService);
+  const bootstrap = inject(ProtocolBootstrapService);
+
+  await auth.ready;
+  await bootstrap.ensureLoaded();
   return true;
 };
