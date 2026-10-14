@@ -4,9 +4,13 @@ import {
   IonButtons,
   IonContent,
   IonHeader,
-  IonRouterLink,
+  IonItem,
+  IonItemOption,
+  IonItemOptions,
+  IonItemSliding,
   IonRefresher,
   IonRefresherContent,
+  IonRouterLink,
   IonRouterLinkWithHref,
   IonTitle,
   IonToolbar
@@ -31,6 +35,14 @@ export const IONIC_LINKS = [RouterLink, IonRouterLink, IonRouterLinkWithHref] as
  * imports di una pagina con un elenco che si rilegge dalla rete.
  */
 export const IONIC_REFRESH = [IonRefresher, IonRefresherContent] as const;
+
+/**
+ * Le righe con l'azione che compare scorrendo (ion-item-sliding): il gesto
+ * iOS per eliminare. Un gesto non e' raggiungibile da chi usa uno screen
+ * reader o la tastiera: dove l'eliminazione non ha un'altra strada nella
+ * pagina di dettaglio, la riga tiene anche il suo pulsante.
+ */
+export const IONIC_SLIDING = [IonItem, IonItemSliding, IonItemOptions, IonItemOption] as const;
 
 /**
  * Esegue il caricamento e chiude l'indicatore del gesto, anche se fallisce:

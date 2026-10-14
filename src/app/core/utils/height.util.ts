@@ -15,12 +15,6 @@ export const HEIGHT_MAX_CM = 250;
 /** Dove si apre la ruota per chi non ha ancora messo l'altezza. */
 export const HEIGHT_DEFAULT_CM = 170;
 
-/** Altezza di una tacca della ruota, in px. La usano il foglio di stile (per
- *  disegnarla) e il componente (per tradurre lo scorrimento in un valore):
- *  se i due numeri divergono, la ruota sceglie un valore diverso da quello
- *  che mostra al centro. */
-export const WHEEL_ITEM_H = 44;
-
 /** I valori della ruota, dal piu' basso al piu' alto. */
 export function heightOptions(): number[] {
   const out: number[] = [];
@@ -36,17 +30,6 @@ export function heightOptions(): number[] {
 export function toWheelValue(cm: number | null | undefined): number {
   if (cm === null || cm === undefined || !isFinite(cm)) return HEIGHT_DEFAULT_CM;
   return Math.min(HEIGHT_MAX_CM, Math.max(HEIGHT_MIN_CM, Math.round(cm)));
-}
-
-/** Traduce lo scorrimento della ruota nel valore che ha al centro. */
-export function wheelValueAt(scrollTop: number): number {
-  const idx = Math.round(scrollTop / WHEEL_ITEM_H);
-  return toWheelValue(HEIGHT_MIN_CM + idx);
-}
-
-/** Lo scorrimento che porta un valore al centro della ruota. */
-export function wheelOffsetOf(cm: number): number {
-  return (toWheelValue(cm) - HEIGHT_MIN_CM) * WHEEL_ITEM_H;
 }
 
 /** Riporta l'altezza nella forma in cui la gente la scrive, con la virgola. */

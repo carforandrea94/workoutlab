@@ -5,7 +5,7 @@ import { CommonModule } from '@angular/common';
 import { MeasurementDataService } from '../../services/measurement-data.service';
 import { ConfirmDialogService } from '../../services/confirm-dialog.service';
 import { MeasurementEntry } from '../../models/measurement.model';
-import { IONIC_PAGE, IONIC_REFRESH, completaRefresh } from '../../core/ionic-page';
+import { IONIC_PAGE, IONIC_REFRESH, IONIC_SLIDING, completaRefresh } from '../../core/ionic-page';
 import { NavController, IonSpinner } from '@ionic/angular';
 
 interface EntryRow {
@@ -18,7 +18,7 @@ interface EntryRow {
 @Component({
   selector: 'app-misure-storico',
   standalone: true,
-  imports: [IonSpinner, ...IONIC_PAGE, ...IONIC_REFRESH, CommonModule, LucideAngularModule],
+  imports: [IonSpinner, ...IONIC_PAGE, ...IONIC_REFRESH, ...IONIC_SLIDING, CommonModule, LucideAngularModule],
   templateUrl: './misure-storico.component.html'
 })
 export class MisureStoricoComponent implements OnInit {

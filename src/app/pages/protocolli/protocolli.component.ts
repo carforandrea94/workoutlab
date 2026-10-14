@@ -4,7 +4,7 @@ import { CommonModule } from '@angular/common';
 import { ProtocolService } from '../../services/protocol.service';
 import { ConfirmDialogService } from '../../services/confirm-dialog.service';
 import { Protocol } from '../../models/protocol.model';
-import { IONIC_PAGE, IONIC_REFRESH, completaRefresh } from '../../core/ionic-page';
+import { IONIC_PAGE, IONIC_REFRESH, IONIC_SLIDING, completaRefresh } from '../../core/ionic-page';
 import { NavController, IonSpinner } from '@ionic/angular';
 
 /**
@@ -14,7 +14,7 @@ import { NavController, IonSpinner } from '@ionic/angular';
 @Component({
   selector: 'app-protocolli',
   standalone: true,
-  imports: [IonSpinner, ...IONIC_PAGE, ...IONIC_REFRESH, CommonModule, LucideAngularModule],
+  imports: [IonSpinner, ...IONIC_PAGE, ...IONIC_REFRESH, ...IONIC_SLIDING, CommonModule, LucideAngularModule],
   templateUrl: './protocolli.component.html'
 })
 export class ProtocolliComponent implements OnInit {

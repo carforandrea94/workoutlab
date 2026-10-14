@@ -359,14 +359,22 @@ ion-content{--background:var(--bg);--color:var(--label);--padding-bottom:calc(va
    chevron e non al posto del numero del giorno, che serve sempre. */
 .daycheck{width:26px;height:26px;flex-shrink:0;border-radius:var(--r-pill);background:var(--accent);color:var(--accent-contrast);display:flex;align-items:center;justify-content:center;}
 .daycheck svg{display:block;}
-.daycard .badge{width:42px;height:42px;border-radius:var(--r-md);background:var(--accent-dim);color:var(--label);border:1px solid var(--border-line);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:var(--text-lg);flex-shrink:0;}
-.daycard .info{flex:1;min-width:0;}
-.daycard .info .lbl{font-weight:700;font-size:var(--text-lg);letter-spacing:-.005em;line-height:1.25;}
-.daycard .info .meta{font-family:'IBM Plex Mono',monospace;font-size:var(--text-xs);color:var(--label-2);margin-top:3px;}
+.daycard .badge,.cardrow .badge{width:42px;height:42px;border-radius:var(--r-md);background:var(--accent-dim);color:var(--label);border:1px solid var(--border-line);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:var(--text-lg);flex-shrink:0;}
+.daycard .info,.cardrow .info{flex:1;min-width:0;}
+.daycard .info .lbl,.cardrow .info .lbl{font-weight:700;font-size:var(--text-lg);letter-spacing:-.005em;line-height:1.25;}
+.daycard .info .meta,.cardrow .info .meta{font-family:'IBM Plex Mono',monospace;font-size:var(--text-xs);color:var(--label-2);margin-top:3px;}
 .daycard .chev{color:var(--label-3);font-size:var(--text-xl);flex-shrink:0;}
 .delete-btn{width:38px;height:38px;border-radius:var(--r-sm);flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;}
 .delete-btn:active{background:var(--state-danger);border-color:var(--state-danger);color:#fff;}
 .daycard:active{background:var(--surface-press);}
+/* La stessa card con l'azione che compare scorrendo verso sinistra
+   (ion-item-sliding). Bordo, angoli e ombra stanno sul contenitore, che taglia
+   l'azione rossa sotto agli angoli; la riga dentro e' trasparente. Il
+   chevron lo disegna Ionic (detail) e il feedback del tocco e' il suo. */
+ion-item-sliding.cardrow{border:1px solid var(--border-line);border-radius:var(--r-xl);background:var(--surface-card);box-shadow:var(--shadow-card);}
+ion-item-sliding.cardrow ion-item{--background:transparent;--background-activated:var(--surface-press);--background-activated-opacity:1;--background-focused:var(--surface-press);--padding-start:16px;--inner-padding-end:12px;--min-height:64px;--border-width:0;--inner-border-width:0;--detail-icon-color:var(--label-3);--detail-icon-opacity:1;--detail-icon-font-size:20px;--color:var(--label);}
+.cardrow .cardrow-body{display:flex;align-items:center;gap:12px;flex:1;min-width:0;padding:16px 0;}
+ion-item-sliding.cardrow ion-item-option{--background:var(--state-danger);--color:#fff;font-weight:700;font-size:var(--text-md);}
 .schedafoot{margin-top:16px;padding:13px 15px;border:1px dashed var(--border-line);border-radius:var(--r-xl);background:var(--surface-card);font-size:var(--text-xs);color:var(--label-3);font-family:'IBM Plex Mono',monospace;line-height:1.55;}
 .daymeta{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 16px;margin-bottom:14px;background:var(--surface-card);border:1px solid var(--border-line);border-radius:var(--r-xl);box-shadow:var(--shadow-card);font-family:'IBM Plex Mono',monospace;font-size:var(--text-xs);color:var(--label-2);letter-spacing:.04em;text-transform:uppercase;}
 .exlist{display:flex;flex-direction:column;gap:12px;}
@@ -1125,6 +1133,14 @@ ion-modal.sheet-modal{--width:100%;--max-width:608px;--height:auto;--background:
 ion-modal.sheet-modal::part(content){border:1px solid var(--border-line);border-bottom:none;box-shadow:0 -10px 28px rgba(0,0,0,.45);}
 ion-modal.sheet-modal::part(handle){width:36px;height:4px;background:var(--border-line);}
 ion-modal.sheet-modal .ion-page{position:relative;display:block;contain:content;}
+/* Il selettore di Ionic (ion-picker). Le sfumature sopra e sotto le colora
+   Ionic con un colore suo, bianco: sul tema scuro coprirebbero i numeri. Hanno
+   il colore del foglio (--surface-card, in valori r,g,b perche' Ionic li
+   compone con l'opacita'), e l'evidenziazione e' il grigio delle altre
+   superfici. */
+ion-picker{--fade-background-rgb:24,27,32;--highlight-background:var(--surface-raise-2);--highlight-border-radius:var(--r-md);}
+:root[data-theme="light"] ion-picker{--fade-background-rgb:255,255,255;}
+ion-picker.heightpicker{margin-bottom:18px;}
 /* In cima c'e' l'handle: il contenuto parte piu' sotto. */
 .bottomsheet{position:relative;width:100%;padding:24px 20px calc(var(--safe-b) + 16px);}
 /* Ruota di selezione. Il valore scelto e' quello fermo al centro: lo scorrimento

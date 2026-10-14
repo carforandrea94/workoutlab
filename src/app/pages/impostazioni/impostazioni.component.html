@@ -188,22 +188,18 @@
     </ion-modal>
 
     <!-- Lo apre la sezione Corpo. -->
-    <ion-modal class="sheet-modal" [isOpen]="heightModalOpen" (willPresent)="onHeightPresent()"
+    <ion-modal class="sheet-modal" [isOpen]="heightModalOpen"
                [breakpoints]="[0, 1]" [initialBreakpoint]="1"
                (didDismiss)="heightModalOpen = false">
      <ng-template>
       <div class="bottomsheet">
         <p class="confirmtext sheet-title">Quanto sei alto</p>
 
-        <div class="wheel-wrap">
-          <div class="wheel-band" aria-hidden="true"><span class="unit">cm</span></div>
-          <div class="wheel" #heightWheel (scroll)="onWheelScroll()">
-            <button type="button" class="wheel-item" *ngFor="let cm of options"
-                    [class.on]="cm === pick()"
-                    [attr.aria-current]="cm === pick() ? 'true' : null"
-                    (click)="centreOn(cm)">{{ cm }}</button>
-          </div>
-        </div>
+        <ion-picker class="heightpicker" aria-label="Altezza in centimetri">
+          <ion-picker-column [value]="pick()" (ionChange)="onPick($event.detail.value)">
+            <ion-picker-column-option *ngFor="let cm of options" [value]="cm">{{ cm }} cm</ion-picker-column-option>
+          </ion-picker-column>
+        </ion-picker>
 
         <div class="confirmbtns">
           <button class="confirmbtn cancel" (click)="closeHeightModal()">Annulla</button>
