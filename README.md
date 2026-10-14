@@ -58,16 +58,42 @@ progetto vecchio non vengono migrati: si parte da un progetto pulito.
 
 ### Hosting e deploy automatico
 
+Da terminale, a mano:
+
 ```bash
 npm run deploy:hosting     # build di produzione + firebase deploy --only hosting
 ```
 
-Il workflow `.github/workflows/firebase-deploy.yml` fa build e test a ogni push e pull request e
-pubblica solo su push a `main`, e solo se nella repo sono impostati:
+Il sito è su <https://workout-lab-8c567.web.app>.
 
-- secret `FIREBASE_SERVICE_ACCOUNT`: il JSON di un service account del progetto nuovo (lo crea
-  `firebase init hosting:github`);
-- variabile `FIREBASE_PROJECT_ID`: l'ID del progetto.
+**Pipeline GitHub** (`.github/workflows/firebase-deploy.yml`):
+
+- su ogni **pull request** verso `main`: installa, lancia i test e compila. Non pubblica niente;
+- quando la PR viene **mergiata su `main`** (cioè a ogni push su `main`): test, build e deploy di
+  **solo Firebase Hosting** sul canale `live`. La build che ha passato i test è quella pubblicata;
+- da *Actions → Run workflow*, per ripubblicare senza un nuovo commit.
+
+Le regole e gli indici di Firestore **non** partono dalla pipeline: quando cambiano si lancia
+`npm run deploy:rules`.
+
+**Per attivarla serve un solo secret**, `FIREBASE_SERVICE_ACCOUNT`. Finché manca, build e test
+girano e il deploy viene saltato con un avviso giallo.
+
+1. In [Google Cloud › IAM › Account di servizio](https://console.cloud.google.com/iam-admin/serviceaccounts?project=workout-lab-8c567)
+   crea un account di servizio, per esempio `github-hosting-deploy`.
+2. Dagli i ruoli **Firebase Hosting Admin** e **Service Usage Consumer**. Se il primo deploy
+   protesta per un permesso mancante, il messaggio dice quale aggiungere (di solito **API Keys
+   Viewer** o **Cloud Run Viewer**).
+3. Dal suo menu *Gestisci chiavi → Aggiungi chiave → Crea nuova chiave → JSON*: scarica il file.
+4. Su GitHub: *Settings → Secrets and variables → Actions → New repository secret*, nome
+   `FIREBASE_SERVICE_ACCOUNT`, valore **l'intero contenuto** del file JSON. Poi cancella il file
+   dal computer: la chiave non va mai committata (il `.gitignore` esclude i nomi più comuni).
+
+In alternativa `firebase init hosting:github` fa tutto da solo (crea l'account di servizio e il
+secret), ma propone anche di scrivere due suoi workflow: rifiutali, c'è già il nostro.
+
+Perché il deploy parta solo dopo un controllo, in *Settings → Branches* conviene proteggere
+`main` richiedendo una pull request e il job *Build e test*.
 
 ### App native (Capacitor)
 
