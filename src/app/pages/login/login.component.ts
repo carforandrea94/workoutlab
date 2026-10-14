@@ -10,6 +10,9 @@ import { isNativeApp } from '../../core/utils/platform.util';
 import { IONIC_PAGE, IONIC_LINKS } from '../../core/ionic-page';
 import { NavController, IonInput, IonSegment, IonSegmentButton } from '@ionic/angular';
 
+/** Dopo quanto, con Google in attesa, il tasto torna premibile. Piu' di una scelta d'account normale. */
+export const GOOGLE_FERMO_MS = 12000;
+
 @Component({
   selector: 'app-login',
   standalone: true,
@@ -31,6 +34,11 @@ export class LoginComponent {
   /** Google ha il suo stato e il suo messaggio: il tasto sta sotto a tutte e due le tacche. */
   googleLoading = false;
   googleError = '';
+  /** Google non risponde da un po': il tasto si puo' ripremere (vedi loginWithGoogle). */
+  googleFermo = false;
+  /** Quale tocco su "Continua con Google" e' quello che conta: i vecchi non scrivono sulla schermata. */
+  private googleTentativo = 0;
+  private timerGoogleFermo: ReturnType<typeof setTimeout> | null = null;
   /** Nell'app nativa il tasto non c'e': vedi isNativeApp(). */
   readonly googleDisponibile = !isNativeApp();
 
@@ -63,22 +71,41 @@ export class LoginComponent {
   /**
    * Accede (o si iscrive) con Google.
    *
-   * Niente timeout: il popup lo chiude chi sta scegliendo l'account, e un
+   * Niente timeout sul popup: lo chiude chi sta scegliendo l'account, e un
    * limite di quindici secondi lo interromperebbe a meta'. Va chiamato
    * direttamente dal tocco: se prima c'e' un await il browser blocca il popup.
+   *
+   * Ma un popup che non risponde mai esiste (nell'app installata su iOS la
+   * finestra di Google puo' chiudersi senza che la pagina lo sappia), e con il
+   * tasto spento per sempre l'unica uscita era ricaricare l'app. Per questo,
+   * dopo GOOGLE_FERMO_MS il tasto torna premibile: un secondo tocco apre una
+   * finestra nuova, e Firebase chiude la vecchia. Il tentativo vecchio, se poi
+   * si risolve, non tocca piu' la schermata: ora parla il nuovo.
    */
   async loginWithGoogle(): Promise<void> {
-    if (this.loading || this.googleLoading) return;
+    if (this.loading || (this.googleLoading && !this.googleFermo)) return;
+    const tentativo = ++this.googleTentativo;
+    this.fermaTimerGoogle();
     this.googleLoading = true;
+    this.googleFermo = false;
     this.googleError = '';
     this.errorMsg = '';
     this.infoMsg = '';
+    this.timerGoogleFermo = setTimeout(() => {
+      if (tentativo !== this.googleTentativo || !this.googleLoading) return;
+      this.googleFermo = true;
+      this.cdr.detectChanges();
+    }, GOOGLE_FERMO_MS);
     this.cdr.detectChanges();
 
     try {
       await this.auth.loginWithGoogle();
+      if (tentativo !== this.googleTentativo) return;
       this.nav.navigateRoot(['/scheda']);
     } catch (e: any) {
+      // Il tentativo sostituito da un tocco nuovo finisce qui con
+      // auth/cancelled-popup-request: non e' un errore da mostrare.
+      if (tentativo !== this.googleTentativo) return;
       if (e?.code === PROFILE_MISSING) {
         // Account Google nuovo: manca solo il profilo, che si finisce nella
         // pagina di iscrizione (nome e informativa).
@@ -88,10 +115,21 @@ export class LoginComponent {
       console.error('Errore accesso con Google:', e);
       this.googleError = googleErrorMessage(e) ?? '';
     } finally {
-      this.googleLoading = false;
-      // L'app non usa zone.js: dopo il popup lo stato nuovo si disegna a mano,
-      // altrimenti il tasto resta su "Un attimo…" o scatta NG0100 in sviluppo.
-      this.cdr.detectChanges();
+      if (tentativo === this.googleTentativo) {
+        this.fermaTimerGoogle();
+        this.googleLoading = false;
+        this.googleFermo = false;
+        // L'app non usa zone.js: dopo il popup lo stato nuovo si disegna a mano,
+        // altrimenti il tasto resta su "Un attimo…" o scatta NG0100 in sviluppo.
+        this.cdr.detectChanges();
+      }
+    }
+  }
+
+  private fermaTimerGoogle(): void {
+    if (this.timerGoogleFermo !== null) {
+      clearTimeout(this.timerGoogleFermo);
+      this.timerGoogleFermo = null;
     }
   }
 
