@@ -10,6 +10,7 @@ import {
   CENTIMETRI_FIELDS
 } from '../../models/measurement.model';
 import { IONIC_PAGE } from '../../core/ionic-page';
+import { IONIC_REFRESH, completaRefresh } from '../../core/ionic-refresh';
 import { IonSpinner } from '@ionic/angular';
 
 interface FieldOption {
@@ -21,7 +22,7 @@ interface FieldOption {
 @Component({
   selector: 'app-misure-analytics',
   standalone: true,
-  imports: [IonSpinner, ...IONIC_PAGE, CommonModule],
+  imports: [IonSpinner, ...IONIC_PAGE, ...IONIC_REFRESH, CommonModule],
   templateUrl: './misure-analytics.component.html'
 })
 export class MisureAnalyticsComponent implements OnInit {
@@ -52,12 +53,18 @@ export class MisureAnalyticsComponent implements OnInit {
     private cdr: ChangeDetectorRef
   ) {}
 
+  /** Tira per aggiornare. */
+  aggiorna(ev: Event): Promise<void> {
+    return completaRefresh(ev, () => this.load(true));
+  }
+
   ngOnInit(): void {
     this.load();
   }
 
-  async load(): Promise<void> {
-    this.loading = true;
+  /** `silenzioso`: il gesto "tira per aggiornare" rilegge senza far sparire l'elenco dietro lo spinner. */
+  async load(silenzioso = false): Promise<void> {
+    if (!silenzioso) this.loading = true;
     this.errorMsg = '';
 
     const timeout = new Promise<never>((_, reject) =>

@@ -1,6 +1,6 @@
 import {
   Component, OnInit, ChangeDetectorRef,
-  ElementRef, ViewChild, signal
+  signal
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -16,15 +16,15 @@ import { todayLocalISO } from '../../core/utils/date.util';
 import { deleteAccountErrorMessage } from '../../core/utils/auth-errors.util';
 import { dividiNome, componiNome } from '../../core/utils/nome.util';
 import {
-  heightOptions, toWheelValue, wheelValueAt, wheelOffsetOf, formatHeightCm
+  heightOptions, toWheelValue, formatHeightCm
 } from '../../core/utils/height.util';
 import { IONIC_PAGE } from '../../core/ionic-page';
-import { IonModal, IonInput, IonSegment, IonSegmentButton, IonToggle } from '@ionic/angular';
+import { IonModal, IonInput, IonSegment, IonSegmentButton, IonToggle, IonPicker, IonPickerColumn, IonPickerColumnOption } from '@ionic/angular';
 
 @Component({
   selector: 'app-impostazioni',
   standalone: true,
-  imports: [IonSegment, IonSegmentButton, IonToggle, IonInput, ...IONIC_PAGE, IonModal, CommonModule, FormsModule, LucideAngularModule],
+  imports: [IonSegment, IonSegmentButton, IonToggle, IonPicker, IonPickerColumn, IonPickerColumnOption, IonInput, ...IONIC_PAGE, IonModal, CommonModule, FormsModule, LucideAngularModule],
   templateUrl: './impostazioni.component.html',
   styles: [`
     .account-row {
@@ -140,7 +140,6 @@ export class ImpostazioniComponent implements OnInit {
   deleting = false;
   deleteError = '';
 
-  @ViewChild('heightWheel') wheelEl?: ElementRef<HTMLDivElement>;
 
   constructor(
     public auth: AuthService,
@@ -403,30 +402,15 @@ export class ImpostazioniComponent implements OnInit {
     this.cdr.detectChanges();
   }
 
-  /** Il foglio e' in presentazione: la ruota ha gia' la sua altezza, si puo' posizionare. */
-  onHeightPresent(): void {
-    requestAnimationFrame(() => this.centreOn(this.pick(), 'auto'));
-  }
-
   closeHeightModal(): void {
     this.heightModalOpen = false;
     this.cdr.detectChanges();
   }
 
-  onWheelScroll(): void {
-    const el = this.wheelEl?.nativeElement;
-    if (!el) return;
-    this.pick.set(wheelValueAt(el.scrollTop));
-  }
-
-  /** Porta un valore al centro. Col tocco secco su una tacca scorre dolce;
-   *  all'apertura salta, perche' un'animazione da un valore che non e' mai
-   *  stato mostrato sarebbe solo un tremolio. */
-  centreOn(cm: number, behavior: ScrollBehavior = 'smooth'): void {
-    const el = this.wheelEl?.nativeElement;
-    if (!el) return;
-    this.pick.set(toWheelValue(cm));
-    el.scrollTo({ top: wheelOffsetOf(cm), behavior });
+  /** Il selettore di Ionic ha cambiato valore: arriva il numero della tacca ferma al centro. */
+  onPick(value: string | number | undefined): void {
+    if (value === undefined) return;
+    this.pick.set(toWheelValue(Number(value)));
   }
 
   async saveHeightModal(): Promise<void> {

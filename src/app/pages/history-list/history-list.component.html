@@ -10,6 +10,10 @@
 </ion-header>
 
 <ion-content>
+  <ion-refresher slot="fixed" (ionRefresh)="aggiorna($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
   <div class="wrap">
     <div *ngIf="loading" class="history-empty"><ion-spinner name="crescent" aria-label="Caricamento"></ion-spinner></div>
 
@@ -26,19 +30,22 @@
       <ng-container *ngFor="let g of weekGroups">
         <p class="sectiontitle">{{ g.label }}</p>
         <div class="grouplist">
-          <div class="daycard press-fx" *ngFor="let s of g.entries" (click)="goToDetail(s.key)">
-            <div class="badge" style="font-size:var(--text-xs)">{{ s.session.dayId.replace('day','G') }}</div>
-            <div class="info">
-              <div class="lbl">{{ s.session.dayLabel }}</div>
-              <div class="meta">
-                {{ s.displayDate }} &nbsp;·&nbsp; {{ s.completedSets }} serie<ng-container *ngIf="s.session.durationSec"> &nbsp;·&nbsp; {{ sessionState.formatDuration(s.session.durationSec) }}</ng-container>
+          <ion-item-sliding class="cardrow" *ngFor="let s of g.entries" #riga>
+            <ion-item lines="none" [button]="true" (click)="goToDetail(s.key)">
+              <div class="cardrow-body">
+                <div class="badge" style="font-size:var(--text-xs)">{{ s.session.dayId.replace('day','G') }}</div>
+                <div class="info">
+                  <div class="lbl">{{ s.session.dayLabel }}</div>
+                  <div class="meta">
+                    {{ s.displayDate }} &nbsp;·&nbsp; {{ s.completedSets }} serie<ng-container *ngIf="s.session.durationSec"> &nbsp;·&nbsp; {{ sessionState.formatDuration(s.session.durationSec) }}</ng-container>
+                  </div>
+                </div>
               </div>
-            </div>
-            <button class="delete-btn" (click)="deleteSession(s.key, $event)" title="Elimina">
-              <lucide-icon name="trash-2" [size]="14"></lucide-icon>
-            </button>
-            <span class="chev">›</span>
-          </div>
+            </ion-item>
+            <ion-item-options side="end">
+              <ion-item-option (click)="riga.close(); deleteSession(s.key, $event)">Elimina</ion-item-option>
+            </ion-item-options>
+          </ion-item-sliding>
         </div>
       </ng-container>
     </ng-container>

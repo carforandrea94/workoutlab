@@ -8,6 +8,7 @@ import { goalPct } from '../../core/utils/run-math.util';
 import { todayLocalISO } from '../../core/utils/date.util';
 import { buildWeekHistory, WeekGroup } from '../../core/utils/week-history.util';
 import { IONIC_PAGE } from '../../core/ionic-page';
+import { IONIC_REFRESH, completaRefresh } from '../../core/ionic-refresh';
 import { NavController } from '@ionic/angular';
 
 const WEEKDAYS = ['dom', 'lun', 'mar', 'mer', 'gio', 'ven', 'sab'];
@@ -37,7 +38,7 @@ const EFFORT_STYLE: Record<RunEffort, { color: string; size: number }> = {
 @Component({
   selector: 'app-corsa',
   standalone: true,
-  imports: [...IONIC_PAGE, CommonModule, LucideAngularModule],
+  imports: [...IONIC_PAGE, ...IONIC_REFRESH, CommonModule, LucideAngularModule],
   templateUrl: './corsa.component.html'
 })
 export class CorsaComponent implements OnInit {
@@ -58,6 +59,11 @@ export class CorsaComponent implements OnInit {
     public state: RunningStateService,
     private nav: NavController
   ) {}
+
+  /** Tira per aggiornare. */
+  aggiorna(ev: Event): Promise<void> {
+    return completaRefresh(ev, () => this.state.refresh());
+  }
 
   /** Ionic tiene viva la pagina nella pila: tornandoci ngOnInit non riparte, e i dati possono essere cambiati altrove (salvataggi, eliminazioni). */
   private primoIngresso = true;

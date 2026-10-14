@@ -443,10 +443,10 @@
     </div>
 
     <ion-modal class="sheet-modal" *ngIf="day && !isStorico" [isOpen]="restModalOpen"
+               [breakpoints]="[0, 1]" [initialBreakpoint]="1"
                (didDismiss)="restModalOpen = false">
      <ng-template>
       <div class="bottomsheet">
-        <div class="grabber"></div>
         <p class="confirmtext sheet-title">
           Recupero — {{ restModalVm?.ex?.name }}
         </p>

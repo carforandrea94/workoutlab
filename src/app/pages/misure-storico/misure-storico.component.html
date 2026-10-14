@@ -10,6 +10,10 @@
 </ion-header>
 
 <ion-content>
+  <ion-refresher slot="fixed" (ionRefresh)="aggiorna($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
   <div class="wrap">
     <p class="sectiontitle">Misurazioni salvate</p>
 
@@ -25,27 +29,28 @@
     </div>
 
     <div *ngIf="!loading && rows.length > 0" class="grouplist">
-      <div class="daycard press-fx" *ngFor="let r of rows" (click)="goToDetail(r.entry.date)">
-        <div class="badge" style="font-size:var(--text-xs)">{{ r.entry.date.slice(8,10) }}/{{ r.entry.date.slice(5,7) }}</div>
-        <div class="info">
-          <div class="lbl">{{ r.displayDate }}</div>
-          <div class="meta">
-            <ng-container *ngIf="r.entry.peso">{{ r.entry.peso }} kg</ng-container>
-            <ng-container *ngIf="r.pesoDelta !== null">
-              &nbsp;·&nbsp;<span [class]="r.pesoDelta! < 0 ? 'delta down' : (r.pesoDelta! > 0 ? 'delta up' : 'delta')">
-                {{ r.pesoDeltaText }} kg
-              </span>
-            </ng-container>
-            <ng-container *ngIf="!r.entry.peso">Misurazione salvata</ng-container>
+      <ion-item-sliding class="cardrow" *ngFor="let r of rows" #riga>
+        <ion-item lines="none" [button]="true" (click)="goToDetail(r.entry.date)">
+          <div class="cardrow-body">
+            <div class="badge" style="font-size:var(--text-xs)">{{ r.entry.date.slice(8,10) }}/{{ r.entry.date.slice(5,7) }}</div>
+            <div class="info">
+              <div class="lbl">{{ r.displayDate }}</div>
+              <div class="meta">
+                <ng-container *ngIf="r.entry.peso">{{ r.entry.peso }} kg</ng-container>
+                <ng-container *ngIf="r.pesoDelta !== null">
+                  &nbsp;·&nbsp;<span [class]="r.pesoDelta! < 0 ? 'delta down' : (r.pesoDelta! > 0 ? 'delta up' : 'delta')">
+                    {{ r.pesoDeltaText }} kg
+                  </span>
+                </ng-container>
+                <ng-container *ngIf="!r.entry.peso">Misurazione salvata</ng-container>
+              </div>
+            </div>
           </div>
-        </div>
-        <button class="delete-btn" (click)="deleteEntry(r.entry.date, $event)" title="Elimina">
-          <lucide-icon name="trash-2" [size]="14"></lucide-icon>
-        </button>
-        <span class="chev">
-          <lucide-icon name="chevron-right" [size]="13"></lucide-icon>
-        </span>
-      </div>
+        </ion-item>
+        <ion-item-options side="end">
+          <ion-item-option (click)="riga.close(); deleteEntry(r.entry.date, $event)">Elimina</ion-item-option>
+        </ion-item-options>
+      </ion-item-sliding>
     </div>
   </div>
 </ion-content>

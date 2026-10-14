@@ -6,6 +6,8 @@ import { MeasurementDataService } from '../../services/measurement-data.service'
 import { ConfirmDialogService } from '../../services/confirm-dialog.service';
 import { MeasurementEntry } from '../../models/measurement.model';
 import { IONIC_PAGE } from '../../core/ionic-page';
+import { IONIC_REFRESH, completaRefresh } from '../../core/ionic-refresh';
+import { IONIC_SLIDING } from '../../core/ionic-sliding';
 import { NavController, IonSpinner } from '@ionic/angular';
 
 interface EntryRow {
@@ -18,7 +20,7 @@ interface EntryRow {
 @Component({
   selector: 'app-misure-storico',
   standalone: true,
-  imports: [IonSpinner, ...IONIC_PAGE, CommonModule, LucideAngularModule],
+  imports: [IonSpinner, ...IONIC_PAGE, ...IONIC_REFRESH, ...IONIC_SLIDING, CommonModule, LucideAngularModule],
   templateUrl: './misure-storico.component.html'
 })
 export class MisureStoricoComponent implements OnInit {
@@ -33,6 +35,11 @@ export class MisureStoricoComponent implements OnInit {
     private cdr: ChangeDetectorRef
   ) {}
 
+  /** Tira per aggiornare. */
+  aggiorna(ev: Event): Promise<void> {
+    return completaRefresh(ev, () => this.load(true));
+  }
+
   /** Ionic tiene viva la pagina nella pila: tornandoci ngOnInit non riparte, e i dati possono essere cambiati altrove (salvataggi, eliminazioni). */
   private primoIngresso = true;
   ionViewWillEnter(): void {
@@ -44,8 +51,9 @@ export class MisureStoricoComponent implements OnInit {
     this.load();
   }
 
-  async load(): Promise<void> {
-    this.loading = true;
+  /** `silenzioso`: il gesto "tira per aggiornare" rilegge senza far sparire l'elenco dietro lo spinner. */
+  async load(silenzioso = false): Promise<void> {
+    if (!silenzioso) this.loading = true;
     this.errorMsg = '';
 
     const timeout = new Promise<never>((_, reject) =>

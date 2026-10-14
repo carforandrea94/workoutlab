@@ -359,14 +359,22 @@ ion-content{--background:var(--bg);--color:var(--label);--padding-bottom:calc(va
    chevron e non al posto del numero del giorno, che serve sempre. */
 .daycheck{width:26px;height:26px;flex-shrink:0;border-radius:var(--r-pill);background:var(--accent);color:var(--accent-contrast);display:flex;align-items:center;justify-content:center;}
 .daycheck svg{display:block;}
-.daycard .badge{width:42px;height:42px;border-radius:var(--r-md);background:var(--accent-dim);color:var(--label);border:1px solid var(--border-line);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:var(--text-lg);flex-shrink:0;}
-.daycard .info{flex:1;min-width:0;}
-.daycard .info .lbl{font-weight:700;font-size:var(--text-lg);letter-spacing:-.005em;line-height:1.25;}
-.daycard .info .meta{font-family:'IBM Plex Mono',monospace;font-size:var(--text-xs);color:var(--label-2);margin-top:3px;}
+.daycard .badge,.cardrow .badge{width:42px;height:42px;border-radius:var(--r-md);background:var(--accent-dim);color:var(--label);border:1px solid var(--border-line);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:var(--text-lg);flex-shrink:0;}
+.daycard .info,.cardrow .info{flex:1;min-width:0;}
+.daycard .info .lbl,.cardrow .info .lbl{font-weight:700;font-size:var(--text-lg);letter-spacing:-.005em;line-height:1.25;}
+.daycard .info .meta,.cardrow .info .meta{font-family:'IBM Plex Mono',monospace;font-size:var(--text-xs);color:var(--label-2);margin-top:3px;}
 .daycard .chev{color:var(--label-3);font-size:var(--text-xl);flex-shrink:0;}
 .delete-btn{width:38px;height:38px;border-radius:var(--r-sm);flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;}
 .delete-btn:active{background:var(--state-danger);border-color:var(--state-danger);color:#fff;}
 .daycard:active{background:var(--surface-press);}
+/* La stessa card con l'azione che compare scorrendo verso sinistra
+   (ion-item-sliding). Bordo, angoli e ombra stanno sul contenitore, che taglia
+   l'azione rossa sotto agli angoli; la riga dentro e' trasparente. Il
+   chevron lo disegna Ionic (detail) e il feedback del tocco e' il suo. */
+ion-item-sliding.cardrow{border:1px solid var(--border-line);border-radius:var(--r-xl);background:var(--surface-card);box-shadow:var(--shadow-card);}
+ion-item-sliding.cardrow ion-item{--background:transparent;--background-activated:var(--surface-press);--background-activated-opacity:1;--background-focused:var(--surface-press);--padding-start:16px;--inner-padding-end:12px;--min-height:64px;--border-width:0;--inner-border-width:0;--detail-icon-color:var(--label-3);--detail-icon-opacity:1;--detail-icon-font-size:20px;--color:var(--label);}
+.cardrow .cardrow-body{display:flex;align-items:center;gap:12px;flex:1;min-width:0;padding:16px 0;}
+ion-item-sliding.cardrow ion-item-option{--background:var(--state-danger);--color:#fff;font-weight:700;font-size:var(--text-md);}
 .schedafoot{margin-top:16px;padding:13px 15px;border:1px dashed var(--border-line);border-radius:var(--r-xl);background:var(--surface-card);font-size:var(--text-xs);color:var(--label-3);font-family:'IBM Plex Mono',monospace;line-height:1.55;}
 .daymeta{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 16px;margin-bottom:14px;background:var(--surface-card);border:1px solid var(--border-line);border-radius:var(--r-xl);box-shadow:var(--shadow-card);font-family:'IBM Plex Mono',monospace;font-size:var(--text-xs);color:var(--label-2);letter-spacing:.04em;text-transform:uppercase;}
 .exlist{display:flex;flex-direction:column;gap:12px;}
@@ -805,40 +813,40 @@ lucide-icon svg.filled{fill:currentColor;}
    uniche domande sono cosa prendere e cosa e' gia' nel carrello. */
 .shop-top{display:flex;align-items:center;gap:12px;margin-bottom:14px;}
 .shop-count{font-family:'IBM Plex Mono',monospace;font-size:var(--text-sm);color:var(--label-2);flex-shrink:0;}
-.shop-bar{flex:1;min-width:0;height:5px;border-radius:var(--r-pill);background:var(--surface-raise);overflow:hidden;}
-.shop-bar i{display:block;height:100%;background:var(--accent);border-radius:var(--r-pill);transition:width .3s ease;}
+.shop-bar{flex:1;min-width:0;height:5px;border-radius:var(--r-pill);--background:var(--surface-raise);--progress-background:var(--accent);overflow:hidden;}
 .shop-clear{flex-shrink:0;min-height:36px;padding:7px 13px;border:1px solid var(--border-line);border-radius:var(--r-pill);background:var(--surface-raise);color:var(--label-2);font-family:'IBM Plex Mono',monospace;font-size:var(--text-2xs);white-space:nowrap;cursor:pointer;}
 
-/* La ricerca. Il bordo e' della RIGA, non del campo, e lente, testo e croce ci
-   stanno dentro affiancati - lo stesso schema di .measure-input-wrap.
-   Prima la lente era appoggiata sopra con position:absolute, contando su un
-   margine di 40px dentro il campo: sul telefono non si e' messa dove doveva e
-   e' finita a cavallo del testo. Qui non c'e' niente da appoggiare: sono tre
-   elementi in fila, e sovrapporsi non possono. */
-.shop-searchrow{display:flex;align-items:center;gap:10px;min-height:46px;margin-bottom:8px;padding:0 6px 0 14px;border-radius:var(--r-lg);border:1px solid var(--border-line);background:var(--surface-card);}
-.shop-searchrow:focus-within{border-color:var(--accent);}
-.shop-searchic{display:flex;flex-shrink:0;color:var(--label-3);}
-.shop-searchx{flex-shrink:0;width:38px;height:38px;display:flex;align-items:center;justify-content:center;border-radius:var(--r-md);background:none;color:var(--label-3);cursor:pointer;}
+/* La ricerca: la barra di iOS (ion-searchbar), con i colori dell'app. Il bordo
+   sta sul contenitore del campo, che Ionic espone come parte. */
+ion-searchbar.shop-search{--background:var(--surface-card);--color:var(--label);--placeholder-color:var(--label-3);--placeholder-opacity:1;--icon-color:var(--label-3);--clear-button-color:var(--label-3);--border-radius:var(--r-lg);--box-shadow:none;padding:0;margin-bottom:8px;min-height:0;}
+ion-searchbar.shop-search::part(container){border:1px solid var(--border-line);border-radius:var(--r-lg);}
+ion-searchbar.shop-search::part(input){font-family:'Inter',sans-serif;font-size:var(--text-md);}
 
 .shop-group{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:18px 2px 8px;}
 .shop-group-tit{font-family:'IBM Plex Mono',monospace;font-size:var(--text-2xs);letter-spacing:.14em;text-transform:uppercase;color:var(--label-3);}
 .shop-group-n{font-family:'IBM Plex Mono',monospace;font-size:var(--text-2xs);color:var(--label-3);}
 
 .shop-list{display:flex;flex-direction:column;gap:8px;}
-.shop-row{display:flex;align-items:center;gap:12px;width:100%;min-height:56px;padding:12px 14px;border:1px solid var(--border-line);border-radius:var(--r-lg);background:var(--surface-card);text-align:left;cursor:pointer;-webkit-user-select:none;user-select:none;}
-.shop-name{flex:1;min-width:0;font-family:'Inter',sans-serif;font-weight:700;font-size:var(--text-md);color:var(--label);line-height:1.3;}
-.shop-row.ok{opacity:.5;}
-.shop-row.ok .shop-name{text-decoration:line-through;}
+/* Una riga della lista: la card con la sua casella (ion-checkbox). La riga
+   intera e' il bersaglio, nome compreso, perche' l'etichetta sta dentro la
+   casella. Con lo swipe (ion-item-sliding) la card e' il contenitore, che
+   taglia l'azione sotto agli angoli. */
+.shop-item{border:1px solid var(--border-line);border-radius:var(--r-lg);background:var(--surface-card);overflow:hidden;}
+ion-item.shop-item,.shop-item ion-item{--background:transparent;--min-height:56px;--padding-start:14px;--padding-end:8px;--inner-padding-end:0;--border-width:0;--inner-border-width:0;--color:var(--label);}
+.shop-item ion-checkbox{flex:1;min-width:0;--size:24px;--checkbox-background-checked:var(--accent);--border-color:var(--border-line);--border-color-checked:var(--accent);--border-width:2px;--checkmark-color:var(--accent-contrast);font-family:'Inter',sans-serif;font-weight:700;font-size:var(--text-md);line-height:1.3;}
+.shop-item ion-checkbox::part(label){white-space:normal;}
+.shop-item.ok{opacity:.5;}
+.shop-item.ok ion-checkbox::part(label){text-decoration:line-through;}
+ion-item-sliding.shop-item ion-item-option{--background:var(--state-danger);--color:#fff;font-weight:700;font-size:var(--text-md);}
 
 /* Il carrello sta in cima e nasce chiuso: a meta' spesa si scorre quello che
-   manca, non venti righe barrate. */
-.shop-cart{display:flex;align-items:center;gap:8px;width:100%;min-height:44px;padding:13px 14px;border:1px dashed var(--border-line);border-radius:var(--r-lg);background:none;color:var(--label-3);font-family:'IBM Plex Mono',monospace;font-size:var(--text-xs);cursor:pointer;}
-.shop-cart-chev{transition:transform .2s ease;flex-shrink:0;}
-.shop-cart.open .shop-cart-chev{transform:rotate(180deg);}
+   manca, non venti righe barrate. E' un ion-accordion; la testata ha il bordo
+   tratteggiato di prima. */
+ion-accordion-group.shop-cartgroup ion-accordion{background:transparent;}
+ion-item.shop-cartitem{--background:transparent;--min-height:44px;--padding-start:14px;--inner-padding-end:12px;--border-width:0;--inner-border-width:0;--color:var(--label-3);border:1px dashed var(--border-line);border-radius:var(--r-lg);font-family:'IBM Plex Mono',monospace;font-size:var(--text-xs);}
+ion-item.shop-cartitem ion-label{margin:0;}
 .shop-list-cart{margin-top:8px;}
 
-.shop-check{width:24px;height:24px;border-radius:var(--r-xs);border:2px solid var(--border-line);flex-shrink:0;display:flex;align-items:center;justify-content:center;color:var(--accent-contrast);transition:border-color .2s ease,background .2s ease;}
-.shop-check.on{border-color:var(--accent);background:var(--accent);}
 .shop-addrow{display:flex;gap:8px;margin-bottom:16px;}
 .shop-addbtn{width:46px;height:46px;border-radius:var(--r-lg);border:1px solid var(--border-line);background:var(--brand);color:var(--accent-contrast);font-size:var(--text-2xl);font-weight:700;cursor:pointer;flex-shrink:0;}
 .shop-addbtn:active{filter:brightness(0.92);}
@@ -1115,12 +1123,26 @@ lucide-icon svg.filled{fill:currentColor;}
 .confirmbtn{flex:1;padding:12px;border-radius:var(--r-lg);border:1px solid var(--border-line);font-family:'Inter',sans-serif;font-weight:700;font-size:var(--text-md);cursor:pointer;}
 
 /* ===== FOGLIO DAL BASSO (ion-modal.sheet-modal) =====
-   Ionic porta il modale sopra a tutto, tab comprese: non serve piu' spostare
-   il nodo in document.body a mano. Ancorato in fondo, alto quanto il contenuto. */
-ion-modal.sheet-modal{--width:100%;--max-width:608px;--height:auto;--background:transparent;--border-radius:0;--backdrop-opacity:.55;align-items:flex-end;}
+   Il foglio nativo di Ionic: handle in cima, si chiude trascinandolo verso il
+   basso o toccando lo sfondo, come i fogli di iOS. I breakpoint [0, 1] stanno
+   nel template; l'altezza e' quella del contenuto perche' i breakpoint sono
+   relativi al modale e non allo schermo, quindi --height:auto basta.
+   Sfondo, angoli e bordo stanno sul modale (e sulla sua parte "content"), non
+   piu' sul contenuto: l'handle e il gesto lavorano su quelli. */
+ion-modal.sheet-modal{--width:100%;--max-width:608px;--height:auto;--background:var(--surface-card);--border-radius:24px;--backdrop-opacity:.55;}
+ion-modal.sheet-modal::part(content){border:1px solid var(--border-line);border-bottom:none;box-shadow:0 -10px 28px rgba(0,0,0,.45);}
+ion-modal.sheet-modal::part(handle){width:36px;height:4px;background:var(--border-line);}
 ion-modal.sheet-modal .ion-page{position:relative;display:block;contain:content;}
-.bottomsheet{position:relative;width:100%;border-top-left-radius:24px;border-top-right-radius:24px;padding:10px 20px calc(var(--safe-b) + 16px);background:var(--surface-card);border:1px solid var(--border-line);border-bottom:none;box-shadow:0 -10px 28px rgba(0,0,0,.45);}
-.bottomsheet .grabber{width:36px;height:4px;border-radius:var(--r-pill);background:var(--border-line);margin:0 auto 14px;}
+/* Il selettore di Ionic (ion-picker). Le sfumature sopra e sotto le colora
+   Ionic con un colore suo, bianco: sul tema scuro coprirebbero i numeri. Hanno
+   il colore del foglio (--surface-card, in valori r,g,b perche' Ionic li
+   compone con l'opacita'), e l'evidenziazione e' il grigio delle altre
+   superfici. */
+ion-picker{--fade-background-rgb:24,27,32;--highlight-background:var(--surface-raise-2);--highlight-border-radius:var(--r-md);}
+:root[data-theme="light"] ion-picker{--fade-background-rgb:255,255,255;}
+ion-picker.heightpicker{margin-bottom:18px;}
+/* In cima c'e' l'handle: il contenuto parte piu' sotto. */
+.bottomsheet{position:relative;width:100%;padding:24px 20px calc(var(--safe-b) + 16px);}
 /* Ruota di selezione. Il valore scelto e' quello fermo al centro: lo scorrimento
    si aggancia (scroll-snap) cosi' non esiste una posizione a meta' fra due
    tacche, e il valore fuori scala non e' respinto — e' irraggiungibile.
@@ -1329,7 +1351,6 @@ ion-spinner{color:var(--label-3);}
 
 ion-textarea.bacheca-textarea{--background:transparent;--color:var(--label);--placeholder-color:var(--label-3);--placeholder-opacity:1;--padding-start:12px;--padding-end:12px;--padding-top:12px;--padding-bottom:12px;width:100%;min-height:80px;padding:0;background:var(--surface-raise);border:1px solid var(--border-line);border-radius:var(--r-md);font-family:'Inter',sans-serif;font-size:var(--text-md);}
 
-.shop-searchrow ion-input{--padding-start:0;--padding-end:0;--padding-top:12px;--padding-bottom:12px;--background:transparent;--color:var(--label);--placeholder-color:var(--label-3);--placeholder-opacity:1;flex:1;min-width:0;min-height:0;font-family:'Inter',sans-serif;font-size:var(--text-md);}
 .shop-addrow ion-input{--padding-start:14px;--padding-end:14px;--padding-top:12px;--padding-bottom:12px;--background:var(--surface-card);--color:var(--label);--placeholder-color:var(--label-3);--placeholder-opacity:1;flex:1;min-width:0;min-height:0;border-radius:var(--r-lg);border:1px solid var(--border-line);font-family:'Inter',sans-serif;font-size:var(--text-md);}
 
 .combo-select ion-select{width:100%;min-height:44px;--padding-start:13px;--padding-end:13px;--padding-top:0;--padding-bottom:0;--color:var(--label);--placeholder-color:var(--label);border:1px solid var(--border-line);border-radius:var(--r-md);background:var(--surface-raise);font-family:'IBM Plex Mono',monospace;font-size:var(--text-sm);font-weight:600;}
