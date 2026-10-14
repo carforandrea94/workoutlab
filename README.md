@@ -64,7 +64,13 @@ Da terminale, a mano:
 npm run deploy:hosting     # build di produzione + firebase deploy --only hosting
 ```
 
-Il sito è su <https://workout-lab-8c567.web.app>.
+Il sito è su <https://workout-lab-8c567.firebaseapp.com>. Usa **questo** indirizzo, e da questo
+installa la PWA sulla Home: è il dominio di `authDomain`, e solo se coincide con quello da cui si
+apre l'app l'accesso con Google funziona su iOS. Hosting risponde anche su
+`workout-lab-8c567.web.app`, ma da lì la finestra di Google può restare appesa (sono due
+origini diverse). Per usare `web.app` bisogna cambiare `authDomain` in `src/environments/` **e**
+aggiungere `https://workout-lab-8c567.web.app/__/auth/handler` fra gli URI di reindirizzamento
+autorizzati del client OAuth (Google Cloud › API e servizi › Credenziali).
 
 **Pipeline GitHub** (`.github/workflows/firebase-deploy.yml`):
 

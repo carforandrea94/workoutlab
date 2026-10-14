@@ -1,4 +1,4 @@
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 
 // Mock condivisa: vedi src/test-support/firestore-mock.ts per il perche' non
 // puo' vivere qui dentro (isolate: false condivide i moduli fra i file).
@@ -72,6 +72,7 @@ const setDocPristino = firestoreMock.setDoc;
 describe("AuthService — iscrizioni che si rompono a meta'", () => {
   let AuthService: any;
   let PROFILE_MISSING: string;
+  let PROFILO_TIMEOUT_MS: number;
   let service: any;
   let scritturaFallisce: (id: string) => boolean;
 
@@ -89,6 +90,7 @@ describe("AuthService — iscrizioni che si rompono a meta'", () => {
     const mod = await import('./auth.service');
     AuthService = mod.AuthService;
     PROFILE_MISSING = mod.PROFILE_MISSING;
+    PROFILO_TIMEOUT_MS = mod.PROFILO_TIMEOUT_MS;
 
     const firestore: any = await import('firebase/firestore');
     vi.spyOn(firestore, 'setDoc').mockImplementation(async (ref: any, ...resto: any[]) => {
@@ -215,6 +217,39 @@ describe("AuthService — iscrizioni che si rompono a meta'", () => {
       expect(service.hasPendingProfile()).toBe(true);
       expect(service.pendingIsGoogle()).toBe(true);
       expect(service.pendingDisplayName()).toBe('Anna G');
+    });
+
+    /* Il popup non ha un tempo massimo, ma la lettura del profilo dopo si': un
+       Firestore che non risponde lasciava il tasto su "Un attimo..." per
+       sempre, e l'unica uscita era ricaricare l'app. */
+    // Timer finti e spie si rimettono a posto qui e non in un finally nel test:
+    // se un test va in timeout il suo finally non gira mai, e i timer finti
+    // resterebbero accesi per tutti quelli che seguono.
+    afterEach(() => {
+      vi.useRealTimers();
+      vi.restoreAllMocks();
+    });
+
+    it('se il profilo non arriva, l\'accesso fallisce con TIMEOUT invece di restare appeso', async () => {
+      vi.useFakeTimers();
+      const firestore: any = await import('firebase/firestore');
+      vi.spyOn(firestore, 'getDoc').mockImplementation(() => new Promise(() => {}));
+      stato.utenteGoogle = utenteGoogle();
+
+      const esito = service.loginWithGoogle().then(() => 'entrato', (e: any) => e.message);
+      await vi.advanceTimersByTimeAsync(PROFILO_TIMEOUT_MS);
+
+      await expect(esito).resolves.toBe('TIMEOUT');
+    });
+
+    it('a profilo arrivato non resta nessun timer in sospeso', async () => {
+      vi.useFakeTimers();
+      stato.utenteGoogle = utenteGoogle();
+      mockDocs.set('uid-google', { uid: 'uid-google', email: 'anna@gmail.com', displayName: 'Anna G' });
+
+      await service.loginWithGoogle();
+
+      expect(vi.getTimerCount()).toBe(0);
     });
 
     it('si finisce l\'iscrizione con il nome e l\'informativa, senza password', async () => {

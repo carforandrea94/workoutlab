@@ -60,6 +60,24 @@ function privacyAccettata(): { privacyAcceptedAt: string; privacyVersion: string
   return { privacyAcceptedAt: new Date().toISOString(), privacyVersion: PRIVACY_VERSION };
 }
 
+/** Quanto si aspetta il profilo dopo l'accesso con Google. Come l'accesso con la password. */
+export const PROFILO_TIMEOUT_MS = 15000;
+
+/**
+ * La promessa, oppure un errore TIMEOUT (lo stesso che le pagine gia' sanno
+ * dire all'utente) se non arriva in tempo. Il timer si toglie a promessa
+ * conclusa: non resta uno scatto pendente dietro a ogni accesso riuscito.
+ */
+function conTempoMassimo<T>(promessa: Promise<T>, ms: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('TIMEOUT')), ms);
+    promessa.then(
+      v => { clearTimeout(timer); resolve(v); },
+      e => { clearTimeout(timer); reject(e); }
+    );
+  });
+}
+
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   currentUser = signal<UserProfile | null>(null);
@@ -138,8 +156,13 @@ export class AuthService {
       // Senza, chi ha piu' account Google nel browser entra con l'ultimo usato
       // senza poter scegliere.
       provider.setCustomParameters({ prompt: 'select_account' });
+      // Il popup NON ha un tempo massimo: lo chiude chi sceglie l'account.
       const cred = await signInWithPopup(this.fb.auth, provider);
-      const profile = await this.loadProfile(cred.user.uid);
+      // La lettura del profilo invece si': e' una richiesta di rete come quella
+      // dell'accesso con la password (che ha i suoi quindici secondi), e senza
+      // limite un Firestore che non risponde lascia la schermata su
+      // "Un attimo…" per sempre.
+      const profile = await conTempoMassimo(this.loadProfile(cred.user.uid), PROFILO_TIMEOUT_MS);
 
       if (!profile) {
         throw Object.assign(new Error('Profilo utente non trovato.'), { code: PROFILE_MISSING });

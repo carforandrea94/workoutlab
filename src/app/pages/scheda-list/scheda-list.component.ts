@@ -6,7 +6,6 @@ import { WorkoutDataService } from '../../services/workout-data.service';
 import { WorkoutStateService } from '../../services/workout-state.service';
 import { AppStateService } from '../../services/app-state.service';
 import { WeeklyProgressService } from '../../services/weekly-progress.service';
-import { AuthService } from '../../core/services/auth.service';
 import { IONIC_PAGE, IONIC_LINKS } from '../../core/ionic-page';
 import { NavController } from '@ionic/angular';
 
@@ -25,8 +24,7 @@ export class SchedaListComponent implements OnInit {
     public state: WorkoutStateService,
     private nav: NavController,
     private appState: AppStateService,
-    public weekly: WeeklyProgressService,
-    private auth: AuthService
+    public weekly: WeeklyProgressService
   ) {
   }
 
@@ -63,10 +61,6 @@ export class SchedaListComponent implements OnInit {
   /** Il nome che l'utente ha dato al protocollo attivo, se c'e'. */
   get titolo(): string {
     return this.workoutData.hasCustomProtocol ? (this.workoutData.protocolName || 'Scheda') : 'Scheda';
-  }
-
-  get sottotitolo(): string {
-    return this.auth.currentUser()?.displayName ?? '';
   }
 
   /** true se questo allenamento e' gia' stato fatto in questa settimana. */

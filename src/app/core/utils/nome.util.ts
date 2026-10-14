@@ -2,7 +2,7 @@
  * Nome e cognome, su profili che per molto tempo hanno avuto solo un campo.
  *
  * L'iscrizione chiede "Il tuo nome" e basta, e tutto quello che mostra una
- * persona nell'app - la testata dell'Account, il sottotitolo della navbar, la
+ * persona nell'app - la testata dell'Account e la
  * lista clienti del coach - legge quel campo unico. Separarli senza rompere
  * nessuno di quei punti vuol dire tenere i tre valori allineati: nome e
  * cognome sono la verita', displayName e' la loro somma, riscritta a ogni

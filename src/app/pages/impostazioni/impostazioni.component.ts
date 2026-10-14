@@ -286,7 +286,7 @@ export class ImpostazioniComponent implements OnInit {
    * Scrive nome, cognome e il nome intero insieme.
    *
    * displayName e' quello che l'app mostra ovunque - testata dell'Account,
-   * sottotitolo della navbar, lista clienti del coach - e ricomporlo qui e'
+   * lista clienti del coach - e ricomporlo qui e'
    * l'unico modo perche' quei posti non restino indietro col nome vecchio.
    *
    * Tutti e due vuoti non si puo': resterebbero schermate senza nome e un
