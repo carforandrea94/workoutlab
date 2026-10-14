@@ -5,7 +5,9 @@ import { CommonModule } from '@angular/common';
 import { MeasurementDataService } from '../../services/measurement-data.service';
 import { ConfirmDialogService } from '../../services/confirm-dialog.service';
 import { MeasurementEntry } from '../../models/measurement.model';
-import { IONIC_PAGE, IONIC_REFRESH, IONIC_SLIDING, completaRefresh } from '../../core/ionic-page';
+import { IONIC_PAGE } from '../../core/ionic-page';
+import { IONIC_REFRESH, completaRefresh } from '../../core/ionic-refresh';
+import { IONIC_SLIDING } from '../../core/ionic-sliding';
 import { NavController, IonSpinner } from '@ionic/angular';
 
 interface EntryRow {

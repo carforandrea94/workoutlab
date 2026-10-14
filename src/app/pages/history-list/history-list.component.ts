@@ -7,7 +7,9 @@ import { WorkoutStateService } from '../../services/workout-state.service';
 import { ConfirmDialogService } from '../../services/confirm-dialog.service';
 import { WorkoutSession } from '../../models/workout.model';
 import { WorkoutSessionStateService } from '../../services/workout-session-state.service';
-import { IONIC_PAGE, IONIC_REFRESH, IONIC_SLIDING, completaRefresh } from '../../core/ionic-page';
+import { IONIC_PAGE } from '../../core/ionic-page';
+import { IONIC_REFRESH, completaRefresh } from '../../core/ionic-refresh';
+import { IONIC_SLIDING } from '../../core/ionic-sliding';
 import { NavController, IonSpinner } from '@ionic/angular';
 
 interface SessionEntry {

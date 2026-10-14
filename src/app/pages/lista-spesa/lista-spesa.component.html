@@ -24,23 +24,17 @@
            tutta la riga e scorreva sopra il contatore. -->
       <div class="shop-top" *ngIf="totalCount > 0">
         <span class="shop-count">{{ checkedCount }} / {{ totalCount }}</span>
-        <span class="shop-bar"><i [style.width.%]="progress"></i></span>
+        <ion-progress-bar class="shop-bar" [value]="progress / 100" aria-label="Spesa fatta"></ion-progress-bar>
         <button class="shop-clear" (click)="resetAll()" *ngIf="checkedCount > 0">Svuota</button>
       </div>
 
       <!-- Cercare e aggiungere restano due campi distinti: in uno solo, battere
            "cala" per trovare il Calamaro e premere invio avrebbe aggiunto "cala"
            alla lista. Qui la ricerca viene prima perche' e' quello che si fa piu'
-           spesso: la lista ha cinquanta voci, e se ne aggiunge una ogni tanto. -->
-      <div class="shop-searchrow" *ngIf="totalCount > 0">
-        <lucide-icon name="search" [size]="16" class="shop-searchic"></lucide-icon>
-        <ion-input type="text" [(ngModel)]="query" placeholder="Cerca nella lista…"
-          aria-label="Cerca un alimento nella lista"></ion-input>
-        <button type="button" class="shop-searchx" *ngIf="filtroAttivo"
-          (click)="pulisciRicerca()" aria-label="Annulla la ricerca">
-          <lucide-icon name="x" [size]="15"></lucide-icon>
-        </button>
-      </div>
+           spesso: la lista ha cinquanta voci, e se ne aggiunge una ogni tanto.
+           E' la barra di ricerca di iOS: la croce per svuotarla la mette lei. -->
+      <ion-searchbar class="shop-search" *ngIf="totalCount > 0" [(ngModel)]="query" [debounce]="0"
+        placeholder="Cerca nella lista…" aria-label="Cerca un alimento nella lista"></ion-searchbar>
 
       <div class="shop-addrow">
         <ion-input type="text" [(ngModel)]="newItemName" (keydown.enter)="addCustomItem()" placeholder="Aggiungi alimento…"></ion-input>
@@ -50,30 +44,32 @@
       <!-- Il carrello, in cima e chiuso: quello che e' gia' dentro esce dalla
            lista, cosi' a meta' spesa si scorre quello che manca e non venti righe
            barrate. Si riapre per togliere una spunta sbagliata. -->
-      <ng-container *ngIf="checkedCount > 0 && (!filtroAttivo || itemsPresi.length + customPresi.length > 0)">
-        <button type="button" class="shop-cart" [class.open]="carrelloAperto" (click)="toggleCart()"
-          [attr.aria-expanded]="carrelloAperto">
-          <lucide-icon name="chevron-down" [size]="14" class="shop-cart-chev"></lucide-icon>
-          Nel carrello ({{ checkedCount }})
-        </button>
-        <div class="shop-list shop-list-cart" *ngIf="carrelloAperto">
-          <button type="button" class="shop-row ok press-fx" *ngFor="let item of itemsPresi" (click)="toggle(item)">
-            <span class="shop-check on">
-              <lucide-icon name="check" [size]="13" [strokeWidth]="3"></lucide-icon>
-            </span>
-            <span class="shop-name">{{ item.name }}</span>
-          </button>
-          <div class="shop-row ok press-fx" *ngFor="let item of customPresi" (click)="toggleCustom(item)">
-            <span class="shop-check on">
-              <lucide-icon name="check" [size]="13" [strokeWidth]="3"></lucide-icon>
-            </span>
-            <span class="shop-name">{{ item.name }}</span>
-            <button class="delete-btn" (click)="removeCustom(item, $event)" title="Elimina">
-              <lucide-icon name="trash-2" [size]="14"></lucide-icon>
-            </button>
+      <ion-accordion-group class="shop-cartgroup"
+        *ngIf="checkedCount > 0 && (!filtroAttivo || itemsPresi.length + customPresi.length > 0)"
+        [value]="carrelloAperto ? 'carrello' : undefined"
+        (ionChange)="impostaCarrello($event.detail.value === 'carrello')">
+        <ion-accordion value="carrello">
+          <ion-item slot="header" lines="none" class="shop-cartitem">
+            <ion-label>Nel carrello ({{ checkedCount }})</ion-label>
+          </ion-item>
+          <div slot="content" class="shop-list shop-list-cart">
+            <ion-item class="shop-item ok" lines="none" *ngFor="let item of itemsPresi">
+              <ion-checkbox labelPlacement="end" justify="start" [checked]="true" (ionChange)="toggle(item)">{{ item.name }}</ion-checkbox>
+            </ion-item>
+            <ion-item-sliding class="shop-item ok" *ngFor="let item of customPresi" #riga>
+              <ion-item lines="none">
+                <ion-checkbox labelPlacement="end" justify="start" [checked]="true" (ionChange)="toggleCustom(item)">{{ item.name }}</ion-checkbox>
+                <button slot="end" class="delete-btn" (click)="removeCustom(item, $event)" title="Elimina" aria-label="Elimina">
+                  <lucide-icon name="trash-2" [size]="14"></lucide-icon>
+                </button>
+              </ion-item>
+              <ion-item-options side="end">
+                <ion-item-option (click)="riga.close(); removeCustom(item, $event)">Elimina</ion-item-option>
+              </ion-item-options>
+            </ion-item-sliding>
           </div>
-        </div>
-      </ng-container>
+        </ion-accordion>
+      </ion-accordion-group>
 
       <div *ngIf="totalCount === 0" class="history-empty">
         Nessun alimento trovato nei tuoi piani alimentari.<br>
@@ -88,32 +84,38 @@
       </div>
 
       <!-- I reparti. Dentro c'e' solo quello che manca: il preso scende nel
-           carrello, qui sopra. -->
+           carrello, qui sopra. Un tocco sulla riga spunta la casella. -->
       <ng-container *ngFor="let g of groups">
         <div class="shop-group" *ngIf="g.daPrendere.length > 0">
           <span class="shop-group-tit">{{ g.label }}</span>
           <span class="shop-group-n">{{ g.presi }} / {{ g.totale }}</span>
         </div>
         <div class="shop-list" *ngIf="g.daPrendere.length > 0">
-          <button type="button" class="shop-row press-fx" *ngFor="let item of g.daPrendere" (click)="toggle(item)">
-            <span class="shop-check"></span>
-            <span class="shop-name">{{ item.name }}</span>
-          </button>
+          <ion-item class="shop-item" lines="none" *ngFor="let item of g.daPrendere">
+            <ion-checkbox labelPlacement="end" justify="start" [checked]="false" (ionChange)="toggle(item)">{{ item.name }}</ion-checkbox>
+          </ion-item>
         </div>
       </ng-container>
 
+      <!-- Quelli aggiunti a mano si possono togliere: con il gesto di iOS
+           (scorrendo la riga) e con il cestino, che resta perche' un gesto da
+           solo non lo raggiunge chi usa uno screen reader o la tastiera. -->
       <ng-container *ngIf="customDaPrendere.length > 0">
         <div class="shop-group">
           <span class="shop-group-tit">Aggiunti da te</span>
         </div>
         <div class="shop-list">
-          <div class="shop-row press-fx" *ngFor="let item of customDaPrendere" (click)="toggleCustom(item)">
-            <span class="shop-check"></span>
-            <span class="shop-name">{{ item.name }}</span>
-            <button class="delete-btn" (click)="removeCustom(item, $event)" title="Elimina">
-              <lucide-icon name="trash-2" [size]="14"></lucide-icon>
-            </button>
-          </div>
+          <ion-item-sliding class="shop-item" *ngFor="let item of customDaPrendere" #riga>
+            <ion-item lines="none">
+              <ion-checkbox labelPlacement="end" justify="start" [checked]="false" (ionChange)="toggleCustom(item)">{{ item.name }}</ion-checkbox>
+              <button slot="end" class="delete-btn" (click)="removeCustom(item, $event)" title="Elimina" aria-label="Elimina">
+                <lucide-icon name="trash-2" [size]="14"></lucide-icon>
+              </button>
+            </ion-item>
+            <ion-item-options side="end">
+              <ion-item-option (click)="riga.close(); removeCustom(item, $event)">Elimina</ion-item-option>
+            </ion-item-options>
+          </ion-item-sliding>
         </div>
       </ng-container>
 

@@ -4,7 +4,9 @@ import { CommonModule } from '@angular/common';
 import { ProtocolService } from '../../services/protocol.service';
 import { ConfirmDialogService } from '../../services/confirm-dialog.service';
 import { Protocol } from '../../models/protocol.model';
-import { IONIC_PAGE, IONIC_REFRESH, IONIC_SLIDING, completaRefresh } from '../../core/ionic-page';
+import { IONIC_PAGE } from '../../core/ionic-page';
+import { IONIC_REFRESH, completaRefresh } from '../../core/ionic-refresh';
+import { IONIC_SLIDING } from '../../core/ionic-sliding';
 import { NavController, IonSpinner } from '@ionic/angular';
 
 /**

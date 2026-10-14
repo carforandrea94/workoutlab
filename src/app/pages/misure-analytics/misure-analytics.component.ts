@@ -9,7 +9,8 @@ import {
   PLICHE_FIELDS,
   CENTIMETRI_FIELDS
 } from '../../models/measurement.model';
-import { IONIC_PAGE, IONIC_REFRESH, completaRefresh } from '../../core/ionic-page';
+import { IONIC_PAGE } from '../../core/ionic-page';
+import { IONIC_REFRESH, completaRefresh } from '../../core/ionic-refresh';
 import { IonSpinner } from '@ionic/angular';
 
 interface FieldOption {

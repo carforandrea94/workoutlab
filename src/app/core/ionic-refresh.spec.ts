@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { completaRefresh } from './ionic-page';
+import { completaRefresh } from './ionic-refresh';
 
 /**
  * Il gesto "tira per aggiornare": l'indicatore di ion-refresher si chiude

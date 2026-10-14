@@ -225,11 +225,21 @@ describe('ListaSpesa — cercare un alimento', () => {
     expect(c.filtroAttivo).toBe(false);
   });
 
-  it('pulire la ricerca rimette tutto in lista', () => {
+  // La croce della barra di ricerca svuota il campo, e il campo e' `query`.
+  it('svuotare la ricerca rimette tutto in lista', () => {
     const c = componente(DIETA);
     c.query = 'riso';
-    c.pulisciRicerca();
-    expect(c.query).toBe('');
+    expect(c.risultati).toBeLessThan(7);
+    c.query = '';
+    expect(c.filtroAttivo).toBe(false);
     expect(c.risultati).toBe(7);
+  });
+
+  it('il carrello segue l\'accordion: aperto o chiuso dall\'utente', () => {
+    const c = componente(DIETA);
+    c.impostaCarrello(true);
+    expect(c.cartOpen).toBe(true);
+    c.impostaCarrello(false);
+    expect(c.cartOpen).toBe(false);
   });
 });

@@ -7,7 +7,8 @@ import { RUN_TYPE_LABELS, RUN_EFFORT_LABELS, RunEffort, hasRunGoal, Run } from '
 import { goalPct } from '../../core/utils/run-math.util';
 import { todayLocalISO } from '../../core/utils/date.util';
 import { buildWeekHistory, WeekGroup } from '../../core/utils/week-history.util';
-import { IONIC_PAGE, IONIC_REFRESH, completaRefresh } from '../../core/ionic-page';
+import { IONIC_PAGE } from '../../core/ionic-page';
+import { IONIC_REFRESH, completaRefresh } from '../../core/ionic-refresh';
 import { NavController } from '@ionic/angular';
 
 const WEEKDAYS = ['dom', 'lun', 'mar', 'mer', 'gio', 'ven', 'sab'];

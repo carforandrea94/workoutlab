@@ -6,7 +6,10 @@ import { DietDataService } from '../../services/diet-data.service';
 import { AppStateService } from '../../services/app-state.service';
 import { FoodItem } from '../../models/diet.model';
 import { IONIC_PAGE } from '../../core/ionic-page';
-import { IonInput, IonSpinner } from '@ionic/angular';
+import { IONIC_SLIDING } from '../../core/ionic-sliding';
+import {
+  IonAccordion, IonAccordionGroup, IonCheckbox, IonInput, IonLabel, IonProgressBar, IonSearchbar, IonSpinner
+} from '@ionic/angular';
 
 /** Il macro sotto cui l'alimento compare nella dieta. */
 export type Macro = 'carb' | 'protein' | 'fat';
@@ -51,7 +54,9 @@ const MACRO: { key: Macro; label: string }[] = [
 @Component({
   selector: 'app-lista-spesa',
   standalone: true,
-  imports: [IonInput, IonSpinner, ...IONIC_PAGE, CommonModule, FormsModule, LucideAngularModule],
+  imports: [
+    IonAccordion, IonAccordionGroup, IonCheckbox, IonInput, IonLabel, IonProgressBar, IonSearchbar, IonSpinner,
+    ...IONIC_PAGE, ...IONIC_SLIDING, CommonModule, FormsModule, LucideAngularModule],
   templateUrl: './lista-spesa.component.html'
 })
 export class ListaSpesaComponent implements OnInit {
@@ -154,10 +159,6 @@ export class ListaSpesaComponent implements OnInit {
     return this.filtroAttivo && this.totalCount > 0 && this.risultati === 0;
   }
 
-  pulisciRicerca(): void {
-    this.query = '';
-  }
-
   /** Aggiunge alla lista quello che si stava cercando senza trovarlo. */
   aggiungiCercato(): void {
     this.newItemName = this.query.trim();
@@ -240,6 +241,11 @@ export class ListaSpesaComponent implements OnInit {
 
   toggleCart(): void {
     this.cartOpen = !this.cartOpen;
+  }
+
+  /** L'accordion dice se l'utente l'ha aperto o chiuso: il carrello lo segue. */
+  impostaCarrello(aperto: boolean): void {
+    this.cartOpen = aperto;
   }
 
   private safeKey(key: string): string {

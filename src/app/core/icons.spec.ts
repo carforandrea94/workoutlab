@@ -23,7 +23,7 @@ const USED = [
   'chart-line', 'check', 'chevron-down', 'chevron-right', 'circle-plus',
   'dumbbell', 'eye', 'eye-off', 'file-text', 'file-up', 'gallery-horizontal',
   'grip-vertical', 'history', 'info',
-  'list', 'pause', 'play', 'plus', 'ruler', 'save', 'search',
+  'list', 'pause', 'play', 'plus', 'ruler', 'save',
   'settings',
   'shopping-cart', 'sport-shoe', 'square-pen', 'timer', 'trash-2', 'user',
   'utensils', 'x'
