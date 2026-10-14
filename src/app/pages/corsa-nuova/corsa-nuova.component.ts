@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, Optional } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
@@ -13,7 +13,9 @@ import {
 import { parseMinutes, formatMinutes } from '../../core/utils/run-math.util';
 import { todayLocalISO } from '../../core/utils/date.util';
 import { IONIC_PAGE } from '../../core/ionic-page';
-import { NavController, IonInput, IonSegment, IonSegmentButton, IonButton } from '@ionic/angular';
+import { NavController, IonInput, IonSegment, IonSegmentButton, IonButton, IonRouterOutlet } from '@ionic/angular';
+import { ConModificheNonSalvate } from '../../core/guards/modifiche-non-salvate.guard';
+import { senzaSwipeIndietro } from '../../core/swipe-indietro';
 
 @Component({
   selector: 'app-corsa-nuova',
@@ -21,7 +23,7 @@ import { NavController, IonInput, IonSegment, IonSegmentButton, IonButton } from
   imports: [IonButton, IonInput, IonSegment, IonSegmentButton, ...IONIC_PAGE, CommonModule, FormsModule],
   templateUrl: './corsa-nuova.component.html'
 })
-export class CorsaNuovaComponent implements OnInit, OnDestroy {
+export class CorsaNuovaComponent implements OnInit, OnDestroy, ConModificheNonSalvate {
 
   readonly types = (Object.keys(RUN_TYPE_LABELS) as RunType[]).map(id => ({ id, label: RUN_TYPE_LABELS[id] }));
   readonly efforts = (Object.keys(RUN_EFFORT_LABELS) as RunEffort[]).map(id => ({ id, label: RUN_EFFORT_LABELS[id] }));
@@ -48,6 +50,12 @@ export class CorsaNuovaComponent implements OnInit, OnDestroy {
 
   private paramSub: Subscription | null = null;
 
+  /** Com'erano i campi appena aperta la pagina (o caricata l'uscita): quello con cui si confronta per dire "hai modificato". */
+  private baseline = '';
+  /** Dopo un salvataggio o un'eliminazione l'uscita e' voluta: la guardia non deve chiedere. */
+  private uscitaConsentita = false;
+  private get swipe() { return senzaSwipeIndietro(this.outlet); }
+
   constructor(
     private runsSvc: RunsService,
     private state: RunningStateService,
@@ -55,7 +63,8 @@ export class CorsaNuovaComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private confirm: ConfirmDialogService,
     private toast: ToastService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    @Optional() private outlet: IonRouterOutlet | null = null
   ) {}
 
   ngOnInit(): void {
@@ -70,6 +79,7 @@ export class CorsaNuovaComponent implements OnInit, OnDestroy {
       // di costringere a girarlo all'indietro.
       const date = params.get('date');
       if (date && date <= this.maxDate) this.date = date;
+      this.baseline = this.fotografia();
     });
     // In modifica servono le uscite gia' salvate: se si arriva qui da un link
     // diretto l'elenco puo' essere ancora vuoto.
@@ -80,6 +90,24 @@ export class CorsaNuovaComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.paramSub?.unsubscribe();
+  }
+
+  ionViewWillEnter(): void {
+    this.uscitaConsentita = false;
+    this.swipe.spegni();
+  }
+
+  ionViewWillLeave(): void {
+    this.swipe.riaccendi();
+  }
+
+  private fotografia(): string {
+    return JSON.stringify([this.date, this.minutes.trim(), this.type, this.effort, this.note.trim()]);
+  }
+
+  /** Scritto qualcosa che non e' stato salvato: vedi uscitaSenzaPerdite. */
+  haModificheNonSalvate(): boolean {
+    return !this.uscitaConsentita && !this.saving && this.baseline !== '' && this.fotografia() !== this.baseline;
   }
 
   get title(): string {
@@ -133,6 +161,7 @@ export class CorsaNuovaComponent implements OnInit, OnDestroy {
 
     await this.state.refresh();
     this.toast.success(this.editId ? 'Uscita aggiornata' : `Registrati ${formatMinutes(durationMin)}`);
+    this.uscitaConsentita = true;
     this.nav.navigateBack(['/corsa']);
   }
 
@@ -163,6 +192,7 @@ export class CorsaNuovaComponent implements OnInit, OnDestroy {
 
     await this.state.refresh();
     this.toast.success('Uscita eliminata');
+    this.uscitaConsentita = true;
     this.nav.navigateBack(['/corsa']);
   }
 
@@ -182,6 +212,7 @@ export class CorsaNuovaComponent implements OnInit, OnDestroy {
     this.type = run.type;
     this.effort = run.effort;
     this.note = run.note ?? '';
+    this.baseline = this.fotografia();
     // Quando i dati arrivano dalla lettura delle uscite siamo fuori da
     // qualsiasi evento: l'app e' zoneless e i campi del form sono proprieta'
     // normali, quindi senza questo il form resterebbe vuoto. Dal ramo

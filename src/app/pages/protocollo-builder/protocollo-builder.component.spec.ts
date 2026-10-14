@@ -288,6 +288,106 @@ describe('ProtocolloBuilderComponent', () => {
       expect(component.dayCount(giorno)).toBe('2 esercizi');
     });
   });
+
+  describe('modifiche non salvate', () => {
+    /** Un builder con il protocollo caricato "dal server" (quello che restituisce get). */
+    async function aperto(server: { current: Protocol }) {
+      const protocolSvc: any = {
+        update: () => Promise.resolve(),
+        get: () => Promise.resolve(structuredClone(server.current)),
+        activate: () => Promise.resolve()
+      };
+      const router: any = { navigateBack: () => {}, navigateForward: () => {} };
+      const cdr: any = { detectChanges: () => {} };
+      const component = new ProtocolloBuilderComponent(
+        {} as any, router, protocolSvc, new PdfImportService(), new WorkoutDataService(), cdr,
+        new ProtocolBuilderStateService(), new ToastService(), new ConfirmDialogService({} as any, {} as any)
+      );
+      component.protocolId = 'proto1';
+      await component.load();
+      return component;
+    }
+
+    it('appena caricato non ha modifiche da perdere', async () => {
+      const c = await aperto({ current: buildProtocol() });
+      expect(c.haModificheNonSalvate()).toBe(false);
+    });
+
+    it('cambiare il nome del protocollo e\' una modifica non salvata', async () => {
+      const c = await aperto({ current: buildProtocol() });
+      c.protocol!.name = 'Un altro nome';
+      expect(c.haModificheNonSalvate()).toBe(true);
+    });
+
+    it('anche una modifica dentro un esercizio conta', async () => {
+      const c = await aperto({ current: buildProtocol() });
+      c.protocol!.workout.days[0].ex[0].sets = 5;
+      expect(c.haModificheNonSalvate()).toBe(true);
+    });
+
+    it('dopo il salvataggio non resta niente da perdere', async () => {
+      const c = await aperto({ current: buildProtocol() });
+      c.protocol!.name = 'Un altro nome';
+      await c.save(false);
+      expect(c.haModificheNonSalvate()).toBe(false);
+    });
+
+    it('tornando alla pagina, se il salvato e\' piu\' recente (Aggiorna da PDF) si ricarica', async () => {
+      const server = { current: buildProtocol() };
+      const c = await aperto(server);
+      server.current = { ...buildProtocol(), name: 'Aggiornato dal PDF', updatedAt: '2026-02-01T00:00:00.000Z' };
+
+      await (c as any).ricaricaSeCambiato();
+
+      expect(c.protocol!.name).toBe('Aggiornato dal PDF');
+      expect(c.haModificheNonSalvate()).toBe(false);
+    });
+
+    it('se il salvato e\' piu\' recente si ricarica anche con modifiche non salvate: salvarle riscriverebbe i dati vecchi', async () => {
+      const server = { current: buildProtocol() };
+      const c = await aperto(server);
+      c.protocol!.name = 'Modifica non salvata';
+      server.current = { ...buildProtocol(), name: 'Aggiornato dal PDF', updatedAt: '2026-02-01T00:00:00.000Z' };
+
+      await (c as any).ricaricaSeCambiato();
+
+      expect(c.protocol!.name).toBe('Aggiornato dal PDF');
+    });
+
+    it('se il salvato non e\' cambiato (si torna da un\'altra tab) tiene quello che c\'e\', modifiche comprese', async () => {
+      const c = await aperto({ current: buildProtocol() });
+      c.protocol!.name = 'Modifica non salvata';
+
+      await (c as any).ricaricaSeCambiato();
+
+      expect(c.protocol!.name).toBe('Modifica non salvata');
+      expect(c.haModificheNonSalvate()).toBe(true);
+    });
+
+    it('un salvataggio fatto da qui non fa credere che il salvato sia piu\' recente', async () => {
+      const server = { current: buildProtocol() };
+      const c = await aperto(server);
+      c.protocol!.name = 'Primo';
+      // il server, dopo il salvataggio, porta la data nuova: e' quella che persist() rilegge
+      server.current = { ...buildProtocol(), name: 'Primo', updatedAt: '2026-03-01T00:00:00.000Z' };
+      await c.save(false);
+      c.protocol!.name = 'Secondo, scritto dopo';
+
+      await (c as any).ricaricaSeCambiato();
+
+      expect(c.protocol!.name).toBe('Secondo, scritto dopo');
+    });
+
+    it('senza rete tiene quello che c\'e\' invece di rompersi', async () => {
+      const server = { current: buildProtocol() };
+      const c = await aperto(server);
+      (c as any).protocolSvc.get = () => Promise.reject(new Error('offline'));
+      c.protocol!.name = 'Modifica non salvata';
+
+      await expect((c as any).ricaricaSeCambiato()).resolves.toBeUndefined();
+      expect(c.protocol!.name).toBe('Modifica non salvata');
+    });
+  });
 });
 
 /**

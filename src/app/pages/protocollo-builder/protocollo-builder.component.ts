@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, Optional } from '@angular/core';
 import { LucideAngularModule } from 'lucide-angular';
 import { CommonModule } from '@angular/common';
 import {
@@ -25,7 +25,9 @@ import { PdfImportService } from '../../services/pdf-import.service';
 import { ConfirmDialogService } from '../../services/confirm-dialog.service';
 import { IONIC_PAGE, IONIC_LINKS } from '../../core/ionic-page';
 import { IONIC_LIST } from '../../core/ionic-list';
-import { NavController, IonInput, IonTextarea, IonSelect, IonSelectOption, IonSpinner, IonSegment, IonSegmentButton, IonButton } from '@ionic/angular';
+import { NavController, IonInput, IonTextarea, IonSelect, IonSelectOption, IonSpinner, IonSegment, IonSegmentButton, IonButton, IonRouterOutlet } from '@ionic/angular';
+import { ConModificheNonSalvate } from '../../core/guards/modifiche-non-salvate.guard';
+import { senzaSwipeIndietro } from '../../core/swipe-indietro';
 
 type Tab = 'scheda' | 'dieta' | 'corsa' | 'info';
 
@@ -58,6 +60,16 @@ export class ProtocolloBuilderComponent implements OnInit, OnDestroy {
   saving = false;
   saveMsg = '';
   private paramSub: Subscription | null = null;
+
+  /**
+   * Com'era il protocollo all'ultimo caricamento o salvataggio: il termine di
+   * confronto per dire "hai modificato" (vedi uscitaSenzaPerdite). Si prende
+   * dopo il primo disegno, cosi' quello che il template normalizza da solo
+   * non conta come modifica.
+   */
+  private baseline = '';
+  private uscitaConsentita = false;
+  private get swipe() { return senzaSwipeIndietro(this.outlet); }
 
   tab: Tab = 'scheda';
   /**
@@ -106,7 +118,8 @@ export class ProtocolloBuilderComponent implements OnInit, OnDestroy {
     private cdr: ChangeDetectorRef,
     public protocolBuilderState: ProtocolBuilderStateService,
     private toast: ToastService,
-    private confirm: ConfirmDialogService
+    private confirm: ConfirmDialogService,
+    @Optional() private outlet: IonRouterOutlet | null = null
   ) {}
 
   ngOnInit(): void {
@@ -121,6 +134,50 @@ export class ProtocolloBuilderComponent implements OnInit, OnDestroy {
     this.paramSub?.unsubscribe();
     this.protocolBuilderState.registerHandlers(null, null);
     this.protocolBuilderState.editingSubform.set(false);
+  }
+
+  ionViewWillEnter(): void {
+    this.uscitaConsentita = false;
+    this.swipe.spegni();
+    void this.ricaricaSeCambiato();
+  }
+
+  ionViewWillLeave(): void {
+    this.swipe.riaccendi();
+  }
+
+  /**
+   * Tornando qui da "Aggiorna da PDF" la pagina e' quella di prima, con in
+   * memoria il protocollo di prima: ma il PDF ha riscritto quello salvato, e
+   * un Salva da qui avrebbe rimesso i dati vecchi. Se il protocollo salvato e'
+   * piu' recente di quello in memoria si ricarica, modifiche non salvate
+   * comprese (la guardia ha gia' chiesto prima di partire). Se e' lo stesso -
+   * si torna da un'altra tab, o dalla lista - si tiene quello che c'e'.
+   */
+  private async ricaricaSeCambiato(): Promise<void> {
+    if (!this.protocol || this.loading || !this.protocolId) return;
+    try {
+      const salvato = await this.protocolSvc.get(this.protocolId);
+      if (!salvato || salvato.updatedAt <= this.protocol.updatedAt) return;
+      this.editingDay = null;
+      this.editingPlan = null;
+      this.editingMeal = null;
+      this.editingExercise = null;
+      await this.caricaProtocollo();
+    } catch {
+      // Senza rete si tiene quello che c'e': la pagina non deve sparire per una lettura.
+    }
+  }
+
+  private fotografia(): string {
+    const p = this.protocol;
+    return p ? JSON.stringify({ name: p.name, workout: p.workout, diet: p.diet, running: p.running, infoNote: p.infoNote }) : '';
+  }
+
+  /** Il protocollo in memoria non e' piu' quello salvato: vedi uscitaSenzaPerdite. */
+  haModificheNonSalvate(): boolean {
+    return !!this.protocol && !this.loading && !this.uscitaConsentita
+      && this.baseline !== '' && this.fotografia() !== this.baseline;
   }
 
   /**
@@ -166,6 +223,8 @@ export class ProtocolloBuilderComponent implements OnInit, OnDestroy {
     } finally {
       this.loading = false;
       this.cdr.detectChanges();
+      // Dopo il disegno: quello che il template mette a posto da solo e' gia' dentro.
+      this.baseline = this.protocol && !this.errorMsg ? this.fotografia() : '';
     }
   }
 
@@ -787,6 +846,11 @@ export class ProtocolloBuilderComponent implements OnInit, OnDestroy {
         this.toast.error('Salvataggio incompleto, riprova.');
         return false;
       }
+      // Quello in memoria ora e' quello salvato (weekPlan ricalcolato compreso),
+      // e porta la data dell'ultimo salvataggio: senza, tornando alla pagina
+      // sembrerebbe che il salvato sia piu' recente e la ricaricherebbe.
+      this.baseline = this.fotografia();
+      if (reread) this.protocol.updatedAt = reread.updatedAt;
       return true;
     } catch (e: any) {
       console.error('Errore salvataggio protocollo:', e);

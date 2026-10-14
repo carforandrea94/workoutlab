@@ -3,6 +3,7 @@ import { authGuard } from './core/guards/auth.guard';
 import { guestGuard } from './core/guards/guest.guard';
 import { protocolGuard } from './core/guards/protocol.guard';
 import { profileGuard, onboardingGuard } from './core/guards/profile.guard';
+import { uscitaSenzaPerdite } from './core/guards/modifiche-non-salvate.guard';
 
 /**
  * Due livelli: le pagine senza barra (accesso, iscrizione, dati mancanti, privacy) e, sotto
@@ -88,6 +89,7 @@ export const routes: Routes = [
       },
       {
         path: 'scheda/protocolli/builder/:protocolId',
+        canDeactivate: [uscitaSenzaPerdite],
         loadComponent: () => import('./pages/protocollo-builder/protocollo-builder.component').then(m => m.ProtocolloBuilderComponent)
       },
 
@@ -112,6 +114,7 @@ export const routes: Routes = [
       },
       {
         path: 'corsa/nuova',
+        canDeactivate: [uscitaSenzaPerdite],
         loadComponent: () => import('./pages/corsa-nuova/corsa-nuova.component').then(m => m.CorsaNuovaComponent)
       },
 
@@ -130,6 +133,7 @@ export const routes: Routes = [
       },
       {
         path: 'misure/:categoria',
+        canDeactivate: [uscitaSenzaPerdite],
         loadComponent: () => import('./pages/misura-categoria/misura-categoria.component').then(m => m.MisuraCategoriaComponent)
       },
       {
