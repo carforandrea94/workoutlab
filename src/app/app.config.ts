@@ -5,6 +5,7 @@ import { LucideAngularModule, LucideIconConfig } from 'lucide-angular';
 
 import { routes } from './app.routes';
 import { APP_ICONS } from './core/icons';
+import { transizionePagina } from './core/page-transition';
 import { provideServiceWorker } from '@angular/service-worker';
 
 export const appConfig: ApplicationConfig = {
@@ -20,7 +21,9 @@ export const appConfig: ApplicationConfig = {
     // Ionic scrive "Back" accanto al segno, e il testo non sta nel riquadro da
     // 38px della testata. A dire cos'e' ai lettori di schermo pensa l'aria-label
     // "Indietro" che ogni pagina mette sul suo ion-back-button.
-    provideIonicAngular({ mode: 'ios', backButtonText: '' }),
+    // navAnimation: la transizione fra pagine e' quella dell'app (testata
+    // coreografata, vedi core/page-transition.ts), non quella di serie di Ionic.
+    provideIonicAngular({ mode: 'ios', backButtonText: '', navAnimation: transizionePagina }),
     provideRouter(routes, withComponentInputBinding()),
     importProvidersFrom(LucideAngularModule.pick(APP_ICONS)),
     { provide: LucideIconConfig, useValue: Object.assign(new LucideIconConfig(), { strokeWidth: 2 }) },
