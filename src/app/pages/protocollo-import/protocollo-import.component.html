@@ -1,7 +1,7 @@
 <ion-header class="ion-no-border">
   <ion-toolbar>
     <ion-buttons slot="start">
-      <ion-back-button [defaultHref]="isUpdateMode ? '/scheda/protocolli/builder/' + protocolId : '/scheda/protocolli/nuovo'"></ion-back-button>
+      <ion-back-button [defaultHref]="isUpdateMode ? '/scheda/protocolli/builder/' + protocolId : '/scheda/protocolli/nuovo'" aria-label="Indietro"></ion-back-button>
     </ion-buttons>
     <ion-title>
       <div class="navtitle">{{ isUpdateMode ? 'Aggiorna da PDF' : 'Importa da PDF' }}</div>
