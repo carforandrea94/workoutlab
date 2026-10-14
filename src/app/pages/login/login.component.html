@@ -64,9 +64,9 @@
         <p class="authinfo" role="status" *ngIf="infoMsg">{{ infoMsg }}</p>
 
         <div class="authfoot">
-          <button class="savebtn" type="submit" [disabled]="loading">
+          <ion-button class="savebtn" type="submit" [disabled]="loading">
             {{ loading ? 'Accesso in corso…' : 'Accedi' }}
-          </button>
+          </ion-button>
 
           <!-- Senza questo, una password dimenticata chiudeva fuori dall'app e
                basta: non c'era nessun modo di rientrare. -->

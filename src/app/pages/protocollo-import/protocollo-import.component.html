@@ -49,9 +49,9 @@
     <p class="autherror" *ngIf="errorMsg">{{ errorMsg }}</p>
 
     <div class="savebar">
-      <button class="savebtn" [disabled]="!canProcess" (click)="process()">
+      <ion-button class="savebtn" [disabled]="!canProcess" (click)="process()">
         {{ processing ? 'Elaborazione in corso…' : (loadingExisting ? 'Caricamento protocollo…' : (isUpdateMode ? 'Aggiorna protocollo' : 'Elabora e crea bozza')) }}
-      </button>
+      </ion-button>
     </div>
 
     <!-- L'elaborazione del PDF blocca la pagina: ion-loading con la fase e la percentuale. -->

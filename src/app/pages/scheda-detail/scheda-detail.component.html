@@ -21,7 +21,7 @@
 
     <div *ngIf="!loading && errorMsg" class="history-empty">
       {{ errorMsg }}<br>
-      <button class="savebtn mt-3" (click)="loadAll()">Riprova</button>
+      <ion-button class="savebtn mt-3" (click)="loadAll()">Riprova</ion-button>
     </div>
 
     <div *ngIf="!loading && !errorMsg && notFound" class="history-empty">Seduta non trovata.</div>
@@ -292,10 +292,10 @@
         </div>
       </div>
 
-      <button type="button" class="confirmbtn confirm w-full" [disabled]="!canSaveSession"
+      <ion-button type="button" class="confirmbtn confirm w-full" [disabled]="!canSaveSession"
         (click)="saveWorkout()" [attr.aria-label]="saveButtonLabel">
         {{ state.saveStatus() === 'saving' ? 'Salvo…' : 'Chiudi e salva' }}
-      </button>
+      </ion-button>
 
       <button type="button" class="closing-discard" [disabled]="!canCancelSession"
         (click)="cancelSession()">Butta via questa sessione</button>
@@ -339,7 +339,7 @@
           </div>
         </div>
 
-        <button type="button" class="confirmbtn cancel w-full" (click)="backToScheda()">Torna alla scheda</button>
+        <ion-button type="button" class="confirmbtn cancel w-full" (click)="backToScheda()">Torna alla scheda</ion-button>
       </div>
     </ng-container>
 
@@ -439,7 +439,7 @@
 
     <!-- Buttare via la seduta: in fondo, dopo averla vista tutta. -->
     <div class="savebar" *ngIf="isStorico && day && !loading && !errorMsg">
-      <button class="savebtn delete-session-btn" (click)="deleteSession()">Elimina questa seduta</button>
+      <ion-button class="savebtn delete-session-btn" (click)="deleteSession()">Elimina questa seduta</ion-button>
     </div>
 
     <ion-modal class="sheet-modal" *ngIf="day && !isStorico" [isOpen]="restModalOpen"
@@ -459,8 +459,8 @@
           Usa il default del protocollo ({{ formatRest(parseRecSecondsPublic()) }})
         </button>
         <div class="confirmbtns">
-          <button class="confirmbtn cancel" (click)="closeRestModal()">Annulla</button>
-          <button class="confirmbtn danger restsave" (click)="saveRestModal()">Salva</button>
+          <ion-button class="confirmbtn cancel" (click)="closeRestModal()">Annulla</ion-button>
+          <ion-button class="confirmbtn danger restsave" (click)="saveRestModal()">Salva</ion-button>
         </div>
       </div>
      </ng-template>

@@ -7,7 +7,7 @@ import { Protocol } from '../../models/protocol.model';
 import { IONIC_PAGE } from '../../core/ionic-page';
 import { IONIC_REFRESH, completaRefresh } from '../../core/ionic-refresh';
 import { IONIC_SLIDING } from '../../core/ionic-sliding';
-import { NavController, IonSpinner } from '@ionic/angular';
+import { NavController, IonSpinner, IonButton } from '@ionic/angular';
 
 /**
  * I protocolli dell'utente: scheda, dieta e obiettivo di corsa. Ne vale uno
@@ -16,7 +16,7 @@ import { NavController, IonSpinner } from '@ionic/angular';
 @Component({
   selector: 'app-protocolli',
   standalone: true,
-  imports: [IonSpinner, ...IONIC_PAGE, ...IONIC_REFRESH, ...IONIC_SLIDING, CommonModule, LucideAngularModule],
+  imports: [IonButton, IonSpinner, ...IONIC_PAGE, ...IONIC_REFRESH, ...IONIC_SLIDING, CommonModule, LucideAngularModule],
   templateUrl: './protocolli.component.html'
 })
 export class ProtocolliComponent implements OnInit {

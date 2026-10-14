@@ -62,9 +62,9 @@
 
         <p class="autherror" role="alert" *ngIf="errorMsg">{{ errorMsg }}</p>
 
-        <button class="savebtn" type="submit" [disabled]="saving">
+        <ion-button class="savebtn" type="submit" [disabled]="saving">
           {{ saving ? 'Salvo…' : 'Salva e continua' }}
-        </button>
+        </ion-button>
       </form>
 
       <button type="button" class="authlink quiet" (click)="piuTardi()" [disabled]="saving">Più tardi</button>

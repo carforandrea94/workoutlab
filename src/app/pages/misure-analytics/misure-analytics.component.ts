@@ -11,7 +11,7 @@ import {
 } from '../../models/measurement.model';
 import { IONIC_PAGE } from '../../core/ionic-page';
 import { IONIC_REFRESH, completaRefresh } from '../../core/ionic-refresh';
-import { IonSpinner } from '@ionic/angular';
+import { IonSpinner, IonButton } from '@ionic/angular';
 
 interface FieldOption {
   field: MeasureField;
@@ -22,7 +22,7 @@ interface FieldOption {
 @Component({
   selector: 'app-misure-analytics',
   standalone: true,
-  imports: [IonSpinner, ...IONIC_PAGE, ...IONIC_REFRESH, CommonModule],
+  imports: [IonButton, IonSpinner, ...IONIC_PAGE, ...IONIC_REFRESH, CommonModule],
   templateUrl: './misure-analytics.component.html'
 })
 export class MisureAnalyticsComponent implements OnInit {

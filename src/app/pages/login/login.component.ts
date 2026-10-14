@@ -8,7 +8,7 @@ import { LogoComponent } from '../../components/logo/logo.component';
 import { loginErrorMessage, googleErrorMessage, resetErrorMessage, RESET_SENT_MESSAGE } from '../../core/utils/auth-errors.util';
 import { isNativeApp } from '../../core/utils/platform.util';
 import { IONIC_PAGE, IONIC_LINKS } from '../../core/ionic-page';
-import { NavController, IonInput, IonSegment, IonSegmentButton } from '@ionic/angular';
+import { NavController, IonInput, IonSegment, IonSegmentButton, IonButton } from '@ionic/angular';
 
 /** Dopo quanto, con Google in attesa, il tasto torna premibile. Piu' di una scelta d'account normale. */
 export const GOOGLE_FERMO_MS = 12000;
@@ -16,7 +16,7 @@ export const GOOGLE_FERMO_MS = 12000;
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [IonSegment, IonSegmentButton, IonInput, ...IONIC_PAGE, CommonModule, FormsModule, ...IONIC_LINKS, LogoComponent, LucideAngularModule],
+  imports: [IonButton, IonSegment, IonSegmentButton, IonInput, ...IONIC_PAGE, CommonModule, FormsModule, ...IONIC_LINKS, LogoComponent, LucideAngularModule],
   templateUrl: './login.component.html'
 })
 export class LoginComponent {

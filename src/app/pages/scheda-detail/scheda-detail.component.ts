@@ -30,7 +30,7 @@ import {
 } from '../../core/utils/extra-sets.util';
 
 import { IONIC_PAGE } from '../../core/ionic-page';
-import { IonModal, NavController, IonSegment, IonSegmentButton, IonSelect, IonSelectOption, IonSpinner } from '@ionic/angular';
+import { IonModal, NavController, IonSegment, IonSegmentButton, IonSelect, IonSelectOption, IonSpinner, IonButton } from '@ionic/angular';
 
 interface ExerciseVM {
   ex: Exercise;
@@ -58,7 +58,7 @@ interface ExerciseVM {
 @Component({
   selector: 'app-scheda-detail',
   standalone: true,
-  imports: [IonSegment, IonSegmentButton, IonSelect, IonSelectOption, IonSpinner, ...IONIC_PAGE, IonModal, CommonModule, FormsModule, LucideAngularModule, NumberWheelComponent],
+  imports: [IonButton, IonSegment, IonSegmentButton, IonSelect, IonSelectOption, IonSpinner, ...IONIC_PAGE, IonModal, CommonModule, FormsModule, LucideAngularModule, NumberWheelComponent],
   templateUrl: './scheda-detail.component.html'
 })
 export class SchedaDetailComponent implements OnInit, OnDestroy {

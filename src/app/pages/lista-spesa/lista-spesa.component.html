@@ -15,7 +15,7 @@
 
     <div *ngIf="!loading && errorMsg" class="history-empty">
       {{ errorMsg }}<br>
-      <button class="savebtn mt-3" (click)="load()">Riprova</button>
+      <ion-button class="savebtn mt-3" (click)="load()">Riprova</ion-button>
     </div>
 
     <ng-container *ngIf="!loading && !errorMsg">
@@ -80,7 +80,7 @@
            d'uscita e' li': aggiungerlo. -->
       <div *ngIf="nessunRisultato" class="history-empty">
         Nessun alimento per «{{ query.trim() }}».<br>
-        <button class="savebtn mt-3" (click)="aggiungiCercato()">Aggiungilo alla lista</button>
+        <ion-button class="savebtn mt-3" (click)="aggiungiCercato()">Aggiungilo alla lista</ion-button>
       </div>
 
       <!-- I reparti. Dentro c'e' solo quello che manca: il preso scende nel

@@ -20,13 +20,13 @@
     <div *ngIf="!loading && errorMsg" class="history-empty">
       {{ errorMsg }}
       <div class="mt-3">
-        <button class="confirmbtn cancel" (click)="load()">Riprova</button>
+        <ion-button class="confirmbtn cancel" (click)="load()">Riprova</ion-button>
       </div>
     </div>
 
     <ng-container *ngIf="!loading && !errorMsg">
       <div class="savebar mt-0 mb-4">
-        <button class="savebtn" (click)="newProtocol()">+ Nuovo protocollo</button>
+        <ion-button class="savebtn" (click)="newProtocol()">+ Nuovo protocollo</ion-button>
       </div>
 
       <p class="sectiontitle">I tuoi protocolli</p>
@@ -51,10 +51,10 @@
                   &nbsp;·&nbsp;{{ p.source === 'pdf' ? 'da PDF' : 'manuale' }}
                 </div>
               </div>
-              <button class="confirmbtn cancel protocol-activatebtn" *ngIf="p.status !== 'active'"
+              <ion-button class="confirmbtn cancel protocol-activatebtn" *ngIf="p.status !== 'active'"
                 [disabled]="busyId === p.id" (click)="activate(p, $event)">
                 {{ busyId === p.id ? '…' : 'Attiva' }}
-              </button>
+              </ion-button>
               <button class="delete-btn" (click)="remove(p, $event)" title="Elimina">
                 <lucide-icon name="trash-2" [size]="14"></lucide-icon>
               </button>
