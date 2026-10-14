@@ -16,7 +16,11 @@ export const appConfig: ApplicationConfig = {
     { provide: RouteReuseStrategy, useClass: IonicRouteStrategy },
     // Un solo aspetto su iOS e Android: il design dell'app e' uno, e la
     // modalita' 'md' cambierebbe barre, transizioni e pulsanti su Android.
-    provideIonicAngular({ mode: 'ios' }),
+    // backButtonText vuoto: il tasto indietro e' la sola freccia. Senza, su iOS
+    // Ionic scrive "Back" accanto al segno, e il testo non sta nel riquadro da
+    // 38px della testata. A dire cos'e' ai lettori di schermo pensa l'aria-label
+    // "Indietro" che ogni pagina mette sul suo ion-back-button.
+    provideIonicAngular({ mode: 'ios', backButtonText: '' }),
     provideRouter(routes, withComponentInputBinding()),
     importProvidersFrom(LucideAngularModule.pick(APP_ICONS)),
     { provide: LucideIconConfig, useValue: Object.assign(new LucideIconConfig(), { strokeWidth: 2 }) },
