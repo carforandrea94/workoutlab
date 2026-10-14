@@ -10,6 +10,12 @@ export const environment = {
   production: true,
   firebase: {
     apiKey: 'AIzaSyAm-M7t6v1EZhjSKjFV6DaPnw-FMuIq0zA',
+    // L'app va aperta (e installata sulla Home) da QUESTO stesso dominio. Da
+    // workout-lab-8c567.web.app l'accesso con Google attraversa due origini
+    // diverse, e Safari su iOS fa restare appesa la finestra di Google. Per
+    // usare web.app serve un authDomain uguale E l'URI di reindirizzamento
+    // https://<dominio>/__/auth/handler fra quelli autorizzati del client
+    // OAuth (Google Cloud › API e servizi › Credenziali).
     authDomain: 'workout-lab-8c567.firebaseapp.com',
     projectId: 'workout-lab-8c567',
     storageBucket: 'workout-lab-8c567.firebasestorage.app',
