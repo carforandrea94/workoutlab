@@ -507,8 +507,8 @@
                    l'alimento che arriva da un altro macro o da una lista di
                    alternative. -->
               <div class="slotdrop" cdkDropList [cdkDropListData]="zonaCasella(cat)"
-                (cdkDropListDropped)="spostaAlimento(getActiveCombo(em), $event)">
-                <div class="builder-item" *ngIf="getActiveCombo(em)[cat] as item; else noComboItem"
+                (cdkDropListDropped)="rilascia(getActiveCombo(em), $event)">
+                <div class="builder-item" *ngIf="getActiveCombo(em)[cat] as item"
                   cdkDrag>
                   <button type="button" class="draghandle" cdkDragHandle
                     aria-label="Trascina per spostare in un altro macro">
@@ -535,7 +535,7 @@
                 </div>
                 <ng-container *ngIf="isItemAltExpanded(getActiveCombo(em), cat)">
                   <div class="draglist" cdkDropList [cdkDropListData]="zonaLista(itemAlt(item2))"
-                    (cdkDropListDropped)="spostaAlimento(getActiveCombo(em), $event)">
+                    (cdkDropListDropped)="rilascia(getActiveCombo(em), $event)">
                     <div class="builder-item mt-2" *ngFor="let a of itemAlt(item2)"
                       cdkDrag>
                     <button type="button" class="draghandle" cdkDragHandle
@@ -555,17 +555,6 @@
                   <ion-button class="confirmbtn cancel w-full mt-2" (click)="addItemAltEntry(item2)">+ Alternativa</ion-button>
                 </ng-container>
               </ng-container>
-
-              <ng-template #noComboItem>
-                <div class="builder-item">
-                  <div class="measure-input-wrap">
-                    <ion-input type="text" [ngModel]="getComboItem(getActiveCombo(em), cat).name" (ngModelChange)="getComboItem(getActiveCombo(em), cat).name = $event" placeholder="Alimento"></ion-input>
-                  </div>
-                  <div class="measure-input-wrap builder-qty">
-                    <ion-input type="text" [ngModel]="getComboItem(getActiveCombo(em), cat).qty" (ngModelChange)="getComboItem(getActiveCombo(em), cat).qty = $event" placeholder="Quantita'"></ion-input>
-                  </div>
-                </div>
-              </ng-template>
             </div>
           </ng-container>
 
@@ -586,7 +575,7 @@
               <ng-container *ngFor="let cat of foodCategories">
                 <p class="meal-preview-catlabel" style="margin:14px 0 6px">{{ foodCategoryLabels[cat] }}</p>
                 <div class="draglist" cdkDropList [cdkDropListData]="zonaLista(altItems(em, cat))"
-                  (cdkDropListDropped)="spostaAlimento(getActiveCombo(em), $event)">
+                  (cdkDropListDropped)="rilascia(getActiveCombo(em), $event)">
                   <div class="builder-item" *ngFor="let item of altItems(em, cat)"
                     cdkDrag>
                     <button type="button" class="draghandle" cdkDragHandle

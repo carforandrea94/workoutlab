@@ -297,7 +297,23 @@ export class ProtocolloBuilderComponent implements OnInit, OnDestroy, DoCheck {
 
   private fotografia(): string {
     const p = this.protocol;
-    return p ? JSON.stringify({ name: p.name, workout: p.workout, diet: p.diet, running: p.running, infoNote: p.infoNote }) : '';
+    if (!p) return '';
+    // Aprire un pasto prepara le sue caselle vuote (vedi preparaCaselle): chi ha
+    // solo guardato non ha cambiato niente, e non deve sentirsi chiedere se
+    // scartare. Una casella senza nome, quantita' e alternative vale come assente.
+    const vuota = (it: FoodItem | null) => !it || (!it.name?.trim() && !it.qty?.trim() && !it.alt?.length);
+    const diet = p.diet?.map(piano => ({
+      ...piano,
+      meals: piano.meals.map(pasto => ({
+        ...pasto,
+        combinations: pasto.combinations.map(c => {
+          const copia = { ...c };
+          for (const cat of FOOD_CATEGORIES) if (vuota(copia[cat])) copia[cat] = null;
+          return copia;
+        })
+      }))
+    }));
+    return JSON.stringify({ name: p.name, workout: p.workout, diet, running: p.running, infoNote: p.infoNote });
   }
 
   /** Il protocollo in memoria non e' piu' quello salvato: vedi uscitaSenzaPerdite. */
@@ -625,12 +641,14 @@ export class ProtocolloBuilderComponent implements OnInit, OnDestroy, DoCheck {
     const meal = newNamedMeal('Nuovo pasto');
     this.editingPlan.meals.push(meal);
     this.editingMeal = meal;
+    this.preparaPasto(meal);
     this.activeCombo[meal.id] = meal.combinations[0].id;
     this.cdr.detectChanges();
   }
 
   openMeal(meal: NamedMeal): void {
     this.editingMeal = meal;
+    this.preparaPasto(meal);
     if (!this.activeCombo[meal.id]) this.activeCombo[meal.id] = meal.combinations[0].id;
     this.cdr.detectChanges();
   }
@@ -673,6 +691,7 @@ export class ProtocolloBuilderComponent implements OnInit, OnDestroy, DoCheck {
   addCombination(meal: NamedMeal): void {
     const n = meal.combinations.length + 1;
     const combo = newCombination(`Alternativa ${n - 1}`);
+    this.preparaCaselle(combo);
     meal.combinations.push(combo);
     this.activeCombo[meal.id] = combo.id;
     this.cdr.detectChanges();
@@ -693,16 +712,36 @@ export class ProtocolloBuilderComponent implements OnInit, OnDestroy, DoCheck {
     return inCombos + inAlt;
   }
 
-  /** Ritorna l'alimento della combinazione per quella macro, creandolo (vuoto) se non esiste ancora. */
-  getComboItem(combo: MealCombination, cat: FoodCategory): FoodItem {
-    if (!combo[cat]) combo[cat] = { name: '', qty: '', category: cat };
-    return combo[cat]!;
+  /**
+   * Ogni macro della combinazione ha la sua casella da riempire, anche vuota.
+   *
+   * Si prepara quando il pasto si apre o una casella si svuota, MAI mentre la
+   * pagina si disegna: il template legge le caselle e basta. Quando a crearle
+   * era la lettura, disegnare il pasto modificava il protocollo mentre Angular
+   * stava controllando che non cambiasse (NG0100 in sviluppo) e la pagina
+   * risultava "con modifiche non salvate" senza che nessuno avesse toccato nulla.
+   */
+  private preparaCaselle(combo: MealCombination): void {
+    for (const cat of this.foodCategories) {
+      if (!combo[cat]) combo[cat] = { name: '', qty: '', category: cat };
+    }
+  }
+
+  private preparaPasto(meal: NamedMeal): void {
+    meal.combinations.forEach(c => this.preparaCaselle(c));
   }
 
   clearComboItem(combo: MealCombination, cat: FoodCategory, event: Event): void {
     event.stopPropagation();
     combo[cat] = null;
+    this.preparaCaselle(combo);
     this.cdr.detectChanges();
+  }
+
+  /** Il rilascio del trascinamento, com'e' chiamato dal template: sposta, poi rimette una casella vuota dove se n'e' svuotata una. */
+  rilascia(combo: MealCombination, e: CdkDragDrop<ZonaDrop>): void {
+    this.spostaAlimento(combo, e);
+    this.preparaCaselle(combo);
   }
 
   // --- Alternative per macro (a livello di pasto, non di combinazione) ---
