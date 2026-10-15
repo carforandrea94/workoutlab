@@ -9,6 +9,7 @@ import { loginErrorMessage, googleErrorMessage, resetErrorMessage, RESET_SENT_ME
 import { isNativeApp } from '../../core/utils/platform.util';
 import { IONIC_PAGE, IONIC_LINKS } from '../../core/ionic-page';
 import { NavController, IonInput, IonSegment, IonSegmentButton, IonButton } from '@ionic/angular';
+import { NomeCampoDirective } from '../../core/nome-campo.directive';
 
 /** Dopo quanto, con Google in attesa, il tasto torna premibile. Piu' di una scelta d'account normale. */
 export const GOOGLE_FERMO_MS = 12000;
@@ -16,7 +17,7 @@ export const GOOGLE_FERMO_MS = 12000;
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [IonButton, IonSegment, IonSegmentButton, IonInput, ...IONIC_PAGE, CommonModule, FormsModule, ...IONIC_LINKS, LogoComponent, LucideAngularModule],
+  imports: [NomeCampoDirective, IonButton, IonSegment, IonSegmentButton, IonInput, ...IONIC_PAGE, CommonModule, FormsModule, ...IONIC_LINKS, LogoComponent, LucideAngularModule],
   templateUrl: './login.component.html'
 })
 export class LoginComponent {

@@ -30,6 +30,12 @@ export const WHEEL_ITEM_H = 36;
  * Un numero scritto fuori dalla griglia (32,3 con passo 0,5) non viene
  * arrotondato: entra nella ruota al posto suo. Arrotondarlo vorrebbe dire
  * cambiare un numero che qualcuno ha scritto apposta.
+ *
+ * Da tastiera e con uno screen reader la ruota e' UN controllo, non centinaia:
+ * un "spinbutton" con un solo tab-stop (le tacche sono solo per il dito, fuori
+ * dall'albero di accessibilita' e dal Tab). Freccia su/giu' cambia di un passo,
+ * Pag su/giu' di dieci, Invio o una cifra aprono la scrittura. Il verso e' quello
+ * dei campi numerici (su = di piu'), non quello in cui scorre la ruota.
  */
 @Component({
   selector: 'app-number-wheel',
@@ -44,14 +50,21 @@ export const WHEEL_ITEM_H = 36;
   <!-- Si scrive dentro la banda, al posto del numero: e' lo stesso punto in
        cui lo si legge, quindi non c'e' niente da cercare. -->
   <input *ngIf="editing" #field class="wheel-write" type="text" inputmode="decimal"
-    [(ngModel)]="draft" (keydown.enter)="commit()" (blur)="commit()"
+    [(ngModel)]="draft" (keydown.enter)="commit(true)" (keydown.escape)="cancel()" (blur)="commit()"
     [attr.aria-label]="label || 'Valore'">
 
-  <div class="wheel" #track (scroll)="onScroll()"
-    [attr.role]="'listbox'" [attr.aria-label]="label || null">
+  <div class="wheel" #track (scroll)="onScroll()" (keydown)="onKey($event)"
+    role="spinbutton"
+    [attr.tabindex]="disabled || editing ? -1 : 0"
+    [attr.aria-label]="label || null"
+    [attr.aria-valuemin]="min" [attr.aria-valuemax]="max"
+    [attr.aria-valuenow]="valoreAttuale"
+    [attr.aria-valuetext]="testoValore"
+    [attr.aria-disabled]="disabled ? 'true' : null"
+    [attr.aria-hidden]="editing ? 'true' : null">
     <button type="button" class="wheel-item" *ngFor="let v of values; let i = index"
+      tabindex="-1" aria-hidden="true"
       [class.on]="i === index"
-      [attr.aria-selected]="i === index ? 'true' : 'false'"
       [disabled]="disabled"
       (click)="onItem(i)">{{ show(v) }}</button>
   </div>
@@ -92,6 +105,19 @@ export class NumberWheelComponent implements AfterViewInit, OnChanges {
   /** Quello su cui la ruota sta ferma: il valore scelto, o il suggerito. */
   private get current(): number | null {
     return this.value ?? this.placeholder;
+  }
+
+  /** Il numero che la ruota dichiara (null: ancora niente, nemmeno un suggerito). */
+  get valoreAttuale(): number | null {
+    return this.current;
+  }
+
+  /** Come lo legge uno screen reader: col numero, l'unita' e se e' ancora solo il suggerito. */
+  get testoValore(): string | null {
+    const v = this.current;
+    if (v === null) return null;
+    const unita = this.unit ? ' ' + this.unit : '';
+    return `${this.show(v)}${unita}${this.value === null ? ', suggerito' : ''}`;
   }
 
   constructor(private cdr: ChangeDetectorRef) {}
@@ -157,17 +183,68 @@ export class NumberWheelComponent implements AfterViewInit, OnChanges {
     this.scrollTo(i, 'smooth');
   }
 
-  edit(): void {
+  /** La ruota da tastiera: frecce e Pag per muoversi, Invio o una cifra per scrivere. */
+  onKey(e: KeyboardEvent): void {
+    if (this.disabled || this.editing || e.ctrlKey || e.metaKey || e.altKey) return;
+    // Un tasto premuto su una tacca (col mouse) non e' per la ruota.
+    if (e.target !== this.trackEl?.nativeElement) return;
+
+    const passi: Record<string, number> = { ArrowUp: 1, ArrowDown: -1, PageUp: 10, PageDown: -10 };
+    if (e.key in passi) {
+      e.preventDefault();
+      this.porta(this.index + passi[e.key]);
+    } else if (e.key === 'Enter' || e.key === 'F2') {
+      e.preventDefault();
+      this.edit();
+    } else if (/^[0-9]$/.test(e.key)) {
+      e.preventDefault();
+      this.edit(e.key);
+    }
+  }
+
+  /** Alla tacca i, senza uscire dall'elenco. Si salta, non si scorre piano: da tastiera e' un passo, non un gesto. */
+  private porta(i: number): void {
+    const n = Math.max(0, Math.min(this.values.length - 1, i));
+    if (n === this.index) return;
+    this.index = n;
+    this.valueChange.emit(this.values[n]);
+    this.scrollTo(n, 'auto');
+    this.allunga();
+  }
+
+  /** Apre la scrittura. Con `inizio` (una cifra premuta sulla ruota) parte da quella, senza selezionarla: la cifra dopo non deve cancellarla. */
+  edit(inizio?: string): void {
     if (this.disabled) return;
     this.editing = true;
-    this.draft = this.current === null ? '' : this.show(this.current);
+    this.draft = inizio ?? (this.current === null ? '' : this.show(this.current));
     this.cdr.detectChanges();
-    this.fieldEl?.nativeElement.select();
+    const campo = this.fieldEl?.nativeElement;
+    if (!campo) return;
+    const posiziona = () => {
+      // Il focus va dato a mano: select() non lo da' in ogni browser, e da tastiera
+      // (Invio o una cifra sulla ruota) senza il campo non riceve piu' nulla.
+      campo.focus({ preventScroll: true });
+      if (inizio === undefined) campo.select();
+      else campo.setSelectionRange(campo.value.length, campo.value.length);
+    };
+    posiziona();
+    // ngModel scrive il valore nel campo un giro dopo: fino ad allora il campo e'
+    // vuoto e la selezione non seleziona niente, la cifra successiva si accoderebbe.
+    void Promise.resolve().then(posiziona);
+  }
+
+  /** Esc: si esce dalla scrittura senza toccare il valore, e il focus torna sulla ruota. */
+  cancel(): void {
+    if (!this.editing) return;
+    this.editing = false;
+    this.cdr.detectChanges();
+    this.centre('auto');
+    this.trackEl?.nativeElement.focus();
   }
 
   /** Chiude la scrittura. Un numero fuori forbice si riporta dentro, uno
    *  illeggibile lascia le cose come stavano. */
-  commit(): void {
+  commit(restituisciFocus = false): void {
     if (!this.editing) return;
     this.editing = false;
 
@@ -180,6 +257,9 @@ export class NumberWheelComponent implements AfterViewInit, OnChanges {
     }
     this.cdr.detectChanges();
     this.centre('auto');
+    // Con Invio il campo sparisce con il focus dentro: senza questo la tastiera
+    // ripartirebbe dall'inizio della pagina.
+    if (restituisciFocus) this.trackEl?.nativeElement.focus();
   }
 
   private rebuild(extra?: number): void {

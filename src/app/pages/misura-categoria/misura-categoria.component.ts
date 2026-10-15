@@ -13,11 +13,12 @@ import { NavController, IonInput, IonSpinner, IonButton, IonRouterOutlet } from 
 import { ConModificheNonSalvate } from '../../core/guards/modifiche-non-salvate.guard';
 import { senzaSwipeIndietro } from '../../core/swipe-indietro';
 import { LucideAngularModule } from 'lucide-angular';
+import { NomeCampoDirective } from '../../core/nome-campo.directive';
 
 @Component({
   selector: 'app-misura-categoria',
   standalone: true,
-  imports: [IonButton, IonInput, IonSpinner, ...IONIC_PAGE, LucideAngularModule, CommonModule, FormsModule],
+  imports: [NomeCampoDirective, IonButton, IonInput, IonSpinner, ...IONIC_PAGE, LucideAngularModule, CommonModule, FormsModule],
   templateUrl: './misura-categoria.component.html'
 })
 export class MisuraCategoriaComponent implements OnInit, OnDestroy, ConModificheNonSalvate {

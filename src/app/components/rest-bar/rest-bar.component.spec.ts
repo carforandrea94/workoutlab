@@ -14,15 +14,16 @@ describe('RestBarComponent', () => {
   const stato = (parti: Partial<{ show: boolean; remaining: number; finished: boolean; fillPct: number; exName: string | null }> = {}) =>
     ({ show: false, remaining: 90, finished: false, fillPct: 100, exName: null, dayId: null, ...parti });
 
-  function monta(iniziale = stato()) {
+  function monta(iniziale = stato(), prossima: any = null) {
     const restTimer = signal(iniziale);
+    const prossimaSerie = signal<any>(prossima);
     const stop = vi.fn();
     TestBed.configureTestingModule({
       imports: [RestBarComponent],
       providers: [
         ...providerPagina(),
         { provide: WorkoutStateService, useValue: {
-          restTimer, stopRestTimer: stop,
+          restTimer, prossimaSerie, stopRestTimer: stop,
           formatTime: (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
         } }
       ]
@@ -31,7 +32,7 @@ describe('RestBarComponent', () => {
     fixture.detectChanges();
     const root: HTMLElement = fixture.nativeElement;
     const q = (sel: string) => root.querySelector<HTMLElement>(sel);
-    return { fixture, root, q, restTimer, stop };
+    return { fixture, root, q, restTimer, prossimaSerie, stop };
   }
 
   describe('senza recupero in corso', () => {
@@ -41,6 +42,77 @@ describe('RestBarComponent', () => {
       expect(q('.restbar-time')).toBeNull();
       expect(q('.restbar-x')).toBeNull();
       expect(q('.restbar-ex')).toBeNull();
+    });
+  });
+
+  describe('a riposo, con una serie che viene dopo', () => {
+    const serie = (parti: object = {}) =>
+      ({ esercizio: 'Panca piana con bilanciere', numero: 2, totale: 3, reps: 10, carico: 55, cluster: false, ...parti });
+
+    it('dice qual e\' la prossima serie, coi valori, invece di "nessun recupero"', () => {
+      const { q } = monta(stato(), serie());
+      expect(q('.restbar-label')!.textContent!.trim()).toBe('Prossima serie');
+      expect(q('.restbar-ex')!.textContent!.trim()).toBe('Serie 2 di 3 · 10 × 55 kg · Panca piana con bilanciere');
+      expect(q('.restbar-time')).toBeNull();
+      expect(q('.restbar-x')).toBeNull();
+    });
+
+    it('i numeri vengono prima del nome: e\' il nome che l\'ellissi puo\' tagliare', () => {
+      const { q } = monta(stato(), serie({ esercizio: 'X'.repeat(80) }));
+      const testo = q('.restbar-ex')!.textContent!.trim();
+      expect(testo.startsWith('Serie 2 di 3 · 10 × 55 kg · ')).toBe(true);
+    });
+
+    it('i decimali si scrivono con la virgola, come nel resto dell\'app', () => {
+      const { q } = monta(stato(), serie({ carico: 52.5, reps: 8 }));
+      expect(q('.restbar-ex')!.textContent).toContain('8 × 52,5 kg');
+    });
+
+    it('a corpo libero (niente carico) dice solo le ripetizioni', () => {
+      const { q } = monta(stato(), serie({ carico: null }));
+      expect(q('.restbar-ex')!.textContent).toContain('Serie 2 di 3 · 10 rip. ·');
+    });
+
+    it('anche un carico a zero vale come corpo libero', () => {
+      const { q } = monta(stato(), serie({ carico: 0 }));
+      expect(q('.restbar-ex')!.textContent).toContain('10 rip.');
+      expect(q('.restbar-ex')!.textContent).not.toContain('kg');
+    });
+
+    it('una serie a cluster non dice numeri: ogni blocco ha i suoi', () => {
+      const { q } = monta(stato(), serie({ cluster: true }));
+      expect(q('.restbar-ex')!.textContent!.trim()).toBe('Serie 2 di 3 · Panca piana con bilanciere');
+    });
+
+    it('senza valori previsti dice solo quale serie', () => {
+      const { q } = monta(stato(), serie({ reps: null, carico: null }));
+      expect(q('.restbar-ex')!.textContent!.trim()).toBe('Serie 2 di 3 · Panca piana con bilanciere');
+    });
+
+    it('segue la serie quando cambia, senza riaprire la pagina', () => {
+      const { fixture, q, prossimaSerie } = monta(stato(), serie());
+      prossimaSerie.set(serie({ numero: 3, carico: 57.5 }));
+      fixture.detectChanges();
+      expect(q('.restbar-ex')!.textContent).toContain('Serie 3 di 3 · 10 × 57,5 kg');
+
+      prossimaSerie.set(null);
+      fixture.detectChanges();
+      expect(q('.restbar-label')!.textContent!.trim()).toBe('Nessun recupero in corso');
+      expect(q('.restbar-ex')).toBeNull();
+    });
+
+    it('con la prossima serie la fascia ha la sua classe (l\'etichetta non e\' piu\' la sola riga)', () => {
+      expect(monta(stato(), serie()).q('.restbar')!.classList.contains('con-prossima')).toBe(true);
+    });
+
+    it('senza, la classe non c\'e\'', () => {
+      expect(monta().q('.restbar')!.classList.contains('con-prossima')).toBe(false);
+    });
+
+    it('durante il recupero vince il recupero: la prossima serie non lo copre', () => {
+      const { q } = monta(stato({ show: true, remaining: 72, exName: 'Panca piana' }), serie());
+      expect(q('.restbar-label')!.textContent!.trim()).toBe('Recupero');
+      expect(q('.restbar-ex')!.textContent!.trim()).toBe('Panca piana');
     });
   });
 

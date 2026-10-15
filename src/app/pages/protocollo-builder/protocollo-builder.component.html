@@ -246,7 +246,7 @@
                     [attr.aria-label]="'Ripetizioni del blocco ' + (i + 1)"></ion-input>
                   <span class="unit">rip</span>
                 </div>
-                <ion-button type="button" class="delete-btn" *ngIf="c.end === 'fixed' && c.blocks.length > 2"
+                <ion-button type="button" class="delete-btn tap44" *ngIf="c.end === 'fixed' && c.blocks.length > 2"
                   (click)="removeBlock(ee.ex, i)" [attr.aria-label]="'Togli il blocco ' + (i + 1)">✕</ion-button>
                 <span class="cluster-plus" *ngIf="i < c.blocks.length - 1" aria-hidden="true">+</span>
               </div>
@@ -314,7 +314,7 @@
                 <ion-input type="number" [(ngModel)]="wp.reps" placeholder="rip"></ion-input>
                 <span class="unit">rip</span>
               </div>
-              <ion-button class="delete-btn" (click)="removeExWeek(ee.ex, i)" title="Rimuovi settimana">✕</ion-button>
+              <ion-button class="delete-btn tap44" (click)="removeExWeek(ee.ex, i)" title="Rimuovi settimana" [attr.aria-label]="'Rimuovi la settimana ' + (i + 1)">✕</ion-button>
             </div>
             <ion-button class="confirmbtn cancel mt-2 w-full" (click)="addExWeek(ee.ex)">+ Aggiungi settimana</ion-button>
           </div>
@@ -350,7 +350,7 @@
                 <div class="lbl">{{ plan.name }}</div>
                 <div class="meta">{{ countPlanItems(plan) }} alimenti</div>
               </div>
-              <ion-button class="delete-btn" (click)="removePlan(plan, $event)" title="Elimina">
+              <ion-button class="delete-btn tap44" (click)="removePlan(plan, $event)" title="Elimina" [attr.aria-label]="'Elimina il piano ' + plan.name">
                 <lucide-icon name="trash-2" [size]="14"></lucide-icon>
               </ion-button>
               <span class="chev">
@@ -383,7 +383,7 @@
           <div class="infocard meal-preview-card" *ngFor="let meal of editingPlan.meals" (click)="openMeal(meal)">
             <div class="meal-preview-header">
               <div class="lbl" appTasto [attr.aria-label]="'Apri il pasto ' + (meal.name || 'senza nome')">{{ meal.name || 'Pasto senza nome' }}</div>
-              <ion-button class="delete-btn" (click)="removeMeal(meal, $event)" title="Elimina pasto">
+              <ion-button class="delete-btn tap44" (click)="removeMeal(meal, $event)" title="Elimina pasto" [attr.aria-label]="'Elimina il pasto ' + meal.name">
                 <lucide-icon name="trash-2" [size]="14"></lucide-icon>
               </ion-button>
             </div>
@@ -520,7 +520,7 @@
                   <div class="measure-input-wrap builder-qty">
                     <ion-input type="text" [(ngModel)]="item.qty" placeholder="Quantita'"></ion-input>
                   </div>
-                  <ion-button class="delete-btn" (click)="clearComboItem(getActiveCombo(em), cat, $event)">✕</ion-button>
+                  <ion-button class="delete-btn tap44" (click)="clearComboItem(getActiveCombo(em), cat, $event)" aria-label="Svuota questo alimento">✕</ion-button>
                   <div class="dragghost" *cdkDragPlaceholder></div>
                 </div>
               </div>
@@ -548,7 +548,7 @@
                       <div class="measure-input-wrap builder-qty">
                         <ion-input type="text" [(ngModel)]="a.qty" placeholder="Quantita'"></ion-input>
                       </div>
-                      <ion-button class="delete-btn" (click)="removeItemAltEntry(item2, a)">✕</ion-button>
+                      <ion-button class="delete-btn tap44" (click)="removeItemAltEntry(item2, a)" aria-label="Togli l'alimento alternativo">✕</ion-button>
                       <div class="dragghost" *cdkDragPlaceholder></div>
                     </div>
                   </div>
@@ -588,7 +588,7 @@
                     <div class="measure-input-wrap builder-qty">
                       <ion-input type="text" [(ngModel)]="item.qty" placeholder="Quantita'"></ion-input>
                     </div>
-                    <ion-button class="delete-btn" (click)="removeAltItem(em, cat, item)">✕</ion-button>
+                    <ion-button class="delete-btn tap44" (click)="removeAltItem(em, cat, item)" aria-label="Togli questo alimento">✕</ion-button>
                     <!-- Il posto dove la riga andrebbe a finire: la riga vera lo
                          segue sotto il dito, e qui resta il suo ingombro. -->
                     <div class="dragghost" *cdkDragPlaceholder></div>
@@ -616,7 +616,7 @@
                 <div class="measure-input-wrap builder-qty">
                   <ion-input type="text" [(ngModel)]="s.qty" placeholder="Dose (es. 5 g)"></ion-input>
                 </div>
-                <ion-button class="delete-btn" (click)="removeSupplement(em, s)">✕</ion-button>
+                <ion-button class="delete-btn tap44" (click)="removeSupplement(em, s)" aria-label="Togli l'integratore">✕</ion-button>
                 <div class="dragghost" *cdkDragPlaceholder></div>
               </div>
             </div>

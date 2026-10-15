@@ -11,6 +11,7 @@ import {
   IonAccordion, IonAccordionGroup, IonCheckbox, IonInput, IonLabel, IonProgressBar, IonSearchbar, IonSpinner,
   IonButton
 } from '@ionic/angular';
+import { NomeCampoDirective } from '../../core/nome-campo.directive';
 
 /** Il macro sotto cui l'alimento compare nella dieta. */
 export type Macro = 'carb' | 'protein' | 'fat';
@@ -55,7 +56,7 @@ const MACRO: { key: Macro; label: string }[] = [
 @Component({
   selector: 'app-lista-spesa',
   standalone: true,
-  imports: [IonButton, 
+  imports: [NomeCampoDirective, IonButton,
     IonAccordion, IonAccordionGroup, IonCheckbox, IonInput, IonLabel, IonProgressBar, IonSearchbar, IonSpinner,
     ...IONIC_PAGE, ...IONIC_SLIDING, CommonModule, FormsModule, LucideAngularModule],
   templateUrl: './lista-spesa.component.html'

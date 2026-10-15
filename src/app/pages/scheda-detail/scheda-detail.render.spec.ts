@@ -53,7 +53,8 @@ describe('SchedaDetailComponent — accessibilita\' delle testate (disegno vero)
         { provide: WorkoutStateService, useValue: {
           viewMode, setViewMode: (m: 'list' | 'slider') => viewMode.set(m),
           saveStatus: signal('idle'), currentWeek: 1,
-          restTimer: signal({ show: false }), stopRestTimer: () => {}, startRestTimer: () => {}
+          restTimer: signal({ show: false }), stopRestTimer: () => {}, startRestTimer: () => {},
+          prossimaSerie: signal(null)
         } },
         { provide: AppStateService, useValue: {
           load: async () => ({ restOverrides: {}, loadPercent: null, workoutDrafts: {} }),

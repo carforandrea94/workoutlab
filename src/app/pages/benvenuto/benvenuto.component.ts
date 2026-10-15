@@ -8,6 +8,7 @@ import { dividiNome, componiNome } from '../../core/utils/nome.util';
 import { todayLocalISO } from '../../core/utils/date.util';
 import { HEIGHT_MIN_CM, HEIGHT_MAX_CM } from '../../core/utils/height.util';
 import { validaProfilo, ErroriProfilo, NASCITA_MIN } from '../../core/utils/profile-completeness.util';
+import { NomeCampoDirective } from '../../core/nome-campo.directive';
 
 /**
  * La schermata dei dati dell'account che mancano.
@@ -25,7 +26,7 @@ import { validaProfilo, ErroriProfilo, NASCITA_MIN } from '../../core/utils/prof
 @Component({
   selector: 'app-benvenuto',
   standalone: true,
-  imports: [IonButton, IonContent, IonInput, IonSegment, IonSegmentButton, CommonModule, FormsModule],
+  imports: [NomeCampoDirective, IonButton, IonContent, IonInput, IonSegment, IonSegmentButton, CommonModule, FormsModule],
   templateUrl: './benvenuto.component.html'
 })
 export class BenvenutoComponent {

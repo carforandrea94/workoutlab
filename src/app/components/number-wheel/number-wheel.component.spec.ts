@@ -202,3 +202,226 @@ describe('NumberWheel — la finestra', () => {
     expect(c.values.length).toBe(WHEEL_NOTCHES * 2 + 1);
   });
 });
+
+/**
+ * Per chi non usa il dito la ruota e' UN controllo: prima erano centinaia di
+ * <button> in un "listbox" senza opzioni, e il Tab li attraversava uno a uno
+ * (in sessione, 1.545 tab-stop). Adesso e' uno "spinbutton" con un solo stop.
+ */
+describe('NumberWheel — per tastiera e screen reader', () => {
+  const pista = (fx: ComponentFixture<NumberWheelComponent>) =>
+    fx.nativeElement.querySelector('.wheel') as HTMLElement;
+  const tasto = (el: HTMLElement, key: string, init: KeyboardEventInit = {}) => {
+    const ev = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true, ...init });
+    el.dispatchEvent(ev);
+    return ev;
+  };
+
+  describe('cosa dichiara', () => {
+    it('e\' uno spinbutton con un solo tab-stop, col suo valore e la sua forbice', () => {
+      const { fx } = monta({ value: 30, min: 0, max: 200, label: 'Carico della serie 1, in chili' });
+      const el = pista(fx);
+      expect(el.getAttribute('role')).toBe('spinbutton');
+      expect(el.getAttribute('tabindex')).toBe('0');
+      expect(el.getAttribute('aria-label')).toBe('Carico della serie 1, in chili');
+      expect(el.getAttribute('aria-valuenow')).toBe('30');
+      expect(el.getAttribute('aria-valuemin')).toBe('0');
+      expect(el.getAttribute('aria-valuemax')).toBe('200');
+      expect(el.getAttribute('aria-valuetext')).toBe('30 kg');
+    });
+
+    it('le tacche non sono tab-stop ne\' voci per lo screen reader', () => {
+      const { fx } = monta({ value: 30 });
+      const tacche = Array.from(fx.nativeElement.querySelectorAll('.wheel-item')) as HTMLElement[];
+      expect(tacche.length).toBeGreaterThan(100);
+      expect(tacche.every(t => t.getAttribute('tabindex') === '-1' && t.getAttribute('aria-hidden') === 'true')).toBe(true);
+      expect(fx.nativeElement.querySelector('[role="listbox"], [aria-selected]')).toBeNull();
+    });
+
+    it('il numero e\' scritto come lo si legge: virgola e unita\'', () => {
+      const { fx } = monta({ value: 32.5, unit: 'kg' });
+      expect(pista(fx).getAttribute('aria-valuetext')).toBe('32,5 kg');
+    });
+
+    it('finche\' c\'e\' solo il suggerito lo dice', () => {
+      const { fx } = monta({ value: null, placeholder: 10, unit: 'rip.', min: 1, max: 100, step: 1 });
+      const el = pista(fx);
+      expect(el.getAttribute('aria-valuenow')).toBe('10');
+      expect(el.getAttribute('aria-valuetext')).toBe('10 rip., suggerito');
+    });
+
+    it('senza nemmeno un suggerito non inventa un valore', () => {
+      const { fx } = monta({ value: null, placeholder: null });
+      expect(pista(fx).getAttribute('aria-valuenow')).toBeNull();
+      expect(pista(fx).getAttribute('aria-valuetext')).toBeNull();
+    });
+
+    it('a ruota spenta esce dal Tab e lo dichiara', () => {
+      const { fx } = monta({ value: 30, disabled: true });
+      const el = pista(fx);
+      expect(el.getAttribute('tabindex')).toBe('-1');
+      expect(el.getAttribute('aria-disabled')).toBe('true');
+    });
+
+    it('mentre si scrive la ruota esce dal Tab e dall\'albero: il campo e\' l\'unico controllo', () => {
+      const { fx, c } = monta({ value: 30 });
+      c.edit();
+      fx.detectChanges();
+      const el = pista(fx);
+      expect(el.getAttribute('tabindex')).toBe('-1');
+      expect(el.getAttribute('aria-hidden')).toBe('true');
+    });
+  });
+
+  describe('le frecce', () => {
+    it('su aumenta di un passo, giu\' diminuisce (il verso dei campi numerici)', () => {
+      const { fx, emessi } = monta({ value: 30 });
+      tasto(pista(fx), 'ArrowUp');
+      tasto(pista(fx), 'ArrowDown');
+      tasto(pista(fx), 'ArrowDown');
+      expect(emessi).toEqual([30.5, 30, 29.5]);
+    });
+
+    it('Pag su e Pag giu\' vanno di dieci passi', () => {
+      const { fx, emessi } = monta({ value: 30 });
+      tasto(pista(fx), 'PageUp');
+      tasto(pista(fx), 'PageDown');
+      tasto(pista(fx), 'PageDown');
+      expect(emessi).toEqual([35, 30, 25]);
+    });
+
+    it('porta davvero la ruota li\': lo scorrimento e il valore dichiarato seguono', () => {
+      const { fx, c } = monta({ value: 30 });
+      tasto(pista(fx), 'ArrowUp');
+      expect(c.trackEl!.nativeElement.scrollTop).toBe((c.index) * WHEEL_ITEM_H);
+      expect(c.values[c.index]).toBe(30.5);
+    });
+
+    it('in fondo e in cima non esce dall\'elenco e non emette', () => {
+      const a = monta({ value: 0 });
+      tasto(pista(a.fx), 'ArrowDown');
+      tasto(pista(a.fx), 'PageDown');
+      expect(a.emessi).toEqual([]);
+
+      const b = monta({ value: 200 });
+      tasto(pista(b.fx), 'ArrowUp');
+      expect(b.emessi).toEqual([]);
+    });
+
+    it('il preventDefault c\'e\': la pagina non scorre sotto la ruota', () => {
+      const { fx } = monta({ value: 30 });
+      expect(tasto(pista(fx), 'ArrowUp').defaultPrevented).toBe(true);
+    });
+
+    it('a ruota spenta, con una scorciatoia di sistema o su una tacca non fa niente', () => {
+      const spenta = monta({ value: 30, disabled: true });
+      tasto(pista(spenta.fx), 'ArrowUp');
+      expect(spenta.emessi).toEqual([]);
+
+      const viva = monta({ value: 30 });
+      tasto(pista(viva.fx), 'ArrowUp', { ctrlKey: true });
+      tasto(pista(viva.fx), 'ArrowUp', { metaKey: true });
+      const tacca = viva.fx.nativeElement.querySelector('.wheel-item') as HTMLElement;
+      tasto(tacca, 'ArrowUp');
+      expect(viva.emessi).toEqual([]);
+    });
+
+    it('una ruota lunga si allunga anche da tastiera, come scorrendo', () => {
+      const { fx, c } = monta({ value: 20, max: 1000 });
+      const prima = c.values.length;
+      for (let i = 0; i < 20; i++) tasto(pista(fx), 'PageUp');
+      expect(c.values.length).toBeGreaterThan(prima);
+      expect(c.values[c.index]).toBe(120);
+    });
+  });
+
+  describe('scrivere', () => {
+    it('Invio apre la scrittura, gia\' compilata', () => {
+      const { fx, c } = monta({ value: 30 });
+      tasto(pista(fx), 'Enter');
+      expect(c.editing).toBe(true);
+      expect(c.draft).toBe('30');
+    });
+
+    it('e il campo riceve il focus: Invio e le cifre dopo vanno a lui, non alla ruota', () => {
+      const { fx } = monta({ value: 30 });
+      pista(fx).focus();
+      tasto(pista(fx), '6');
+      fx.detectChanges();
+      const campo = fx.nativeElement.querySelector('input.wheel-write') as HTMLInputElement;
+      expect(document.activeElement).toBe(campo);
+    });
+
+    it('una cifra premuta sulla ruota apre la scrittura da quella, senza selezionarla', async () => {
+      const { fx, c } = monta({ value: 30 });
+      tasto(pista(fx), '6');
+      fx.detectChanges();
+      await Promise.resolve();
+      const campo = fx.nativeElement.querySelector('input.wheel-write') as HTMLInputElement;
+      expect(c.draft).toBe('6');
+      expect(campo.value).toBe('6');
+      expect(campo.selectionStart).toBe(1);
+      expect(campo.selectionEnd).toBe(1);
+    });
+
+    it('Invio apre il numero tutto selezionato: la cifra dopo lo sostituisce, non lo allunga', async () => {
+      const { fx } = monta({ value: 30 });
+      tasto(pista(fx), 'Enter');
+      fx.detectChanges();
+      await Promise.resolve();
+      const campo = fx.nativeElement.querySelector('input.wheel-write') as HTMLInputElement;
+      expect(campo.value).toBe('30');
+      expect(campo.selectionStart).toBe(0);
+      expect(campo.selectionEnd).toBe(2);
+    });
+
+    it('Invio nel campo conferma e il focus torna sulla ruota', () => {
+      const { fx, c, emessi } = monta({ value: 30 });
+      tasto(pista(fx), '6');
+      fx.detectChanges();
+      c.draft = '65';
+      const campo = fx.nativeElement.querySelector('input.wheel-write') as HTMLInputElement;
+      tasto(campo, 'Enter');
+      fx.detectChanges();
+
+      expect(emessi).toEqual([65]);
+      expect(c.editing).toBe(false);
+      expect(document.activeElement).toBe(pista(fx));
+    });
+
+    it('Esc esce senza toccare il valore e restituisce il focus', () => {
+      const { fx, c, emessi } = monta({ value: 30 });
+      tasto(pista(fx), 'Enter');
+      fx.detectChanges();
+      c.draft = '99';
+      const campo = fx.nativeElement.querySelector('input.wheel-write') as HTMLInputElement;
+      tasto(campo, 'Escape');
+      fx.detectChanges();
+
+      expect(emessi).toEqual([]);
+      expect(c.editing).toBe(false);
+      expect(c.values[c.index]).toBe(30);
+      expect(document.activeElement).toBe(pista(fx));
+    });
+
+    it('uscire dal campo col Tab conferma ma non ruba il focus', () => {
+      const { fx, c, emessi } = monta({ value: 30 });
+      tasto(pista(fx), 'Enter');
+      fx.detectChanges();
+      c.draft = '40';
+      const campo = fx.nativeElement.querySelector('input.wheel-write') as HTMLInputElement;
+      campo.dispatchEvent(new Event('blur'));
+      fx.detectChanges();
+
+      expect(emessi).toEqual([40]);
+      expect(document.activeElement).not.toBe(pista(fx));
+    });
+
+    it('a ruota spenta Invio e le cifre non aprono niente', () => {
+      const { fx, c } = monta({ value: 30, disabled: true });
+      tasto(pista(fx), 'Enter');
+      tasto(pista(fx), '5');
+      expect(c.editing).toBe(false);
+    });
+  });
+});

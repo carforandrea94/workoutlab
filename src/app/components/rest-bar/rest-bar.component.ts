@@ -36,6 +36,10 @@ const WAVE_BARS: number[] = Array.from({ length: BAR_COUNT }, (_, i) => {
  * sulla panca. A fine tempo diventa "Vai" e RESTA cosi' finche' non si segna la
  * serie dopo o si tocca la X: una scritta di quattro secondi si perdeva.
  *
+ * Quando nessun recupero e' in corso dice quale serie viene dopo (la pubblica la
+ * pagina del giorno): e' il momento in cui si guarda lo schermo, e "nessun
+ * recupero" era una frase in negativo su 76 px di fondo schermo.
+ *
  * La fascia resta ferma anche quando nessun recupero e' in corso: se andasse
  * e venisse a ogni serie, il fondo dello schermo cambierebbe identita' venti
  * volte per allenamento.
@@ -46,7 +50,7 @@ const WAVE_BARS: number[] = Array.from({ length: BAR_COUNT }, (_, i) => {
   imports: [CommonModule, LucideAngularModule],
   template: `
     <div class="tabfade"></div>
-    <div class="restbar" [class.running]="running" [class.finished]="timer.finished">
+    <div class="restbar" [class.running]="running" [class.finished]="timer.finished" [class.con-prossima]="!running && !!dettaglioProssima">
       <div class="restbar-row">
         <span class="restbar-time" *ngIf="running" role="timer">
           {{ timer.finished ? 'Vai' : svc.formatTime(timer.remaining) }}
@@ -54,6 +58,7 @@ const WAVE_BARS: number[] = Array.from({ length: BAR_COUNT }, (_, i) => {
         <span class="restbar-info">
           <span class="restbar-label">{{ label }}</span>
           <span class="restbar-ex" *ngIf="running && timer.exName">{{ timer.exName }}</span>
+          <span class="restbar-ex" *ngIf="!running && dettaglioProssima">{{ dettaglioProssima }}</span>
         </span>
         <button class="restbar-x tap44" *ngIf="running" (click)="stop()" aria-label="Ferma il recupero">
           <lucide-icon name="x" [size]="16"></lucide-icon>
@@ -87,8 +92,25 @@ export class RestBarComponent {
   }
 
   get label(): string {
-    if (!this.running) return 'Nessun recupero in corso';
+    if (!this.running) return this.dettaglioProssima ? 'Prossima serie' : 'Nessun recupero in corso';
     return this.timer.finished ? 'Recupero finito' : 'Recupero';
+  }
+
+  /**
+   * "Serie 2 di 3 · 10 × 55 kg · Panca piana": a riposo la fascia dice cosa viene
+   * dopo. Il nome dell'esercizio e' in coda perche' e' la parte che l'ellissi puo'
+   * tagliare senza far perdere niente: il numero della serie e i valori no.
+   */
+  get dettaglioProssima(): string | null {
+    const p = this.svc.prossimaSerie();
+    if (!p) return null;
+    const n = (v: number) => String(v).replace('.', ',');
+    const parti = [`Serie ${p.numero} di ${p.totale}`];
+    if (!p.cluster && p.reps !== null) {
+      parti.push(p.carico ? `${n(p.reps)} × ${n(p.carico)} kg` : `${n(p.reps)} rip.`);
+    }
+    parti.push(p.esercizio);
+    return parti.join(' · ');
   }
 
   /** Quello che un lettore di schermo deve sentire a fine tempo. */

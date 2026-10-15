@@ -7,6 +7,7 @@ import { LucideAngularModule } from 'lucide-angular';
 import { WorkoutDataService } from '../services/workout-data.service';
 import { WorkoutSessionStateService } from '../services/workout-session-state.service';
 import { RestBarComponent } from '../components/rest-bar/rest-bar.component';
+import { SchermoAccesoService } from '../services/schermo-acceso.service';
 
 interface Tab { id: string; label: string; icon: string; }
 
@@ -46,6 +47,11 @@ export function eRadiceDiTab(url: string, tabs: readonly { id: string }[] = TABS
  * torna indietro. Toccare di nuovo la tab gia' aperta, sulla radice, riporta
  * in cima alla pagina.
  *
+ * Il `href` non serve a navigare (la rotta la decide Ionic dal nome della tab e
+ * il clic non segue il link): serve a rendere l'<a role="tab"> interno
+ * focalizzabile. Senza, la barra non era raggiungibile col Tab: dopo l'ultimo
+ * elemento del contenuto il focus usciva dalla pagina.
+ *
  * Con una sessione in corso, fuori dalla pagina del suo giorno compare la
  * pillola "In corso · 23:10 · Riprendi": prima, uscendo dal giorno, la
  * sessione spariva dallo schermo e l'unico modo di ritrovarla era ricordarsi
@@ -62,7 +68,7 @@ export function eRadiceDiTab(url: string, tabs: readonly { id: string }[] = TABS
         [style.display]="showRestBar ? 'none' : null">
         <div class="pill" [class]="'pill p' + selectedIndex()"></div>
         @for (t of tabs; track t.id) {
-          <ion-tab-button [tab]="t.id" class="tabbtn" [class.active]="selected() === t.id" (click)="alToccoTab(t.id)">
+          <ion-tab-button [tab]="t.id" [href]="'/' + t.id" class="tabbtn" [class.active]="selected() === t.id" (click)="alToccoTab(t.id)">
             <span class="ic"><lucide-icon [name]="t.icon" [size]="23"></lucide-icon></span>
             <span class="tablabel">{{ t.label }}</span>
           </ion-tab-button>
@@ -115,7 +121,10 @@ export class TabsPage implements OnInit, OnDestroy {
     private workoutData: WorkoutDataService,
     private sessionState: WorkoutSessionStateService,
     private host: ElementRef<HTMLElement>,
-    private nav: NavController
+    private nav: NavController,
+    // Non si usa qui: va solo istanziato, e la barra e' sempre in pagina. Da li'
+    // in poi tiene lo schermo acceso finche' c'e' un allenamento in corso.
+    _schermoAcceso: SchermoAccesoService
   ) {
     // Il contenuto delle pagine tiene sotto uno spazio per la barra: senza barra
     // (e senza la fascia del recupero, che ne prende il posto) lo rende.

@@ -7,12 +7,13 @@ import { AuthService } from '../../core/services/auth.service';
 import { IONIC_PAGE, IONIC_LINKS } from '../../core/ionic-page';
 import { NavController, IonInput, IonCheckbox, IonButton } from '@ionic/angular';
 import { RequiredTrueDirective } from '../../core/directives/required-true.directive';
+import { NomeCampoDirective } from '../../core/nome-campo.directive';
 
 
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [IonButton, IonInput, IonCheckbox, RequiredTrueDirective, ...IONIC_PAGE, CommonModule, FormsModule, ...IONIC_LINKS, LucideAngularModule],
+  imports: [NomeCampoDirective, IonButton, IonInput, IonCheckbox, RequiredTrueDirective, ...IONIC_PAGE, CommonModule, FormsModule, ...IONIC_LINKS, LucideAngularModule],
   templateUrl: './register.component.html'
 })
 export class RegisterComponent {

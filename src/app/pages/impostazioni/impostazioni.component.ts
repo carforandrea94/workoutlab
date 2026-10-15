@@ -20,11 +20,12 @@ import {
 } from '../../core/utils/height.util';
 import { IONIC_PAGE } from '../../core/ionic-page';
 import { IonModal, IonInput, IonSegment, IonSegmentButton, IonToggle, IonPicker, IonPickerColumn, IonPickerColumnOption, IonButton } from '@ionic/angular';
+import { NomeCampoDirective } from '../../core/nome-campo.directive';
 
 @Component({
   selector: 'app-impostazioni',
   standalone: true,
-  imports: [IonButton, IonSegment, IonSegmentButton, IonToggle, IonPicker, IonPickerColumn, IonPickerColumnOption, IonInput, ...IONIC_PAGE, IonModal, CommonModule, FormsModule, LucideAngularModule],
+  imports: [NomeCampoDirective, IonButton, IonSegment, IonSegmentButton, IonToggle, IonPicker, IonPickerColumn, IonPickerColumnOption, IonInput, ...IONIC_PAGE, IonModal, CommonModule, FormsModule, LucideAngularModule],
   templateUrl: './impostazioni.component.html',
   styles: [`
     .account-row {

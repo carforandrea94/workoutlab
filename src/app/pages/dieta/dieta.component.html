@@ -36,11 +36,11 @@
           *ngFor="let card of cards" (click)="openCard(card)">
           <div class="cardrow-body">
             <div class="badge">
-              <lucide-icon name="circle-plus" [size]="18"></lucide-icon>
+              <lucide-icon name="utensils" [size]="18"></lucide-icon>
             </div>
             <div class="info">
               <div class="lbl">{{ card.plan.name }}</div>
-              <div class="meta">{{ card.itemCount }} alimenti</div>
+              <div class="meta">{{ pasti(card) }} &nbsp;·&nbsp; {{ card.itemCount }} alimenti</div>
             </div>
           </div>
         </ion-item>
