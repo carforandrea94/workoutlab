@@ -1,3 +1,4 @@
+import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap } from '@angular/router';
 import { Subject, of } from 'rxjs';
@@ -16,6 +17,10 @@ import { ProtocolloBuilderComponent } from './protocollo-builder.component';
 import { ProtocolService } from '../../services/protocol.service';
 import { ConfirmDialogService } from '../../services/confirm-dialog.service';
 import { Protocol } from '../../models/protocol.model';
+
+/** Dove il builder torna dopo aver salvato. */
+@Component({ standalone: true, template: '' })
+class ElencoProtocolli {}
 
 /**
  * Il builder e' una pagina sola con cinque livelli. Qui si monta il template
@@ -71,7 +76,7 @@ describe('ProtocolloBuilderComponent — disegno vero', () => {
     TestBed.configureTestingModule({
       imports: [ProtocolloBuilderComponent],
       providers: [
-        ...providerPagina(),
+        ...providerPagina([{ path: 'scheda/protocolli', component: ElencoProtocolli }]),
         { provide: ActivatedRoute, useValue: { paramMap: of(convertToParamMap({ protocolId: 'proto1' })) } },
         { provide: ProtocolService, useValue: protocolSvc },
         { provide: ConfirmDialogService, useValue: { confirm: vi.fn(async () => true) } }
@@ -92,7 +97,7 @@ describe('ProtocolloBuilderComponent — disegno vero', () => {
       return ev;
     };
     const aggiorna = () => fixture.detectChanges();
-    return { fixture, c, root, titolo, freccia, tasto, aggiorna };
+    return { fixture, c, root, titolo, freccia, tasto, aggiorna, protocolSvc };
   }
 
   describe('testata', () => {
@@ -218,6 +223,40 @@ describe('ProtocolloBuilderComponent — disegno vero', () => {
       expect(lista.map(a => a.name)).toEqual(['Pane']);
       expect(combo.carb).toEqual({ name: '', qty: '', category: 'carb' });
       expect(caselle(root).length).toBe(3);
+    });
+
+    it('salvando, le caselle vuote non finiscono nel protocollo', async () => {
+      const { c, protocolSvc } = await conPastoAperto();
+      // aperto il pasto, proteine e grassi sono caselle vuote; il pane c'e'
+
+      await c.save(false);
+
+      const salvata = (protocolSvc.update.mock.calls[0] as any[])[1].diet[0].meals[0].combinations[0];
+      expect(salvata.carb).toEqual({ name: 'Pane', qty: '80 g', alt: [{ name: 'Fette biscottate', qty: '60 g' }] });
+      expect(salvata.protein).toBeNull();
+      expect(salvata.fat).toBeNull();
+    });
+
+    it('e l\'editor, dopo il salvataggio, ha ancora le sue caselle da riempire', async () => {
+      const { c, fixture, root } = await conPastoAperto();
+
+      await c.save(false);
+      fixture.detectChanges();
+
+      expect(c.editingMeal!.combinations[0].protein).toEqual({ name: '', qty: '', category: 'protein' });
+      expect(caselle(root).length).toBe(3);
+      expect(c.haModificheNonSalvate()).toBe(false);
+    });
+
+    it('un alimento scritto nella casella, invece, si salva', async () => {
+      const { c, protocolSvc } = await conPastoAperto();
+      c.editingMeal!.combinations[0].protein!.name = 'Pollo';
+      c.editingMeal!.combinations[0].protein!.qty = '150 g';
+
+      await c.save(false);
+
+      const salvata = (protocolSvc.update.mock.calls[0] as any[])[1].diet[0].meals[0].combinations[0];
+      expect(salvata.protein).toEqual({ name: 'Pollo', qty: '150 g', category: 'protein' });
     });
 
     it('una combinazione aggiunta ha le sue tre caselle', async () => {

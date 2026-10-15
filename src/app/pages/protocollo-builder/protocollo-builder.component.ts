@@ -18,6 +18,7 @@ import {
 } from '../../core/utils/cluster.util';
 import { MAX_BLOCKS_PER_SET } from '../../core/utils/extra-sets.util';
 import { RunGoal, normalizeRunGoal } from '../../models/run.model';
+import { senzaCaselleVuote } from '../../core/utils/diet-empty.util';
 import { FoodItem, DietPlan, NamedMeal, MealCombination, SupplementItem, newDietPlan, newNamedMeal, newCombination, FoodCategory, FOOD_CATEGORIES, FOOD_CATEGORY_LABELS } from '../../models/diet.model';
 import { ProtocolBuilderStateService } from '../../services/protocol-builder-state.service';
 import { ToastService } from '../../services/toast.service';
@@ -298,22 +299,9 @@ export class ProtocolloBuilderComponent implements OnInit, OnDestroy, DoCheck {
   private fotografia(): string {
     const p = this.protocol;
     if (!p) return '';
-    // Aprire un pasto prepara le sue caselle vuote (vedi preparaCaselle): chi ha
-    // solo guardato non ha cambiato niente, e non deve sentirsi chiedere se
-    // scartare. Una casella senza nome, quantita' e alternative vale come assente.
-    const vuota = (it: FoodItem | null) => !it || (!it.name?.trim() && !it.qty?.trim() && !it.alt?.length);
-    const diet = p.diet?.map(piano => ({
-      ...piano,
-      meals: piano.meals.map(pasto => ({
-        ...pasto,
-        combinations: pasto.combinations.map(c => {
-          const copia = { ...c };
-          for (const cat of FOOD_CATEGORIES) if (vuota(copia[cat])) copia[cat] = null;
-          return copia;
-        })
-      }))
-    }));
-    return JSON.stringify({ name: p.name, workout: p.workout, diet, running: p.running, infoNote: p.infoNote });
+    // Le caselle vuote che l'editor tiene pronte (vedi preparaCaselle) non sono una
+    // modifica: chi ha solo guardato un pasto non deve sentirsi chiedere se scartare.
+    return JSON.stringify({ name: p.name, workout: p.workout, diet: senzaCaselleVuote(p.diet), running: p.running, infoNote: p.infoNote });
   }
 
   /** Il protocollo in memoria non e' piu' quello salvato: vedi uscitaSenzaPerdite. */
@@ -996,7 +984,8 @@ export class ProtocolloBuilderComponent implements OnInit, OnDestroy, DoCheck {
       const toSave = {
         name: this.protocol.name,
         workout: this.protocol.workout,
-        diet: this.protocol.diet,
+        // Le caselle vuote restano all'editor: nel protocollo salvato non ci sono.
+        diet: senzaCaselleVuote(this.protocol.diet),
         running: this.protocol.running,
         infoNote: this.protocol.infoNote
       };
