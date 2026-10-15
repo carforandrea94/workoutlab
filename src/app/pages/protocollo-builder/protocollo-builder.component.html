@@ -1,28 +1,50 @@
 <ion-header class="ion-no-border">
   <ion-toolbar>
     <ion-buttons slot="start">
-      <ion-back-button defaultHref="/scheda/protocolli" aria-label="Indietro"></ion-back-button>
+      <!-- Sull'elenco la freccia esce dall'editor; dentro un giorno, un esercizio,
+           un piano o un pasto sale di un livello: l'editor e' una pagina sola, ma
+           ha i suoi livelli (vedi builder-nav.util.ts). -->
+      @if (livello === 0) {
+        <ion-back-button defaultHref="/scheda/protocolli" aria-label="Indietro"></ion-back-button>
+      } @else {
+        <ion-button class="navicon navback" (click)="saliDiUnLivello()" [attr.aria-label]="etichettaSu" [title]="etichettaSu">
+          <lucide-icon name="chevron-left" [size]="24" [strokeWidth]="2.4"></lucide-icon>
+        </ion-button>
+      }
     </ion-buttons>
     <ion-title>
-      <div class="navtitle">Protocollo</div>
+      <!-- La chiave e' la schermata, non il testo: il titolo si dissolve quando si
+           cambia livello, non a ogni lettera del nome che si scrive. -->
+      @for (k of [chiaveLivello]; track k) {
+        <div class="navtitle navtitle-livello">{{ titoloHeader }}</div>
+      }
     </ion-title>
     <ion-buttons slot="end">
-      @if (!protocolBuilderState.editingSubform()) {
+      @if (livello === 0) {
       <ion-button class="navicon" (click)="save(false)" [disabled]="protocolBuilderState.saving()" aria-label="Salva bozza" title="Salva bozza">
         <lucide-icon name="save" [size]="18"></lucide-icon>
       </ion-button>
       <ion-button class="navicon" (click)="save(true)" [disabled]="protocolBuilderState.saving()" aria-label="Salva e attiva" title="Salva e attiva">
         <lucide-icon name="check" [size]="18"></lucide-icon>
       </ion-button>
-      }
       <ion-button class="navicon" [routerLink]="['/scheda/protocolli/aggiorna-pdf', protocolId]" routerDirection="forward" aria-label="Aggiorna da PDF" title="Aggiorna da PDF">
         <lucide-icon name="file-up" [size]="18"></lucide-icon>
       </ion-button>
+      } @else {
+      <!-- Dentro un livello il gesto e' uno solo, "fatto": salvare o attivare tutto
+           il protocollo da un giorno aperto era fuori posto, e il tasto in fondo
+           alla pagina, in un giorno da sette esercizi, e' lontano. -->
+      <ion-button class="navicon" (click)="confermaLivello()" [disabled]="protocolBuilderState.saving()"
+        [attr.aria-label]="etichettaFatto" [title]="etichettaFatto">
+        <lucide-icon name="check" [size]="18"></lucide-icon>
+      </ion-button>
+      }
     </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
-<ion-content>
+<ion-content (ionInput)="aggiornaSwipe()" (ionChange)="aggiornaSwipe()" (click)="aggiornaSwipe()"
+  (touchstart)="alToccoInizio($event)" (touchend)="alToccoFine($event)">
   <div class="wrap">
     <div *ngIf="loading" class="history-empty"><ion-spinner name="crescent" aria-label="Caricamento"></ion-spinner></div>
 
@@ -37,7 +59,7 @@
 
     <ng-container *ngIf="!loading && !errorMsg && protocol">
 
-      <ng-container *ngIf="!editingExercise && !editingMeal && !editingDay">
+      <ng-container *ngIf="livello === 0">
         <div class="authfield mb-4">
           <label>Nome protocollo</label>
           <div class="measure-input-wrap">
@@ -45,13 +67,23 @@
           </div>
         </div>
 
-        <ion-segment class="seg labelseg fullseg builder-tabs" [value]="tab" aria-label="Sezione del protocollo">
-          <ion-segment-button value="scheda" (click)="tab = 'scheda'">Scheda</ion-segment-button>
-          <ion-segment-button value="dieta" (click)="tab = 'dieta'">Dieta</ion-segment-button>
-          <ion-segment-button value="corsa" (click)="tab = 'corsa'">Corsa</ion-segment-button>
-          <ion-segment-button value="info" (click)="tab = 'info'">Info</ion-segment-button>
-        </ion-segment>
+        <!-- Il selettore resta sotto la testata mentre si scorre: da un elenco lungo
+             si passa a un'altra scheda senza tornare in cima. -->
+        <div class="builder-tabsbar">
+          <ion-segment class="seg labelseg fullseg builder-tabs" [value]="tab" aria-label="Sezione del protocollo">
+            <ion-segment-button value="scheda" (click)="vaAScheda('scheda')">Scheda</ion-segment-button>
+            <ion-segment-button value="dieta" (click)="vaAScheda('dieta')">Dieta</ion-segment-button>
+            <ion-segment-button value="corsa" (click)="vaAScheda('corsa')">Corsa</ion-segment-button>
+            <ion-segment-button value="info" (click)="vaAScheda('info')">Info</ion-segment-button>
+          </ion-segment>
+        </div>
       </ng-container>
+
+      <!-- Ogni schermata distinta (scheda, giorno, esercizio, piano, pasto) e' un blocco
+           nuovo: entra da destra se si scende, da sinistra se si sale o si va a
+           una scheda piu' a sinistra (vedi .livello in styles.css). -->
+      @for (k of [chiaveLivello]; track k) {
+      <div class="livello" [attr.data-dir]="direzione">
 
       <!-- ===================== SCHEDA ===================== -->
       <!-- L'ELENCO DEI GIORNI: la stessa forma che vede il cliente in Scheda.
@@ -96,7 +128,6 @@
 
       <!-- ===================== IL SINGOLO GIORNO ===================== -->
       <ng-container *ngIf="tab === 'scheda' && !editingExercise && editingDay as ed">
-        <ion-button class="editorback mb-4" (click)="closeDay()">← Giorni</ion-button>
 
         <div class="authfield">
           <label for="day-label">Nome giorno</label>
@@ -152,7 +183,6 @@
 
       <!-- ===================== EDITOR ESERCIZIO ===================== -->
       <ng-container *ngIf="tab === 'scheda' && editingExercise as ee">
-        <ion-button class="editorback mb-4" (click)="cancelExercise()">← Annulla</ion-button>
 
         <div class="authfield">
           <label>Nome esercizio</label>
@@ -336,7 +366,6 @@
 
         <!-- Editor del piano selezionato -->
         <ng-container *ngIf="editingPlan && !editingMeal">
-          <ion-button class="editorback mb-4" (click)="closePlan()">← Torna ai piani</ion-button>
 
           <div class="authfield mb-4">
             <label>Nome del piano</label>
@@ -434,7 +463,6 @@
 
         <!-- Editor del pasto selezionato -->
         <ng-container *ngIf="editingPlan && editingMeal as em">
-          <ion-button class="editorback mb-4" (click)="closeMeal()">← Torna ai pasti</ion-button>
 
           <div class="authfield mb-4">
             <label>Nome pasto</label>
@@ -649,6 +677,9 @@
             placeholder="Indicazioni generali, note sul programma, avvertenze…"></ion-textarea>
         </div>
       </ng-container>
+
+      </div>
+      }
 
       <p class="autherror" *ngIf="saveMsg && !editingExercise && !editingMeal">{{ saveMsg }}</p>
 

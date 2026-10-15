@@ -7,8 +7,7 @@ describe('ProtocolBuilderStateService', () => {
     service = new ProtocolBuilderStateService();
   });
 
-  it('editingSubform e saving partono a false', () => {
-    expect(service.editingSubform()).toBe(false);
+  it('saving parte a false', () => {
     expect(service.saving()).toBe(false);
   });
 

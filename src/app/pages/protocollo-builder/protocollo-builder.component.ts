@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef, Optional } from '@angular/core';
+import { Component, OnInit, OnDestroy, DoCheck, ChangeDetectorRef, ElementRef, Optional, ViewChild } from '@angular/core';
 import { LucideAngularModule } from 'lucide-angular';
 import { CommonModule } from '@angular/common';
 import {
@@ -25,11 +25,15 @@ import { PdfImportService } from '../../services/pdf-import.service';
 import { ConfirmDialogService } from '../../services/confirm-dialog.service';
 import { IONIC_PAGE, IONIC_LINKS } from '../../core/ionic-page';
 import { IONIC_LIST } from '../../core/ionic-list';
-import { NavController, IonInput, IonTextarea, IonSelect, IonSelectOption, IonSpinner, IonSegment, IonSegmentButton, IonButton, IonRouterOutlet } from '@ionic/angular';
+import { NavController, IonContent, IonInput, IonTextarea, IonSelect, IonSelectOption, IonSpinner, IonSegment, IonSegmentButton, IonButton, IonRouterOutlet } from '@ionic/angular';
+import {
+  LivelloBuilder, PosizioneBuilder, SchedaBuilder, chiaveBuilder, direzioneBuilder, etichettaFattoBuilder, etichettaSuBuilder,
+  livelloBuilder, titoloBuilder
+} from '../../core/utils/builder-nav.util';
 import { ConModificheNonSalvate } from '../../core/guards/modifiche-non-salvate.guard';
 import { senzaSwipeIndietro } from '../../core/swipe-indietro';
 
-type Tab = 'scheda' | 'dieta' | 'corsa' | 'info';
+type Tab = SchedaBuilder;
 
 /**
  * Una zona che puo' ricevere un alimento trascinato.
@@ -52,7 +56,7 @@ export type ZonaDrop =
   ],
   templateUrl: './protocollo-builder.component.html'
 })
-export class ProtocolloBuilderComponent implements OnInit, OnDestroy {
+export class ProtocolloBuilderComponent implements OnInit, OnDestroy, DoCheck {
   protocolId = '';
   protocol: Protocol | null = null;
   loading = true;
@@ -83,23 +87,8 @@ export class ProtocolloBuilderComponent implements OnInit, OnDestroy {
    */
   editingDay: { day: Day; index: number } | null = null;
   editingPlan: DietPlan | null = null;
-  private _editingMeal: NamedMeal | null = null;
-  get editingMeal(): NamedMeal | null { return this._editingMeal; }
-  set editingMeal(val: NamedMeal | null) {
-    this._editingMeal = val;
-    this.syncEditingSubform();
-  }
-
-  private _editingExercise: { day: Day; ex: Exercise; isNew: boolean } | null = null;
-  get editingExercise(): { day: Day; ex: Exercise; isNew: boolean } | null { return this._editingExercise; }
-  set editingExercise(val: { day: Day; ex: Exercise; isNew: boolean } | null) {
-    this._editingExercise = val;
-    this.syncEditingSubform();
-  }
-
-  private syncEditingSubform(): void {
-    this.protocolBuilderState.editingSubform.set(!!this._editingExercise || !!this._editingMeal);
-  }
+  editingMeal: NamedMeal | null = null;
+  editingExercise: { day: Day; ex: Exercise; isNew: boolean } | null = null;
 
   readonly muscles = ['Petto', 'Spalle', 'Tricipiti', 'Dorso', 'Bicipiti', 'Gambe', 'Core'];
 
@@ -133,13 +122,141 @@ export class ProtocolloBuilderComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.paramSub?.unsubscribe();
     this.protocolBuilderState.registerHandlers(null, null);
-    this.protocolBuilderState.editingSubform.set(false);
   }
 
   ionViewWillEnter(): void {
     this.uscitaConsentita = false;
-    this.swipe.spegni();
+    this.aggiornaSwipe();
     void this.ricaricaSeCambiato();
+  }
+
+  // ===== Livelli =====
+  //
+  // L'editor e' una pagina sola con dei livelli (vedi builder-nav.util.ts): la
+  // testata dice a che livello si e', la freccia sale di uno invece di buttare
+  // fuori dall'editor, e la schermata nuova entra dalla parte giusta.
+
+  /** Dove si e': scheda, giorno aperto, esercizio, piano, pasto. */
+  get posizione(): PosizioneBuilder {
+    return {
+      scheda: this.tab,
+      giorno: this.editingDay ? { label: this.editingDay.day.label } : null,
+      esercizio: this.editingExercise ? { name: this.editingExercise.ex.name, isNew: this.editingExercise.isNew } : null,
+      piano: this.editingPlan ? { id: this.editingPlan.id, name: this.editingPlan.name } : null,
+      pasto: this.editingMeal ? { id: this.editingMeal.id, name: this.editingMeal.name } : null
+    };
+  }
+
+  get livello(): LivelloBuilder { return livelloBuilder(this.posizione); }
+  get chiaveLivello(): string { return chiaveBuilder(this.posizione); }
+  get titoloHeader(): string { return titoloBuilder(this.posizione); }
+  get etichettaSu(): string { return etichettaSuBuilder(this.posizione); }
+  get etichettaFatto(): string { return etichettaFattoBuilder(this.posizione); }
+
+  /** Da che parte entra la schermata che si sta per vedere: la legge il template. */
+  direzione: 'avanti' | 'indietro' = 'avanti';
+  private chiaveAttuale: string | null = null;
+  /** Fin dove era scorsa ogni schermata quando la si e' lasciata: salendo o tornando a una scheda si riparte da li'. */
+  private scrollPerChiave = new Map<string, number>();
+  private toccoIniziale: { x: number; y: number } | null = null;
+
+  @ViewChild(IonContent, { read: ElementRef }) private contenuto?: ElementRef<HTMLElement>;
+
+  /** Il contenitore che scorre di ion-content: sta nel suo shadow DOM. */
+  private scrollEl(): HTMLElement | null {
+    return this.contenuto?.nativeElement.shadowRoot?.querySelector<HTMLElement>('.inner-scroll') ?? null;
+  }
+
+  /**
+   * Quando cambia schermata: ricorda dov'era scorsa quella che si lascia, decide
+   * da che parte entra la nuova e dove parte (dall'alto se si scende in un
+   * giorno o in un esercizio, da dove era se si sale o si torna a una scheda).
+   * Gira prima del disegno, cosi' la direzione e' gia' quella giusta.
+   */
+  ngDoCheck(): void {
+    const chiave = this.chiaveLivello;
+    if (chiave === this.chiaveAttuale) return;
+    const el = this.scrollEl();
+    if (this.chiaveAttuale !== null && el) this.scrollPerChiave.set(this.chiaveAttuale, el.scrollTop);
+    this.direzione = direzioneBuilder(this.chiaveAttuale, chiave);
+    this.chiaveAttuale = chiave;
+    const riprende = (this.livello === 0 || this.direzione === 'indietro') && this.scrollPerChiave.has(chiave);
+    const dove = riprende ? this.scrollPerChiave.get(chiave)! : 0;
+    if (typeof requestAnimationFrame === 'function') {
+      requestAnimationFrame(() => { const e = this.scrollEl(); if (e) e.scrollTop = dove; });
+    }
+    this.aggiornaSwipe();
+  }
+
+  /**
+   * Lo swipe indietro di Ionic esce dall'editor intero: va bene solo
+   * sull'elenco e senza modifiche da perdere (con le modifiche c'e' la guardia, e
+   * il gesto non puo' aspettarla). Dentro un giorno o un piano il gesto e' un
+   * altro: sale di un livello (vedi alTocco).
+   */
+  aggiornaSwipe(): void {
+    if (this.livello === 0 && !this.haModificheNonSalvate()) this.swipe.riaccendi();
+    else this.swipe.spegni();
+  }
+
+  /** Cambia scheda. Il selettore sta fisso in alto: si cambia da qualunque punto dell'elenco. */
+  vaAScheda(scheda: Tab): void {
+    if (this.tab === scheda) return;
+    this.tab = scheda;
+    this.cdr.detectChanges();
+  }
+
+  /** La freccia della testata (e lo swipe dal bordo) dentro un livello: sale di uno. */
+  async saliDiUnLivello(): Promise<void> {
+    const l = this.livello;
+    if (l === 0) return;
+    if (this.tab === 'scheda') {
+      if (l === 2) {
+        // Un esercizio nuovo non e' ancora nel giorno: uscendo cosi' si butta. Se c'e'
+        // scritto qualcosa si chiede, come per le altre modifiche non salvate.
+        const ee = this.editingExercise!;
+        if (ee.isNew && this.esercizioScritto(ee.ex)) {
+          const ok = await this.confirm.confirm('Scartare questo esercizio? Non e\' ancora nel giorno.', {
+            confirmLabel: 'Scarta', dangerous: true
+          });
+          if (!ok) return;
+        }
+        this.cancelExercise();
+      } else {
+        this.closeDay();
+      }
+      return;
+    }
+    if (l === 2) this.closeMeal(); else this.closePlan();
+  }
+
+  /** "Fatto" della testata: lo stesso gesto del tasto in fondo alla pagina, senza scorrere fin la'. */
+  async confermaLivello(): Promise<void> {
+    const l = this.livello;
+    if (l === 0) return;
+    if (this.tab === 'scheda') {
+      if (l === 2) this.saveExercise(); else await this.saveDay();
+      return;
+    }
+    if (l === 2) this.closeMeal(); else this.closePlan();
+  }
+
+  private esercizioScritto(ex: Exercise): boolean {
+    return !!(ex.name?.trim() || ex.note?.trim() || ex.text?.trim() || ex.reps?.some(r => String(r ?? '').trim()));
+  }
+
+  /** Il dito parte dal bordo sinistro: potrebbe essere lo swipe per salire di un livello. */
+  alToccoInizio(e: TouchEvent): void {
+    const t = e.touches[0];
+    this.toccoIniziale = t && t.clientX <= 24 ? { x: t.clientX, y: t.clientY } : null;
+  }
+
+  alToccoFine(e: TouchEvent): void {
+    const inizio = this.toccoIniziale;
+    this.toccoIniziale = null;
+    if (!inizio || this.livello === 0) return;
+    const t = e.changedTouches[0];
+    if (t && t.clientX - inizio.x > 70 && Math.abs(t.clientY - inizio.y) < 60) void this.saliDiUnLivello();
   }
 
   ionViewWillLeave(): void {

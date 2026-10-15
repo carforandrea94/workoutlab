@@ -994,13 +994,29 @@ ion-button.shop-addbtn:active{filter:brightness(0.92);}
 .builder-savebar{display:flex;gap:10px;}
 .builder-savebar .savebtn{width:auto;flex:1;}
 
-/* L'uscita da un editor. Stessa famiglia del tasto primario - stesso raggio,
-   stessa altezza, stessa ombra - ma larga quanto il suo testo, perche' e' una
-   via d'uscita e non l'azione della pagina. Prima era .confirmbtn, con un
-   raggio piu' stretto di tutto il resto della schermata. */
-ion-button.editorback{--background:var(--surface-card);--color:var(--label);--border-radius:var(--r-xl);--border-width:1px;--border-style:solid;--border-color:var(--border-line);--box-shadow:var(--shadow-card);--padding-start:18px;--padding-end:18px;--padding-top:0;--padding-bottom:0;--background-activated-opacity:0;--background-hover-opacity:0;--background-focused-opacity:.12;display:inline-block;min-height:44px;font-family:'Inter',sans-serif;font-weight:700;font-size:var(--text-md);text-transform:none;transition:filter .2s ease;}
-:where(ion-button.editorback){margin:0;}
-ion-button.editorback:active{filter:brightness(0.92);}
+/* ===== Editor del protocollo: livelli e schede =====
+   L'editor e' una pagina sola con dei livelli (scheda > giorno > esercizio,
+   piano > pasto): la freccia della testata sale di uno, e la schermata nuova
+   entra dalla parte da cui si e' arrivati - da destra scendendo, da sinistra
+   salendo - con la curva delle transizioni di pagina. */
+.livello{animation:livello-avanti .32s cubic-bezier(0.32,0.72,0,1) both;}
+.livello[data-dir=indietro]{animation-name:livello-indietro;}
+@keyframes livello-avanti{from{opacity:0;transform:translateX(28px);}to{opacity:1;transform:none;}}
+@keyframes livello-indietro{from{opacity:0;transform:translateX(-28px);}to{opacity:1;transform:none;}}
+/* Il titolo della testata si dissolve cambiando livello (la chiave e' la
+   schermata: scrivendo il nome non riparte). */
+.navtitle-livello{animation:titolo-livello .24s ease-out both;}
+@keyframes titolo-livello{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:none;}}
+/* Il selettore delle schede resta sotto la testata: da un elenco lungo si passa a
+   un'altra scheda senza tornare in cima. Fondo pieno e fascia di 16px per lato
+   (sta dentro .wrap) cosi' il contenuto che scorre non si vede di lato. */
+.builder-tabsbar{position:sticky;top:0;z-index:5;margin:0 -16px;padding:6px 16px 14px;background:var(--bg);}
+/* Sotto il selettore il contenuto che scorre si spegne invece di tagliarsi di netto. */
+.builder-tabsbar::after{content:"";position:absolute;left:0;right:0;top:100%;height:14px;background:linear-gradient(to bottom, var(--bg), transparent);pointer-events:none;}
+/* La freccia dentro un livello e' un ion-button con il segno di Lucide: stessa
+   scatola da 38px di ion-back-button (vedi sopra), stesso segno. */
+ion-button.navback{--color:var(--label);}
+@media (prefers-reduced-motion:reduce){.livello,.navtitle-livello{animation:none;}}
 
 .authfield input[type="file"]{font-family:'Inter',sans-serif;font-size:var(--text-sm);color:var(--label-2);background:var(--surface-raise);border:1px dashed var(--border-line);border-radius:var(--r-sm);padding:10px;width:100%;}
 .authfield input[type="file"]::file-selector-button{font-family:'Inter',sans-serif;font-weight:600;font-size:var(--text-xs);color:var(--label);background:var(--surface-raise-2);border:1px solid var(--border-line);border-radius:var(--r-xs);padding:6px 10px;margin-right:10px;cursor:pointer;}

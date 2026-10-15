@@ -20,7 +20,7 @@ class IconHost {
 
 /** Gli stessi nomi che compaiono nei template, in kebab-case. */
 const USED = [
-  'chart-line', 'check', 'chevron-down', 'chevron-right', 'circle-plus',
+  'chart-line', 'check', 'chevron-down', 'chevron-left', 'chevron-right', 'circle-plus',
   'dumbbell', 'eye', 'eye-off', 'file-text', 'file-up', 'gallery-horizontal',
   'grip-vertical', 'history', 'info',
   'list', 'pause', 'play', 'plus', 'ruler', 'save',
