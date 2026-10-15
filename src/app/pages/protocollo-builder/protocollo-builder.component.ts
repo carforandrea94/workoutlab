@@ -24,6 +24,7 @@ import { ToastService } from '../../services/toast.service';
 import { PdfImportService } from '../../services/pdf-import.service';
 import { ConfirmDialogService } from '../../services/confirm-dialog.service';
 import { IONIC_PAGE, IONIC_LINKS } from '../../core/ionic-page';
+import { TastoDirective } from '../../core/tasto.directive';
 import { IONIC_LIST } from '../../core/ionic-list';
 import { NavController, IonContent, IonInput, IonTextarea, IonSelect, IonSelectOption, IonSpinner, IonSegment, IonSegmentButton, IonButton, IonRouterOutlet } from '@ionic/angular';
 import {
@@ -50,7 +51,7 @@ export type ZonaDrop =
 @Component({
   selector: 'app-protocollo-builder',
   standalone: true,
-  imports: [IonButton, ...IONIC_LIST, IonInput, IonTextarea, IonSelect, IonSelectOption, IonSpinner, IonSegment, IonSegmentButton, ...IONIC_PAGE, ...IONIC_LINKS, 
+  imports: [IonButton, TastoDirective, ...IONIC_LIST, IonInput, IonTextarea, IonSelect, IonSelectOption, IonSpinner, IonSegment, IonSegmentButton, ...IONIC_PAGE, ...IONIC_LINKS, 
     CommonModule, FormsModule, LucideAngularModule,
     CdkDropListGroup, CdkDropList, CdkDrag, CdkDragHandle, CdkDragPlaceholder
   ],

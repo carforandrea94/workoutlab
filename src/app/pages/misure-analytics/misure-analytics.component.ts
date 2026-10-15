@@ -10,6 +10,7 @@ import {
   CENTIMETRI_FIELDS
 } from '../../models/measurement.model';
 import { IONIC_PAGE } from '../../core/ionic-page';
+import { TastoDirective } from '../../core/tasto.directive';
 import { IONIC_REFRESH, completaRefresh } from '../../core/ionic-refresh';
 import { IonSpinner, IonButton } from '@ionic/angular';
 
@@ -22,7 +23,7 @@ interface FieldOption {
 @Component({
   selector: 'app-misure-analytics',
   standalone: true,
-  imports: [IonButton, IonSpinner, ...IONIC_PAGE, ...IONIC_REFRESH, CommonModule],
+  imports: [IonButton, IonSpinner, ...IONIC_PAGE, ...IONIC_REFRESH, CommonModule, TastoDirective],
   templateUrl: './misure-analytics.component.html'
 })
 export class MisureAnalyticsComponent implements OnInit {

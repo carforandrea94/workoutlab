@@ -42,7 +42,7 @@
 
             <ng-container *ngIf="item.alt && item.alt.length > 0">
               <div class="altwrap" [class.open]="isItemAltOpen(vm, cat)">
-                <div class="altwrap-header" (click)="toggleItemAlt(vm, cat)">
+                <div class="altwrap-header" appTasto [attr.aria-expanded]="isItemAltOpen(vm, cat)" (click)="toggleItemAlt(vm, cat)">
                   <span>{{ isItemAltOpen(vm, cat) ? 'Nascondi alternative' : 'Alternative (' + item.alt.length + ')' }}</span>
                   <span class="chevron">
                     <lucide-icon name="chevron-down" [size]="10"></lucide-icon>
@@ -74,7 +74,7 @@
       <!-- Alternative per macro, un unico accordion -->
       <ng-container *ngIf="totalAlternatives(vm) > 0">
         <div class="altwrap mt-4" [class.open]="isMacroAltExpanded(vm)">
-          <div class="altwrap-header" (click)="toggleMacroAltExpanded(vm)">
+          <div class="altwrap-header" appTasto [attr.aria-expanded]="isMacroAltExpanded(vm)" (click)="toggleMacroAltExpanded(vm)">
             <span>{{ isMacroAltExpanded(vm) ? 'Nascondi alternative' : 'Alternative (' + totalAlternatives(vm) + ')' }}</span>
             <span class="chevron">
               <lucide-icon name="chevron-down" [size]="10"></lucide-icon>
@@ -99,7 +99,7 @@
     <div *ngIf="plan && state.viewMode() === 'list'">
       <div *ngFor="let vm of meals">
         <div class="meal" [class.open]="vm.open">
-          <div class="meal-summary" (click)="toggleMeal(vm)">
+          <div class="meal-summary" appTasto [attr.aria-expanded]="vm.open" (click)="toggleMeal(vm)">
             <span>{{ vm.meal.name }}</span>
             <span class="chevron">
               <lucide-icon name="chevron-down" [size]="12"></lucide-icon>
@@ -118,6 +118,7 @@
       <div class="exslider-dashes" *ngIf="meals.length > 1">
         <span *ngFor="let vm of meals; let i = index"
           class="exslider-dash" [class.active]="i === sliderIndex" [class.done]="vm.completed"
+          appTasto [attr.aria-label]="'Vai al pasto ' + (i + 1)" [attr.aria-current]="i === sliderIndex ? 'true' : null"
           (click)="scrollToIndex(i)"></span>
       </div>
 
@@ -125,7 +126,8 @@
         <div class="meal mealslide exslide" *ngFor="let vm of meals">
           <div class="meal-summary noclick">
             <span>{{ vm.meal.name }}</span>
-            <div class="meal-check" [class.done]="vm.completed" (click)="toggleMealCompleted(vm)">✓</div>
+            <div class="meal-check" [class.done]="vm.completed" appTasto="checkbox" [attr.aria-checked]="vm.completed"
+              aria-label="Pasto fatto" (click)="toggleMealCompleted(vm)">✓</div>
           </div>
 
           <div class="content-inner">
