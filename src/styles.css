@@ -269,7 +269,11 @@ a { color: inherit; text-decoration: none; }
    translateZ(0) che Ionic gli mette: su un livello a se' WebKit posiziona il
    testo a mezzo pixel e lo sfoca. */
 ion-header{background:var(--bg);}
-ion-toolbar{--background:var(--bg);--color:var(--label);--border-width:0;--min-height:52px;--padding-start:16px;--padding-end:16px;--padding-top:8px;--padding-bottom:6px;}
+/* La testata segue la colonna del contenuto (.wrap, 640 px con 16 di margine):
+   sotto i 640 px e' il margine di sempre, oltre la freccia, il titolo e i tasti
+   restano allineati alle schede invece di stare ai bordi dello schermo con le
+   card in mezzo (iPad in verticale, PWA su desktop). */
+ion-toolbar{--background:var(--bg);--color:var(--label);--border-width:0;--min-height:52px;--padding-start:max(16px,calc((100vw - 640px) / 2 + 16px));--padding-end:max(16px,calc((100vw - 640px) / 2 + 16px));--padding-top:8px;--padding-bottom:6px;}
 ion-toolbar ion-title:not(.title-large){position:static;width:auto;height:auto;padding:0;transform:none;text-align:left;pointer-events:auto;}
 /* Distanza fissa fra titolo e pulsanti, e nessun margine di Ionic sui gruppi:
    freccia e azioni stanno sullo stesso filo delle card (16px dal bordo). */
@@ -660,11 +664,21 @@ ion-button.closing-discard.button-disabled{opacity:.4;}
 .measure-grid.cols-2{grid-template-columns:minmax(0,1fr) minmax(0,1fr);}
 .measure-field{display:flex;flex-direction:column;gap:6px;min-width:0;}
 .measure-field label{font-family:'IBM Plex Mono',monospace;font-size:var(--text-2xs);letter-spacing:.04em;color:var(--label-3);}
-.measure-input-wrap{display:flex;align-items:center;gap:6px;min-width:0;background:var(--surface-raise);border:1px solid var(--border-line);border-radius:var(--r-sm);padding:9px 10px;}
-.measure-input-wrap input{flex:1;min-width:0;background:none;border:none;outline:none;font-family:'IBM Plex Mono',monospace;font-size:var(--text-md);font-weight:600;color:var(--label);padding:0;}
+/* Il riquadro del campo E' il campo: l'aria sopra e sotto il testo sta nel campo
+   stesso (padding dell'input, non del contenitore), cosi' toccare il riquadro
+   in un punto qualsiasi lo mette a fuoco. Con l'aria sul contenitore rispondeva
+   solo la fascia alta quanto il testo - 13 px in un riquadro da 44. */
+.measure-input-wrap{display:flex;align-items:center;gap:6px;min-width:0;background:var(--surface-raise);border:1px solid var(--border-line);border-radius:var(--r-sm);padding:0 10px;}
+.measure-input-wrap input{flex:1;align-self:stretch;min-width:0;background:none;border:none;outline:none;font-family:'IBM Plex Mono',monospace;font-size:var(--text-md);font-weight:600;color:var(--label);padding:9px 0;}
 .measure-input-wrap input::placeholder{color:var(--label-3);font-weight:500;}
 .measure-input-wrap:focus-within{border-color:var(--accent);background:var(--surface-raise-2);}
 .measure-input-wrap .unit{font-family:'IBM Plex Mono',monospace;font-size:var(--text-xs);color:var(--label-3);flex-shrink:0;}
+/* La durata scritta per esteso sotto i minuti ("1 h 05" mentre si digita 65).
+   Il markup c'era ma nessuna regola: "Durata" e il valore uscivano nel carattere
+   di serie del browser, a 16 px, in mezzo a un'app tutta in Plex Mono. */
+.runlive{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-top:14px;padding-top:12px;border-top:1px solid var(--border-line);}
+.runlive .k{font-family:'IBM Plex Mono',monospace;font-size:var(--text-2xs);font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--label-3);}
+.runlive .v{font-family:'IBM Plex Mono',monospace;font-size:var(--text-lg);font-weight:700;color:var(--label);}
 
 .measure-readrow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 2px;border-bottom:1px solid var(--border-line);}
 .measure-readrow:last-child{border-bottom:none;}
@@ -779,7 +793,9 @@ lucide-icon svg.filled{fill:currentColor;}
    su una schermata di accesso i campi sono il bersaglio principale. Vale
    qui e non su .measure-input-wrap in generale, che vive anche in form
    fitti dove la riga e' stretta apposta. */
-.authfield .measure-input-wrap{min-height:44px;}
+/* L'altezza sta sul campo, non sul contenitore: un contenitore da 44 con dentro
+   un campo da 31 lasciava 13 px di riquadro che non rispondevano al tocco. */
+.authfield .measure-input-wrap > :is(input,ion-input,ion-select){min-height:42px;}
 .authfield .fielderr,.fielderr{font-size:var(--text-xs);color:var(--state-danger-text);margin-top:5px;line-height:1.4;}
 .autherror{font-size:var(--text-sm);color:var(--state-danger-text);background:rgba(var(--state-danger-rgb),.10);border:1px solid rgba(var(--state-danger-rgb),.25);border-radius:var(--r-sm);padding:10px 12px;margin-bottom:14px;line-height:1.4;}
 /* I link erano alti quanto la loro riga di testo, una ventina di px: sotto i
@@ -1339,6 +1355,11 @@ ion-picker.heightpicker{margin-bottom:18px;}
 /* Per i bottoni affiancati il bersaglio cresce solo in verticale: in
    orizzontale ruberebbe i tocchi al vicino. */
 .tap44.tap44-v::after{width:100%;}
+/* "Alternative (n)" e il chip del recupero sono alti 32 e 24: il disegno resta,
+   il bersaglio arriva a 44 (vedi .tap44). Il chip e' dentro una riga che apre
+   l'esercizio: un tocco vicino al chip e' per lui, non per la riga. */
+.altwrap-header,.ex-chip.rest{position:relative;}
+.altwrap-header::after,.ex-chip.rest::after{content:"";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:100%;min-width:44px;height:44px;}
 
 .press-fx{transition:transform .35s var(--spring),filter .15s ease;}
 /* Schiarire e' un ritorno visivo che esiste solo su fondo scuro: in tema
@@ -1431,7 +1452,7 @@ ion-alert.confirm-alert .alert-button-role-cancel{color:var(--label-2);}
 ion-spinner{color:var(--label-3);}
 .history-empty ion-spinner{display:block;margin:0 auto;}
 
-.measure-input-wrap ion-input,.measure-input-wrap ion-select{--background:transparent;--color:var(--label);--placeholder-color:var(--label-3);--placeholder-opacity:1;--padding-start:0;--padding-end:0;--padding-top:0;--padding-bottom:0;flex:1;min-width:0;min-height:0;font-family:'IBM Plex Mono',monospace;font-size:var(--text-md);font-weight:600;}
+.measure-input-wrap ion-input,.measure-input-wrap ion-select{--background:transparent;--color:var(--label);--placeholder-color:var(--label-3);--placeholder-opacity:1;--padding-start:0;--padding-end:0;--padding-top:9px;--padding-bottom:9px;flex:1;align-self:stretch;min-width:0;min-height:0;font-family:'IBM Plex Mono',monospace;font-size:var(--text-md);font-weight:600;}
 .authfield ion-input{width:100%;}
 .builder-row2 ion-select{font-family:'Inter',sans-serif;font-size:var(--text-sm);font-weight:400;}
 
