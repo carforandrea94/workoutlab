@@ -1,6 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
+import { NavController } from '@ionic/angular';
 import { afterEach, vi } from 'vitest';
 import { providerPagina } from '../../test-support/pagina';
 import { TabsPage } from './tabs.page';
@@ -25,15 +26,23 @@ describe('TabsPage — barra nascosta e tocco sulla tab (disegno vero)', () => {
     { path: 'scheda/day/:n', component: Vuota }
   ];
 
-  afterEach(() => document.documentElement.classList.remove('senza-tabbar'));
+  afterEach(() => document.documentElement.classList.remove('senza-tabbar', 'con-pillola'));
 
-  async function monta(opzioni: { sessioneSuGiorno?: boolean } = {}) {
+  async function monta(opzioni: { sessioneSuGiorno?: boolean; sessione?: { dayId: string; dayLabel?: string; pausedAt?: string | null } } = {}) {
+    // La sessione in corso: o quella sul giorno 0 (comodo per i test della fascia),
+    // o una descritta per intero (la pillola dipende da quale giorno e' e se e' in pausa).
+    const attiva = signal<any>(opzioni.sessione ?? (opzioni.sessioneSuGiorno ? { dayId: 'day1', pausedAt: null } : null));
     TestBed.configureTestingModule({
       imports: [TabsPage],
       providers: [
         ...providerPagina(rotte),
-        { provide: WorkoutDataService, useValue: { days: [{ id: 'day1' }] } },
-        { provide: WorkoutSessionStateService, useValue: { isActiveForDay: () => !!opzioni.sessioneSuGiorno } }
+        { provide: WorkoutDataService, useValue: { days: [{ id: 'day1', label: 'Petto' }, { id: 'day2', label: 'Gambe' }] } },
+        { provide: WorkoutSessionStateService, useValue: {
+          activeSession: attiva,
+          isActiveForDay: (id: string) => attiva()?.dayId === id,
+          elapsedSec: signal(1390),
+          formatDuration: () => '23:10'
+        } }
       ]
     });
     const router = TestBed.inject(Router);
@@ -50,7 +59,7 @@ describe('TabsPage — barra nascosta e tocco sulla tab (disegno vero)', () => {
       await fixture.whenStable();
       fixture.detectChanges();
     };
-    return { fixture, root, barra, vai, router };
+    return { fixture, root, barra, vai, router, attiva };
   }
 
   it('sulla radice la barra c\'e\' e lo spazio sotto il contenuto e\' tenuto', async () => {
@@ -163,6 +172,101 @@ describe('TabsPage — barra nascosta e tocco sulla tab (disegno vero)', () => {
 
       expect(vecchia.scrollToTop).not.toHaveBeenCalled();
       expect(visibile.scrollToTop).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('la pillola della sessione in corso', () => {
+    const pillola = (root: HTMLElement) => root.querySelector<HTMLElement>('.sessionpill');
+    const inCorso = { dayId: 'day2', dayLabel: 'Gambe', pausedAt: null };
+
+    it('senza sessione non c\'e\' e il contenuto non tiene spazio per lei', async () => {
+      const { root } = await monta();
+      expect(pillola(root)).toBeNull();
+      expect(document.documentElement.classList.contains('con-pillola')).toBe(false);
+    });
+
+    it('con una sessione, fuori dal suo giorno, dice che e\' in corso, da quanto e come riprenderla', async () => {
+      const { root, fixture } = await monta({ sessione: inCorso });
+      fixture.detectChanges();
+
+      const p = pillola(root)!;
+      expect(p).toBeTruthy();
+      expect(p.textContent).toContain('In corso');
+      expect(p.textContent).toContain('23:10');
+      expect(p.textContent).toContain('Riprendi');
+      expect(p.getAttribute('aria-label')).toBe('Allenamento in corso, 23:10. Riprendi.');
+    });
+
+    it('sopra la barra sulle radici; al posto della barra dove la barra scivola via', async () => {
+      const { root, vai, fixture } = await monta({ sessione: inCorso });
+      fixture.detectChanges();
+      expect(pillola(root)!.classList.contains('senza-barra')).toBe(false);
+
+      await vai('/dieta/lista-spesa');
+
+      expect(pillola(root)!.classList.contains('senza-barra')).toBe(true);
+    });
+
+    it('il contenuto tiene lo spazio per lei finche\' c\'e', async () => {
+      const { fixture, attiva } = await monta({ sessione: inCorso });
+      fixture.detectChanges();
+      expect(document.documentElement.classList.contains('con-pillola')).toBe(true);
+
+      attiva.set(null);
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      expect(document.documentElement.classList.contains('con-pillola')).toBe(false);
+    });
+
+    it('in pausa lo dice', async () => {
+      const { root, fixture } = await monta({ sessione: { ...inCorso, pausedAt: '2026-10-15T10:00:00.000Z' } });
+      fixture.detectChanges();
+
+      const p = pillola(root)!;
+      expect(p.textContent).toContain('In pausa');
+      expect(p.classList.contains('in-pausa')).toBe(true);
+      expect(p.getAttribute('aria-label')).toContain('in pausa');
+    });
+
+    it('sulla pagina di un giorno non c\'e\': li\' la sessione si vede gia\'', async () => {
+      const { root, vai, fixture } = await monta({ sessione: inCorso });
+      fixture.detectChanges();
+
+      await vai('/scheda/day/0');
+
+      expect(pillola(root)).toBeNull();
+    });
+
+    it('toccarla riporta sul giorno della sessione', async () => {
+      const { root, fixture } = await monta({ sessione: inCorso });
+      fixture.detectChanges();
+      const vaiA = vi.spyOn(TestBed.inject(NavController), 'navigateForward').mockResolvedValue(true);
+
+      pillola(root)!.click();
+
+      expect(vaiA).toHaveBeenCalledWith(['/scheda/day', 1]); // day2 e' il secondo giorno
+    });
+
+    it('se il protocollo non ha piu\' quel giorno porta sul primo, dove la sessione si puo\' annullare', async () => {
+      const { root, fixture } = await monta({ sessione: { dayId: 'sparito', pausedAt: null } });
+      fixture.detectChanges();
+      const vaiA = vi.spyOn(TestBed.inject(NavController), 'navigateForward').mockResolvedValue(true);
+
+      pillola(root)!.click();
+
+      expect(vaiA).toHaveBeenCalledWith(['/scheda/day', 0]);
+    });
+
+    it('se la sessione ha un\'etichetta diversa dal giorno di quell\'id, non lo considera lo stesso allenamento', async () => {
+      // gli id sono posizionali: day2 oggi puo' essere un altro allenamento di ieri
+      const { root, fixture } = await monta({ sessione: { dayId: 'day2', dayLabel: 'Schiena', pausedAt: null } });
+      fixture.detectChanges();
+      const vaiA = vi.spyOn(TestBed.inject(NavController), 'navigateForward').mockResolvedValue(true);
+
+      pillola(root)!.click();
+
+      expect(vaiA).toHaveBeenCalledWith(['/scheda/day', 0]);
     });
   });
 });

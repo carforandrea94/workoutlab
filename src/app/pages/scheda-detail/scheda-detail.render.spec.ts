@@ -38,7 +38,8 @@ describe('SchedaDetailComponent — accessibilita\' delle testate (disegno vero)
     HTMLElement.prototype.scrollIntoView = function () {} as any;
   });
 
-  async function monta(vista: 'list' | 'slider', sessioneAvviata = false) {
+  async function monta(vista: 'list' | 'slider', sessioneAvviata = false, altraSessione = false) {
+    const start = vi.fn();
     const viewMode = signal<'list' | 'slider'>(vista);
     TestBed.configureTestingModule({
       imports: [SchedaDetailComponent],
@@ -63,8 +64,9 @@ describe('SchedaDetailComponent — accessibilita\' delle testate (disegno vero)
         { provide: ToastService, useValue: {} },
         { provide: WorkoutSessionStateService, useValue: {
           matchesDay: () => sessioneAvviata, isPaused: () => false,
-          activeSession: () => (sessioneAvviata ? { dayId: 'day1', dayLabel: 'Petto' } : null),
-          elapsedSec: signal(0), formatDuration: (s: number) => `${s}`
+          activeSession: () => (sessioneAvviata ? { dayId: 'day1', dayLabel: 'Petto' }
+            : altraSessione ? { dayId: 'altro', dayLabel: 'Gambe' } : null),
+          elapsedSec: signal(0), formatDuration: (s: number) => `${s}`, start
         } }
       ]
     });
@@ -80,7 +82,7 @@ describe('SchedaDetailComponent — accessibilita\' delle testate (disegno vero)
       el.dispatchEvent(ev);
       return ev;
     };
-    return { fixture, root, nomi, trattini, tasto };
+    return { fixture, root, nomi, trattini, tasto, start };
   }
 
   describe('vista elenco', () => {
@@ -198,6 +200,56 @@ describe('SchedaDetailComponent — accessibilita\' delle testate (disegno vero)
     it('senza sessione il tondo della chiusura non c\'e\'', async () => {
       const { trattini } = await monta('slider', false);
       expect(trattini().some(t => t.classList.contains('finish'))).toBe(false);
+    });
+  });
+
+  /**
+   * Il comando principale della pagina sta in basso, sotto il pollice. Finche'
+   * non c'e' una sessione la scheda e' spenta: l'avvio non deve essere un tondo
+   * piccolo da cercare in alto a destra.
+   */
+  describe('avvio dell\'allenamento', () => {
+    const footer = (root: HTMLElement) => root.querySelector<HTMLElement>('ion-footer.avvio-footer');
+    const pulsante = (root: HTMLElement) => footer(root)?.querySelector<HTMLElement>('ion-button.avvio-btn') ?? null;
+
+    it('senza sessione in fondo c\'e\' "Inizia allenamento"', async () => {
+      const { root } = await monta('list');
+      expect(pulsante(root)?.textContent?.trim()).toBe('Inizia allenamento');
+    });
+
+    it('toccarlo avvia la sessione di questo giorno', async () => {
+      const { root, start } = await monta('list');
+      pulsante(root)!.click();
+      expect(start).toHaveBeenCalledWith('day1', 'Petto');
+    });
+
+    it('c\'e\' anche nello slider', async () => {
+      const { root } = await monta('slider');
+      expect(pulsante(root)).not.toBeNull();
+    });
+
+    it('a sessione avviata sparisce: il suo posto lo prende la fascia del recupero', async () => {
+      const { root } = await monta('list', true);
+      expect(footer(root)).toBeNull();
+    });
+
+    it('se la sessione e\' su un altro giorno non si puo\' avviarne una seconda', async () => {
+      const { root } = await monta('list', false, true);
+      expect(footer(root)).toBeNull();
+    });
+
+    it('la barra della sessione compare solo quando c\'e\' una sessione (questo giorno o un altro)', async () => {
+      expect((await monta('list', false, false)).root.querySelector('.session-bar')).toBeNull();
+      TestBed.resetTestingModule();
+      expect((await monta('list', true, false)).root.querySelector('.session-bar')).not.toBeNull();
+      TestBed.resetTestingModule();
+      expect((await monta('list', false, true)).root.querySelector('.session-bar')).not.toBeNull();
+    });
+
+    it('il tondo play/pausa in alto c\'e\' solo se la sessione e\' di questo giorno', async () => {
+      expect((await monta('list', true)).root.querySelector('.session-bar-btn')).not.toBeNull();
+      TestBed.resetTestingModule();
+      expect((await monta('list', false, true)).root.querySelector('.session-bar-btn')).toBeNull();
     });
   });
 });

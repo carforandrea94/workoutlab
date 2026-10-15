@@ -1,3 +1,4 @@
+import { afterEach, beforeEach, vi } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { WorkoutStateService } from './workout-state.service';
 
@@ -68,5 +69,66 @@ describe('WorkoutStateService.weekNumberForDate', () => {
     moltoPrima.setDate(lunedi.getDate() - 70);
     service.recomputeWeek(iso(moltoPrima), 8);
     expect(service.currentWeek).toBe(8);
+  });
+});
+
+/**
+ * Il "Vai" a fine recupero non e' piu' un banner di quattro secondi: sulla
+ * panca, con lo sguardo di sbieco, quattro secondi si perdono. Resta finche'
+ * qualcuno non lo toglie o non parte il recupero dopo.
+ */
+describe('WorkoutStateService — il recupero finito resta', () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
+
+  const crea = () => TestBed.runInInjectionContext(() =>
+    new WorkoutStateService({} as any, { authReady: () => false, currentUser: () => null } as any)
+  );
+
+  it('a tempo scaduto segna "finito" e non si spegne da solo', () => {
+    const s = crea();
+    s.startRestTimer(5, 'Panca piana', 'd1');
+
+    vi.advanceTimersByTime(5000);
+    expect(s.restTimer().finished).toBe(true);
+
+    vi.advanceTimersByTime(10 * 60 * 1000);
+    expect(s.restTimer().show).toBe(true);
+    expect(s.restTimer().finished).toBe(true);
+    expect(s.restTimer().exName).toBe('Panca piana');
+  });
+
+  it('la X lo toglie', () => {
+    const s = crea();
+    s.startRestTimer(5, 'Panca piana', 'd1');
+    vi.advanceTimersByTime(5000);
+
+    s.stopRestTimer();
+
+    expect(s.restTimer().show).toBe(false);
+    expect(s.restTimer().finished).toBe(false);
+  });
+
+  it('il recupero della serie dopo lo sostituisce con quello nuovo', () => {
+    const s = crea();
+    s.startRestTimer(5, 'Panca piana', 'd1');
+    vi.advanceTimersByTime(5000);
+
+    s.startRestTimer(90, 'Croci', 'd1');
+
+    expect(s.restTimer().finished).toBe(false);
+    expect(s.restTimer().show).toBe(true);
+    expect(s.restTimer().exName).toBe('Croci');
+    expect(s.restTimer().remaining).toBe(90);
+  });
+
+  it('prima della scadenza il conto scende e non e\' finito', () => {
+    const s = crea();
+    s.startRestTimer(60, 'Panca piana', 'd1');
+
+    vi.advanceTimersByTime(20_000);
+
+    expect(s.restTimer().finished).toBe(false);
+    expect(s.restTimer().remaining).toBe(40);
   });
 });

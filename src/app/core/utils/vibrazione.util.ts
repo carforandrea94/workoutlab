@@ -2,8 +2,10 @@ import { Haptics, ImpactStyle, NotificationType } from '@capacitor/haptics';
 import { isNativeApp } from './platform.util';
 
 /**
- * Le due vibrazioni dell'app: il telefono e' in tasca o sulla panca, non
- * davanti agli occhi, e il segnale arriva dal tatto.
+ * Le vibrazioni dell'app: il telefono e' in tasca o sulla panca, non
+ * davanti agli occhi, e il segnale arriva dal tatto. Due avvisano (fine del
+ * recupero e della pausa nel cluster), una conferma ('serie': la serie e'
+ * entrata) e per questo e' la piu' leggera.
  *
  * Nel browser c'e' navigator.vibrate, che pero' iOS non implementa (nemmeno
  * nella PWA sulla Home): li' non succede niente. Nell'app nativa si passa dal
@@ -11,7 +13,7 @@ import { isNativeApp } from './platform.util';
  * su iOS ignora la durata e da' un colpo secco lungo, quindi si usano gli
  * effetti di sistema, che sono quelli che l'utente conosce.
  */
-export type Vibrazione = 'fine-recupero' | 'fine-pausa';
+export type Vibrazione = 'fine-recupero' | 'fine-pausa' | 'serie';
 
 /** Cio' da cui dipende la scelta: passato a mano nei test, preso dal dispositivo altrove. */
 export interface Ambiente {
@@ -23,7 +25,8 @@ export interface Ambiente {
 
 const SCHEMA_WEB: Record<Vibrazione, number | number[]> = {
   'fine-recupero': [200, 100, 200],
-  'fine-pausa': 200
+  'fine-pausa': 200,
+  'serie': 15
 };
 
 function ambienteReale(): Ambiente {
@@ -39,7 +42,7 @@ export function vibra(tipo: Vibrazione, ambiente: Ambiente = ambienteReale()): v
     // Nessuno aspetta l'esito: se l'aptico non c'e' (iPad, simulatore) non e' un errore.
     const effetto = tipo === 'fine-recupero'
       ? ambiente.aptico.notification({ type: NotificationType.Success })
-      : ambiente.aptico.impact({ style: ImpactStyle.Medium });
+      : ambiente.aptico.impact({ style: tipo === 'serie' ? ImpactStyle.Light : ImpactStyle.Medium });
     effetto.catch(() => {});
     return;
   }

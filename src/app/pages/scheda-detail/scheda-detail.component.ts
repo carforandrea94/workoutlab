@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef, ElementRef, ViewChild, effect, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, ElementRef, Optional, ViewChild, effect, signal } from '@angular/core';
 import { LucideAngularModule } from 'lucide-angular';
 import { NumberWheelComponent } from '../../components/number-wheel/number-wheel.component';
 import { CommonModule } from '@angular/common';
@@ -32,7 +32,7 @@ import {
 import { IONIC_PAGE } from '../../core/ionic-page';
 import { TastoDirective } from '../../core/tasto.directive';
 import { vibra } from '../../core/utils/vibrazione.util';
-import { IonModal, NavController, IonSegment, IonSegmentButton, IonSelect, IonSelectOption, IonSpinner, IonButton } from '@ionic/angular';
+import { IonFooter, IonModal, NavController, IonSegment, IonSegmentButton, IonSelect, IonSelectOption, IonSpinner, IonButton } from '@ionic/angular';
 
 interface ExerciseVM {
   ex: Exercise;
@@ -60,7 +60,7 @@ interface ExerciseVM {
 @Component({
   selector: 'app-scheda-detail',
   standalone: true,
-  imports: [IonButton, TastoDirective, IonSegment, IonSegmentButton, IonSelect, IonSelectOption, IonSpinner, ...IONIC_PAGE, IonModal, CommonModule, FormsModule, LucideAngularModule, NumberWheelComponent],
+  imports: [IonButton, IonFooter, TastoDirective, IonSegment, IonSegmentButton, IonSelect, IonSelectOption, IonSpinner, ...IONIC_PAGE, IonModal, CommonModule, FormsModule, LucideAngularModule, NumberWheelComponent],
   templateUrl: './scheda-detail.component.html'
 })
 export class SchedaDetailComponent implements OnInit, OnDestroy {
@@ -149,7 +149,10 @@ export class SchedaDetailComponent implements OnInit, OnDestroy {
     private confirm: ConfirmDialogService,
     private cdr: ChangeDetectorRef,
     private toast: ToastService,
-    public sessionState: WorkoutSessionStateService
+    public sessionState: WorkoutSessionStateService,
+    // Facoltativo: serve solo a portare in vista l'esercizio dopo, e gli spec che
+    // costruiscono il componente a mano non lo passano.
+    @Optional() private host: ElementRef<HTMLElement> | null = null
   ) {
     // Il toggle sta nella testata, ma la preferenza e' condivisa con lo
     // storico: quando si passa a "slider", riparte sempre dalla prima card.
@@ -382,6 +385,7 @@ export class SchedaDetailComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    if (this.avanzaTimer) { clearTimeout(this.avanzaTimer); this.avanzaTimer = null; }
     this.paramSub?.unsubscribe();
     this.stopPause();
     if (this.draftTimer) {
@@ -708,6 +712,8 @@ export class SchedaDetailComponent implements OnInit, OnDestroy {
     // spunta e' una correzione, e la fascia col timer non ha senso.
     if (row.done && !this.isStorico) {
       this.state.startRestTimer(vm.restSeconds, vm.ex.name, this.day.id);
+      // Un colpo leggero: dice che la serie e' entrata, senza guardare lo schermo.
+      vibra('serie');
     }
   }
 
@@ -766,6 +772,47 @@ export class SchedaDetailComponent implements OnInit, OnDestroy {
     if (this.setsLocked || vm.rows[rowIdx].done) return;
     this.onSetCheck(vm, rowIdx);
     this.syncActiveRow(vm);
+    this.avanzaSeFinito(vm);
+  }
+
+  // ---- Dopo l'ultima serie ----
+  //
+  // Finito un esercizio la pagina porta da sola al successivo (o alla chiusura,
+  // dopo l'ultimo). In piedi, con le mani sporche, scorrere due schermate per
+  // trovare la prossima serie era la parte piu' lenta dell'allenamento.
+
+  private avanzaTimer: ReturnType<typeof setTimeout> | null = null;
+
+  private esercizioFinito(vm: ExerciseVM): boolean {
+    return vm.rows.length > 0 && vm.rows.every(r => r.done);
+  }
+
+  private avanzaSeFinito(vm: ExerciseVM): void {
+    if (this.isStorico || !this.esercizioFinito(vm)) return;
+    const i = this.exercises.indexOf(vm);
+    if (i < 0) return;
+    if (this.avanzaTimer) clearTimeout(this.avanzaTimer);
+    // Un respiro, il tempo di vedere la spunta e l'anello che si chiude.
+    this.avanzaTimer = setTimeout(() => {
+      this.avanzaTimer = null;
+      // Nel frattempo si puo' aver tolto la spunta, o aver lasciato la pagina.
+      if (this.distrutto || !this.esercizioFinito(vm)) return;
+      this.vaAllaSlide(i + 1);
+    }, 450);
+  }
+
+  /** Porta in vista l'esercizio i-esimo, o la chiusura se i e' oltre l'ultimo. */
+  vaAllaSlide(i: number): void {
+    if (this.state.viewMode() === 'slider') { this.scrollToIndex(i); return; }
+    const radice = this.host?.nativeElement;
+    const el = i < this.exercises.length
+      ? radice?.querySelectorAll<HTMLElement>('.exlist > .ex')[i]
+      : radice?.querySelector<HTMLElement>('.closing');
+    el?.scrollIntoView({ behavior: this.movimentoRidotto() ? 'auto' : 'smooth', block: 'start' });
+  }
+
+  private movimentoRidotto(): boolean {
+    return typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
   }
 
   /** Toglie la spunta e riapre quella riga: e' li' che si sta correggendo. */
@@ -975,7 +1022,11 @@ export class SchedaDetailComponent implements OnInit, OnDestroy {
     this.scheduleDraft();
     // Finita la serie tocca il recupero lungo dell'esercizio, non piu' quello
     // corto di dentro. Nello storico non tocca niente: e' una correzione.
-    if (!this.isStorico) this.state.startRestTimer(vm.restSeconds, vm.ex.name, this.day.id);
+    if (!this.isStorico) {
+      this.state.startRestTimer(vm.restSeconds, vm.ex.name, this.day.id);
+      vibra('serie');
+    }
+    this.avanzaSeFinito(vm);
   }
 
   /** Riapre una serie a cluster per correggerla: i blocchi restano come sono. */
@@ -1410,6 +1461,9 @@ export class SchedaDetailComponent implements OnInit, OnDestroy {
     );
     if (!ok) return;
     this.sessionState.cancel();
+    // Il recupero appartiene alla sessione: senza questo il "Vai" di una
+    // sessione buttata riapparirebbe all'inizio della prossima.
+    this.state.stopRestTimer();
     // La card di chiusura era l'ultima slide e ora non c'e' piu': l'indicatore
     // resterebbe puntato oltre la fine, senza nessun trattino acceso.
     if (this.sliderIndex >= this.exercises.length) {
@@ -1468,6 +1522,7 @@ export class SchedaDetailComponent implements OnInit, OnDestroy {
       if (ok) {
         await this.appState.deleteFieldPath(`workoutDrafts.${this.day.id}`);
         this.sessionState.finish();
+        this.state.stopRestTimer();
         this.state.saveStatus.set('saved');
         // Il resoconto si costruisce dalla seduta appena scritta e dall'ultima
         // volta che si era fatto LO STESSO giorno: un Giorno 1 di petto e un

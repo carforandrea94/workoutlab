@@ -1,8 +1,8 @@
-import { Component, ElementRef, OnDestroy, OnInit, effect, signal } from '@angular/core';
+import { Component, ElementRef, OnDestroy, OnInit, computed, effect, signal } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { filter } from 'rxjs/operators';
-import { IonTabs, IonTabBar, IonTabButton } from '@ionic/angular';
+import { IonTabs, IonTabBar, IonTabButton, NavController } from '@ionic/angular';
 import { LucideAngularModule } from 'lucide-angular';
 import { WorkoutDataService } from '../services/workout-data.service';
 import { WorkoutSessionStateService } from '../services/workout-session-state.service';
@@ -45,6 +45,11 @@ export function eRadiceDiTab(url: string, tabs: readonly { id: string }[] = TABS
  * giorno, un editor, uno storico serve lo spazio, e per cambiare sezione si
  * torna indietro. Toccare di nuovo la tab gia' aperta, sulla radice, riporta
  * in cima alla pagina.
+ *
+ * Con una sessione in corso, fuori dalla pagina del suo giorno compare la
+ * pillola "In corso · 23:10 · Riprendi": prima, uscendo dal giorno, la
+ * sessione spariva dallo schermo e l'unico modo di ritrovarla era ricordarsi
+ * quale giorno si stava facendo.
  */
 @Component({
   selector: 'app-tabs',
@@ -68,6 +73,15 @@ export function eRadiceDiTab(url: string, tabs: readonly { id: string }[] = TABS
       @if (showRestBar) {
         <app-rest-bar></app-rest-bar>
       }
+      @if (sessione(); as s) {
+        <button type="button" class="sessionpill" [class.senza-barra]="nascondiBarra" [class.in-pausa]="s.inPausa"
+          (click)="riprendiSessione()" [attr.aria-label]="s.aria">
+          <span class="sessionpill-dot" aria-hidden="true"></span>
+          <span class="sessionpill-stato">{{ s.inPausa ? 'In pausa' : 'In corso' }}</span>
+          <span class="sessionpill-tempo">{{ s.tempo }}</span>
+          <span class="sessionpill-vai">Riprendi <lucide-icon name="chevron-right" [size]="14"></lucide-icon></span>
+        </button>
+      }
     </ion-tabs>
   `
 })
@@ -75,6 +89,24 @@ export class TabsPage implements OnInit, OnDestroy {
   readonly selected = signal<string>('');
   /** In una pagina dentro la tab, non sulla sua radice. */
   readonly paginaInterna = signal(false);
+  /** Sulla pagina di un giorno (/scheda/day/N): li' la sessione si vede gia', con la fascia o con "Inizia". */
+  readonly paginaGiorno = signal(false);
+
+  /**
+   * La sessione in corso, per la pillola: c'e' solo se una sessione esiste e
+   * non si e' sulla pagina di un giorno. Il tempo e' lo stesso della barra del
+   * giorno (un signal che batte ogni secondo).
+   */
+  readonly sessione = computed(() => {
+    const s = this.sessionState.activeSession();
+    if (!s || this.paginaGiorno()) return null;
+    const inPausa = !!s.pausedAt;
+    const tempo = this.sessionState.formatDuration(this.sessionState.elapsedSec());
+    return {
+      inPausa, tempo,
+      aria: `${inPausa ? 'Allenamento in pausa' : 'Allenamento in corso'}, ${tempo}. Riprendi.`
+    };
+  });
   private dayIdOnScreen: string | null = null;
   private routeSub: Subscription | null = null;
 
@@ -82,12 +114,18 @@ export class TabsPage implements OnInit, OnDestroy {
     private router: Router,
     private workoutData: WorkoutDataService,
     private sessionState: WorkoutSessionStateService,
-    private host: ElementRef<HTMLElement>
+    private host: ElementRef<HTMLElement>,
+    private nav: NavController
   ) {
     // Il contenuto delle pagine tiene sotto uno spazio per la barra: senza barra
     // (e senza la fascia del recupero, che ne prende il posto) lo rende.
     effect(() => {
       document.documentElement.classList.toggle('senza-tabbar', this.nascondiBarra);
+    });
+    // Idem per la pillola: sta sopra la barra e il contenuto deve poter scorrere
+    // oltre, altrimenti l'ultima card resta in parte coperta.
+    effect(() => {
+      document.documentElement.classList.toggle('con-pillola', this.sessione() !== null);
     });
   }
 
@@ -109,6 +147,14 @@ export class TabsPage implements OnInit, OnDestroy {
   /** Dentro una pagina interna la barra sparisce, tranne dove ne fa le veci la fascia del recupero. */
   get nascondiBarra(): boolean {
     return this.paginaInterna() && !this.showRestBar;
+  }
+
+  /** Riporta sul giorno della sessione in corso. Se il protocollo non ha piu' quel giorno, sul primo: li' la sessione si puo' annullare. */
+  riprendiSessione(): void {
+    const s = this.sessionState.activeSession();
+    if (!s) return;
+    const idx = this.workoutData.days.findIndex(d => d.id === s.dayId && (!s.dayLabel || d.label === s.dayLabel));
+    this.nav.navigateForward(['/scheda/day', idx >= 0 ? idx : 0]);
   }
 
   /** Toccare la tab gia' aperta, quando si e' sulla sua radice, riporta in cima: e' il gesto che iOS insegna. */
@@ -136,5 +182,6 @@ export class TabsPage implements OnInit, OnDestroy {
     const giorno = u.match(/^\/scheda\/day\/(\d+)$/);
     this.dayIdOnScreen = giorno ? (this.workoutData.days[+giorno[1]]?.id ?? null) : null;
     this.paginaInterna.set(!eRadiceDiTab(u));
+    this.paginaGiorno.set(/^\/scheda\/day\/\d+$/.test(u));
   }
 }

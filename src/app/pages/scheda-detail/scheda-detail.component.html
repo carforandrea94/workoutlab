@@ -351,7 +351,7 @@
     <!-- Sessione: unico posto da cui si comanda, sopra i pallini e nel flusso con
          le card, non sospesa sopra di loro. Vale per entrambe le viste; lo storico
          usa un altro componente e non la mostra. -->
-    <div class="session-bar" *ngIf="day && !loading && !summary && !isStorico">
+    <div class="session-bar" *ngIf="day && !loading && !summary && !isStorico && (isSessionOnThisDay || hasOtherSession)">
       <span class="session-bar-dot" [class.live]="isSessionOnThisDay"></span>
 
       <!-- Se la sessione e' su un altro giorno l'etichetta ci porta: senza card non
@@ -370,7 +370,7 @@
       <!-- Avvia / metti in pausa / riprendi: un solo tasto, l'icona dice cosa fara'.
            Salvare e buttare via non stanno piu' qui: erano due tondi identici uno
            accanto all'altro, e uno dei due distrugge il lavoro. -->
-      <button class="session-bar-btn tap44 tap44-v" [disabled]="hasOtherSession"
+      <button class="session-bar-btn tap44 tap44-v" *ngIf="isSessionOnThisDay"
         (click)="onPlayPause()" [attr.aria-label]="playPauseLabel">
         <lucide-icon *ngIf="!isSessionRunning" name="play" [size]="18" class="filled"></lucide-icon>
         <lucide-icon *ngIf="isSessionRunning" name="pause" [size]="18" class="filled"></lucide-icon>
@@ -474,3 +474,16 @@
     </ion-modal>
   </div>
 </ion-content>
+
+<!-- Avvio: il comando principale della pagina sta in basso, sotto il pollice, al
+     posto in cui poi compare la fascia del recupero. Prima era un tondo da 34 px
+     in alto a destra, e finche' non lo trovavi tutta la scheda restava spenta. -->
+<ion-footer class="avvio-footer ion-no-border"
+  *ngIf="day && !loading && !errorMsg && !summary && !isStorico && !sessionState.activeSession()">
+  <div class="avvio">
+    <ion-button type="button" class="setdone avvio-btn" (click)="startSession()">
+      <lucide-icon name="play" [size]="18" class="filled"></lucide-icon>
+      Inizia allenamento
+    </ion-button>
+  </div>
+</ion-footer>
