@@ -1,5 +1,5 @@
 import {
-  ChartLine, Check, ChevronDown, ChevronRight, CirclePlus, Dumbbell, Eye, EyeOff,
+  ChartLine, Check, ChevronDown, ChevronLeft, ChevronRight, CirclePlus, Dumbbell, Eye, EyeOff,
   FileText, FileUp, GalleryHorizontal, GripVertical, History, Info, List,
   Pause, Play, Plus, Ruler, Save, Settings, ShoppingCart, SquarePen, Timer,
   Trash2, User, Utensils, X
@@ -27,7 +27,7 @@ const SportShoe = [
  * muscolari (workout-data.service.ts) e il marchio (components/logo).
  */
 export const APP_ICONS = {
-  ChartLine, Check, ChevronDown, ChevronRight, CirclePlus, Dumbbell, Eye, EyeOff,
+  ChartLine, Check, ChevronDown, ChevronLeft, ChevronRight, CirclePlus, Dumbbell, Eye, EyeOff,
   FileText, FileUp, GalleryHorizontal, GripVertical, History, Info, List,
   Pause, Play, Plus, Ruler, Save, Settings, ShoppingCart, SportShoe,
   SquarePen, Timer, Trash2, User, Utensils, X

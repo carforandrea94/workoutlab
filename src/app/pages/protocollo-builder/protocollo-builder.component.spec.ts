@@ -388,6 +388,249 @@ describe('ProtocolloBuilderComponent', () => {
       expect(c.protocol!.name).toBe('Modifica non salvata');
     });
   });
+
+  describe('livelli di navigazione', () => {
+    async function aperto(opzioni: { outlet?: any; conferma?: boolean; diet?: boolean } = {}) {
+      const proto = buildProtocol();
+      if (opzioni.diet) {
+        proto.diet = [{
+          id: 'pianoA', name: 'Giorno ON',
+          meals: [{ id: 'pastoA', name: 'Colazione', combinations: [{ id: 'comboA', label: 'Base' }] }]
+        } as any];
+      }
+      const protocolSvc: any = {
+        update: () => Promise.resolve(),
+        get: () => Promise.resolve(structuredClone(proto)),
+        activate: () => Promise.resolve()
+      };
+      const conferme: any = { confirm: vi.fn(async () => opzioni.conferma ?? true) };
+      const router: any = { navigateBack: () => {}, navigateForward: () => {} };
+      const cdr: any = { detectChanges: () => {} };
+      const c = new ProtocolloBuilderComponent(
+        {} as any, router, protocolSvc, new PdfImportService(), new WorkoutDataService(), cdr,
+        new ProtocolBuilderStateService(), new ToastService(), conferme, opzioni.outlet ?? null
+      );
+      c.protocolId = 'proto1';
+      await c.load();
+      return { c, conferme };
+    }
+
+    const tocco = (x: number, y: number) => ({ touches: [{ clientX: x, clientY: y }], changedTouches: [{ clientX: x, clientY: y }] }) as unknown as TouchEvent;
+
+    it('sull\'elenco il livello e\' 0 e il titolo dice Protocollo', async () => {
+      const { c } = await aperto();
+      expect(c.livello).toBe(0);
+      expect(c.titoloHeader).toBe('Protocollo');
+      expect(c.etichettaSu).toBe('Indietro');
+    });
+
+    it('aprire un giorno sposta la testata sul giorno; la freccia torna all\'elenco', async () => {
+      const { c } = await aperto();
+      c.openDay(c.protocol!.workout.days[0], 0);
+      expect(c.livello).toBe(1);
+      expect(c.titoloHeader).toBe('Gambe');
+      expect(c.etichettaSu).toBe('Torna ai giorni');
+
+      await c.saliDiUnLivello();
+      expect(c.livello).toBe(0);
+    });
+
+    it('il titolo segue il nome mentre lo si scrive, la chiave della schermata no', async () => {
+      const { c } = await aperto();
+      c.openDay(c.protocol!.workout.days[0], 0);
+      const chiave = c.chiaveLivello;
+      c.editingDay!.day.label = 'Gambe e glutei';
+      expect(c.titoloHeader).toBe('Gambe e glutei');
+      expect(c.chiaveLivello).toBe(chiave);
+    });
+
+    it('da un esercizio nuovo e vuoto la freccia sale senza chiedere', async () => {
+      const { c, conferme } = await aperto();
+      const giorno = c.protocol!.workout.days[0];
+      c.openDay(giorno, 0);
+      c.addExercise(giorno);
+      expect(c.livello).toBe(2);
+      expect(c.titoloHeader).toBe('Nuovo esercizio');
+
+      await c.saliDiUnLivello();
+
+      expect(conferme.confirm).not.toHaveBeenCalled();
+      expect(c.livello).toBe(1);
+      expect(giorno.ex.length).toBe(1);
+    });
+
+    it('da un esercizio nuovo con qualcosa scritto la freccia chiede prima di scartarlo', async () => {
+      const { c, conferme } = await aperto({ conferma: false });
+      const giorno = c.protocol!.workout.days[0];
+      c.openDay(giorno, 0);
+      c.addExercise(giorno);
+      c.editingExercise!.ex.name = 'Stacco';
+
+      await c.saliDiUnLivello();
+
+      expect(conferme.confirm).toHaveBeenCalledTimes(1);
+      expect(c.livello).toBe(2);
+      expect(giorno.ex.length).toBe(1);
+    });
+
+    it('confermando lo scarto l\'esercizio nuovo non finisce nel giorno', async () => {
+      const { c } = await aperto({ conferma: true });
+      const giorno = c.protocol!.workout.days[0];
+      c.openDay(giorno, 0);
+      c.addExercise(giorno);
+      c.editingExercise!.ex.name = 'Stacco';
+
+      await c.saliDiUnLivello();
+
+      expect(c.livello).toBe(1);
+      expect(giorno.ex.map(e => e.name)).toEqual(['Squat']);
+    });
+
+    it('da un esercizio esistente la freccia sale senza chiedere: le modifiche sono gia\' li\'', async () => {
+      const { c, conferme } = await aperto();
+      const giorno = c.protocol!.workout.days[0];
+      c.openDay(giorno, 0);
+      c.editExercise(giorno, giorno.ex[0]);
+      c.editingExercise!.ex.name = 'Squat bulgaro';
+
+      await c.saliDiUnLivello();
+
+      expect(conferme.confirm).not.toHaveBeenCalled();
+      expect(c.livello).toBe(1);
+      expect(giorno.ex[0].name).toBe('Squat bulgaro');
+    });
+
+    it('"Fatto" in un esercizio nuovo lo aggiunge al giorno', async () => {
+      const { c } = await aperto();
+      const giorno = c.protocol!.workout.days[0];
+      c.openDay(giorno, 0);
+      c.addExercise(giorno);
+      c.editingExercise!.ex.name = 'Stacco';
+
+      await c.confermaLivello();
+
+      expect(c.livello).toBe(1);
+      expect(giorno.ex.map(e => e.name)).toEqual(['Squat', 'Stacco']);
+    });
+
+    it('"Fatto" in un giorno lo salva e torna all\'elenco', async () => {
+      const { c } = await aperto();
+      c.openDay(c.protocol!.workout.days[0], 0);
+      c.editingDay!.day.label = 'Gambe e glutei';
+
+      await c.confermaLivello();
+
+      expect(c.livello).toBe(0);
+      expect(c.haModificheNonSalvate()).toBe(false);
+    });
+
+    it('nella dieta: piano e pasto sono i livelli 1 e 2, e la freccia scende un livello alla volta', async () => {
+      const { c } = await aperto({ diet: true });
+      c.tab = 'dieta';
+      const piano = c.protocol!.diet[0];
+      c.openPlan(piano);
+      expect(c.livello).toBe(1);
+      expect(c.titoloHeader).toBe('Giorno ON');
+      expect(c.etichettaSu).toBe('Torna ai piani');
+
+      c.openMeal(piano.meals[0]);
+      expect(c.livello).toBe(2);
+      expect(c.titoloHeader).toBe('Colazione');
+      expect(c.etichettaSu).toBe('Torna al piano');
+
+      await c.saliDiUnLivello();
+      expect(c.livello).toBe(1);
+      await c.saliDiUnLivello();
+      expect(c.livello).toBe(0);
+    });
+
+    it('"Fatto" nella dieta chiude il livello senza salvare', async () => {
+      const { c } = await aperto({ diet: true });
+      c.tab = 'dieta';
+      c.openPlan(c.protocol!.diet[0]);
+      await c.confermaLivello();
+      expect(c.livello).toBe(0);
+    });
+
+    it('la freccia sull\'elenco non fa niente: lascia fare a ion-back-button', async () => {
+      const { c } = await aperto();
+      await c.saliDiUnLivello();
+      await c.confermaLivello();
+      expect(c.livello).toBe(0);
+    });
+
+    it('cambiare scheda cambia la scheda; toccare quella gia\' aperta no', async () => {
+      const { c } = await aperto();
+      c.vaAScheda('dieta');
+      expect(c.tab).toBe('dieta');
+      c.vaAScheda('dieta');
+      expect(c.tab).toBe('dieta');
+    });
+
+    it('la schermata nuova entra da destra scendendo e da sinistra salendo', async () => {
+      const { c } = await aperto();
+      c.ngDoCheck();
+      c.openDay(c.protocol!.workout.days[0], 0);
+      c.ngDoCheck();
+      expect(c.direzione).toBe('avanti');
+      c.closeDay();
+      c.ngDoCheck();
+      expect(c.direzione).toBe('indietro');
+      c.vaAScheda('dieta');
+      c.ngDoCheck();
+      expect(c.direzione).toBe('avanti');
+      c.vaAScheda('scheda');
+      c.ngDoCheck();
+      expect(c.direzione).toBe('indietro');
+    });
+
+    it('lo swipe dal bordo sinistro sale di un livello', async () => {
+      const { c } = await aperto();
+      c.openDay(c.protocol!.workout.days[0], 0);
+      c.alToccoInizio(tocco(8, 300));
+      c.alToccoFine(tocco(140, 310));
+      await Promise.resolve();
+      expect(c.livello).toBe(0);
+    });
+
+    it('uno swipe che parte dal mezzo, troppo corto o troppo storto non fa niente', async () => {
+      const { c } = await aperto();
+      const apri = () => c.openDay(c.protocol!.workout.days[0], 0);
+      apri();
+      c.alToccoInizio(tocco(120, 300)); c.alToccoFine(tocco(260, 300));
+      c.alToccoInizio(tocco(8, 300)); c.alToccoFine(tocco(40, 300));
+      c.alToccoInizio(tocco(8, 300)); c.alToccoFine(tocco(140, 420));
+      await Promise.resolve();
+      expect(c.livello).toBe(1);
+    });
+
+    it('sull\'elenco lo swipe dal bordo e\' quello di Ionic, non questo', async () => {
+      const { c } = await aperto();
+      c.alToccoInizio(tocco(8, 300));
+      c.alToccoFine(tocco(140, 300));
+      expect(c.livello).toBe(0);
+    });
+
+    it('lo swipe di Ionic e\' acceso solo sull\'elenco e senza modifiche da perdere', async () => {
+      const outlet = { swipeGesture: false };
+      const { c } = await aperto({ outlet });
+      c.aggiornaSwipe();
+      expect(outlet.swipeGesture).toBe(true);
+
+      c.protocol!.name = 'Cambiato';
+      c.aggiornaSwipe();
+      expect(outlet.swipeGesture).toBe(false);
+
+      await c.save(false);
+      c.aggiornaSwipe();
+      expect(outlet.swipeGesture).toBe(true);
+
+      c.openDay(c.protocol!.workout.days[0], 0);
+      c.aggiornaSwipe();
+      expect(outlet.swipeGesture).toBe(false);
+    });
+  });
+
 });
 
 /**
