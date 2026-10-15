@@ -436,6 +436,12 @@ ion-item-sliding.cardrow ion-item-option{--background:var(--state-danger);--colo
 /* L'ultima slide non e' un esercizio ma la chiusura: il suo segno e' un
    tondo vuoto, cosi' si vede che la fila di trattini e' finita. */
 .exslider-dash.finish{width:9px;height:9px;border-radius:50%;background:none;border:1.5px solid var(--border-line);}
+/* I trattini sono alti 3px: a dito non si prendevano. Il bersaglio cresce senza
+   cambiare il disegno - in alto quanto basta, in basso fin dove finisce il
+   margine prima della card (14px: se ne usano 10, per non rubare il tocco alla
+   card), ai lati di 2px dei 6 che li separano, cosi' non si pestano. */
+.exslider-dash{position:relative;}
+.exslider-dash::after{content:"";position:absolute;left:-2px;right:-2px;top:-16px;bottom:-10px;}
 .exslider-dash.finish.active{width:9px;background:var(--accent);border-color:var(--accent);}
 .ex{background:var(--surface-card);border:1px solid var(--border-line);border-radius:var(--r-xl);overflow:hidden;-webkit-mask-image:-webkit-radial-gradient(white,black);mask-image:radial-gradient(white,black);position:relative;box-shadow:var(--shadow-card);}
 .ex-summary{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;cursor:pointer;-webkit-user-select:none;user-select:none;}
