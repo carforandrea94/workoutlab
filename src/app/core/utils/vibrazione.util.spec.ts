@@ -31,6 +31,11 @@ describe('vibra', () => {
       expect(vibrate).toHaveBeenCalledWith(200);
     });
 
+    it('alla serie confermata fa un tocco brevissimo, piu\' leggero degli avvisi', () => {
+      vibra('serie', ambiente({}));
+      expect(vibrate).toHaveBeenCalledWith(15);
+    });
+
     it('dove navigator.vibrate non c\'e\' (iPhone) non fa niente e non si rompe', () => {
       expect(() => vibra('fine-recupero', ambiente({ vibrate: null }))).not.toThrow();
       expect(aptico.notification).not.toHaveBeenCalled();
@@ -49,6 +54,12 @@ describe('vibra', () => {
       vibra('fine-pausa', ambiente({ nativa: true }));
       expect(aptico.impact).toHaveBeenCalledWith({ style: ImpactStyle.Medium });
       expect(vibrate).not.toHaveBeenCalled();
+    });
+
+    it('alla serie confermata manda un colpo leggero, non medio', () => {
+      vibra('serie', ambiente({ nativa: true }));
+      expect(aptico.impact).toHaveBeenCalledWith({ style: ImpactStyle.Light });
+      expect(aptico.notification).not.toHaveBeenCalled();
     });
 
     it('se l\'aptico rifiuta non e\' un errore per chi chiama', async () => {

@@ -102,6 +102,10 @@
      da qui si ricava come --tabbar-h meno due volte --tabbar-pad. Sotto
      56 px il bersaglio scende sotto i 44 pt predefiniti. */
   --tabbar-h: 60px;
+  /* La fascia del recupero e' piu' alta della tabbar che sostituisce: il conto
+     e' il numero piu' grande dello schermo. Sta comunque dentro l'imbottitura in
+     fondo al contenuto (60 + 22 + 28). */
+  --restbar-h: 76px;
   /* Aria fra il bordo della barra e i tasti. La pastiglia che scorre ci si
      appoggia: era ripetuta a mano in quattro punti (5 qui, 10 nelle larghezze)
      e bastava cambiarne uno per vederla sbordare. */
@@ -143,6 +147,8 @@
   /* Il titolo grande delle pagine radice, che si comprime scorrendo. */
   --text-large-title:32px;
   --text-3xl:26px;
+  /* Il conto del recupero: si legge a un metro, in piedi, con il telefono sulla panca. */
+  --text-timer:32px;
   /* Raggi. --r-pill e' per gli elementi la cui forma E' una pillola: un raggio
      enorme resta corretto anche se l'altezza cambia, un numero fisso no. */
   --r-xs:6px;
@@ -348,6 +354,10 @@ ion-content{--background:var(--bg);--color:var(--label);--padding-bottom:calc(va
 .tabfade{transition:opacity .3s ease,visibility 0s;}
 .tabfade.tabbar-nascosta{opacity:0;visibility:hidden;transition:opacity .3s ease,visibility 0s .3s;}
 :root.senza-tabbar ion-content{--padding-bottom:calc(var(--safe-b) + 28px);}
+/* La pillola della sessione sta sopra la barra: il contenuto scorre oltre di
+   quanto ne occupa (44 + 10), cosi' l'ultima card non resta coperta. */
+:root.con-pillola ion-content{--padding-bottom:calc(var(--tabbar-h) + var(--tabbar-gap) + 28px + 54px);}
+:root.con-pillola.senza-tabbar ion-content{--padding-bottom:calc(var(--safe-b) + 28px + 54px);}
 @media (prefers-reduced-motion:reduce){.tabbar,.tabbar.tabbar-nascosta,.tabfade,.tabfade.tabbar-nascosta{transition:none;}}
 /* HIG iOS, Accessibility: dimensione predefinita dei controlli 44x44 pt,
    minimo assoluto 28x28. Oggi il bersaglio e' 48x119, ma nasce dalla
@@ -391,6 +401,10 @@ ion-content{--background:var(--bg);--color:var(--label);--padding-bottom:calc(va
 .daycard{display:flex;align-items:center;gap:12px;padding:16px;min-height:64px;border:1px solid var(--border-line);border-radius:var(--r-xl);background:var(--surface-card);box-shadow:var(--shadow-card);cursor:pointer;-webkit-user-select:none;user-select:none;}
 /* Spunta dell'allenamento gia' fatto in questa settimana. Sta accanto al
    chevron e non al posto del numero del giorno, che serve sempre. */
+/* Il giorno che tocca (o quello in corso) ha il numero pieno: e' l'unico
+   segno di "da dove si parte" nell'elenco. Il resto resta com'era. */
+.daycard .badge.next,.cardrow .badge.next{background:var(--accent);color:var(--accent-contrast);border-color:var(--accent);}
+.meta-tag{font-weight:600;color:var(--accent);white-space:nowrap;}
 .daycheck{width:26px;height:26px;flex-shrink:0;border-radius:var(--r-pill);background:var(--accent);color:var(--accent-contrast);display:flex;align-items:center;justify-content:center;}
 .daycheck svg{display:block;}
 .daycard .badge,.cardrow .badge{width:42px;height:42px;border-radius:var(--r-md);background:var(--accent-dim);color:var(--label);border:1px solid var(--border-line);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:var(--text-lg);flex-shrink:0;}
@@ -537,13 +551,21 @@ ion-button.rest-defaultbtn:hover{--color:var(--label);--border-color:var(--label
    perche' sono anche le uniche che si possono togliere. */
 .setline-extra{font-family:'IBM Plex Mono',monospace;font-size:var(--text-2xs);color:var(--label-3);flex-shrink:0;}
 
-.setcard{display:flex;flex-direction:column;gap:11px;padding:14px;border-radius:var(--r-lg);background:var(--accent-dim);border:1px solid var(--accent);}
+.setcard{display:flex;flex-direction:column;gap:11px;padding:14px;border-radius:var(--r-lg);background:var(--accent-dim);border:1px solid var(--accent);animation:setcard-in 200ms cubic-bezier(.23,1,.32,1);}
+/* Confermata una serie, la card grande passa alla successiva: entra con un
+   accenno di discesa invece di comparire di colpo cinquanta pixel piu' in basso,
+   cosi' l'occhio la segue. */
+@keyframes setcard-in{from{opacity:0;transform:translateY(-6px);}to{opacity:1;transform:none;}}
+@media (prefers-reduced-motion: reduce){.setcard{animation:none;}ion-button.setdone{transition:none;}ion-button.setdone:active{transform:none;}.press-fx,.press-fx:active{transition:none;transform:none;}}
 .setcard-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;}
 .setcard-title{font-family:'IBM Plex Mono',monospace;font-size:var(--text-2xs);font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);}
 .setcard-hint{font-family:'IBM Plex Mono',monospace;font-size:var(--text-2xs);color:var(--label-3);}
 
 .stepper{display:flex;align-items:center;gap:10px;}
-ion-button.setdone{--background:var(--accent);--color:var(--accent-contrast);--border-radius:var(--r-lg);width:100%;min-height:52px;font-family:'Inter',sans-serif;font-size:var(--text-lg);font-weight:700;}
+ion-button.setdone{--background:var(--accent);--color:var(--accent-contrast);--border-radius:var(--r-lg);width:100%;min-height:52px;font-family:'Inter',sans-serif;font-size:var(--text-lg);font-weight:700;transition:transform 120ms cubic-bezier(.23,1,.32,1);}
+/* "Fatta" si preme una dozzina di volte a seduta, e da premuto era identico al
+   pixel a da fermo: niente diceva che il tocco era arrivato. */
+ion-button.setdone:active{transform:scale(.97);}
 /* Spento, un .setdone resta a meta' (e' il disabled di ion-button). Il "Togli la
    spunta" invece non cambiava aspetto: qui nemmeno. */
 ion-button.setundo{--background:transparent;--color:var(--label-2);--border-radius:var(--r-md);--border-width:1px;--border-style:solid;--border-color:var(--border-line);width:100%;min-height:44px;font-family:'Inter',sans-serif;font-size:var(--text-sm);font-weight:600;}
@@ -1137,7 +1159,7 @@ ion-button.confirmbtn.restsave,ion-button.confirmbtn.confirm{--background:var(--
    a cronometro e comandi invece di mandarli a capo. */
 .session-bar-label{flex:1;min-width:0;font-family:'IBM Plex Mono',monospace;font-size:var(--text-2xs);letter-spacing:.1em;text-transform:uppercase;color:var(--label-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:left;}
 .session-bar-label.link{background:none;border:none;padding:0;cursor:pointer;text-decoration:underline;text-underline-offset:3px;color:var(--accent);}
-.session-bar-time{font-family:'IBM Plex Mono',monospace;font-size:var(--text-2xl);font-weight:600;letter-spacing:.02em;color:var(--accent);font-variant-numeric:tabular-nums;flex-shrink:0;transition:color .25s ease,opacity .25s ease;}
+.session-bar-time{font-family:'IBM Plex Mono',monospace;font-size:var(--text-lg);font-weight:600;letter-spacing:.02em;color:var(--label-2);font-variant-numeric:tabular-nums;flex-shrink:0;transition:color .25s ease,opacity .25s ease;}
 .session-bar-time.idle{color:var(--label-3);opacity:.5;}
 .session-bar-time.paused{opacity:.55;}
 /* Comandi solo icona: pieno il comando principale (avvia/pausa), a vetro gli
@@ -1223,19 +1245,24 @@ ion-button.confirmbtn.restsave,ion-button.confirmbtn.confirm{--background:var(--
    e' `space-between` a distribuire l'aria sulla larghezza disponibile. Le
    altezze arrivano dal componente e non cambiano mai durante il recupero:
    scorre solo la soglia fra tacchette accese e spente. */
-/* La fascia del recupero prende la sagoma e il posto della tabbar: stessa
-   altezza, stessi margini, stesso raggio, cosi' l'imbottitura in fondo al
-   contenuto (--tabbar-h) resta buona e niente si sposta quando una sostituisce
-   l'altra. */
-.restbar{position:fixed;left:16px;right:16px;bottom:var(--tabbar-gap);z-index:60;height:var(--tabbar-h);background:var(--surface-chrome);border:1px solid var(--border-line);border-radius:var(--r-pill);box-shadow:var(--shadow-float);max-width:608px;margin:0 auto;padding:9px 18px;display:flex;flex-direction:column;justify-content:center;gap:6px;animation:fade .25s ease;}
-.restbar-row{display:flex;align-items:center;gap:10px;}
-.restbar-label{font-size:var(--text-xs);color:var(--label-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.restbar.running .restbar-label{color:var(--label-2);}
-.restbar-time{margin-left:auto;font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:var(--text-md);color:var(--accent);font-variant-numeric:tabular-nums;flex-shrink:0;}
+/* La fascia del recupero prende il posto e i margini della tabbar, e sta
+   dentro la stessa imbottitura in fondo al contenuto. E' piu' alta (76 contro
+   60) perche' il conto e' il numero piu' grande dello schermo. */
+.restbar{position:fixed;left:16px;right:16px;bottom:var(--tabbar-gap);z-index:60;height:var(--restbar-h);background:var(--surface-chrome);border:1px solid var(--border-line);border-radius:var(--r-pill);box-shadow:var(--shadow-float);max-width:608px;margin:0 auto;padding:10px 14px 10px 24px;display:flex;flex-direction:column;justify-content:center;gap:6px;animation:fade .25s ease;}
+.restbar-row{display:flex;align-items:center;gap:12px;min-height:36px;}
+.restbar-time{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:var(--text-timer);line-height:1;letter-spacing:-.02em;color:var(--accent);font-variant-numeric:tabular-nums;flex-shrink:0;min-width:4.4ch;}
 .restbar.finished .restbar-time{color:var(--state-success);}
-.restbar-x{width:24px;height:24px;border-radius:50%;border:1px solid var(--border-line);background:var(--surface-raise);color:var(--label-2);font-size:var(--text-xs);line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform .18s ease;}
+.restbar-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;}
+.restbar-label{font-size:var(--text-xs);line-height:1.25;color:var(--label-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+/* Senza recupero la fascia ha una riga sola, e quella riga e' la sua voce. */
+.restbar:not(.running) .restbar-label{font-size:var(--text-sm);}
+.restbar-ex{font-size:var(--text-sm);font-weight:600;line-height:1.25;color:var(--label-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+/* La X e' un cerchio da 32 con il bersaglio da 44 di .tap44: sta accanto al
+   conto, non sopra, e un tocco storto non la prende per sbaglio. */
+.restbar-x{width:32px;height:32px;border-radius:50%;border:1px solid var(--border-line);background:var(--surface-raise);color:var(--label-2);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform 120ms cubic-bezier(.23,1,.32,1);}
 .restbar-x:active{transform:scale(0.9);}
-.restbar-bars{position:relative;height:16px;}
+.restbar-x svg{display:block;}
+.restbar-bars{position:relative;height:14px;}
 .restbar-track{position:absolute;inset:0;display:flex;align-items:center;justify-content:space-between;}
 .restbar-track span{display:block;flex:none;width:1.5px;border-radius:var(--r-pill);background:var(--restbar-off);}
 .restbar-track.lit{transition:clip-path 1s linear;}
@@ -1244,6 +1271,28 @@ ion-button.confirmbtn.restsave,ion-button.confirmbtn.confirm{--background:var(--
    cambiare colore e' la traccia, che a quel punto e' rimasta sola. */
 .restbar.finished .restbar-track.lit{display:none;}
 .restbar.finished .restbar-track span{background:var(--state-success);}
+
+/* Avvio dell'allenamento: il comando principale della pagina, in basso, dove
+   poi comparira' la fascia del recupero (stessi margini e stessa pillola). */
+ion-footer.avvio-footer{background:var(--bg);}
+.avvio{position:relative;max-width:640px;margin:0 auto;padding:10px 16px var(--tabbar-gap);}
+.avvio::before{content:"";position:absolute;left:0;right:0;bottom:100%;height:24px;pointer-events:none;background:linear-gradient(to top,var(--bg),transparent);}
+ion-button.setdone.avvio-btn{--border-radius:var(--r-pill);min-height:56px;font-size:var(--text-lg);}
+ion-button.avvio-btn lucide-icon{margin-right:8px;}
+
+/* Pillola della sessione in corso, fuori dalla pagina del suo giorno. Sta
+   sopra la tabbar (o al suo posto dove la tabbar e' nascosta) ed e' tutta un
+   bottone: tocchi e torni sulla sessione. */
+.sessionpill{position:fixed;left:16px;right:16px;bottom:var(--tabbar-gap);z-index:58;height:44px;max-width:608px;margin:0 auto;display:flex;align-items:center;gap:8px;padding:0 14px 0 16px;border-radius:var(--r-pill);border:1px solid var(--border-line);background:var(--surface-chrome);box-shadow:var(--shadow-float);color:var(--label);font-family:inherit;cursor:pointer;text-align:left;transform:translateY(calc(-1 * (var(--tabbar-h) + 10px)));transition:transform .42s cubic-bezier(0.32,0.72,0,1);}
+.sessionpill.senza-barra{transform:none;}
+.sessionpill:active{filter:brightness(var(--press-brightness));}
+.sessionpill-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex-shrink:0;}
+.sessionpill.in-pausa .sessionpill-dot{background:var(--label-3);}
+.sessionpill-stato{font-size:var(--text-sm);font-weight:600;color:var(--label-2);}
+.sessionpill-tempo{font-family:'IBM Plex Mono',monospace;font-size:var(--text-md);font-weight:600;font-variant-numeric:tabular-nums;color:var(--label);}
+.sessionpill-vai{margin-left:auto;display:flex;align-items:center;gap:2px;font-size:var(--text-sm);font-weight:600;color:var(--accent);}
+.sessionpill-vai svg{display:block;}
+@media (prefers-reduced-motion: reduce){.sessionpill{transition:none;}}
 
 /* ===== TESTI E BOTTONI DEI FOGLI (la conferma e' un ion-alert, vedi sotto) ===== */
 .confirmtext{font-size:var(--text-md);color:var(--label);line-height:1.5;text-align:center;margin-bottom:18px;}
@@ -1361,10 +1410,13 @@ ion-picker.heightpicker{margin-bottom:18px;}
 .altwrap-header,.ex-chip.rest{position:relative;}
 .altwrap-header::after,.ex-chip.rest::after{content:"";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:100%;min-width:44px;height:44px;}
 
-.press-fx{transition:transform .35s var(--spring),filter .15s ease;}
+/* Una riga che si preme e' feedback, non un'entrata: scende in 140 ms e risale in
+   200 con una curva che frena (ease-out), senza il rimbalzo della molla, che su
+   decine di righe al giorno rallentava la mano invece di confermarla. */
+.press-fx{transition:transform 200ms cubic-bezier(.23,1,.32,1),filter .15s ease;}
 /* Schiarire e' un ritorno visivo che esiste solo su fondo scuro: in tema
    chiaro la card e' gia' bianca, quindi li' la pressione scurisce. */
-.press-fx:active{transform:scale(.96);filter:brightness(var(--press-brightness));}
+.press-fx:active{transform:scale(.96);filter:brightness(var(--press-brightness));transition-duration:140ms,.15s;}
 
 @keyframes fade {
   from { opacity: 0; transform: translateY(6px); }

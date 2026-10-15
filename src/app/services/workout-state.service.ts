@@ -68,7 +68,6 @@ export class WorkoutStateService {
   saveStatus = signal<SaveWorkoutStatus>('idle');
 
   private ticker: ReturnType<typeof setInterval> | null = null;
-  private closeTimeout: ReturnType<typeof setTimeout> | null = null;
   private restEndAt = 0;
   private restDuration = REST_DURATION;
   private restFinishedHandled = false;
@@ -164,7 +163,9 @@ export class WorkoutStateService {
       if (this.ticker) { clearInterval(this.ticker); this.ticker = null; }
       vibra('fine-recupero');
       this.notifyRestFinished();
-      this.closeTimeout = setTimeout(() => this.stopRestTimer(), 4000);
+      // Il "Vai" NON si spegne da solo: una volta era un banner di quattro
+      // secondi, e chi guardava la panca o il telefono in tasca lo perdeva.
+      // Resta finche' non parte il recupero dopo, o si tocca la X.
     }
   }
 
@@ -204,10 +205,6 @@ export class WorkoutStateService {
 
   stopRestTimer(): void {
     if (this.ticker) { clearInterval(this.ticker); this.ticker = null; }
-    if (this.closeTimeout) {
-      clearTimeout(this.closeTimeout);
-      this.closeTimeout = null;
-    }
     this.restFinishedHandled = false;
     this.restExName = null;
     this.restDayId = null;

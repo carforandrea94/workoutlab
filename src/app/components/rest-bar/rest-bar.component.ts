@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { LucideAngularModule } from 'lucide-angular';
 import { WorkoutStateService } from '../../services/workout-state.service';
 
 const BAR_COUNT = 72;
@@ -25,10 +26,15 @@ const WAVE_BARS: number[] = Array.from({ length: BAR_COUNT }, (_, i) => {
 /**
  * Il recupero, in fondo allo schermo, al posto della barra di navigazione.
  *
- * Prende la sagoma e la posizione della tabbar che sostituisce: durante
+ * Prende il posto e i margini della tabbar che sostituisce: durante
  * l'allenamento quello spazio non serve a spostarsi — si sta fermi a
  * recuperare — e serve invece a sapere quanto manca senza cercare la card
  * giusta. Chi deve uscire usa la freccia della navbar.
+ *
+ * Si legge a un metro: il conto e' il numero piu' grande dello schermo
+ * (--text-timer), perche' e' quello che si guarda di sbieco con il telefono
+ * sulla panca. A fine tempo diventa "Vai" e RESTA cosi' finche' non si segna la
+ * serie dopo o si tocca la X: una scritta di quattro secondi si perdeva.
  *
  * La fascia resta ferma anche quando nessun recupero e' in corso: se andasse
  * e venisse a ogni serie, il fondo dello schermo cambierebbe identita' venti
@@ -37,17 +43,21 @@ const WAVE_BARS: number[] = Array.from({ length: BAR_COUNT }, (_, i) => {
 @Component({
   selector: 'app-rest-bar',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, LucideAngularModule],
   template: `
     <div class="tabfade"></div>
     <div class="restbar" [class.running]="running" [class.finished]="timer.finished">
       <div class="restbar-row">
-        <span class="restbar-label">{{ label }}</span>
-        <span class="restbar-time" *ngIf="running">
-          {{ timer.finished ? '✓' : svc.formatTime(timer.remaining) }}
+        <span class="restbar-time" *ngIf="running" role="timer">
+          {{ timer.finished ? 'Vai' : svc.formatTime(timer.remaining) }}
         </span>
-        <button class="restbar-x tap44" *ngIf="running" (click)="stop()"
-                aria-label="Ferma il recupero">✕</button>
+        <span class="restbar-info">
+          <span class="restbar-label">{{ label }}</span>
+          <span class="restbar-ex" *ngIf="running && timer.exName">{{ timer.exName }}</span>
+        </span>
+        <button class="restbar-x tap44" *ngIf="running" (click)="stop()" aria-label="Ferma il recupero">
+          <lucide-icon name="x" [size]="16"></lucide-icon>
+        </button>
       </div>
       <div class="restbar-bars">
         <div class="restbar-track">
@@ -57,6 +67,8 @@ const WAVE_BARS: number[] = Array.from({ length: BAR_COUNT }, (_, i) => {
           <span *ngFor="let h of bars" [style.height.px]="h"></span>
         </div>
       </div>
+      <!-- Il conto non si annuncia (batte ogni secondo): si annuncia la fine. -->
+      <span class="sr-only" aria-live="polite">{{ annuncio }}</span>
     </div>
   `,
   styles: [`:host { display: contents; }`]
@@ -76,8 +88,12 @@ export class RestBarComponent {
 
   get label(): string {
     if (!this.running) return 'Nessun recupero in corso';
-    if (this.timer.finished) return 'Recupero finito — vai!';
-    return this.timer.exName ? `Recupero — ${this.timer.exName}` : 'Recupero';
+    return this.timer.finished ? 'Recupero finito' : 'Recupero';
+  }
+
+  /** Quello che un lettore di schermo deve sentire a fine tempo. */
+  get annuncio(): string {
+    return this.timer.show && this.timer.finished ? 'Recupero finito: vai con la serie successiva.' : '';
   }
 
   /**

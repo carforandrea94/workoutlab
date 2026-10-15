@@ -9,17 +9,20 @@ import { SchedaDetailComponent } from './scheda-detail.component';
  * invece di montarlo: qui interessa la regola, non il rendering. Serve pero'
  * un contesto di iniezione, perche' il costruttore registra un effect().
  */
-function makeComponent(opts: { sessionSuQuestoGiorno: boolean; inPausa?: boolean }) {
+function makeComponent(opts: { sessionSuQuestoGiorno: boolean; inPausa?: boolean; host?: any; conferma?: boolean }) {
   const startRestTimer = vi.fn();
+  const stopRestTimer = vi.fn();
   const patchField = vi.fn(() => Promise.resolve());
 
   const sessionState = {
     matchesDay: () => opts.sessionSuQuestoGiorno,
     isPaused: () => opts.inPausa ?? false,
-    activeSession: () => (opts.sessionSuQuestoGiorno ? { dayId: 'day1' } : null)
+    activeSession: () => (opts.sessionSuQuestoGiorno ? { dayId: 'day1' } : null),
+    cancel: vi.fn(),
+    finish: vi.fn()
   } as any;
 
-  const state = { viewMode: () => 'list', saveStatus: () => 'idle', startRestTimer } as any;
+  const state = { viewMode: () => 'list', saveStatus: () => 'idle', startRestTimer, stopRestTimer } as any;
 
   const component = TestBed.runInInjectionContext(() => new SchedaDetailComponent(
     {} as any,                       // ActivatedRoute: ngOnInit non viene chiamato
@@ -28,14 +31,15 @@ function makeComponent(opts: { sessionSuQuestoGiorno: boolean; inPausa?: boolean
     state,
     { patchField } as any,           // AppStateService
     {} as any,                       // WorkoutSessionsService
-    {} as any,                       // ConfirmDialogService
+    { confirm: vi.fn(async () => opts.conferma ?? true) } as any,   // ConfirmDialogService
     { detectChanges: () => {} } as any,
     {} as any,                       // ToastService
-    sessionState
+    sessionState,
+    opts.host ?? null
   ));
 
   component.day = { id: 'day1', label: 'Petto', rec: '90"', ex: [] } as any;
-  return { component, startRestTimer, patchField };
+  return { component, startRestTimer, stopRestTimer, patchField, sessionState, state };
 }
 
 function makeVm() {
@@ -749,5 +753,225 @@ describe('SchedaDetailComponent — un riassunto non e\' una misura', () => {
       { load: '70', reps: '5', done: true }
     ]);
     expect(vm.insight.oneRmText).toContain('70 × 5');
+  });
+});
+
+/**
+ * Finito l'ultimo set di un esercizio la pagina porta da sola al successivo, o
+ * alla chiusura dopo l'ultimo: in piedi, con le mani sporche, scorrere a mano
+ * per trovare la serie dopo era la parte piu' lenta dell'allenamento.
+ */
+describe('SchedaDetailComponent — dopo l\'ultima serie di un esercizio', () => {
+  const riga = (done = false) => ({ reps: '', load: '', done, ripPlaceholder: '10', loadPlaceholder: '' }) as any;
+  const esercizio = (nome: string, righe: any[]) => ({
+    ex: { name: nome, muscle: '', scheme: 'plain' }, rows: righe, open: true, activeRow: 0,
+    insightVisible: false, insight: null, restSeconds: 90, isFirst: false, warmup: null, cluster: null, rmPick: 1
+  }) as any;
+
+  function conEsercizi(righePerEsercizio: number[], opts: { host?: any } = {}) {
+    const m = makeComponent({ sessionSuQuestoGiorno: true, host: opts.host });
+    const vms = righePerEsercizio.map((n, i) => esercizio(`Es ${i + 1}`, Array.from({ length: n }, () => riga())));
+    m.component.exercises = vms;
+    const vai = vi.spyOn(m.component, 'vaAllaSlide').mockImplementation(() => {});
+    return { ...m, vms, vai };
+  }
+
+  it('segnata l\'ultima serie, dopo un respiro va al prossimo esercizio', () => {
+    const { component, vms, vai } = conEsercizi([1, 1]);
+
+    component.confirmSet(vms[0], 0);
+    vi.advanceTimersByTime(100);
+    expect(vai).not.toHaveBeenCalled(); // prima si vede la spunta, l'anello che si chiude
+
+    vi.advanceTimersByTime(400);
+    expect(vai).toHaveBeenCalledWith(1);
+  });
+
+  it('con ancora serie da fare non si muove', () => {
+    const { component, vms, vai } = conEsercizi([2, 1]);
+
+    component.confirmSet(vms[0], 0);
+    vi.advanceTimersByTime(2000);
+
+    expect(vai).not.toHaveBeenCalled();
+  });
+
+  it('dopo l\'ultimo esercizio porta alla chiusura: l\'indice e\' quello oltre l\'ultimo', () => {
+    const { component, vms, vai } = conEsercizi([1, 1]);
+
+    component.confirmSet(vms[1], 0);
+    vi.advanceTimersByTime(500);
+
+    expect(vai).toHaveBeenCalledWith(2);
+  });
+
+  it('se si toglie la spunta nel frattempo resta dov\'e\'', () => {
+    const { component, vms, vai } = conEsercizi([1, 1]);
+
+    component.confirmSet(vms[0], 0);
+    vi.advanceTimersByTime(200);
+    component.undoSet(vms[0], 0);
+    vi.advanceTimersByTime(2000);
+
+    expect(vai).not.toHaveBeenCalled();
+  });
+
+  it('lasciare la pagina annulla lo spostamento in attesa', () => {
+    const { component, vms, vai } = conEsercizi([1, 1]);
+
+    component.confirmSet(vms[0], 0);
+    component.ngOnDestroy();
+    vi.advanceTimersByTime(2000);
+
+    expect(vai).not.toHaveBeenCalled();
+  });
+
+  it('nello storico (si corregge una seduta passata) non porta da nessuna parte', () => {
+    const { component, vms, vai } = conEsercizi([1, 1]);
+    component.modo = 'storico';
+
+    component.confirmSet(vms[0], 0);
+    vi.advanceTimersByTime(2000);
+
+    expect(vai).not.toHaveBeenCalled();
+  });
+
+  it('una serie a cluster chiusa vale come serie fatta: anche lei porta avanti', () => {
+    const { component, vms, vai } = conEsercizi([1, 1]);
+    vms[0].cluster = { blocks: [5], restSec: 30, end: 'open' };
+    vms[0].rows[0].blocks = [{ reps: '5', load: '60', done: true, ripPlaceholder: '', loadPlaceholder: '' }];
+
+    component.closeClusterSet(vms[0], 0);
+    vi.advanceTimersByTime(500);
+
+    expect(vai).toHaveBeenCalledWith(1);
+  });
+});
+
+describe('SchedaDetailComponent — portare in vista l\'esercizio dopo', () => {
+  const elemento = () => ({ scrollIntoView: vi.fn() });
+
+  function conHost(viewMode: 'list' | 'slider') {
+    const esercizi = [elemento(), elemento()];
+    const chiusura = elemento();
+    const host = {
+      nativeElement: {
+        querySelectorAll: (sel: string) => (sel === '.exlist > .ex' ? esercizi : []),
+        querySelector: (sel: string) => (sel === '.closing' ? chiusura : null)
+      }
+    };
+    const m = makeComponent({ sessionSuQuestoGiorno: true, host });
+    m.component.exercises = [{}, {}] as any;
+    (m.component as any).state.viewMode = () => viewMode;
+    return { ...m, esercizi, chiusura };
+  }
+
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('nell\'elenco scorre fino alla card dell\'esercizio, in modo morbido', () => {
+    const { component, esercizi } = conHost('list');
+
+    component.vaAllaSlide(1);
+
+    expect(esercizi[1].scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth', block: 'start' });
+    expect(esercizi[0].scrollIntoView).not.toHaveBeenCalled();
+  });
+
+  it('oltre l\'ultimo esercizio scorre fino alla chiusura', () => {
+    const { component, chiusura } = conHost('list');
+
+    component.vaAllaSlide(2);
+
+    expect(chiusura.scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth', block: 'start' });
+  });
+
+  it('con "riduci movimento" attivo salta senza scorrere piano', () => {
+    vi.stubGlobal('matchMedia', () => ({ matches: true }));
+    const { component, esercizi } = conHost('list');
+
+    component.vaAllaSlide(1);
+
+    expect(esercizi[1].scrollIntoView).toHaveBeenCalledWith({ behavior: 'auto', block: 'start' });
+  });
+
+  it('nello slider passa per lo scorrimento dello slider', () => {
+    const { component } = conHost('slider');
+    const slide = vi.spyOn(component, 'scrollToIndex').mockImplementation(() => {});
+
+    component.vaAllaSlide(1);
+
+    expect(slide).toHaveBeenCalledWith(1);
+  });
+
+  it('senza un host (spec costruiti a mano) non fa niente e non si rompe', () => {
+    const { component } = makeComponent({ sessionSuQuestoGiorno: true });
+    component.exercises = [{}] as any;
+    expect(() => component.vaAllaSlide(1)).not.toThrow();
+  });
+});
+
+describe('SchedaDetailComponent — una serie confermata si sente', () => {
+  const riga = () => ({ reps: '', load: '', done: false, ripPlaceholder: '10', loadPlaceholder: '' }) as any;
+  const vm = () => ({
+    ex: { name: 'Panca', muscle: '', scheme: 'plain' }, rows: [riga()], open: true, activeRow: 0,
+    insightVisible: false, insight: null, restSeconds: 90, isFirst: false, warmup: null, cluster: null, rmPick: 1
+  }) as any;
+  let vibrate: ReturnType<typeof vi.fn>;
+
+  beforeEach(() => {
+    vibrate = vi.fn(() => true);
+    Object.defineProperty(navigator, 'vibrate', { value: vibrate, configurable: true, writable: true });
+  });
+  afterEach(() => { delete (navigator as any).vibrate; });
+
+  it('segnare la serie fa il tocco breve', () => {
+    const { component } = makeComponent({ sessionSuQuestoGiorno: true });
+    component.onSetCheck(vm(), 0);
+    expect(vibrate).toHaveBeenCalledWith(15);
+  });
+
+  it('togliere la spunta no: non e\' una conferma', () => {
+    const { component } = makeComponent({ sessionSuQuestoGiorno: true });
+    const v = vm();
+    component.onSetCheck(v, 0);
+    vibrate.mockClear();
+
+    component.onSetCheck(v, 0);
+
+    expect(vibrate).not.toHaveBeenCalled();
+  });
+
+  it('a scheda bloccata (sessione non avviata) non registra niente e non vibra', () => {
+    const { component } = makeComponent({ sessionSuQuestoGiorno: false });
+    component.onSetCheck(vm(), 0);
+    expect(vibrate).not.toHaveBeenCalled();
+  });
+
+  it('nello storico (correzione) non vibra', () => {
+    const { component } = makeComponent({ sessionSuQuestoGiorno: true });
+    component.modo = 'storico';
+    component.onSetCheck(vm(), 0);
+    expect(vibrate).not.toHaveBeenCalled();
+  });
+});
+
+describe('SchedaDetailComponent — il recupero non sopravvive alla sessione', () => {
+  it('buttando via la sessione si spegne anche il recupero, o il "Vai" riapparirebbe alla prossima', async () => {
+    const { component, stopRestTimer, sessionState } = makeComponent({ sessionSuQuestoGiorno: true, conferma: true });
+    component.exercises = [];
+
+    await component.cancelSession();
+
+    expect(sessionState.cancel).toHaveBeenCalled();
+    expect(stopRestTimer).toHaveBeenCalled();
+  });
+
+  it('se non si conferma non si tocca niente', async () => {
+    const { component, stopRestTimer, sessionState } = makeComponent({ sessionSuQuestoGiorno: true, conferma: false });
+
+    await component.cancelSession();
+
+    expect(sessionState.cancel).not.toHaveBeenCalled();
+    expect(stopRestTimer).not.toHaveBeenCalled();
   });
 });

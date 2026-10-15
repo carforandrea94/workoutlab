@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { LucideAngularModule } from 'lucide-angular';
 import { CommonModule } from '@angular/common';
 
@@ -6,6 +6,7 @@ import { WorkoutDataService } from '../../services/workout-data.service';
 import { WorkoutStateService } from '../../services/workout-state.service';
 import { AppStateService } from '../../services/app-state.service';
 import { WeeklyProgressService } from '../../services/weekly-progress.service';
+import { WorkoutSessionStateService } from '../../services/workout-session-state.service';
 import { IONIC_PAGE, IONIC_LINKS } from '../../core/ionic-page';
 import { IONIC_LIST } from '../../core/ionic-list';
 import { NavController, IonButton } from '@ionic/angular';
@@ -18,14 +19,18 @@ import { NavController, IonButton } from '@ionic/angular';
 })
 export class SchedaListComponent implements OnInit {
 
-  private draftDayIds = new Set<string>();
+  // Un signal: la pagina e' zoneless, e un campo cambiato da una promise non
+  // avvisa nessuno - la lista restava senza "bozza" finche' qualcos'altro non
+  // la ridisegnava.
+  private draftDayIds = signal<ReadonlySet<string>>(new Set());
 
   constructor(
     public workoutData: WorkoutDataService,
     public state: WorkoutStateService,
     private nav: NavController,
     private appState: AppStateService,
-    public weekly: WeeklyProgressService
+    public weekly: WeeklyProgressService,
+    private sessionState: WorkoutSessionStateService
   ) {
   }
 
@@ -47,7 +52,7 @@ export class SchedaListComponent implements OnInit {
     this.weekly.refresh();
 
     this.appState.load()
-      .then(state => { this.draftDayIds = new Set(Object.keys(state.workoutDrafts ?? {})); })
+      .then(state => { this.draftDayIds.set(new Set(Object.keys(state.workoutDrafts ?? {}))); })
       // Le bozze sono contorno: se la lettura fallisce la lista resta usabile.
       .catch(e => console.error('Lettura delle bozze fallita:', e));
   }
@@ -83,8 +88,27 @@ export class SchedaListComponent implements OnInit {
     return this.days[idx].ex.length;
   }
 
+  /**
+   * Quale allenamento tocca: il primo, nell'ordine del protocollo, che questa
+   * settimana non e' ancora stato fatto (e nessuna sessione e' in corso: allora
+   * il segno e' quello della sessione). La scheda non lega i giorni ai giorni
+   * della settimana ("Giorno 2" non e' "martedi'"), quindi "oggi" non esiste:
+   * esiste "il prossimo". Null quando sono tutti fatti.
+   */
+  get giornoProssimo(): number | null {
+    // Con una sessione in corso il segno e' quello della sessione, non due.
+    if (this.sessionState.activeSession()) return null;
+    const i = this.days.findIndex(d => !this.weekly.isDone(d.id));
+    return i >= 0 ? i : null;
+  }
+
+  /** La sessione in corso e' su questo giorno. */
+  inCorso(dayId: string): boolean {
+    return this.sessionState.isActiveForDay(dayId);
+  }
+
   hasDraft(dayId: string): boolean {
-    return this.draftDayIds.has(dayId);
+    return this.draftDayIds().has(dayId);
   }
 
   getWaveInfo(): string {
