@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { MeasurementDataService } from '../../services/measurement-data.service';
@@ -12,7 +12,7 @@ import {
 import { IONIC_PAGE } from '../../core/ionic-page';
 import { TastoDirective } from '../../core/tasto.directive';
 import { IONIC_REFRESH, completaRefresh } from '../../core/ionic-refresh';
-import { IonSpinner, IonButton } from '@ionic/angular';
+import { IonContent, IonSpinner, IonButton } from '@ionic/angular';
 
 interface FieldOption {
   field: MeasureField;
@@ -42,6 +42,8 @@ export class MisureAnalyticsComponent implements OnInit {
   lastValue: string | null = null;
   delta: number | null = null;
   deltaText: string | null = null;
+
+  @ViewChild(IonContent) content?: IonContent;
 
   private allEntries: import('../../models/measurement.model').MeasurementEntry[] = [];
   private allHistory: { date: string; value: number }[] = [];
@@ -106,6 +108,26 @@ export class MisureAnalyticsComponent implements OnInit {
     }
   }
 
+  /**
+   * La scelta fatta dall'utente, dalla lista: il grafico sta in cima e la lista
+   * sotto, e scegliendo "Plica sottoscapolare" a meta' pagina il grafico cambiava
+   * fuori vista. Se la pagina e' scesa, si torna su dal grafico (piano, o di colpo
+   * per chi ha ridotto le animazioni); se si e' gia' in cima non si muove niente.
+   */
+  async scegli(field: MeasureField): Promise<void> {
+    this.selectField(field);
+    this.cdr.detectChanges();
+    const content = this.content;
+    if (!content) return;
+    const scorsa = (await content.getScrollElement()).scrollTop;
+    if (scorsa <= 24) return;
+    await content.scrollToTop(this.movimentoRidotto() ? 0 : 300);
+  }
+
+  private movimentoRidotto(): boolean {
+    return typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  }
+
   selectField(field: MeasureField): void {
     this.selectedKey = field.key;
     this.selectedField = field;
@@ -141,10 +163,5 @@ export class MisureAnalyticsComponent implements OnInit {
 
   isSelected(field: MeasureField): boolean {
     return this.selectedKey === field.key;
-  }
-
-  getDeltaClass(): string {
-    if (this.delta === null || this.delta === 0) return 'delta';
-    return this.delta > 0 ? 'delta up' : 'delta down';
   }
 }

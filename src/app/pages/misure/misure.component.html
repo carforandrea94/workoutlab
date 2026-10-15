@@ -30,6 +30,7 @@
           <div class="badge">{{ c.badge }}</div>
           <div class="info">
             <div class="lbl">{{ c.label }}</div>
+            <div class="meta" *ngIf="riassunto(c.id) as r">{{ r }}</div>
           </div>
         </div>
       </ion-item>

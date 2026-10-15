@@ -10,6 +10,7 @@ import { TastoDirective } from './tasto.directive';
     <div id="a" appTasto (click)="clic()">Apri</div>
     <div id="b" appTasto="checkbox" [attr.aria-checked]="spuntato()" (click)="clic()">Sì</div>
     <div id="c" appTasto (click)="clic()"><input id="campo" /></div>
+    <div id="d" appTasto="radio" [attr.aria-checked]="spuntato()" (click)="clic()">Peso</div>
   `
 })
 class Prova {
@@ -51,6 +52,16 @@ describe('TastoDirective', () => {
     prova.spuntato.set(true);
     fixture.detectChanges();
     expect(el('b').getAttribute('aria-checked')).toBe('true');
+  });
+
+  it('con "radio" ha il ruolo radio: una scelta fra piu\' righe, di cui una sola attiva', () => {
+    const { el, fixture, prova } = monta();
+    expect(el('d').getAttribute('role')).toBe('radio');
+    expect(el('d').getAttribute('tabindex')).toBe('0');
+    expect(el('d').getAttribute('aria-checked')).toBe('false');
+    prova.spuntato.set(true);
+    fixture.detectChanges();
+    expect(el('d').getAttribute('aria-checked')).toBe('true');
   });
 
   it('Invio fa il click', () => {

@@ -684,6 +684,8 @@ ion-button.closing-discard.button-disabled{opacity:.4;}
 
 /* ===================== MISURE ===================== */
 .measure-card{margin-bottom:12px;overflow:hidden;}
+.measure-when{font-size:var(--text-sm);color:var(--label-2);margin:2px 4px 12px;}
+.measure-last{font-family:'IBM Plex Mono',monospace;font-size:var(--text-xs);color:var(--label-3);}
 .measure-grid{display:grid;gap:14px 10px;min-width:0;}
 .measure-grid.cols-2{grid-template-columns:minmax(0,1fr) minmax(0,1fr);}
 .measure-field{display:flex;flex-direction:column;gap:6px;min-width:0;}
@@ -709,9 +711,8 @@ ion-button.closing-discard.button-disabled{opacity:.4;}
 .mr-label{font-size:var(--text-sm);color:var(--label-2);}
 .mr-value{font-family:'IBM Plex Mono',monospace;font-size:var(--text-md);font-weight:600;color:var(--label);display:flex;align-items:center;gap:8px;}
 
-.delta{font-family:'IBM Plex Mono',monospace;font-size:var(--text-xs);font-weight:600;color:var(--label-3);}
-.delta.up{color:var(--state-danger-text);}
-.delta.down{color:var(--state-success);}
+/* La variazione dice di quanto e' cambiato, col segno: non se e' un bene. Senza un obiettivo dichiarato (massa, definizione) un +2,8 kg non e' un errore, e per un bicipite o per la vita il verso buono e' opposto: il rosso/verde di prima giudicava a caso. */
+.delta{font-family:'IBM Plex Mono',monospace;font-size:var(--text-xs);font-weight:600;color:var(--label-2);}
 
 /* ===================== CORSA ===================== */
 .runcard{margin-bottom:14px;}
@@ -1280,10 +1281,10 @@ ion-button.confirmbtn.restsave,ion-button.confirmbtn.confirm{--background:var(--
 
 /* Avvio dell'allenamento: il comando principale della pagina, in basso, dove
    poi comparira' la fascia del recupero (stessi margini e stessa pillola). */
-ion-footer.avvio-footer{background:var(--bg);}
-.avvio{position:relative;max-width:640px;margin:0 auto;padding:10px 16px var(--tabbar-gap);}
-.avvio::before{content:"";position:absolute;left:0;right:0;bottom:100%;height:24px;pointer-events:none;background:linear-gradient(to top,var(--bg),transparent);}
-ion-button.setdone.avvio-btn{--border-radius:var(--r-pill);min-height:56px;font-size:var(--text-lg);}
+ion-footer.avvio-footer,ion-footer.salva-footer{background:var(--bg);}
+.avvio,.salva{position:relative;max-width:640px;margin:0 auto;padding:10px 16px var(--tabbar-gap);}
+.avvio::before,.salva::before{content:"";position:absolute;left:0;right:0;bottom:100%;height:24px;pointer-events:none;background:linear-gradient(to top,var(--bg),transparent);}
+ion-button.setdone.avvio-btn,ion-button.setdone.salva-btn{--border-radius:var(--r-pill);min-height:56px;font-size:var(--text-lg);}
 ion-button.avvio-btn lucide-icon{margin-right:8px;}
 
 /* Pillola della sessione in corso, fuori dalla pagina del suo giorno. Sta
