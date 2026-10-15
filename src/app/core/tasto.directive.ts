@@ -12,7 +12,8 @@ import { Directive, ElementRef, computed, input } from '@angular/core';
  *  - un anello di focus visibile (.tasto:focus-visible in styles.css).
  *
  * Lo stato si dichiara dove si usa, perche' dipende dal contenuto:
- * [attr.aria-expanded] per ciò che si apre, [attr.aria-checked] per la spunta.
+ * [attr.aria-expanded] per ciò che si apre, [attr.aria-checked] per la spunta
+ * (checkbox) e per la riga scelta (radio, dentro un role="radiogroup").
  *
  * Dove l'elemento cliccabile contiene altri controlli (un cestino, un chip),
  * un ruolo "button" sul contenitore sarebbe un controllo dentro un controllo:
@@ -30,8 +31,8 @@ import { Directive, ElementRef, computed, input } from '@angular/core';
   }
 })
 export class TastoDirective {
-  /** Vuoto = "button"; "checkbox" per cio' che si spunta. */
-  readonly appTasto = input<'' | 'button' | 'checkbox'>('');
+  /** Vuoto = "button"; "checkbox" per cio' che si spunta; "radio" per una scelta fra piu' righe di cui una sola e' attiva. */
+  readonly appTasto = input<'' | 'button' | 'checkbox' | 'radio'>('');
   protected readonly ruolo = computed(() => this.appTasto() || 'button');
 
   constructor(private el: ElementRef<HTMLElement>) {}

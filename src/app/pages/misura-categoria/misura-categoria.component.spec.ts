@@ -11,7 +11,9 @@ describe('MisuraCategoriaComponent — uscire dalla pagina', () => {
   async function pagina(modifica: boolean) {
     const data: any = {
       getCategoryValues: vi.fn(async () => ({ peso: '80' })),
-      getLastValues: vi.fn(async () => ({})),
+      getLastValuesWithDate: vi.fn(async () => ({})),
+      parseMeasureValue: (v: string | null | undefined) => (v ? parseFloat(v.replace(',', '.')) : null),
+      formatMeasureNumber: (n: number) => (Math.round(n * 10) / 10).toString().replace('.', ','),
       loadDraft: vi.fn(async () => null),
       saveDraft: vi.fn(async () => {}),
       clearDraft: vi.fn(async () => {}),

@@ -51,3 +51,33 @@ export function ageOn(birthISO: string | null | undefined, onISO: string): numbe
   if (!compleannoPassato) age--;
   return age < 0 ? null : age;
 }
+
+/** Giorni di calendario fra due date ISO (b - a), senza farsi ingannare dall'ora legale. */
+function giorniTra(aISO: string, bISO: string): number {
+  const t = (iso: string) => { const [y, m, d] = iso.split('-').map(Number); return Date.UTC(y, m - 1, d); };
+  return Math.round((t(bISO) - t(aISO)) / 86400000);
+}
+
+const MESE_BREVE = new Intl.DateTimeFormat('it-IT', { day: 'numeric', month: 'short' });
+const MESE_BREVE_ANNO = new Intl.DateTimeFormat('it-IT', { day: 'numeric', month: 'short', year: 'numeric' });
+const GIORNO_ESTESO = new Intl.DateTimeFormat('it-IT', { weekday: 'long', day: 'numeric', month: 'long' });
+
+/**
+ * Quando e' successa una cosa, come lo si direbbe a voce: "oggi", "ieri", "3 ott"
+ * (con l'anno se non e' quello in corso). Una data nel futuro o illeggibile si
+ * scrive per intero: e' un dato sbagliato, non va nascosto sotto un "domani".
+ */
+export function quandoBreve(dateISO: string, oggiISO: string = todayLocalISO()): string {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateISO)) return dateISO;
+  const giorni = giorniTra(dateISO, oggiISO);
+  if (giorni === 0) return 'oggi';
+  if (giorni === 1) return 'ieri';
+  const d = new Date(dateISO + 'T00:00:00');
+  const stessoAnno = dateISO.slice(0, 4) === oggiISO.slice(0, 4);
+  return (stessoAnno ? MESE_BREVE : MESE_BREVE_ANNO).format(d);
+}
+
+/** "giovedì 15 ottobre": la data scritta per esteso. */
+export function dataEstesa(dateISO: string): string {
+  return GIORNO_ESTESO.format(new Date(dateISO + 'T00:00:00'));
+}

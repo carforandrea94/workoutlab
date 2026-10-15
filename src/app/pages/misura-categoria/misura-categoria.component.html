@@ -6,11 +6,6 @@
     <ion-title>
       <div class="navtitle">{{ title }}</div>
     </ion-title>
-    <ion-buttons slot="end">
-      <ion-button class="navicon" (click)="save()" [disabled]="measureState.saving()" aria-label="Salva misurazione" title="Salva misurazione">
-        <lucide-icon name="check" [size]="18"></lucide-icon>
-      </ion-button>
-    </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
@@ -19,7 +14,8 @@
     <div *ngIf="loading" class="history-empty"><ion-spinner name="crescent" aria-label="Caricamento"></ion-spinner></div>
 
     <ng-container *ngIf="!loading">
-      <p class="sectiontitle">{{ title }}</p>
+      <!-- Una misura nuova e' sempre di oggi, e il titolo della pagina dice gia' cosa si misura. -->
+      <p class="measure-when" *ngIf="!isEdit">Oggi, {{ oggiEsteso }}</p>
 
       <div class="infocard measure-card" *ngIf="isEdit">
         <div class="measure-field">
@@ -31,16 +27,18 @@
       </div>
 
       <div class="infocard measure-card">
-        <div class="measure-grid cols-2">
+        <!-- Un campo solo (il peso) prende tutta la larghezza: a meta' sembrava un campo dimenticato. -->
+        <div class="measure-grid" [class.cols-2]="fields.length > 1">
           <div class="measure-field" *ngFor="let f of fields">
             <label>{{ f.label }}</label>
             <div class="measure-input-wrap">
               <ion-input type="text" inputmode="decimal"
                 [(ngModel)]="values[f.key]"
-                [placeholder]="placeholders[f.key] ?? '—'"
+                placeholder="—"
                 (ionInput)="onInput()"></ion-input>
               <span class="unit">{{ f.unit }}</span>
             </div>
+            <span class="measure-last" *ngIf="ultimo(f) as u">{{ u }}</span>
           </div>
         </div>
       </div>
@@ -49,3 +47,14 @@
     </ng-container>
   </div>
 </ion-content>
+
+<!-- Il comando principale sta in basso, sotto il pollice, con la scritta: prima era una spunta
+     senza testo in alto a destra, la zona piu' lontana dello schermo. Resta spento finche' non
+     c'e' niente da salvare, cosi' si vede anche se quello che si e' scritto e' stato preso. -->
+<ion-footer *ngIf="!loading" class="salva-footer ion-no-border">
+  <div class="salva">
+    <ion-button type="button" class="setdone salva-btn" [disabled]="measureState.saving() || !hasAnyValue()" (click)="save()">
+      {{ etichettaSalva }}
+    </ion-button>
+  </div>
+</ion-footer>

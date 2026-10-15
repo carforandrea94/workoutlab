@@ -34,7 +34,7 @@
             <span class="mr-value">
               <ng-container *ngIf="r.value">{{ r.value }} {{ r.field.unit }}</ng-container>
               <ng-container *ngIf="!r.value">—</ng-container>
-              <span *ngIf="r.delta !== null" [class]="r.delta < 0 ? 'delta down' : (r.delta > 0 ? 'delta up' : 'delta')">
+              <span *ngIf="r.delta !== null" class="delta">
                 {{ r.deltaText }}
               </span>
             </span>
@@ -51,7 +51,7 @@
             <span class="mr-value">
               <ng-container *ngIf="r.value">{{ r.value }} {{ r.field.unit }}</ng-container>
               <ng-container *ngIf="!r.value">—</ng-container>
-              <span *ngIf="r.delta !== null" [class]="r.delta < 0 ? 'delta down' : (r.delta > 0 ? 'delta up' : 'delta')">
+              <span *ngIf="r.delta !== null" class="delta">
                 {{ r.deltaText }}
               </span>
             </span>
@@ -68,7 +68,7 @@
             <span class="mr-value">
               <ng-container *ngIf="r.value">{{ r.value }} {{ r.field.unit }}</ng-container>
               <ng-container *ngIf="!r.value">—</ng-container>
-              <span *ngIf="r.delta !== null" [class]="r.delta < 0 ? 'delta down' : (r.delta > 0 ? 'delta up' : 'delta')">
+              <span *ngIf="r.delta !== null" class="delta">
                 {{ r.deltaText }}
               </span>
             </span>

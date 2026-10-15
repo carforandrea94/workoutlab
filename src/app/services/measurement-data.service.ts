@@ -14,6 +14,26 @@ import {
 import { ZoneFixService } from '../core/utils/zone.util';
 import { todayLocalISO } from '../core/utils/date.util';
 
+/** L'ultimo valore di ogni campo, e il giorno in cui e' stato registrato. */
+export type UltimiValori = Partial<Record<MeasurementKey, { value: string; date: string }>>;
+
+/**
+ * Per ogni campo, il valore piu' recente che ha uno storico e la sua data.
+ * `history` e' dal piu' recente: la prima voce che ha il campo vince. Non tutte
+ * le voci hanno tutti i campi (si misura il peso un giorno, le pliche un altro),
+ * quindi l'ultimo valore di un campo puo' essere piu' vecchio dell'ultima voce.
+ */
+export function ultimiValori(history: MeasurementEntry[]): UltimiValori {
+  const out: UltimiValori = {};
+  for (const field of ALL_MEASURE_FIELDS) {
+    for (const entry of history) {
+      const v = entry[field.key];
+      if (v) { out[field.key] = { value: v, date: entry.date }; break; }
+    }
+  }
+  return out;
+}
+
 /**
  * Dati misure su Firestore:
  * - storico: users/{uid}/measurements/{isoDate}
@@ -70,17 +90,18 @@ export class MeasurementDataService {
     })());
   }
 
-  /** Per ogni campo, l'ultimo valore registrato nello storico (per i placeholder in form). */
+  /** Per ogni campo, l'ultimo valore registrato nello storico. */
   async getLastValues(): Promise<Partial<Record<MeasurementKey, string>>> {
-    const history = await this.loadHistory();
     const out: Partial<Record<MeasurementKey, string>> = {};
-    for (const field of ALL_MEASURE_FIELDS) {
-      for (const entry of history) {
-        const v = entry[field.key];
-        if (v) { out[field.key] = v; break; }
-      }
+    for (const [k, u] of Object.entries(ultimiValori(await this.loadHistory()))) {
+      out[k as MeasurementKey] = u!.value;
     }
     return out;
+  }
+
+  /** Come getLastValues, con il giorno: il form dice "ultimo 82 kg · 3 ott" invece di un segnaposto che sembra un valore. */
+  async getLastValuesWithDate(): Promise<UltimiValori> {
+    return ultimiValori(await this.loadHistory());
   }
 
   /** L'ultima voce storica precedente a una certa data (per calcolare le variazioni). */
@@ -202,7 +223,7 @@ export class MeasurementDataService {
     const gridYs = [padT, padT + innerH / 2, padT + innerH];
     const gridLabels = [max, (max + min) / 2, min];
     const grid = gridYs.map((gy, i) => `
-      <line x1="${padL}" y1="${gy.toFixed(1)}" x2="${padL + innerW}" y2="${gy.toFixed(1)}" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+      <line x1="${padL}" y1="${gy.toFixed(1)}" x2="${padL + innerW}" y2="${gy.toFixed(1)}" stroke="var(--separator)" stroke-width="1"/>
       <text x="${(padL - 8).toFixed(1)}" y="${(gy + 3).toFixed(1)}" text-anchor="end" font-family="IBM Plex Mono, monospace" font-size="9.5" fill="var(--label-3)">${this.formatAxisNum(gridLabels[i])}</text>
     `).join('');
 
@@ -240,8 +261,9 @@ export class MeasurementDataService {
     return (Math.round(n * 10) / 10).toString().replace('.', ',');
   }
 
+  /** Con la virgola, come ogni altro numero dell'app: l'asse diceva "80.6" mentre la testata scriveva "79,2". */
   private formatAxisNum(n: number): string {
-    return Number.isInteger(n) ? String(n) : n.toFixed(1);
+    return (Number.isInteger(n) ? String(n) : n.toFixed(1)).replace('.', ',');
   }
 
   private formatShortDate(iso: string): string {

@@ -30,7 +30,8 @@
 
       <!-- Grafico unico -->
       <div class="infocard chart-card">
-        <div class="chart-head">
+        <!-- Cambia scegliendo una riga dalla lista: chi non guarda lo schermo deve sentirlo. -->
+        <div class="chart-head" aria-live="polite" aria-atomic="true">
           <div>
             <div class="chart-title">{{ selectedField?.label }}</div>
             <div class="chart-sub" *ngIf="hasEnoughData">
@@ -38,7 +39,7 @@
             </div>
             <div class="chart-sub" *ngIf="!hasEnoughData">Servono almeno 2 misurazioni per il grafico</div>
           </div>
-          <span *ngIf="delta !== null" [class]="getDeltaClass()">
+          <span *ngIf="delta !== null" class="delta">
             {{ deltaText }} {{ selectedField?.unit }}
           </span>
         </div>
@@ -51,12 +52,13 @@
         </div>
       </div>
 
-      <!-- Lista misure selezionabili -->
+      <!-- Lista misure selezionabili: se ne sceglie UNA per tutte e tre le sezioni, quindi un solo gruppo. -->
+      <div role="radiogroup" aria-label="Misura da mostrare nel grafico">
       <p class="sectiontitle">Peso</p>
       <div class="grouplist measure-selectlist">
         <div class="daycard press-fx measure-selectrow" *ngFor="let o of group1"
-          [class.selected]="isSelected(o.field)" appTasto="checkbox" [attr.aria-checked]="isSelected(o.field)"
-          (click)="selectField(o.field)">
+          [class.selected]="isSelected(o.field)" appTasto="radio" [attr.aria-checked]="isSelected(o.field)"
+          (click)="scegli(o.field)">
           <div class="ms-dot" [class.on]="isSelected(o.field)"></div>
           <div class="info">
             <div class="lbl">{{ o.field.label }}</div>
@@ -69,8 +71,8 @@
       <p class="sectiontitle">Pliche</p>
       <div class="grouplist measure-selectlist">
         <div class="daycard press-fx measure-selectrow" *ngFor="let o of group2"
-          [class.selected]="isSelected(o.field)" appTasto="checkbox" [attr.aria-checked]="isSelected(o.field)"
-          (click)="selectField(o.field)">
+          [class.selected]="isSelected(o.field)" appTasto="radio" [attr.aria-checked]="isSelected(o.field)"
+          (click)="scegli(o.field)">
           <div class="ms-dot" [class.on]="isSelected(o.field)"></div>
           <div class="info">
             <div class="lbl">{{ o.field.label }}</div>
@@ -83,8 +85,8 @@
       <p class="sectiontitle">Centimetri</p>
       <div class="grouplist measure-selectlist">
         <div class="daycard press-fx measure-selectrow" *ngFor="let o of group3"
-          [class.selected]="isSelected(o.field)" appTasto="checkbox" [attr.aria-checked]="isSelected(o.field)"
-          (click)="selectField(o.field)">
+          [class.selected]="isSelected(o.field)" appTasto="radio" [attr.aria-checked]="isSelected(o.field)"
+          (click)="scegli(o.field)">
           <div class="ms-dot" [class.on]="isSelected(o.field)"></div>
           <div class="info">
             <div class="lbl">{{ o.field.label }}</div>
@@ -92,6 +94,8 @@
             <div class="meta" *ngIf="!o.lastValue">Nessun dato</div>
           </div>
         </div>
+      </div>
+
       </div>
 
     </ng-container>
