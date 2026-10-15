@@ -118,17 +118,21 @@ export class ProtocolloBuilderComponent implements OnInit, OnDestroy, DoCheck {
       this.protocolId = params.get('protocolId') ?? '';
       this.load();
     });
+    this.changedSub = this.protocolSvc.changed$.subscribe(() => {
+      if (!this.scrivendoDaQui) this.salvatoAltrove = true;
+    });
   }
 
   ngOnDestroy(): void {
     this.paramSub?.unsubscribe();
+    this.changedSub?.unsubscribe();
     this.protocolBuilderState.registerHandlers(null, null);
   }
 
   ionViewWillEnter(): void {
     this.uscitaConsentita = false;
     this.aggiornaSwipe();
-    void this.ricaricaSeCambiato();
+    this.ricaricaSeScrittoAltrove();
   }
 
   // ===== Livelli =====
@@ -267,24 +271,28 @@ export class ProtocolloBuilderComponent implements OnInit, OnDestroy, DoCheck {
   /**
    * Tornando qui da "Aggiorna da PDF" la pagina e' quella di prima, con in
    * memoria il protocollo di prima: ma il PDF ha riscritto quello salvato, e
-   * un Salva da qui avrebbe rimesso i dati vecchi. Se il protocollo salvato e'
-   * piu' recente di quello in memoria si ricarica, modifiche non salvate
-   * comprese (la guardia ha gia' chiesto prima di partire). Se e' lo stesso -
-   * si torna da un'altra tab, o dalla lista - si tiene quello che c'e'.
+   * un Salva da qui avrebbe rimesso i dati vecchi. Il servizio dice quando un
+   * protocollo viene scritto (changed$): se e' stato qualcun altro - non un
+   * salvataggio di questa pagina - al rientro si ricarica, modifiche non
+   * salvate comprese (la guardia ha gia' chiesto prima di partire). Se non e'
+   * successo niente - si torna da un'altra tab, o dalla lista - si tiene
+   * quello che c'e'. Niente lettura a ogni rientro e niente confronto fra
+   * date: si ricarica solo quando c'e' davvero qualcosa di nuovo.
    */
-  private async ricaricaSeCambiato(): Promise<void> {
+  private salvatoAltrove = false;
+  /** true solo mentre questa pagina scrive: il changed$ che ne segue e' suo, non di un altro. */
+  private scrivendoDaQui = false;
+  private changedSub: Subscription | null = null;
+
+  private ricaricaSeScrittoAltrove(): void {
+    if (!this.salvatoAltrove) return;
+    this.salvatoAltrove = false;
     if (!this.protocol || this.loading || !this.protocolId) return;
-    try {
-      const salvato = await this.protocolSvc.get(this.protocolId);
-      if (!salvato || salvato.updatedAt <= this.protocol.updatedAt) return;
-      this.editingDay = null;
-      this.editingPlan = null;
-      this.editingMeal = null;
-      this.editingExercise = null;
-      await this.caricaProtocollo();
-    } catch {
-      // Senza rete si tiene quello che c'e': la pagina non deve sparire per una lettura.
-    }
+    this.editingDay = null;
+    this.editingPlan = null;
+    this.editingMeal = null;
+    this.editingExercise = null;
+    void this.caricaProtocollo();
   }
 
   private fotografia(): string {
@@ -953,7 +961,12 @@ export class ProtocolloBuilderComponent implements OnInit, OnDestroy, DoCheck {
         running: this.protocol.running,
         infoNote: this.protocol.infoNote
       };
-      await this.protocolSvc.update(this.protocolId, toSave);
+      this.scrivendoDaQui = true;
+      try {
+        await this.protocolSvc.update(this.protocolId, toSave);
+      } finally {
+        this.scrivendoDaQui = false;
+      }
 
       // Verifica reale: rileggo da Firestore e confronto i conteggi strutturali
       // con quello che intendevo salvare, invece di fidarmi solo dell'assenza di errori.
@@ -964,11 +977,8 @@ export class ProtocolloBuilderComponent implements OnInit, OnDestroy, DoCheck {
         this.toast.error('Salvataggio incompleto, riprova.');
         return false;
       }
-      // Quello in memoria ora e' quello salvato (weekPlan ricalcolato compreso),
-      // e porta la data dell'ultimo salvataggio: senza, tornando alla pagina
-      // sembrerebbe che il salvato sia piu' recente e la ricaricherebbe.
+      // Quello in memoria ora e' quello salvato (weekPlan ricalcolato compreso).
       this.baseline = this.fotografia();
-      if (reread) this.protocol.updatedAt = reread.updatedAt;
       return true;
     } catch (e: any) {
       console.error('Errore salvataggio protocollo:', e);
