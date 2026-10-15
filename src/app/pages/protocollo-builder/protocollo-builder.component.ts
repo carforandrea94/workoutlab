@@ -34,6 +34,7 @@ import {
 } from '../../core/utils/builder-nav.util';
 import { ConModificheNonSalvate } from '../../core/guards/modifiche-non-salvate.guard';
 import { senzaSwipeIndietro } from '../../core/swipe-indietro';
+import { NomeCampoDirective } from '../../core/nome-campo.directive';
 
 type Tab = SchedaBuilder;
 
@@ -52,7 +53,7 @@ export type ZonaDrop =
 @Component({
   selector: 'app-protocollo-builder',
   standalone: true,
-  imports: [IonButton, TastoDirective, ...IONIC_LIST, IonInput, IonTextarea, IonSelect, IonSelectOption, IonSpinner, IonSegment, IonSegmentButton, ...IONIC_PAGE, ...IONIC_LINKS, 
+  imports: [NomeCampoDirective, IonButton, TastoDirective, ...IONIC_LIST, IonInput, IonTextarea, IonSelect, IonSelectOption, IonSpinner, IonSegment, IonSegmentButton, ...IONIC_PAGE, ...IONIC_LINKS,
     CommonModule, FormsModule, LucideAngularModule,
     CdkDropListGroup, CdkDropList, CdkDrag, CdkDragHandle, CdkDragPlaceholder
   ],

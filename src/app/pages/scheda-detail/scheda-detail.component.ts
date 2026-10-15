@@ -29,6 +29,7 @@ import {
   SerieRow, BlockRow, canAddSet, buildExtraSet, canRemoveSet, removeSetAt, mergeDraftRows
 } from '../../core/utils/extra-sets.util';
 
+import { ProssimaSerie } from '../../services/workout-state.service';
 import { IONIC_PAGE } from '../../core/ionic-page';
 import { TastoDirective } from '../../core/tasto.directive';
 import { vibra } from '../../core/utils/vibrazione.util';
@@ -197,6 +198,7 @@ export class SchedaDetailComponent implements OnInit, OnDestroy {
       // disegnato da nessuna parte, e senza modo di fermarlo.
       const timer = this.state.restTimer();
       if (timer.show && timer.dayId !== this.day.id) this.state.stopRestTimer();
+      this.state.prossimaSerie.set(null);
       this.loadAll();
     });
   }
@@ -368,6 +370,7 @@ export class SchedaDetailComponent implements OnInit, OnDestroy {
       this.daySessions = daySessions.map(d => d.session);
       this.loadInsights(daySessions);
       this.exercises.forEach(vm => this.syncActiveRow(vm));
+      this.pubblicaProssima();
     } catch (e: any) {
       if (generation !== this.loadGeneration) return;
       console.error('Errore caricamento scheda:', e);
@@ -385,6 +388,9 @@ export class SchedaDetailComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    // La fascia vive fuori da questa pagina: lasciata li' dopo l'uscita direbbe una
+    // serie che non e' piu' sotto gli occhi.
+    this.state.prossimaSerie.set(null);
     if (this.avanzaTimer) { clearTimeout(this.avanzaTimer); this.avanzaTimer = null; }
     this.paramSub?.unsubscribe();
     this.stopPause();
@@ -696,6 +702,7 @@ export class SchedaDetailComponent implements OnInit, OnDestroy {
     if (this.setsLocked) return;
     const row = vm.rows[rowIdx];
     row.done = !row.done;
+    this.ultimoEsercizio = this.exercises.indexOf(vm);
 
     // Spuntare la serie e' il momento in cui i suggerimenti diventano valori
     // veri: il carico dell'ultima volta e le ripetizioni del protocollo entrano
@@ -1002,6 +1009,7 @@ export class SchedaDetailComponent implements OnInit, OnDestroy {
     if (this.setsLocked) return;
     const row = vm.rows[rowIdx];
     if (!row.blocks?.some(b => b.done)) return;
+    this.ultimoEsercizio = this.exercises.indexOf(vm);
 
     // A esaurimento l'ultimo blocco e' quello che stavi per fare e non hai
     // fatto: e' li' perche' la striscia mostrasse dove si stava andando, e
@@ -1245,12 +1253,45 @@ export class SchedaDetailComponent implements OnInit, OnDestroy {
    * storico la seduta stessa, che esiste e va corretta.
    */
   private scheduleDraft(): void {
+    // Ogni modifica alle serie passa di qui: la fascia in fondo deve sapere subito
+    // cosa viene dopo, non fra mezzo secondo.
+    this.pubblicaProssima();
     if (this.draftTimer) clearTimeout(this.draftTimer);
     this.draftTimer = setTimeout(() => {
       this.draftTimer = null;
       if (this.isStorico) { void this.salvaSeduta(); return; }
       this.saveDraft();
     }, 500);
+  }
+
+  // ---- La prossima serie, per la fascia in fondo ----
+
+  /** L'esercizio su cui si e' lavorato per ultimo: da lui si cerca la serie dopo, poi dai successivi. */
+  private ultimoEsercizio = 0;
+
+  /** La prima serie ancora da fare, partendo dall'esercizio toccato per ultimo. */
+  private cercaProssima(): ProssimaSerie | null {
+    const n = this.exercises.length;
+    for (let k = 0; k < n; k++) {
+      const vm = this.exercises[(Math.max(0, this.ultimoEsercizio) + k) % n];
+      const j = vm.rows.findIndex(r => !r.done);
+      if (j < 0) continue;
+      const row = vm.rows[j];
+      return {
+        esercizio: vm.ex.name,
+        numero: j + 1,
+        totale: vm.rows.length,
+        reps: this.numero(row.reps) ?? this.numero(row.ripPlaceholder),
+        carico: this.numero(row.load) ?? this.numero(row.loadPlaceholder),
+        cluster: !!vm.cluster
+      };
+    }
+    return null;
+  }
+
+  /** Solo dentro l'allenamento in corso: nello storico (si corregge una seduta passata) non c'e' una "prossima". */
+  private pubblicaProssima(): void {
+    this.state.prossimaSerie.set(!this.isStorico && this.isSessionOnThisDay ? this.cercaProssima() : null);
   }
 
   private saveDraft(): void {
@@ -1446,6 +1487,7 @@ export class SchedaDetailComponent implements OnInit, OnDestroy {
 
   startSession(): void {
     this.sessionState.start(this.day.id, this.day.label);
+    this.pubblicaProssima();
   }
 
   goToOtherSession(): void {
@@ -1464,6 +1506,7 @@ export class SchedaDetailComponent implements OnInit, OnDestroy {
     // Il recupero appartiene alla sessione: senza questo il "Vai" di una
     // sessione buttata riapparirebbe all'inizio della prossima.
     this.state.stopRestTimer();
+    this.state.prossimaSerie.set(null);
     // La card di chiusura era l'ultima slide e ora non c'e' piu': l'indicatore
     // resterebbe puntato oltre la fine, senza nessun trattino acceso.
     if (this.sliderIndex >= this.exercises.length) {
@@ -1523,6 +1566,7 @@ export class SchedaDetailComponent implements OnInit, OnDestroy {
         await this.appState.deleteFieldPath(`workoutDrafts.${this.day.id}`);
         this.sessionState.finish();
         this.state.stopRestTimer();
+        this.state.prossimaSerie.set(null);
         this.state.saveStatus.set('saved');
         // Il resoconto si costruisce dalla seduta appena scritta e dall'ultima
         // volta che si era fatto LO STESSO giorno: un Giorno 1 di petto e un

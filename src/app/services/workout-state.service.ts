@@ -20,6 +20,24 @@ export interface RestTimerState {
   dayId: string | null;
 }
 
+/**
+ * La prossima serie da fare, pubblicata dalla pagina del giorno in sessione.
+ * Quando non c'e' un recupero in corso la fascia in fondo la mostra, invece di
+ * dire soltanto che non c'e' niente: e' il momento in cui si guarda lo schermo
+ * per sapere cosa viene dopo.
+ */
+export interface ProssimaSerie {
+  esercizio: string;
+  /** 1-based, dentro le serie dell'esercizio. */
+  numero: number;
+  totale: number;
+  /** Il valore previsto: quello scelto sulla ruota o, in mancanza, il suggerito. */
+  reps: number | null;
+  carico: number | null;
+  /** Serie a cluster: ogni blocco ha i suoi numeri, qui non se ne dice nessuno. */
+  cluster: boolean;
+}
+
 export type WorkoutViewMode = 'list' | 'slider';
 export type SaveWorkoutStatus = 'idle' | 'saving' | 'saved' | 'err';
 
@@ -51,6 +69,9 @@ export class WorkoutStateService {
   restTimer = signal<RestTimerState>({
     show: false, remaining: REST_DURATION, finished: false, fillPct: 100, exName: null, dayId: null
   });
+
+  /** null: niente da dire (fuori sessione, o tutte le serie fatte). */
+  prossimaSerie = signal<ProssimaSerie | null>(null);
 
   /**
    * Vista lista/slider della scheda giornaliera: inizializzata dalla cache

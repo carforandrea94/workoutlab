@@ -1,3 +1,4 @@
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { SchedaDetailComponent } from './scheda-detail.component';
@@ -22,7 +23,8 @@ function makeComponent(opts: { sessionSuQuestoGiorno: boolean; inPausa?: boolean
     finish: vi.fn()
   } as any;
 
-  const state = { viewMode: () => 'list', saveStatus: () => 'idle', startRestTimer, stopRestTimer } as any;
+  const prossimaSerie = signal<any>(null);
+  const state = { viewMode: () => 'list', saveStatus: () => 'idle', startRestTimer, stopRestTimer, prossimaSerie } as any;
 
   const component = TestBed.runInInjectionContext(() => new SchedaDetailComponent(
     {} as any,                       // ActivatedRoute: ngOnInit non viene chiamato
@@ -365,7 +367,7 @@ function makeStorico(opts: {
     { snapshot: { data: { modo: 'storico' } }, paramMap: { subscribe: () => null } } as any,
     { navigateBack, navigateForward } as any,
     { days: opts.giorni ?? [], MUSCLES: {} } as any,
-    { viewMode: () => 'list', saveStatus: () => 'idle', startRestTimer } as any,
+    { viewMode: () => 'list', saveStatus: () => 'idle', startRestTimer, prossimaSerie: signal<any>(null) } as any,
     { patchField: vi.fn(() => Promise.resolve()) } as any,
     { get, moveSession, delete: cancella, sessionId } as any,
     { confirm } as any,
@@ -973,5 +975,125 @@ describe('SchedaDetailComponent — il recupero non sopravvive alla sessione', (
 
     expect(sessionState.cancel).not.toHaveBeenCalled();
     expect(stopRestTimer).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * A riposo la fascia in fondo dice quale serie viene dopo. La pagina del giorno
+ * la pubblica nello stato condiviso a ogni modifica alle serie: la fascia vive
+ * fuori da questa pagina e non ha altro modo di saperlo.
+ */
+describe('SchedaDetailComponent — la prossima serie, per la fascia in fondo', () => {
+  const riga = (parti: object = {}) =>
+    ({ reps: '', load: '', done: false, ripPlaceholder: '10', loadPlaceholder: '55', extra: false, ...parti }) as any;
+  const esercizio = (nome: string, righe: any[], cluster: any = null) =>
+    ({ ex: { name: nome, muscle: '', scheme: 'plain' }, rows: righe, open: true, activeRow: 0,
+       insightVisible: false, insight: null, restSeconds: 90, isFirst: false, warmup: null, cluster, rmPick: 1 }) as any;
+
+  function conEsercizi(opts: { sessione?: boolean } = {}) {
+    const m = makeComponent({ sessionSuQuestoGiorno: opts.sessione ?? true });
+    const panca = esercizio('Panca piana', [riga(), riga(), riga()]);
+    const croci = esercizio('Croci', [riga({ ripPlaceholder: '12', loadPlaceholder: '20' }), riga({ ripPlaceholder: '12', loadPlaceholder: '20' })]);
+    m.component.exercises = [panca, croci];
+    return { ...m, panca, croci, serie: () => m.state.prossimaSerie() };
+  }
+
+  it('prima di toccare niente non pubblica: si pubblica quando le serie cambiano', () => {
+    const { serie } = conEsercizi();
+    expect(serie()).toBeNull();
+  });
+
+  it('segnata una serie, la prossima e\' quella dopo, coi valori previsti', () => {
+    const { component, panca, serie } = conEsercizi();
+    component.onSetCheck(panca, 0);
+    expect(serie()).toEqual({ esercizio: 'Panca piana', numero: 2, totale: 3, reps: 10, carico: 55, cluster: false });
+  });
+
+  it('i valori sono quelli scelti sulla ruota, non solo il suggerito', () => {
+    const { component, panca, serie } = conEsercizi();
+    panca.rows[1].reps = '8';
+    panca.rows[1].load = '57,5';
+    component.onSetCheck(panca, 0);
+    expect(serie()).toEqual(expect.objectContaining({ numero: 2, reps: 8, carico: 57.5 }));
+  });
+
+  it('finite le serie di un esercizio passa al successivo', () => {
+    const { component, panca, serie } = conEsercizi();
+    component.onSetCheck(panca, 0);
+    component.onSetCheck(panca, 1);
+    component.onSetCheck(panca, 2);
+    expect(serie()).toEqual({ esercizio: 'Croci', numero: 1, totale: 2, reps: 12, carico: 20, cluster: false });
+  });
+
+  it('si parte da dove si e\' lavorato, non dal primo esercizio che ha ancora serie', () => {
+    // Si fa prima il secondo esercizio: la fascia non deve rimandare al primo.
+    const { component, croci, serie } = conEsercizi();
+    component.onSetCheck(croci, 0);
+    expect(serie()).toEqual(expect.objectContaining({ esercizio: 'Croci', numero: 2 }));
+  });
+
+  it('finito l\'ultimo esercizio torna a quelli rimasti indietro', () => {
+    const { component, panca, croci, serie } = conEsercizi();
+    component.onSetCheck(panca, 0);
+    component.onSetCheck(croci, 0);
+    component.onSetCheck(croci, 1);
+    expect(serie()).toEqual(expect.objectContaining({ esercizio: 'Panca piana', numero: 2 }));
+  });
+
+  it('a tutto fatto non c\'e\' piu\' una prossima serie', () => {
+    const { component, panca, croci, serie } = conEsercizi();
+    for (const j of [0, 1, 2]) component.onSetCheck(panca, j);
+    for (const j of [0, 1]) component.onSetCheck(croci, j);
+    expect(serie()).toBeNull();
+  });
+
+  it('togliendo una spunta la serie torna ad essere la prossima', () => {
+    const { component, panca, serie } = conEsercizi();
+    component.onSetCheck(panca, 0);
+    component.onSetCheck(panca, 1);
+    expect(serie()).toEqual(expect.objectContaining({ numero: 3 }));
+    component.onSetCheck(panca, 1);
+    expect(serie()).toEqual(expect.objectContaining({ numero: 2 }));
+  });
+
+  it('una serie a cluster non porta valori: ogni blocco ha i suoi', () => {
+    const m = makeComponent({ sessionSuQuestoGiorno: true });
+    const squat = esercizio('Squat', [
+      riga({ blocks: [{ reps: '5', load: '100', done: true, ripPlaceholder: '', loadPlaceholder: '' }] }), riga()
+    ], { blocks: [5, 5], restSec: 30, end: 'fixed' });
+    m.component.exercises = [squat];
+    m.component.closeClusterSet(squat, 0);
+    expect(m.state.prossimaSerie()).toEqual({
+      esercizio: 'Squat', numero: 2, totale: 2, reps: 10, carico: 55, cluster: true
+    });
+  });
+
+  it('a sessione non avviata su questo giorno non pubblica niente', () => {
+    const { component, panca, serie } = conEsercizi({ sessione: false });
+    component.setLoad(panca, 0, 60); // setsLocked: nessun effetto
+    component.onSetCheck(panca, 0);
+    expect(serie()).toBeNull();
+  });
+
+  it('uscendo dalla pagina la fascia non resta con una serie che non e\' piu\' sotto gli occhi', () => {
+    const { component, panca, serie } = conEsercizi();
+    component.onSetCheck(panca, 0);
+    expect(serie()).not.toBeNull();
+    component.ngOnDestroy();
+    expect(serie()).toBeNull();
+  });
+
+  it('buttare via la sessione la toglie', async () => {
+    const { component, panca, serie } = conEsercizi();
+    component.onSetCheck(panca, 0);
+    await component.cancelSession();
+    expect(serie()).toBeNull();
+  });
+
+  it('modificare il carico di una serie ancora da fare aggiorna il valore detto', () => {
+    const { component, panca, serie } = conEsercizi();
+    component.onSetCheck(panca, 0);
+    component.setLoad(panca, 1, 60);
+    expect(serie()).toEqual(expect.objectContaining({ numero: 2, carico: 60 }));
   });
 });

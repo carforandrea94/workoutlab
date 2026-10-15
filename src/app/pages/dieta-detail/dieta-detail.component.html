@@ -99,11 +99,17 @@
     <div *ngIf="plan && state.viewMode() === 'list'">
       <div *ngFor="let vm of meals">
         <div class="meal" [class.open]="vm.open">
-          <div class="meal-summary" appTasto [attr.aria-expanded]="vm.open" (click)="toggleMeal(vm)">
-            <span>{{ vm.meal.name }}</span>
-            <span class="chevron">
-              <lucide-icon name="chevron-down" [size]="12"></lucide-icon>
-            </span>
+          <!-- La spunta e l'intestazione che apre sono due controlli, uno accanto
+               all'altro: dentro l'intestazione sarebbe un controllo in un controllo. -->
+          <div class="meal-head">
+            <div class="meal-summary con-spunta" appTasto [attr.aria-expanded]="vm.open" (click)="toggleMeal(vm)">
+              <span>{{ vm.meal.name }}</span>
+              <span class="chevron">
+                <lucide-icon name="chevron-down" [size]="12"></lucide-icon>
+              </span>
+            </div>
+            <div class="meal-check tap44" [class.done]="vm.completed" appTasto="checkbox" [attr.aria-checked]="vm.completed"
+              [attr.aria-label]="'Pasto fatto: ' + vm.meal.name" (click)="toggleMealCompleted(vm)">✓</div>
           </div>
 
           <div class="content-inner" *ngIf="vm.open">
@@ -126,8 +132,8 @@
         <div class="meal mealslide exslide" *ngFor="let vm of meals">
           <div class="meal-summary noclick">
             <span>{{ vm.meal.name }}</span>
-            <div class="meal-check" [class.done]="vm.completed" appTasto="checkbox" [attr.aria-checked]="vm.completed"
-              aria-label="Pasto fatto" (click)="toggleMealCompleted(vm)">✓</div>
+            <div class="meal-check tap44" [class.done]="vm.completed" appTasto="checkbox" [attr.aria-checked]="vm.completed"
+              [attr.aria-label]="'Pasto fatto: ' + vm.meal.name" (click)="toggleMealCompleted(vm)">✓</div>
           </div>
 
           <div class="content-inner">

@@ -228,8 +228,10 @@
 
 /* La barra a tab di Ionic e' una pillola fissa: tolgo il suo layout standard. */
 ion-tab-bar.tabbar{--background:var(--surface-chrome);--border:1px solid var(--border-line);contain:none;}
-ion-tab-button.tabbtn{--color:var(--label-3);--color-selected:var(--accent);--padding-top:0;--padding-bottom:0;background:transparent;}
+ion-tab-button.tabbtn{--color:var(--label-3);--color-selected:var(--accent);--padding-top:0;--padding-bottom:0;--background-focused:var(--surface-raise);--background-focused-opacity:1;background:transparent;}
 ion-tab-button.tabbtn.tab-selected,ion-tab-button.tabbtn.active{color:var(--accent);}
+/* Da tastiera il focus sta sull'<a> dentro il bottone (vedi il href in tabs.page.ts): l'anello lo disegna la sua parte "native", a pillola come la barra (con un offset negativo il raggio a pillola lo cancella). */
+ion-tab-button.tabbtn.ion-focused::part(native){outline:2px solid var(--accent);outline-offset:0;border-radius:var(--r-pill);}
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -1183,10 +1185,14 @@ ion-button.confirmbtn.restsave,ion-button.confirmbtn.confirm{--background:var(--
 .meal-summary{cursor:pointer;padding:15px 16px;min-height:44px;display:flex;align-items:center;justify-content:space-between;font-weight:700;letter-spacing:-.005em;font-size:var(--text-lg);-webkit-user-select:none;user-select:none;}
 .meal .chevron{display:flex;align-items:center;justify-content:center;color:var(--label-3);transition:transform .35s var(--spring);}
 .meal .chevron svg{display:block;}
-.meal.open > .meal-summary .chevron{transform:rotate(180deg);color:var(--accent);}
+.meal.open .meal-summary .chevron{transform:rotate(180deg);color:var(--accent);}
 .meal .content-inner{padding:0 16px 15px;border-top:1px solid var(--separator);}
 .meal.mealslide{margin-bottom:0;}
 .meal-summary.noclick{cursor:default;}
+/* Nell'elenco la spunta sta accanto all'intestazione, non dentro: le due si toccano separatamente. Il nome lascia il suo posto alla spunta. */
+.meal-head{position:relative;}
+.meal-head > .meal-check{position:absolute;top:50%;right:48px;transform:translateY(-50%);}
+.meal-summary.con-spunta > span:first-child{padding-right:70px;}
 .variant-tabs{display:flex;gap:6px;margin:13px 0 10px;flex-wrap:wrap;}
 .variant-tabs button{font-family:'IBM Plex Mono',monospace;font-size:var(--text-xs);padding:8px 12px;min-height:38px;border-radius:var(--r-sm);border:1px solid var(--border-line);background:var(--surface-raise);color:var(--label-2);cursor:pointer;}
 .variant-tabs button.active{border-color:var(--accent);color:var(--accent);background:var(--accent-dim);}
@@ -1255,7 +1261,7 @@ ion-button.confirmbtn.restsave,ion-button.confirmbtn.confirm{--background:var(--
 .restbar-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;}
 .restbar-label{font-size:var(--text-xs);line-height:1.25;color:var(--label-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 /* Senza recupero la fascia ha una riga sola, e quella riga e' la sua voce. */
-.restbar:not(.running) .restbar-label{font-size:var(--text-sm);}
+.restbar:not(.running):not(.con-prossima) .restbar-label{font-size:var(--text-sm);}
 .restbar-ex{font-size:var(--text-sm);font-weight:600;line-height:1.25;color:var(--label-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 /* La X e' un cerchio da 32 con il bersaglio da 44 di .tap44: sta accanto al
    conto, non sopra, e un tocco storto non la prende per sbaglio. */
@@ -1333,12 +1339,17 @@ ion-picker.heightpicker{margin-bottom:18px;}
 .wheel::-webkit-scrollbar{display:none;}
 .wheel-item{display:flex;align-items:center;justify-content:center;width:100%;height:44px;scroll-snap-align:center;border:none;background:none;cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:var(--text-lg);font-weight:600;color:var(--label-3);opacity:.45;transition:color .15s ease,opacity .15s ease;}
 .wheel-item.on{color:var(--label);opacity:1;font-size:var(--text-2xl);font-weight:700;}
-.wheel-item:focus-visible{outline:2px solid var(--accent);outline-offset:-4px;border-radius:var(--r-sm);}
+.wheel:focus-visible{outline:2px solid var(--accent);outline-offset:-2px;border-radius:var(--r-sm);}
 /* Cio' che e' cliccabile e non e' un <button> (vedi tasto.directive.ts): da
    tastiera si vede dov'e' il focus; col dito o col mouse l'anello non compare. */
 .tasto{cursor:pointer;}
 .tasto:focus:not(:focus-visible){outline:none;}
 .tasto:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+/* Controlli Ionic con un bordo proprio (non dentro .measure-input-wrap, che si evidenzia da solo): da tastiera Ionic mette .ion-focused sull'host. */
+ion-select.rmpick-sel.ion-focused,.combo-select ion-select.ion-focused{outline:2px solid var(--accent);outline-offset:2px;}
+/* La ricerca non ha shadow DOM (e' "scoped"): ::part non esiste, si va sull'<input> vero. */
+ion-searchbar.shop-search.searchbar-has-focus .searchbar-input{box-shadow:0 0 0 2px var(--accent);}
+input.daterow:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
 /* L'intestazione del pasto riempie la card, che taglia (overflow:hidden): l'anello va dentro. Il nome dell'esercizio e' il controllo, la riga e' il resto: l'anello lo segue da vicino. */
 .meal-summary.tasto:focus-visible{outline-offset:-3px;}
 .ex-name.tasto{width:fit-content;max-width:100%;}
@@ -1520,12 +1531,13 @@ ion-select.rmpick-sel{width:112px;min-height:40px;--padding-start:10px;--padding
 .authcheck ion-checkbox::part(label){white-space:normal;}
 
 /* Toggle segmentati (vista elenco/slider, tema, sesso, ...): ion-segment con l'aspetto di prima. */
+/* Il segmento taglia (contain:paint, overflow:hidden): un ::after da 44 come per .tap44 verrebbe tagliato, quindi i bersagli sono veri. Nella testata 40x36 (il segmento arriva a 44 d'altezza con il suo padding), nei form 40 di altezza. */
 ion-segment.seg{--background:var(--surface-raise);flex-shrink:0;width:auto;min-height:0;padding:3px;gap:3px;border:1px solid var(--border-line);border-radius:var(--r-md);}
-ion-segment.seg ion-segment-button{--color:var(--label-3);--color-checked:var(--accent-contrast);--indicator-color:var(--accent);--indicator-box-shadow:none;--border-radius:var(--r-sm);--padding-start:0;--padding-end:0;--padding-top:0;--padding-bottom:0;margin:0;min-width:30px;width:30px;min-height:26px;}
-ion-segment.seg.labelseg ion-segment-button{width:auto;min-width:0;padding:0 14px;min-height:30px;font-family:'IBM Plex Mono',monospace;font-size:var(--text-xs);font-weight:600;}
+ion-segment.seg ion-segment-button{--color:var(--label-3);--color-checked:var(--accent-contrast);--indicator-color:var(--accent);--indicator-box-shadow:none;--border-radius:var(--r-sm);--padding-start:0;--padding-end:0;--padding-top:0;--padding-bottom:0;margin:0;min-width:40px;width:40px;min-height:36px;}
+ion-segment.seg.labelseg ion-segment-button{width:auto;min-width:0;padding:0 14px;min-height:40px;font-family:'IBM Plex Mono',monospace;font-size:var(--text-xs);font-weight:600;}
 /* A tutta larghezza, per i campi di una scheda (tipo di uscita, sezioni del protocollo): le voci si dividono la riga. */
 ion-segment.seg.fullseg{width:100%;}
-ion-segment.seg.fullseg ion-segment-button{flex:1;max-width:none;padding:0 6px;min-height:36px;}
+ion-segment.seg.fullseg ion-segment-button{flex:1;max-width:none;padding:0 6px;min-height:40px;}
 ion-segment.builder-tabs{margin-bottom:16px;}
 /* Accedi / Crea un account */
 ion-segment.authtabs{--background:transparent;min-height:0;}

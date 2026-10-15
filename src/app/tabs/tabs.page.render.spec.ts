@@ -62,6 +62,17 @@ describe('TabsPage — barra nascosta e tocco sulla tab (disegno vero)', () => {
     return { fixture, root, barra, vai, router, attiva };
   }
 
+  it('ogni tab ha il suo href: serve a renderla focalizzabile col Tab, non a navigare', async () => {
+    // Senza href l'<a role="tab"> interno non e' focalizzabile e la barra restava
+    // fuori dalla tastiera. `href` e' una proprieta' del componente, non un attributo.
+    const { root } = await monta();
+    const href = Array.from(root.querySelectorAll<HTMLElement>('ion-tab-button'))
+      .map(b => [(b as any).tab, (b as any).href]);
+    expect(href).toEqual([
+      ['scheda', '/scheda'], ['dieta', '/dieta'], ['corsa', '/corsa'], ['misure', '/misure'], ['account', '/account']
+    ]);
+  });
+
   it('sulla radice la barra c\'e\' e lo spazio sotto il contenuto e\' tenuto', async () => {
     const { barra, root } = await monta();
 

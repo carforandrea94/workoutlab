@@ -111,6 +111,54 @@ describe('DietaDetailComponent — accessibilita\' del template', () => {
       expect(tutti('.altlist').length).toBe(prima + 1);
     });
 
+    it('ogni pasto ha la sua spunta, accanto all\'intestazione e non dentro', async () => {
+      // Dentro l'intestazione (role="button") sarebbe un controllo in un controllo.
+      const { tutti } = await monta('list');
+      const spunte = tutti('.meal-check');
+      expect(spunte.length).toBe(2);
+      expect(spunte.map(s => s.getAttribute('role'))).toEqual(['checkbox', 'checkbox']);
+      expect(spunte.map(s => s.getAttribute('aria-label'))).toEqual(['Pasto fatto: Colazione', 'Pasto fatto: Pranzo']);
+      expect(spunte.map(s => s.getAttribute('aria-checked'))).toEqual(['false', 'false']);
+      for (const s of spunte) expect(s.closest('.meal-summary')).toBeNull();
+    });
+
+    it('la spunta ha il bersaglio da 44 px', async () => {
+      const { tutti } = await monta('list');
+      expect(tutti('.meal-check').every(s => s.classList.contains('tap44'))).toBe(true);
+    });
+
+    it('toccarla segna il pasto e lo salva, senza aprire o chiudere il pasto', async () => {
+      const { tutti, aggiorna, patchField } = await monta('list');
+      expect(tutti('.meal-summary')[0].getAttribute('aria-expanded')).toBe('true');
+
+      tutti('.meal-check')[0].click();
+      await aggiorna();
+
+      expect(tutti('.meal-check')[0].getAttribute('aria-checked')).toBe('true');
+      expect(tutti('.meal-check')[1].getAttribute('aria-checked')).toBe('false');
+      expect(tutti('.meal-summary')[0].getAttribute('aria-expanded')).toBe('true');
+      expect(patchField).toHaveBeenCalledWith('mealsCompletion', expect.objectContaining({ done: { m1: true, m2: false } }));
+    });
+
+    it('da tastiera: Spazio e Invio la cambiano, e di nuovo toglie la spunta', async () => {
+      const { tutti, tasto, aggiorna } = await monta('list');
+      tasto(tutti('.meal-check')[1], ' ');
+      await aggiorna();
+      expect(tutti('.meal-check')[1].getAttribute('aria-checked')).toBe('true');
+
+      tasto(tutti('.meal-check')[1], 'Enter');
+      await aggiorna();
+      expect(tutti('.meal-check')[1].getAttribute('aria-checked')).toBe('false');
+    });
+
+    it('l\'intestazione continua ad aprire e chiudere come prima', async () => {
+      const { tutti, aggiorna } = await monta('list');
+      tutti('.meal-summary')[0].click();
+      await aggiorna();
+      expect(tutti('.meal-summary')[0].getAttribute('aria-expanded')).toBe('false');
+      expect(tutti('.meal-check')[0].getAttribute('aria-checked')).toBe('false');
+    });
+
     it('le intestazioni non hanno ne\' tabindex negativi ne\' ruoli doppi', async () => {
       const { tutti } = await monta('list');
       for (const el of tutti('[appTasto], .tasto')) {
@@ -126,7 +174,7 @@ describe('DietaDetailComponent — accessibilita\' del template', () => {
       const spunte = tutti('.meal-check');
       expect(spunte.length).toBe(2);
       expect(spunte[0].getAttribute('role')).toBe('checkbox');
-      expect(spunte[0].getAttribute('aria-label')).toBe('Pasto fatto');
+      expect(spunte[0].getAttribute('aria-label')).toBe('Pasto fatto: Colazione');
       expect(spunte[0].getAttribute('aria-checked')).toBe('false');
 
       tasto(spunte[0], ' ');
@@ -146,6 +194,11 @@ describe('DietaDetailComponent — accessibilita\' del template', () => {
       expect(trattini.map(t => t.getAttribute('role'))).toEqual(['button', 'button']);
       expect(trattini.filter(t => t.getAttribute('aria-current') === 'true').length).toBe(1);
       expect(trattini[0].getAttribute('aria-current')).toBe('true');
+    });
+
+    it('anche nello slider la spunta ha il bersaglio da 44 px', async () => {
+      const { tutti } = await monta('slider');
+      expect(tutti('.meal-check').every(s => s.classList.contains('tap44'))).toBe(true);
     });
 
     it('nello slider il titolo del pasto non e\' un controllo che apre qualcosa', async () => {

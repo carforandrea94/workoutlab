@@ -16,11 +16,12 @@ import { IONIC_PAGE } from '../../core/ionic-page';
 import { NavController, IonInput, IonSegment, IonSegmentButton, IonButton, IonRouterOutlet } from '@ionic/angular';
 import { ConModificheNonSalvate } from '../../core/guards/modifiche-non-salvate.guard';
 import { senzaSwipeIndietro } from '../../core/swipe-indietro';
+import { NomeCampoDirective } from '../../core/nome-campo.directive';
 
 @Component({
   selector: 'app-corsa-nuova',
   standalone: true,
-  imports: [IonButton, IonInput, IonSegment, IonSegmentButton, ...IONIC_PAGE, CommonModule, FormsModule],
+  imports: [NomeCampoDirective, IonButton, IonInput, IonSegment, IonSegmentButton, ...IONIC_PAGE, CommonModule, FormsModule],
   templateUrl: './corsa-nuova.component.html'
 })
 export class CorsaNuovaComponent implements OnInit, OnDestroy, ConModificheNonSalvate {

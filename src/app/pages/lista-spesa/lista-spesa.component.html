@@ -59,7 +59,7 @@
             <ion-item-sliding class="shop-item ok" *ngFor="let item of customPresi" #riga>
               <ion-item lines="none">
                 <ion-checkbox labelPlacement="end" justify="start" [checked]="true" (ionChange)="toggleCustom(item)">{{ item.name }}</ion-checkbox>
-                <ion-button slot="end" class="delete-btn" (click)="removeCustom(item, $event)" title="Elimina" aria-label="Elimina">
+                <ion-button slot="end" class="delete-btn tap44" (click)="removeCustom(item, $event)" title="Elimina" [attr.aria-label]="'Elimina ' + item.name">
                   <lucide-icon name="trash-2" [size]="14"></lucide-icon>
                 </ion-button>
               </ion-item>
@@ -108,7 +108,7 @@
           <ion-item-sliding class="shop-item" *ngFor="let item of customDaPrendere" #riga>
             <ion-item lines="none">
               <ion-checkbox labelPlacement="end" justify="start" [checked]="false" (ionChange)="toggleCustom(item)">{{ item.name }}</ion-checkbox>
-              <ion-button slot="end" class="delete-btn" (click)="removeCustom(item, $event)" title="Elimina" aria-label="Elimina">
+              <ion-button slot="end" class="delete-btn tap44" (click)="removeCustom(item, $event)" title="Elimina" [attr.aria-label]="'Elimina ' + item.name">
                 <lucide-icon name="trash-2" [size]="14"></lucide-icon>
               </ion-button>
             </ion-item>
