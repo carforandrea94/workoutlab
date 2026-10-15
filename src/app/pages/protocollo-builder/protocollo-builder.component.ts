@@ -18,12 +18,14 @@ import {
 } from '../../core/utils/cluster.util';
 import { MAX_BLOCKS_PER_SET } from '../../core/utils/extra-sets.util';
 import { RunGoal, normalizeRunGoal } from '../../models/run.model';
+import { senzaCaselleVuote } from '../../core/utils/diet-empty.util';
 import { FoodItem, DietPlan, NamedMeal, MealCombination, SupplementItem, newDietPlan, newNamedMeal, newCombination, FoodCategory, FOOD_CATEGORIES, FOOD_CATEGORY_LABELS } from '../../models/diet.model';
 import { ProtocolBuilderStateService } from '../../services/protocol-builder-state.service';
 import { ToastService } from '../../services/toast.service';
 import { PdfImportService } from '../../services/pdf-import.service';
 import { ConfirmDialogService } from '../../services/confirm-dialog.service';
 import { IONIC_PAGE, IONIC_LINKS } from '../../core/ionic-page';
+import { TastoDirective } from '../../core/tasto.directive';
 import { IONIC_LIST } from '../../core/ionic-list';
 import { NavController, IonContent, IonInput, IonTextarea, IonSelect, IonSelectOption, IonSpinner, IonSegment, IonSegmentButton, IonButton, IonRouterOutlet } from '@ionic/angular';
 import {
@@ -50,7 +52,7 @@ export type ZonaDrop =
 @Component({
   selector: 'app-protocollo-builder',
   standalone: true,
-  imports: [IonButton, ...IONIC_LIST, IonInput, IonTextarea, IonSelect, IonSelectOption, IonSpinner, IonSegment, IonSegmentButton, ...IONIC_PAGE, ...IONIC_LINKS, 
+  imports: [IonButton, TastoDirective, ...IONIC_LIST, IonInput, IonTextarea, IonSelect, IonSelectOption, IonSpinner, IonSegment, IonSegmentButton, ...IONIC_PAGE, ...IONIC_LINKS, 
     CommonModule, FormsModule, LucideAngularModule,
     CdkDropListGroup, CdkDropList, CdkDrag, CdkDragHandle, CdkDragPlaceholder
   ],
@@ -117,17 +119,21 @@ export class ProtocolloBuilderComponent implements OnInit, OnDestroy, DoCheck {
       this.protocolId = params.get('protocolId') ?? '';
       this.load();
     });
+    this.changedSub = this.protocolSvc.changed$.subscribe(() => {
+      if (!this.scrivendoDaQui) this.salvatoAltrove = true;
+    });
   }
 
   ngOnDestroy(): void {
     this.paramSub?.unsubscribe();
+    this.changedSub?.unsubscribe();
     this.protocolBuilderState.registerHandlers(null, null);
   }
 
   ionViewWillEnter(): void {
     this.uscitaConsentita = false;
     this.aggiornaSwipe();
-    void this.ricaricaSeCambiato();
+    this.ricaricaSeScrittoAltrove();
   }
 
   // ===== Livelli =====
@@ -266,29 +272,36 @@ export class ProtocolloBuilderComponent implements OnInit, OnDestroy, DoCheck {
   /**
    * Tornando qui da "Aggiorna da PDF" la pagina e' quella di prima, con in
    * memoria il protocollo di prima: ma il PDF ha riscritto quello salvato, e
-   * un Salva da qui avrebbe rimesso i dati vecchi. Se il protocollo salvato e'
-   * piu' recente di quello in memoria si ricarica, modifiche non salvate
-   * comprese (la guardia ha gia' chiesto prima di partire). Se e' lo stesso -
-   * si torna da un'altra tab, o dalla lista - si tiene quello che c'e'.
+   * un Salva da qui avrebbe rimesso i dati vecchi. Il servizio dice quando un
+   * protocollo viene scritto (changed$): se e' stato qualcun altro - non un
+   * salvataggio di questa pagina - al rientro si ricarica, modifiche non
+   * salvate comprese (la guardia ha gia' chiesto prima di partire). Se non e'
+   * successo niente - si torna da un'altra tab, o dalla lista - si tiene
+   * quello che c'e'. Niente lettura a ogni rientro e niente confronto fra
+   * date: si ricarica solo quando c'e' davvero qualcosa di nuovo.
    */
-  private async ricaricaSeCambiato(): Promise<void> {
+  private salvatoAltrove = false;
+  /** true solo mentre questa pagina scrive: il changed$ che ne segue e' suo, non di un altro. */
+  private scrivendoDaQui = false;
+  private changedSub: Subscription | null = null;
+
+  private ricaricaSeScrittoAltrove(): void {
+    if (!this.salvatoAltrove) return;
+    this.salvatoAltrove = false;
     if (!this.protocol || this.loading || !this.protocolId) return;
-    try {
-      const salvato = await this.protocolSvc.get(this.protocolId);
-      if (!salvato || salvato.updatedAt <= this.protocol.updatedAt) return;
-      this.editingDay = null;
-      this.editingPlan = null;
-      this.editingMeal = null;
-      this.editingExercise = null;
-      await this.caricaProtocollo();
-    } catch {
-      // Senza rete si tiene quello che c'e': la pagina non deve sparire per una lettura.
-    }
+    this.editingDay = null;
+    this.editingPlan = null;
+    this.editingMeal = null;
+    this.editingExercise = null;
+    void this.caricaProtocollo();
   }
 
   private fotografia(): string {
     const p = this.protocol;
-    return p ? JSON.stringify({ name: p.name, workout: p.workout, diet: p.diet, running: p.running, infoNote: p.infoNote }) : '';
+    if (!p) return '';
+    // Le caselle vuote che l'editor tiene pronte (vedi preparaCaselle) non sono una
+    // modifica: chi ha solo guardato un pasto non deve sentirsi chiedere se scartare.
+    return JSON.stringify({ name: p.name, workout: p.workout, diet: senzaCaselleVuote(p.diet), running: p.running, infoNote: p.infoNote });
   }
 
   /** Il protocollo in memoria non e' piu' quello salvato: vedi uscitaSenzaPerdite. */
@@ -616,12 +629,14 @@ export class ProtocolloBuilderComponent implements OnInit, OnDestroy, DoCheck {
     const meal = newNamedMeal('Nuovo pasto');
     this.editingPlan.meals.push(meal);
     this.editingMeal = meal;
+    this.preparaPasto(meal);
     this.activeCombo[meal.id] = meal.combinations[0].id;
     this.cdr.detectChanges();
   }
 
   openMeal(meal: NamedMeal): void {
     this.editingMeal = meal;
+    this.preparaPasto(meal);
     if (!this.activeCombo[meal.id]) this.activeCombo[meal.id] = meal.combinations[0].id;
     this.cdr.detectChanges();
   }
@@ -664,6 +679,7 @@ export class ProtocolloBuilderComponent implements OnInit, OnDestroy, DoCheck {
   addCombination(meal: NamedMeal): void {
     const n = meal.combinations.length + 1;
     const combo = newCombination(`Alternativa ${n - 1}`);
+    this.preparaCaselle(combo);
     meal.combinations.push(combo);
     this.activeCombo[meal.id] = combo.id;
     this.cdr.detectChanges();
@@ -684,16 +700,36 @@ export class ProtocolloBuilderComponent implements OnInit, OnDestroy, DoCheck {
     return inCombos + inAlt;
   }
 
-  /** Ritorna l'alimento della combinazione per quella macro, creandolo (vuoto) se non esiste ancora. */
-  getComboItem(combo: MealCombination, cat: FoodCategory): FoodItem {
-    if (!combo[cat]) combo[cat] = { name: '', qty: '', category: cat };
-    return combo[cat]!;
+  /**
+   * Ogni macro della combinazione ha la sua casella da riempire, anche vuota.
+   *
+   * Si prepara quando il pasto si apre o una casella si svuota, MAI mentre la
+   * pagina si disegna: il template legge le caselle e basta. Quando a crearle
+   * era la lettura, disegnare il pasto modificava il protocollo mentre Angular
+   * stava controllando che non cambiasse (NG0100 in sviluppo) e la pagina
+   * risultava "con modifiche non salvate" senza che nessuno avesse toccato nulla.
+   */
+  private preparaCaselle(combo: MealCombination): void {
+    for (const cat of this.foodCategories) {
+      if (!combo[cat]) combo[cat] = { name: '', qty: '', category: cat };
+    }
+  }
+
+  private preparaPasto(meal: NamedMeal): void {
+    meal.combinations.forEach(c => this.preparaCaselle(c));
   }
 
   clearComboItem(combo: MealCombination, cat: FoodCategory, event: Event): void {
     event.stopPropagation();
     combo[cat] = null;
+    this.preparaCaselle(combo);
     this.cdr.detectChanges();
+  }
+
+  /** Il rilascio del trascinamento, com'e' chiamato dal template: sposta, poi rimette una casella vuota dove se n'e' svuotata una. */
+  rilascia(combo: MealCombination, e: CdkDragDrop<ZonaDrop>): void {
+    this.spostaAlimento(combo, e);
+    this.preparaCaselle(combo);
   }
 
   // --- Alternative per macro (a livello di pasto, non di combinazione) ---
@@ -948,11 +984,17 @@ export class ProtocolloBuilderComponent implements OnInit, OnDestroy, DoCheck {
       const toSave = {
         name: this.protocol.name,
         workout: this.protocol.workout,
-        diet: this.protocol.diet,
+        // Le caselle vuote restano all'editor: nel protocollo salvato non ci sono.
+        diet: senzaCaselleVuote(this.protocol.diet),
         running: this.protocol.running,
         infoNote: this.protocol.infoNote
       };
-      await this.protocolSvc.update(this.protocolId, toSave);
+      this.scrivendoDaQui = true;
+      try {
+        await this.protocolSvc.update(this.protocolId, toSave);
+      } finally {
+        this.scrivendoDaQui = false;
+      }
 
       // Verifica reale: rileggo da Firestore e confronto i conteggi strutturali
       // con quello che intendevo salvare, invece di fidarmi solo dell'assenza di errori.
@@ -963,11 +1005,8 @@ export class ProtocolloBuilderComponent implements OnInit, OnDestroy, DoCheck {
         this.toast.error('Salvataggio incompleto, riprova.');
         return false;
       }
-      // Quello in memoria ora e' quello salvato (weekPlan ricalcolato compreso),
-      // e porta la data dell'ultimo salvataggio: senza, tornando alla pagina
-      // sembrerebbe che il salvato sia piu' recente e la ricaricherebbe.
+      // Quello in memoria ora e' quello salvato (weekPlan ricalcolato compreso).
       this.baseline = this.fotografia();
-      if (reread) this.protocol.updatedAt = reread.updatedAt;
       return true;
     } catch (e: any) {
       console.error('Errore salvataggio protocollo:', e);

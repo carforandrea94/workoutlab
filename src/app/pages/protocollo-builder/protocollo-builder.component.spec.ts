@@ -1,4 +1,6 @@
 import { vi } from 'vitest';
+import { convertToParamMap } from '@angular/router';
+import { Subject, of } from 'rxjs';
 
 // pdfjs-dist tocca API browser (DOMMatrix, canvas) assenti nell'ambiente di test:
 // stesso mock gia' usato in pdf-import.service.spec.ts, necessario qui perche'
@@ -332,60 +334,136 @@ describe('ProtocolloBuilderComponent', () => {
       expect(c.haModificheNonSalvate()).toBe(false);
     });
 
-    it('tornando alla pagina, se il salvato e\' piu\' recente (Aggiorna da PDF) si ricarica', async () => {
+    // --- Aggiorna da PDF: la pagina riparte dal protocollo riscritto, non da quello in memoria ---
+
+    /** Un builder avviato davvero (ngOnInit), con il servizio che dice quando un protocollo viene scritto. */
+    async function avviato(server: { current: Protocol }) {
+      const changed$ = new Subject<void>();
+      const protocolSvc: any = {
+        changed$,
+        // come il servizio vero: dopo la scrittura avvisa
+        update: vi.fn(async () => { changed$.next(); }),
+        get: vi.fn(async () => structuredClone(server.current)),
+        activate: vi.fn(async () => { changed$.next(); })
+      };
+      const route: any = { paramMap: of(convertToParamMap({ protocolId: 'proto1' })) };
+      const c = new ProtocolloBuilderComponent(
+        route, { navigateBack: () => {}, navigateForward: () => {} } as any, protocolSvc, new PdfImportService(),
+        new WorkoutDataService(), { detectChanges: () => {} } as any, new ProtocolBuilderStateService(), new ToastService(),
+        new ConfirmDialogService({} as any, {} as any), null
+      );
+      c.ngOnInit();
+      await vi.waitFor(() => expect(c.loading).toBe(false));
+      return { c, protocolSvc, changed$ };
+    }
+
+    it('se un\'altra pagina riscrive il protocollo (Aggiorna da PDF), al rientro si ricarica', async () => {
       const server = { current: buildProtocol() };
-      const c = await aperto(server);
-      server.current = { ...buildProtocol(), name: 'Aggiornato dal PDF', updatedAt: '2026-02-01T00:00:00.000Z' };
+      const { c, changed$ } = await avviato(server);
+      server.current = { ...buildProtocol(), name: 'Aggiornato dal PDF' };
+      changed$.next();
 
-      await (c as any).ricaricaSeCambiato();
+      c.ionViewWillEnter();
 
-      expect(c.protocol!.name).toBe('Aggiornato dal PDF');
+      await vi.waitFor(() => expect(c.protocol!.name).toBe('Aggiornato dal PDF'));
       expect(c.haModificheNonSalvate()).toBe(false);
     });
 
-    it('se il salvato e\' piu\' recente si ricarica anche con modifiche non salvate: salvarle riscriverebbe i dati vecchi', async () => {
+    it('si ricarica anche con modifiche non salvate: salvarle riscriverebbe i dati vecchi', async () => {
       const server = { current: buildProtocol() };
-      const c = await aperto(server);
+      const { c, changed$ } = await avviato(server);
       c.protocol!.name = 'Modifica non salvata';
-      server.current = { ...buildProtocol(), name: 'Aggiornato dal PDF', updatedAt: '2026-02-01T00:00:00.000Z' };
+      server.current = { ...buildProtocol(), name: 'Aggiornato dal PDF' };
+      changed$.next();
 
-      await (c as any).ricaricaSeCambiato();
+      c.ionViewWillEnter();
 
-      expect(c.protocol!.name).toBe('Aggiornato dal PDF');
+      await vi.waitFor(() => expect(c.protocol!.name).toBe('Aggiornato dal PDF'));
     });
 
-    it('se il salvato non e\' cambiato (si torna da un\'altra tab) tiene quello che c\'e\', modifiche comprese', async () => {
-      const c = await aperto({ current: buildProtocol() });
-      c.protocol!.name = 'Modifica non salvata';
+    it('ricaricando chiude gli editor aperti: puntano a oggetti che non ci sono piu\'', async () => {
+      const server = { current: buildProtocol() };
+      const { c, changed$ } = await avviato(server);
+      c.openDay(c.protocol!.workout.days[0], 0);
+      changed$.next();
 
-      await (c as any).ricaricaSeCambiato();
+      c.ionViewWillEnter();
+
+      await vi.waitFor(() => expect(c.loading).toBe(false));
+      expect(c.livello).toBe(0);
+    });
+
+    it('se nessuno ha scritto (si torna da un\'altra tab) tiene quello che c\'e\', modifiche comprese', async () => {
+      const { c, protocolSvc } = await avviato({ current: buildProtocol() });
+      c.protocol!.name = 'Modifica non salvata';
+      protocolSvc.get.mockClear();
+
+      c.ionViewWillEnter();
+      await Promise.resolve();
 
       expect(c.protocol!.name).toBe('Modifica non salvata');
       expect(c.haModificheNonSalvate()).toBe(true);
+      expect(protocolSvc.get).not.toHaveBeenCalled(); // niente lettura a ogni rientro
     });
 
-    it('un salvataggio fatto da qui non fa credere che il salvato sia piu\' recente', async () => {
-      const server = { current: buildProtocol() };
-      const c = await aperto(server);
+    it('un salvataggio fatto da questa pagina non la fa ricaricare', async () => {
+      const { c, protocolSvc } = await avviato({ current: buildProtocol() });
       c.protocol!.name = 'Primo';
-      // il server, dopo il salvataggio, porta la data nuova: e' quella che persist() rilegge
-      server.current = { ...buildProtocol(), name: 'Primo', updatedAt: '2026-03-01T00:00:00.000Z' };
-      await c.save(false);
+      await c.save(false); // update() avvisa changed$, ma e' una scrittura nostra
       c.protocol!.name = 'Secondo, scritto dopo';
+      protocolSvc.get.mockClear();
 
-      await (c as any).ricaricaSeCambiato();
+      c.ionViewWillEnter();
+      await Promise.resolve();
 
       expect(c.protocol!.name).toBe('Secondo, scritto dopo');
+      expect(protocolSvc.get).not.toHaveBeenCalled();
     });
 
-    it('senza rete tiene quello che c\'e\' invece di rompersi', async () => {
+    it('dopo un salvataggio l\'avviso di un altro riparte a contare', async () => {
       const server = { current: buildProtocol() };
-      const c = await aperto(server);
-      (c as any).protocolSvc.get = () => Promise.reject(new Error('offline'));
-      c.protocol!.name = 'Modifica non salvata';
+      const { c, changed$ } = await avviato(server);
+      c.protocol!.name = 'Primo';
+      await c.save(false);
+      server.current = { ...buildProtocol(), name: 'Dal PDF' };
+      changed$.next();
 
-      await expect((c as any).ricaricaSeCambiato()).resolves.toBeUndefined();
-      expect(c.protocol!.name).toBe('Modifica non salvata');
+      c.ionViewWillEnter();
+
+      await vi.waitFor(() => expect(c.protocol!.name).toBe('Dal PDF'));
+    });
+
+    it('l\'avviso vale una volta sola', async () => {
+      const server = { current: buildProtocol() };
+      const { c, changed$, protocolSvc } = await avviato(server);
+      changed$.next();
+      c.ionViewWillEnter();
+      await vi.waitFor(() => expect(protocolSvc.get).toHaveBeenCalledTimes(2));
+      await vi.waitFor(() => expect(c.loading).toBe(false));
+      c.protocol!.name = 'Dopo';
+
+      c.ionViewWillEnter();
+      await Promise.resolve();
+
+      expect(protocolSvc.get).toHaveBeenCalledTimes(2);
+      expect(c.protocol!.name).toBe('Dopo');
+    });
+
+    it('se la rilettura fallisce non si resta con dati vecchi da salvare: errore e Riprova', async () => {
+      const server = { current: buildProtocol() };
+      const { c, changed$, protocolSvc } = await avviato(server);
+      protocolSvc.get.mockRejectedValueOnce(new Error('offline'));
+      changed$.next();
+
+      c.ionViewWillEnter();
+
+      await vi.waitFor(() => expect(c.errorMsg).not.toBe(''));
+    });
+
+    it('smette di ascoltare quando la pagina viene distrutta', async () => {
+      const { c, changed$ } = await avviato({ current: buildProtocol() });
+      c.ngOnDestroy();
+      expect(changed$.observed).toBe(false);
     });
   });
 

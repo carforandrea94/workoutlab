@@ -346,7 +346,7 @@
 
           <div class="grouplist" *ngIf="protocol.diet.length > 0">
             <div class="daycard press-fx protocol-row" *ngFor="let plan of protocol.diet" (click)="openPlan(plan)">
-              <div class="info">
+              <div class="info" appTasto [attr.aria-label]="'Apri il piano ' + (plan.name || 'senza nome')">
                 <div class="lbl">{{ plan.name }}</div>
                 <div class="meta">{{ countPlanItems(plan) }} alimenti</div>
               </div>
@@ -382,7 +382,7 @@
 
           <div class="infocard meal-preview-card" *ngFor="let meal of editingPlan.meals" (click)="openMeal(meal)">
             <div class="meal-preview-header">
-              <div class="lbl">{{ meal.name || 'Pasto senza nome' }}</div>
+              <div class="lbl" appTasto [attr.aria-label]="'Apri il pasto ' + (meal.name || 'senza nome')">{{ meal.name || 'Pasto senza nome' }}</div>
               <ion-button class="delete-btn" (click)="removeMeal(meal, $event)" title="Elimina pasto">
                 <lucide-icon name="trash-2" [size]="14"></lucide-icon>
               </ion-button>
@@ -408,7 +408,8 @@
                 </div>
 
                 <ng-container *ngIf="itemAlt(it).length > 0">
-                  <div class="altwrap-header" (click)="toggleItemAltExpanded(getActiveCombo(meal), cat, $event)">
+                  <div class="altwrap-header" appTasto [attr.aria-expanded]="isItemAltExpanded(getActiveCombo(meal), cat)"
+                    (click)="toggleItemAltExpanded(getActiveCombo(meal), cat, $event)">
                     <span>Alternative ({{ itemAlt(it).length }})</span>
                     <span class="chevron">
                       <lucide-icon name="chevron-down" [size]="10"></lucide-icon>
@@ -436,7 +437,7 @@
             </div>
 
             <ng-container *ngIf="totalAlternatives(meal) > 0">
-              <div class="altwrap-header" (click)="toggleAltExpanded(meal, $event)">
+              <div class="altwrap-header" appTasto [attr.aria-expanded]="isAltExpanded(meal)" (click)="toggleAltExpanded(meal, $event)">
                 <span>Alternative ({{ totalAlternatives(meal) }})</span>
                 <span class="chevron">
                   <lucide-icon name="chevron-down" [size]="10"></lucide-icon>
@@ -506,8 +507,8 @@
                    l'alimento che arriva da un altro macro o da una lista di
                    alternative. -->
               <div class="slotdrop" cdkDropList [cdkDropListData]="zonaCasella(cat)"
-                (cdkDropListDropped)="spostaAlimento(getActiveCombo(em), $event)">
-                <div class="builder-item" *ngIf="getActiveCombo(em)[cat] as item; else noComboItem"
+                (cdkDropListDropped)="rilascia(getActiveCombo(em), $event)">
+                <div class="builder-item" *ngIf="getActiveCombo(em)[cat] as item"
                   cdkDrag>
                   <button type="button" class="draghandle" cdkDragHandle
                     aria-label="Trascina per spostare in un altro macro">
@@ -525,7 +526,8 @@
               </div>
 
               <ng-container *ngIf="getActiveCombo(em)[cat] as item2">
-                <div class="altwrap-header mt-3" (click)="toggleItemAltExpanded(getActiveCombo(em), cat)">
+                <div class="altwrap-header mt-3" appTasto [attr.aria-expanded]="isItemAltExpanded(getActiveCombo(em), cat)"
+                  (click)="toggleItemAltExpanded(getActiveCombo(em), cat)">
                   <span>Alternative per questo alimento ({{ itemAlt(item2).length }})</span>
                   <span class="chevron">
                     <lucide-icon name="chevron-down" [size]="10"></lucide-icon>
@@ -533,7 +535,7 @@
                 </div>
                 <ng-container *ngIf="isItemAltExpanded(getActiveCombo(em), cat)">
                   <div class="draglist" cdkDropList [cdkDropListData]="zonaLista(itemAlt(item2))"
-                    (cdkDropListDropped)="spostaAlimento(getActiveCombo(em), $event)">
+                    (cdkDropListDropped)="rilascia(getActiveCombo(em), $event)">
                     <div class="builder-item mt-2" *ngFor="let a of itemAlt(item2)"
                       cdkDrag>
                     <button type="button" class="draghandle" cdkDragHandle
@@ -553,17 +555,6 @@
                   <ion-button class="confirmbtn cancel w-full mt-2" (click)="addItemAltEntry(item2)">+ Alternativa</ion-button>
                 </ng-container>
               </ng-container>
-
-              <ng-template #noComboItem>
-                <div class="builder-item">
-                  <div class="measure-input-wrap">
-                    <ion-input type="text" [ngModel]="getComboItem(getActiveCombo(em), cat).name" (ngModelChange)="getComboItem(getActiveCombo(em), cat).name = $event" placeholder="Alimento"></ion-input>
-                  </div>
-                  <div class="measure-input-wrap builder-qty">
-                    <ion-input type="text" [ngModel]="getComboItem(getActiveCombo(em), cat).qty" (ngModelChange)="getComboItem(getActiveCombo(em), cat).qty = $event" placeholder="Quantita'"></ion-input>
-                  </div>
-                </div>
-              </ng-template>
             </div>
           </ng-container>
 
@@ -571,7 +562,7 @@
           <p class="bacheca-text mb-3">Alimenti sostitutivi validi per tutto il pasto, a prescindere dalla combinazione scelta.</p>
 
           <div class="infocard mb-3">
-            <div class="altwrap-header" (click)="toggleAltExpanded(em)" style="padding:0 0 8px">
+            <div class="altwrap-header" appTasto [attr.aria-expanded]="isAltExpanded(em)" (click)="toggleAltExpanded(em)" style="padding:0 0 8px">
               <span>Alternative ({{ totalAlternatives(em) }})</span>
               <span class="chevron">
                 <lucide-icon name="chevron-down" [size]="12"></lucide-icon>
@@ -584,7 +575,7 @@
               <ng-container *ngFor="let cat of foodCategories">
                 <p class="meal-preview-catlabel" style="margin:14px 0 6px">{{ foodCategoryLabels[cat] }}</p>
                 <div class="draglist" cdkDropList [cdkDropListData]="zonaLista(altItems(em, cat))"
-                  (cdkDropListDropped)="spostaAlimento(getActiveCombo(em), $event)">
+                  (cdkDropListDropped)="rilascia(getActiveCombo(em), $event)">
                   <div class="builder-item" *ngFor="let item of altItems(em, cat)"
                     cdkDrag>
                     <button type="button" class="draghandle" cdkDragHandle

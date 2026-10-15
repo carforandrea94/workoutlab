@@ -231,7 +231,7 @@
     <!-- La testata dell'esercizio, una sola volta per due viste: elenco e slider
          la disegnavano identica ciascuna per conto suo, quindi potevano divergere
          senza che niente lo segnalasse. -->
-    <ng-template #exHeader let-vm="vm" let-i="i">
+    <ng-template #exHeader let-vm="vm" let-i="i" let-toggle="toggle">
       <!-- Il numero porta anche l'avanzamento: l'anello segue il contorno del
            badge e si chiude man mano che spunti le serie. Segue la forma del
            badge invece di essere un cerchio dentro un quadrato smussato. -->
@@ -244,7 +244,12 @@
         <span>{{ i + 1 }}</span>
       </div>
       <div class="ex-info">
-        <div class="ex-name">{{ vm.ex.name }}</div>
+        <!-- Nell'elenco il nome e' il controllo che apre l'esercizio: l'intera riga
+             e' cliccabile col dito, ma contiene il chip del recupero, e un ruolo
+             "button" sul contenitore sarebbe un pulsante dentro un pulsante. Il
+             click sintetico del nome risale alla riga. Nello slider il nome non apre niente. -->
+        <div class="ex-name" *ngIf="toggle" appTasto [attr.aria-expanded]="vm.open">{{ vm.ex.name }}</div>
+        <div class="ex-name" *ngIf="!toggle">{{ vm.ex.name }}</div>
         <div class="ex-tags">
           <span class="ex-muscle" *ngIf="vm.ex.muscle" [style.background]="getMuscleInfo(vm.ex.muscle).color">
             {{ vm.ex.muscle }}
@@ -378,7 +383,7 @@
       <div class="ex" *ngFor="let vm of exercises; let i = index" [class.open]="vm.open">
 
         <div class="ex-summary" (click)="toggleEx(vm)">
-          <ng-container *ngTemplateOutlet="exHeader; context: { vm: vm, i: i }"></ng-container>
+          <ng-container *ngTemplateOutlet="exHeader; context: { vm: vm, i: i, toggle: true }"></ng-container>
           <div class="ex-meta">
             <ng-container *ngTemplateOutlet="exCounter; context: { vm: vm }"></ng-container>
             <span class="ex-chevron">
@@ -405,10 +410,12 @@
       <div class="exslider-dashes" *ngIf="slideCount > 1">
         <span *ngFor="let vm of exercises; let i = index"
           class="exslider-dash" [class.active]="i === sliderIndex" [class.done]="isComplete(vm)"
+          appTasto [attr.aria-label]="'Vai all\'esercizio ' + (i + 1)" [attr.aria-current]="i === sliderIndex ? 'true' : null"
           (click)="scrollToIndex(i)"></span>
         <!-- Tondo invece che trattino: quella slide non e' un esercizio. -->
         <span class="exslider-dash finish" *ngIf="isSessionOnThisDay"
           [class.active]="sliderIndex === exercises.length"
+          appTasto aria-label="Vai alla chiusura dell'allenamento" [attr.aria-current]="sliderIndex === exercises.length ? 'true' : null"
           (click)="scrollToIndex(exercises.length)"></span>
       </div>
 

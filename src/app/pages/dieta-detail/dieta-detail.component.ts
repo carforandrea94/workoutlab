@@ -11,6 +11,7 @@ import { firstUncompletedIndex } from '../../core/utils/meal-completion.util';
 import { todayLocalISO } from '../../core/utils/date.util';
 import { DietPlan, NamedMeal, MealCombination, FoodItem, FoodCategory, FOOD_CATEGORIES, FOOD_CATEGORY_LABELS } from '../../models/diet.model';
 import { IONIC_PAGE } from '../../core/ionic-page';
+import { TastoDirective } from '../../core/tasto.directive';
 import { NavController, IonSegment, IonSegmentButton, IonSelect, IonSelectOption } from '@ionic/angular';
 
 interface MealVM {
@@ -23,7 +24,7 @@ interface MealVM {
 @Component({
   selector: 'app-dieta-detail',
   standalone: true,
-  imports: [IonSegment, IonSegmentButton, IonSelect, IonSelectOption, ...IONIC_PAGE, CommonModule, FormsModule, LucideAngularModule],
+  imports: [IonSegment, IonSegmentButton, IonSelect, IonSelectOption, ...IONIC_PAGE, CommonModule, FormsModule, LucideAngularModule, TastoDirective],
   templateUrl: './dieta-detail.component.html'
 })
 export class DietaDetailComponent implements OnInit {
