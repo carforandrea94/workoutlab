@@ -104,12 +104,17 @@
   --tabbar-h: 60px;
   /* La fascia del recupero e' piu' alta della tabbar che sostituisce: il conto
      e' il numero piu' grande dello schermo. Sta comunque dentro l'imbottitura in
-     fondo al contenuto (60 + 22 + 28). */
+     fondo al contenuto (--tabbar-outer + 22 + 28). */
   --restbar-h: 76px;
   /* Aria fra il bordo della barra e i tasti. La pastiglia che scorre ci si
      appoggia: era ripetuta a mano in quattro punti (5 qui, 10 nelle larghezze)
      e bastava cambiarne uno per vederla sbordare. */
   --tabbar-pad: 6px;
+  /* L'altezza che la barra occupa davvero. ion-tab-bar e' content-box: --tabbar-h
+     e' lo spazio dei tasti, e imbottitura e bordo vengono in piu' (60 + 12 + 2 =
+     74). Quello che si appoggia sopra la barra o le lascia posto va misurato da
+     qui: la pillola della sessione, che contava 60, finiva 4 px dentro la barra. */
+  --tabbar-outer: calc(var(--tabbar-h) + var(--tabbar-pad) * 2 + 2px);
   /*
    * Quanto la tabbar sta staccata dal fondo: ventidue pixel, scritti.
    *
@@ -332,7 +337,7 @@ ion-buttons[slot=end] .navicon + .navicon,ion-buttons[slot=end] ion-segment + .n
 @media (display-mode: standalone){
   .statusbar-strip{display:block;position:fixed;top:0;left:0;right:0;height:var(--safe-t);background:var(--bg);pointer-events:none;}
 }
-ion-content{--background:var(--bg);--color:var(--label);--padding-bottom:calc(var(--tabbar-h) + var(--tabbar-gap) + 28px);}
+ion-content{--background:var(--bg);--color:var(--label);--padding-bottom:calc(var(--tabbar-outer) + var(--tabbar-gap) + 28px);}
 .wrap{position:relative;z-index:1;max-width:640px;margin:0 auto;padding:0 16px;}
 
 /* ===== BOTTOM TAB BAR ===== */
@@ -345,26 +350,26 @@ ion-content{--background:var(--bg);--color:var(--label);--padding-bottom:calc(va
    dell'elemento che apre il contesto di impilamento si dipingono per primi e
    i figli negativi vengono subito dopo — la sfumatura finiva sopra la
    pillola e la cancellava. */
-.tabfade{position:fixed;left:0;right:0;bottom:0;z-index:55;height:calc(var(--tabbar-h) + var(--tabbar-gap) + 70px);pointer-events:none;background:linear-gradient(to top, var(--bg) 0%, var(--bg) 55%, transparent 100%);}
+.tabfade{position:fixed;left:0;right:0;bottom:0;z-index:55;height:calc(var(--tabbar-outer) + var(--tabbar-gap) + 70px);pointer-events:none;background:linear-gradient(to top, var(--bg) 0%, var(--bg) 55%, transparent 100%);}
 /* Nelle pagine interne la barra scivola via (TabsPage mette .tabbar-nascosta, e
    senza-tabbar sulla radice, che rende al contenuto lo spazio che teneva per
    lei). La curva e' quella delle transizioni di pagina (vedi page-transition.ts):
    la barra parte e arriva insieme alla pagina. visibility la toglie dall'ordine
    del Tab e dallo screen reader a fine corsa. */
 .tabbar{transition:transform .42s cubic-bezier(0.32,0.72,0,1),opacity .3s ease,visibility 0s;}
-.tabbar.tabbar-nascosta{transform:translateY(calc(var(--tabbar-h) + var(--tabbar-gap) + 28px));opacity:0;visibility:hidden;pointer-events:none;transition:transform .42s cubic-bezier(0.32,0.72,0,1),opacity .25s ease,visibility 0s .42s;}
+.tabbar.tabbar-nascosta{transform:translateY(calc(var(--tabbar-outer) + var(--tabbar-gap) + 28px));opacity:0;visibility:hidden;pointer-events:none;transition:transform .42s cubic-bezier(0.32,0.72,0,1),opacity .25s ease,visibility 0s .42s;}
 .tabfade{transition:opacity .3s ease,visibility 0s;}
 .tabfade.tabbar-nascosta{opacity:0;visibility:hidden;transition:opacity .3s ease,visibility 0s .3s;}
 :root.senza-tabbar ion-content{--padding-bottom:calc(var(--safe-b) + 28px);}
 /* La pillola della sessione sta sopra la barra: il contenuto scorre oltre di
    quanto ne occupa (44 + 10), cosi' l'ultima card non resta coperta. */
-:root.con-pillola ion-content{--padding-bottom:calc(var(--tabbar-h) + var(--tabbar-gap) + 28px + 54px);}
+:root.con-pillola ion-content{--padding-bottom:calc(var(--tabbar-outer) + var(--tabbar-gap) + 28px + 54px);}
 :root.con-pillola.senza-tabbar ion-content{--padding-bottom:calc(var(--safe-b) + 28px + 54px);}
 /* Barra, fascia del recupero e pillola sono fisse sopra il contenuto: per il
    browser quello che sta sotto e' "in vista", e il Tab non lo porta mai piu'
    su. Il margine di scorrimento gli dice quanto del fondo e' coperto, e dove
    serve (la fascia e' piu' alta della barra) lo sa dalla classe sulla radice. */
-:root{--coperto-base:calc(var(--tabbar-h) + var(--tabbar-gap));--coperto-pillola:0px;}
+:root{--coperto-base:calc(var(--tabbar-outer) + var(--tabbar-gap));--coperto-pillola:0px;}
 :root.senza-tabbar{--coperto-base:var(--safe-b);}
 :root.con-fascia{--coperto-base:calc(var(--restbar-h) + var(--tabbar-gap));}
 :root.con-pillola{--coperto-pillola:54px;}
@@ -1299,7 +1304,7 @@ ion-button.avvio-btn lucide-icon{margin-right:8px;}
 /* Pillola della sessione in corso, fuori dalla pagina del suo giorno. Sta
    sopra la tabbar (o al suo posto dove la tabbar e' nascosta) ed e' tutta un
    bottone: tocchi e torni sulla sessione. */
-.sessionpill{position:fixed;left:16px;right:16px;bottom:var(--tabbar-gap);z-index:58;height:44px;max-width:608px;margin:0 auto;display:flex;align-items:center;gap:8px;padding:0 14px 0 16px;border-radius:var(--r-pill);border:1px solid var(--border-line);background:var(--surface-chrome);box-shadow:var(--shadow-float);color:var(--label);font-family:inherit;cursor:pointer;text-align:left;transform:translateY(calc(-1 * (var(--tabbar-h) + 10px)));transition:transform .42s cubic-bezier(0.32,0.72,0,1);}
+.sessionpill{position:fixed;left:16px;right:16px;bottom:var(--tabbar-gap);z-index:58;height:44px;max-width:608px;margin:0 auto;display:flex;align-items:center;gap:8px;padding:0 14px 0 16px;border-radius:var(--r-pill);border:1px solid var(--border-line);background:var(--surface-chrome);box-shadow:var(--shadow-float);color:var(--label);font-family:inherit;cursor:pointer;text-align:left;transform:translateY(calc(-1 * (var(--tabbar-outer) + 10px)));transition:transform .42s cubic-bezier(0.32,0.72,0,1);}
 .sessionpill.senza-barra{transform:none;}
 .sessionpill:active{filter:brightness(var(--press-brightness));}
 .sessionpill-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex-shrink:0;}
