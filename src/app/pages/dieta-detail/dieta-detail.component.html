@@ -3,8 +3,10 @@
     <ion-buttons slot="start">
       <ion-back-button defaultHref="/dieta" aria-label="Indietro"></ion-back-button>
     </ion-buttons>
+    <!-- Il titolo e' il piano: Giorno ON o OFF cambia le quantita', ed era
+         un'etichetta da 11 px sotto un "Piano alimentare" che non diceva niente. -->
     <ion-title>
-      <div class="navtitle">Piano alimentare</div>
+      <div class="navtitle">{{ plan?.name || 'Piano alimentare' }}</div>
     </ion-title>
     <ion-buttons slot="end">
       <ion-segment class="seg" [value]="state.viewMode()">
@@ -16,46 +18,40 @@
 </ion-header>
 
 <ion-content>
-  <div class="wrap">
-    <p class="sectiontitle">{{ plan?.name }}</p>
+  <div class="wrap" *ngIf="plan">
+    <div class="dayprog">
+      <span class="dayprog-cnt">{{ fatti }} di {{ meals.length }} pasti</span>
+      <ion-progress-bar class="dayprog-bar" [value]="meals.length ? fatti / meals.length : 0" aria-label="Pasti fatti oggi"></ion-progress-bar>
+    </div>
 
+    <!-- Cosa si mangia in un pasto: la combinazione (il pasto intero) e, per ogni
+         macro, l'alimento scelto. Prima le alternative erano testo da leggere, in
+         due fisarmoniche diverse con lo stesso nome; ora sono una scelta. -->
     <ng-template #mealDetail let-vm="vm">
-      <!-- La combinazione si sceglie da un menu: le pastiglie erano una fila di
-           bersagli da 38 px che andava a capo appena le etichette del coach si
-           allungavano, e occupavano una riga intera per una scelta sola. -->
-      <p class="fooditem-category" *ngIf="hasMultipleCombinations(vm)">Combinazioni</p>
-      <div class="combo-select" *ngIf="hasMultipleCombinations(vm)">
-        <ion-select interface="popover" [(ngModel)]="vm.selectedComboId" [attr.aria-label]="'Combinazione per ' + vm.meal.name">
-          <ion-select-option *ngFor="let combo of getCombinations(vm)" [value]="combo.id">{{ combo.label }}</ion-select-option>
-        </ion-select>
-      </div>
+      <button type="button" class="comborow" *ngIf="hasMultipleCombinations(vm)" (click)="apriCombo(vm)"
+        [attr.aria-label]="'Combinazione ' + combo(vm)?.label + ', ' + indiceCombo(vm) + ' di ' + vm.meal.combinations.length + '. Cambia combinazione'">
+        <span class="comborow-k">Combinazione</span>
+        <span class="comborow-v">{{ combo(vm)?.label }} <small>· {{ indiceCombo(vm) }} di {{ vm.meal.combinations.length }}</small></span>
+        <lucide-icon name="chevrons-up-down" [size]="16"></lucide-icon>
+      </button>
 
-      <!-- Un alimento per macro nella combinazione selezionata -->
       <ng-container *ngFor="let cat of foodCategories">
-        <ng-container *ngIf="comboItem(vm, cat) as item">
+        <ng-container *ngIf="mostraMacro(vm, cat)">
           <p class="fooditem-category" [class.fat]="cat === 'fat'" [class.carb]="cat === 'carb'" [class.protein]="cat === 'protein'">{{ foodCategoryLabels[cat] }}</p>
-          <div class="fooditem">
-            <div class="row">
-              <span class="fname">{{ item.name }}</span>
-              <span class="fqty">{{ item.qty }}</span>
-            </div>
-
-            <ng-container *ngIf="item.alt && item.alt.length > 0">
-              <div class="altwrap" [class.open]="isItemAltOpen(vm, cat)">
-                <div class="altwrap-header" appTasto [attr.aria-expanded]="isItemAltOpen(vm, cat)" (click)="toggleItemAlt(vm, cat)">
-                  <span>{{ isItemAltOpen(vm, cat) ? 'Nascondi alternative' : 'Alternative (' + item.alt.length + ')' }}</span>
-                  <span class="chevron">
-                    <lucide-icon name="chevron-down" [size]="10"></lucide-icon>
-                  </span>
-                </div>
-                <div class="altlist" *ngIf="isItemAltOpen(vm, cat)">
-                  <div class="row" *ngFor="let alt of item.alt">
-                    <span>{{ alt.name }}</span>
-                    <span>{{ alt.qty }}</span>
-                  </div>
-                </div>
+          <div class="fooditem scelta-row" *ngIf="{ s: scelto(vm, cat), n: nAlternative(vm, cat) } as r">
+            <div class="scelta-testo">
+              <div class="fname">
+                <ng-container *ngIf="r.s; else nonPrevisto">{{ r.s.name }}</ng-container>
+                <ng-template #nonPrevisto><span class="scelta-vuota">Non previsto in questa combinazione</span></ng-template>
+                <span class="scelta-tua" *ngIf="r.s?.cambiato"><span class="sr-only">, </span>scelta tua</span>
               </div>
-            </ng-container>
+              <div class="fqty" *ngIf="r.s?.qty">{{ r.s?.qty }}</div>
+            </div>
+            <ion-button class="cambia-btn" *ngIf="r.n > 0" (click)="apriMacro(vm, cat)"
+              [attr.aria-label]="'Cambia ' + foodCategoryLabels[cat] + ': ' + (r.s?.name || 'nessuno') + ', ' + r.n + (r.n === 1 ? ' alternativa' : ' alternative')">
+              <lucide-icon name="arrow-left-right" [size]="14"></lucide-icon>
+              Cambia
+            </ion-button>
           </div>
         </ng-container>
       </ng-container>
@@ -70,33 +66,10 @@
           </div>
         </div>
       </ng-container>
-
-      <!-- Alternative per macro, un unico accordion -->
-      <ng-container *ngIf="totalAlternatives(vm) > 0">
-        <div class="altwrap mt-4" [class.open]="isMacroAltExpanded(vm)">
-          <div class="altwrap-header" appTasto [attr.aria-expanded]="isMacroAltExpanded(vm)" (click)="toggleMacroAltExpanded(vm)">
-            <span>{{ isMacroAltExpanded(vm) ? 'Nascondi alternative' : 'Alternative (' + totalAlternatives(vm) + ')' }}</span>
-            <span class="chevron">
-              <lucide-icon name="chevron-down" [size]="10"></lucide-icon>
-            </span>
-          </div>
-        </div>
-        <div class="altlist" *ngIf="isMacroAltExpanded(vm)">
-          <ng-container *ngFor="let cat of foodCategories">
-            <ng-container *ngIf="macroAlternatives(vm, cat).length > 0">
-              <p class="fooditem-category mt-3" [class.fat]="cat === 'fat'" [class.carb]="cat === 'carb'" [class.protein]="cat === 'protein'">{{ foodCategoryLabels[cat] }}</p>
-              <div class="row" *ngFor="let alt of macroAlternatives(vm, cat)">
-                <span>{{ alt.name }}</span>
-                <span>{{ alt.qty }}</span>
-              </div>
-            </ng-container>
-          </ng-container>
-        </div>
-      </ng-container>
     </ng-template>
 
     <!-- Vista lista (accordion) -->
-    <div *ngIf="plan && state.viewMode() === 'list'">
+    <div *ngIf="state.viewMode() === 'list'">
       <div *ngFor="let vm of meals">
         <div class="meal" [class.open]="vm.open">
           <!-- La spunta e l'intestazione che apre sono due controlli, uno accanto
@@ -119,21 +92,28 @@
       </div>
     </div>
 
-    <!-- Vista slider (card scorrevoli, una per volta) -->
-    <div class="exslider-wrap" *ngIf="plan && state.viewMode() === 'slider'">
-      <div class="exslider-dashes" *ngIf="meals.length > 1">
-        <span *ngFor="let vm of meals; let i = index"
-          class="exslider-dash" [class.active]="i === sliderIndex" [class.done]="vm.completed"
-          appTasto [attr.aria-label]="'Vai al pasto ' + (i + 1)" [attr.aria-current]="i === sliderIndex ? 'true' : null"
-          (click)="scrollToIndex(i)"></span>
+    <!-- Vista slider: un pasto alla volta. I pasti hanno un nome nel segmento in
+         cima (erano cinque trattini uguali), e "fatto" e' il tasto in fondo. -->
+    <div class="exslider-wrap" *ngIf="state.viewMode() === 'slider'">
+      <div class="mealnav-wrap" *ngIf="meals.length > 1">
+        <ion-segment class="seg labelseg mealnav" scrollable [value]="pastoCorrente?.meal?.id"
+          (ionChange)="vaiAlPasto($event.detail.value)" aria-label="Pasti di oggi">
+          <ion-segment-button *ngFor="let vm of meals" [value]="vm.meal.id">
+            <span class="mealnav-lab">{{ vm.meal.name }}<lucide-icon *ngIf="vm.completed" class="mealnav-tick" name="check" [size]="12" aria-hidden="true"></lucide-icon><span class="sr-only" *ngIf="vm.completed">, fatto</span></span>
+          </ion-segment-button>
+        </ion-segment>
       </div>
 
-      <div class="exslider" #sliderEl (scroll)="onSliderScroll()">
-        <div class="meal mealslide exslide" *ngFor="let vm of meals">
+      <!-- Ogni card e' alta quanto il suo pasto: prima prendevano tutte l'altezza
+           della piu' lunga, e una colazione da tre righe aveva mezza card vuota. -->
+      <div class="exslider dietslider" #sliderEl (scroll)="onSliderScroll()">
+        <div class="meal mealslide exslide" *ngFor="let vm of meals" [class.fatto]="vm.completed">
           <div class="meal-summary noclick">
             <span>{{ vm.meal.name }}</span>
-            <div class="meal-check tap44" [class.done]="vm.completed" appTasto="checkbox" [attr.aria-checked]="vm.completed"
-              [attr.aria-label]="'Pasto fatto: ' + vm.meal.name" (click)="toggleMealCompleted(vm)">✓</div>
+            <span class="meal-stato">
+              <lucide-icon *ngIf="vm.completed" name="check" [size]="13" aria-hidden="true"></lucide-icon>
+              {{ vm.completed ? 'fatto' : 'da fare' }}
+            </span>
           </div>
 
           <div class="content-inner">
@@ -144,3 +124,62 @@
     </div>
   </div>
 </ion-content>
+
+<!-- Il gesto della pagina, dove arriva il pollice: si riferisce alla card visibile. -->
+<ion-footer class="salva-footer ion-no-border" *ngIf="plan && state.viewMode() === 'slider' && pastoCorrente as vm">
+  <div class="salva">
+    <ion-button class="setdone salva-btn" [class.fatto]="vm.completed" (click)="toggleMealCompleted(vm)">
+      {{ vm.completed ? 'Segna come da fare' : 'Ho mangiato questo' }}
+    </ion-button>
+  </div>
+</ion-footer>
+
+<!-- Un foglio solo per tutta la pagina: la combinazione di un pasto o le
+     alternative di un macro. Scegliere chiude il foglio. -->
+<ion-modal class="sheet-modal" [isOpen]="foglioAperto" [breakpoints]="[0, 1]" [initialBreakpoint]="1"
+  (didDismiss)="foglioChiuso()">
+  <ng-template>
+    <div class="bottomsheet scelta-sheet" *ngIf="foglio as f">
+      <ng-container *ngIf="f.tipo === 'combo'">
+        <p class="confirmtext sheet-title">Combinazione</p>
+        <p class="scelta-hint">Il pasto intero: cambiano tutti i macro.</p>
+        <ion-radio-group [value]="valoreFoglio(f)" (ionChange)="scegliNelFoglio(f, $event.detail.value, $event.detail.event)"
+          [attr.aria-label]="'Combinazione per ' + f.vm.meal.name">
+          <ion-item class="scelta-opt" lines="full" *ngFor="let c of f.vm.meal.combinations">
+            <ion-radio class="scelta-radio scelta-radio-combo" [value]="c.id" justify="space-between" labelPlacement="start">
+              <span class="scelta-combo"><b>{{ c.label }}</b><span>{{ riassunto(c) }}</span></span>
+            </ion-radio>
+          </ion-item>
+        </ion-radio-group>
+      </ng-container>
+
+      <ng-container *ngIf="f.tipo === 'macro' && opzioni(f.vm, f.cat) as o">
+        <p class="confirmtext sheet-title">{{ foodCategoryLabels[f.cat] }}</p>
+        <p class="scelta-hint">Prima le alternative di questo alimento, poi quelle del pasto.</p>
+        <ion-radio-group [value]="valoreFoglio(f)" (ionChange)="scegliNelFoglio(f, $event.detail.value, $event.detail.event)"
+          [attr.aria-label]="foodCategoryLabels[f.cat] + ' per ' + f.vm.meal.name">
+          <ion-item class="scelta-opt" lines="full">
+            <ion-radio class="scelta-radio" value="base" justify="space-between" labelPlacement="start">
+              <span class="scelta-voce">
+                <span class="scelta-nome">{{ o.base?.name || 'Niente' }}<span class="scelta-piano">dal piano</span></span>
+                <span class="scelta-qty">{{ o.base?.qty }}</span>
+              </span>
+            </ion-radio>
+          </ion-item>
+          <p class="scelta-gruppo" *ngIf="o.alimento.length">Per questo alimento</p>
+          <ion-item class="scelta-opt" lines="full" *ngFor="let a of o.alimento">
+            <ion-radio class="scelta-radio" [value]="'alimento:' + a.name" justify="space-between" labelPlacement="start">
+              <span class="scelta-voce"><span class="scelta-nome">{{ a.name }}</span><span class="scelta-qty">{{ a.qty }}</span></span>
+            </ion-radio>
+          </ion-item>
+          <p class="scelta-gruppo" *ngIf="o.pasto.length">Per tutto il pasto</p>
+          <ion-item class="scelta-opt" lines="full" *ngFor="let a of o.pasto">
+            <ion-radio class="scelta-radio" [value]="'pasto:' + a.name" justify="space-between" labelPlacement="start">
+              <span class="scelta-voce"><span class="scelta-nome">{{ a.name }}</span><span class="scelta-qty">{{ a.qty }}</span></span>
+            </ion-radio>
+          </ion-item>
+        </ion-radio-group>
+      </ng-container>
+    </div>
+  </ng-template>
+</ion-modal>
