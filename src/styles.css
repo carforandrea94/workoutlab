@@ -1036,7 +1036,11 @@ ion-button.shop-addbtn:active{filter:brightness(0.92);}
    Stessa presa degli alimenti, ma sulla riga di un'ion-list: la riga e' una card
    alta, e quello che resta al suo posto mentre la si trascina deve avere la sua
    stessa forma. Il distacco fra le righe lo da' gia' il gap della lista. */
-.sec-head{display:flex;align-items:center;justify-content:space-between;gap:12px;}
+/* La riga e' alta quanto il tasto (36), quindi il margine di sotto del titolo
+   non conta piu': glielo da la riga, gli stessi 10 che ha ogni .sectiontitle.
+   Il titolo senza margini verticali, o resterebbe 2 px sopra il centro del tasto. */
+.sec-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;}
+.sec-head .sectiontitle{margin:0 4px;}
 .riordina-aiuto{font-size:var(--text-xs);line-height:1.5;color:var(--label-3);margin:0 4px 12px;}
 .riordina-presa{width:44px;margin:0;color:var(--label-2);}
 .dragghost.dragghost-riga{height:76px;margin:0;border-radius:var(--r-xl);}
