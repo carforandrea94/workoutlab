@@ -120,3 +120,29 @@ describe('styles.css — la barra in basso si misura per quanto occupa davvero',
     expect(px('restbar-h')).toBeGreaterThanOrEqual(px('tabbar-h') + 2 * px('tabbar-pad') + 2);
   });
 });
+
+/**
+ * La riga del titolo con un tasto accanto ("ESERCIZI" + Riordina) e' alta quanto
+ * il tasto: il margine di sotto del titolo non conta piu', e il tasto finiva
+ * a filo di quello che sta sotto (gap 0 px).
+ */
+describe('styles.css — la riga del titolo con un tasto accanto', () => {
+  let css = '';
+  beforeAll(async () => {
+    const nome = 'node:fs';
+    const fs = await import(/* @vite-ignore */ nome);
+    css = fs.readFileSync('src/styles.css', 'utf8');
+  });
+
+  it('da alla riga il distacco che ogni titolo di sezione ha di suo', () => {
+    const titolo = css.match(/\.sectiontitle\{[^}]*\}/)?.[0] ?? '';
+    const sotto = parseFloat(titolo.match(/margin:\s*\S+\s+\S+\s+([0-9.]+)px/)?.[1] ?? 'NaN');
+    const riga = css.match(/\.sec-head\{[^}]*\}/)?.[0] ?? '';
+    const margine = parseFloat(riga.match(/margin-bottom:\s*([0-9.]+)px/)?.[1] ?? 'NaN');
+    expect(margine).toBe(sotto);
+  });
+
+  it('il titolo dentro la riga non ha margini verticali: e\' la riga a centrarlo sul tasto', () => {
+    expect(css).toMatch(/\.sec-head \.sectiontitle\{margin:0 [0-9]+px;\}/);
+  });
+});
