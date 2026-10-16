@@ -5,6 +5,7 @@ import { AuthService } from '../core/services/auth.service';
 import { ZoneFixService } from '../core/utils/zone.util';
 import { sanitizeForFirestore } from '../core/utils/sanitize.util';
 import { ToastService } from './toast.service';
+import { SceltaPasto } from '../core/utils/scelta-pasto.util';
 
 export interface WorkoutDraftRow {
   reps: string;
@@ -41,7 +42,8 @@ export interface AppState {
   shoppingCustomItems: { id: string; name: string; checked: boolean }[];
   workoutViewMode: 'list' | 'slider';
   dietViewMode: 'list' | 'slider';
-  mealsCompletion: { date: string; done: Record<string, boolean> } | null;
+  /** I pasti di oggi: quali sono fatti e, per quelli in cui si e' scelto, cosa (vedi scelta-pasto.util). */
+  mealsCompletion: { date: string; done: Record<string, boolean>; choices?: Record<string, SceltaPasto> } | null;
   themeMode: ThemeMode | null;
   activeWorkoutSession: ActiveWorkoutSession | null;
   /**

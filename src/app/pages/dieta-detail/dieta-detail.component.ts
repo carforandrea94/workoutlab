@@ -1,7 +1,6 @@
 import { Component, OnInit, ChangeDetectorRef, ElementRef, ViewChild, effect } from '@angular/core';
 import { LucideAngularModule } from 'lucide-angular';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { DietDataService } from '../../services/diet-data.service';
 import { DietStateService } from '../../services/diet-state.service';
@@ -9,22 +8,36 @@ import { AppStateService } from '../../services/app-state.service';
 import { findClosestSlideIndex, scrollToSlide } from '../../core/utils/horizontal-slider.util';
 import { firstUncompletedIndex } from '../../core/utils/meal-completion.util';
 import { todayLocalISO } from '../../core/utils/date.util';
-import { DietPlan, NamedMeal, MealCombination, FoodItem, FoodCategory, FOOD_CATEGORIES, FOOD_CATEGORY_LABELS } from '../../models/diet.model';
+import {
+  AlimentoScelto, OpzioniMacro, SceltaPasto, alimentoScelto, comboDi, conCombo, conMacro,
+  contaAlternative, daValoreMacro, normalizzaScelta, opzioniMacro, riassuntoCombo, valoreMacro
+} from '../../core/utils/scelta-pasto.util';
+import { DietPlan, NamedMeal, MealCombination, FoodCategory, FOOD_CATEGORIES, FOOD_CATEGORY_LABELS } from '../../models/diet.model';
 import { IONIC_PAGE } from '../../core/ionic-page';
 import { TastoDirective } from '../../core/tasto.directive';
-import { NavController, IonSegment, IonSegmentButton, IonSelect, IonSelectOption } from '@ionic/angular';
+import {
+  NavController, IonSegment, IonSegmentButton, IonButton, IonFooter, IonModal, IonRadioGroup, IonRadio,
+  IonItem, IonProgressBar
+} from '@ionic/angular';
 
 interface MealVM {
   meal: NamedMeal;
   open: boolean;
-  selectedComboId: string;
   completed: boolean;
+  /** Cosa si e' scelto oggi; assente = il piano com'e'. */
+  scelta?: SceltaPasto;
 }
+
+/** Il foglio dal basso aperto: la combinazione di un pasto, o le alternative di un macro. */
+type Foglio = { tipo: 'combo'; vm: MealVM } | { tipo: 'macro'; vm: MealVM; cat: FoodCategory };
 
 @Component({
   selector: 'app-dieta-detail',
   standalone: true,
-  imports: [IonSegment, IonSegmentButton, IonSelect, IonSelectOption, ...IONIC_PAGE, CommonModule, FormsModule, LucideAngularModule, TastoDirective],
+  imports: [
+    IonSegment, IonSegmentButton, IonButton, IonFooter, IonModal, IonRadioGroup, IonRadio, IonItem, IonProgressBar,
+    ...IONIC_PAGE, CommonModule, LucideAngularModule, TastoDirective
+  ],
   templateUrl: './dieta-detail.component.html'
 })
 export class DietaDetailComponent implements OnInit {
@@ -36,6 +49,21 @@ export class DietaDetailComponent implements OnInit {
 
   sliderIndex = 0;
   private scrollTicking = false;
+
+  /**
+   * Il foglio si apre e si chiude con [isOpen]; il contenuto resta finche' non
+   * e' sceso del tutto (didDismiss), o scenderebbe vuoto.
+   */
+  foglio: Foglio | null = null;
+  foglioAperto = false;
+
+  /**
+   * Quello che e' gia' salvato per oggi sui pasti degli ALTRI piani: si salva
+   * tutto insieme, e scrivere solo quelli di questo piano li cancellerebbe (chi
+   * apre il Giorno OFF dopo aver segnato la colazione del Giorno ON la perdeva).
+   */
+  private altriFatti: Record<string, boolean> = {};
+  private altreScelte: Record<string, SceltaPasto> = {};
 
   @ViewChild('sliderEl') sliderEl?: ElementRef<HTMLDivElement>;
 
@@ -64,17 +92,18 @@ export class DietaDetailComponent implements OnInit {
     this.plan = this.dietData.getPlan(id);
     if (!this.plan) { this.nav.navigateBack(['/dieta']); return; }
 
-    this.meals = this.plan.meals.map(meal => ({
-      meal,
-      open: true,
-      selectedComboId: meal.combinations[0]?.id ?? '',
-      completed: false
-    }));
+    this.meals = this.plan.meals.map(meal => ({ meal, open: true, completed: false }));
 
     const appState = await this.appState.load();
     const completion = appState.mealsCompletion;
     if (completion && completion.date === todayLocalISO()) {
-      this.meals.forEach(vm => { vm.completed = !!completion.done[vm.meal.id]; });
+      const qui = new Set(this.meals.map(vm => vm.meal.id));
+      for (const [k, v] of Object.entries(completion.done ?? {})) if (!qui.has(k)) this.altriFatti[k] = v;
+      for (const [k, v] of Object.entries(completion.choices ?? {})) if (!qui.has(k)) this.altreScelte[k] = v;
+      this.meals.forEach(vm => {
+        vm.completed = !!completion.done?.[vm.meal.id];
+        vm.scelta = normalizzaScelta(vm.meal, completion.choices?.[vm.meal.id]);
+      });
     }
 
     this.sliderIndex = firstUncompletedIndex(this.meals);
@@ -82,57 +111,123 @@ export class DietaDetailComponent implements OnInit {
     this.cdr.detectChanges();
   }
 
+  // --- La giornata ---
+
+  get fatti(): number {
+    return this.meals.filter(vm => vm.completed).length;
+  }
+
+  /** Il pasto sulla card visibile dello slider: e' quello a cui si riferisce il tasto in fondo. */
+  get pastoCorrente(): MealVM | null {
+    return this.meals[this.sliderIndex] ?? null;
+  }
+
   toggleMeal(vm: MealVM): void {
     vm.open = !vm.open;
+  }
+
+  toggleMealCompleted(vm: MealVM): void {
+    vm.completed = !vm.completed;
+    this.salva();
+  }
+
+  private salva(): void {
+    const done: Record<string, boolean> = { ...this.altriFatti };
+    const choices: Record<string, SceltaPasto> = { ...this.altreScelte };
+    this.meals.forEach(vm => {
+      done[vm.meal.id] = vm.completed;
+      if (vm.scelta) choices[vm.meal.id] = vm.scelta;
+    });
+    const giorno = { date: todayLocalISO(), done, ...(Object.keys(choices).length ? { choices } : {}) };
+    this.appState.patchField('mealsCompletion', giorno).catch(() => { /* gia' segnalato da AppStateService */ });
+  }
+
+  // --- Cosa si mangia ---
+
+  combo(vm: MealVM): MealCombination | null {
+    return comboDi(vm.meal, vm.scelta);
   }
 
   hasMultipleCombinations(vm: MealVM): boolean {
     return vm.meal.combinations.length > 1;
   }
 
-  getCombinations(vm: MealVM): MealCombination[] {
-    return vm.meal.combinations;
+  /** "2 di 3": la posizione della combinazione scelta fra quelle del pasto. */
+  indiceCombo(vm: MealVM): number {
+    const c = this.combo(vm);
+    return c ? vm.meal.combinations.indexOf(c) + 1 : 0;
   }
 
-  getActiveCombo(vm: MealVM): MealCombination {
-    return vm.meal.combinations.find(c => c.id === vm.selectedComboId) ?? vm.meal.combinations[0];
+  opzioni(vm: MealVM, cat: FoodCategory): OpzioniMacro {
+    return opzioniMacro(vm.meal, this.combo(vm), cat);
   }
 
-  comboItem(vm: MealVM, cat: FoodCategory): FoodItem | null {
-    return this.getActiveCombo(vm)[cat];
+  scelto(vm: MealVM, cat: FoodCategory): AlimentoScelto | null {
+    return alimentoScelto(this.opzioni(vm, cat), vm.scelta?.macro?.[cat]);
   }
 
-  // --- Alternative dell'alimento della combinazione (item.alt) ---
-  private itemAltOpen = new Set<string>();
-
-  isItemAltOpen(vm: MealVM, cat: FoodCategory): boolean {
-    return this.itemAltOpen.has(`${vm.meal.id}:${vm.selectedComboId}:${cat}`);
+  nAlternative(vm: MealVM, cat: FoodCategory): number {
+    return contaAlternative(this.opzioni(vm, cat));
   }
 
-  toggleItemAlt(vm: MealVM, cat: FoodCategory): void {
-    const key = `${vm.meal.id}:${vm.selectedComboId}:${cat}`;
-    if (this.itemAltOpen.has(key)) this.itemAltOpen.delete(key);
-    else this.itemAltOpen.add(key);
+  /** Un macro si mostra se la combinazione lo prevede o se il pasto ha alternative per lui. */
+  mostraMacro(vm: MealVM, cat: FoodCategory): boolean {
+    return !!this.scelto(vm, cat) || this.nAlternative(vm, cat) > 0;
   }
 
-  // --- Alternative per macro a livello di pasto (un unico accordion 'Alternative') ---
-  totalAlternatives(vm: MealVM): number {
-    return this.foodCategories.reduce((acc, cat) => acc + vm.meal.alternatives[cat].length, 0);
+  riassunto(c: MealCombination): string {
+    return riassuntoCombo(c);
   }
 
-  macroAlternatives(vm: MealVM, cat: FoodCategory): FoodItem[] {
-    return vm.meal.alternatives[cat];
+  // --- I fogli dal basso ---
+
+  apriCombo(vm: MealVM): void {
+    this.foglio = { tipo: 'combo', vm };
+    this.foglioAperto = true;
   }
 
-  private macroAltExpanded = new Set<string>();
-
-  isMacroAltExpanded(vm: MealVM): boolean {
-    return this.macroAltExpanded.has(vm.meal.id);
+  apriMacro(vm: MealVM, cat: FoodCategory): void {
+    this.foglio = { tipo: 'macro', vm, cat };
+    this.foglioAperto = true;
   }
 
-  toggleMacroAltExpanded(vm: MealVM): void {
-    if (this.macroAltExpanded.has(vm.meal.id)) this.macroAltExpanded.delete(vm.meal.id);
-    else this.macroAltExpanded.add(vm.meal.id);
+  foglioChiuso(): void {
+    this.foglioAperto = false;
+    this.foglio = null;
+  }
+
+  /** Il valore selezionato nel gruppo di radio del foglio aperto. */
+  valoreFoglio(f: Foglio): string {
+    if (f.tipo === 'combo') return this.combo(f.vm)?.id ?? '';
+    return valoreMacro(f.vm.scelta?.macro?.[f.cat]);
+  }
+
+  /**
+   * Scegliere col dito chiude il foglio: la scelta si vede subito nella card.
+   * Con le frecce no: nel gruppo di radio le frecce spostano E scelgono, e chi
+   * usa la tastiera deve poter scorrere le opzioni senza che il foglio gli si
+   * chiuda alla prima; conferma con Spazio, o esce con Esc.
+   * Cambiare combinazione riparte dal pasto intero (i cambi fatti sull'altra non valgono).
+   */
+  scegliNelFoglio(f: Foglio, valore: string, evento?: Event): void {
+    if (f.tipo === 'combo') {
+      f.vm.scelta = conCombo(f.vm.meal, valore);
+    } else {
+      f.vm.scelta = conMacro(f.vm.meal, f.vm.scelta, f.cat, daValoreMacro(valore));
+    }
+    this.salva();
+    if (!(typeof KeyboardEvent !== 'undefined' && evento instanceof KeyboardEvent)) this.foglioAperto = false;
+    this.cdr.detectChanges();
+  }
+
+  // --- Lo slider e il segmento dei pasti ---
+
+  /** Dal segmento in cima: porta la card di quel pasto. */
+  vaiAlPasto(id: unknown): void {
+    const i = this.meals.findIndex(vm => vm.meal.id === id);
+    if (i < 0 || i === this.sliderIndex) return;
+    this.sliderIndex = i;
+    this.scrollToIndex(i);
   }
 
   onSliderScroll(): void {
@@ -152,12 +247,5 @@ export class DietaDetailComponent implements OnInit {
 
   scrollToIndex(idx: number): void {
     scrollToSlide(this.sliderEl?.nativeElement, idx);
-  }
-
-  toggleMealCompleted(vm: MealVM): void {
-    vm.completed = !vm.completed;
-    const done: Record<string, boolean> = {};
-    this.meals.forEach(m => { done[m.meal.id] = m.completed; });
-    this.appState.patchField('mealsCompletion', { date: todayLocalISO(), done }).catch(() => { /* gia' segnalato da AppStateService */ });
   }
 }
