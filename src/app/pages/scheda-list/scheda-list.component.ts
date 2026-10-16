@@ -115,7 +115,16 @@ export class SchedaListComponent implements OnInit {
     // La settimana ora e' calcolata da oggi e non piu' fotografata all'avvio:
     // se il piano avesse meno settimane del tetto, l'indice cadrebbe fuori.
     const wp = this.workoutData.WEEK_PLAN[this.currentWeek - 1];
-    return wp ? `${wp.sets}×${wp.reps} reps` : '';
+    return wp ? `${wp.sets}×${wp.reps} rip.` : '';
+  }
+
+  /**
+   * Il metodo di progressione, se c'e': la riga sotto la settimana diceva sempre
+   * "WAVE LOADING", anche con un protocollo a serie fisse. Ora lo dice solo chi
+   * ha almeno un esercizio a onda.
+   */
+  get metodo(): string | null {
+    return this.days.some(d => d.ex.some(e => e.scheme === 'wave')) ? 'Wave loading' : null;
   }
 
   get todayWeekday(): string {

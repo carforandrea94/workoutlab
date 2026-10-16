@@ -224,14 +224,14 @@ export class MeasurementDataService {
     const gridLabels = [max, (max + min) / 2, min];
     const grid = gridYs.map((gy, i) => `
       <line x1="${padL}" y1="${gy.toFixed(1)}" x2="${padL + innerW}" y2="${gy.toFixed(1)}" stroke="var(--separator)" stroke-width="1"/>
-      <text x="${(padL - 8).toFixed(1)}" y="${(gy + 3).toFixed(1)}" text-anchor="end" font-family="IBM Plex Mono, monospace" font-size="9.5" fill="var(--label-3)">${this.formatAxisNum(gridLabels[i])}</text>
+      <text x="${(padL - 8).toFixed(1)}" y="${(gy + 3).toFixed(1)}" text-anchor="end" font-family="IBM Plex Mono, monospace" font-size="11" fill="var(--label-3)">${this.formatAxisNum(gridLabels[i])}</text>
     `).join('');
 
     const firstDate = this.formatShortDate(points[0].date);
     const lastDate = this.formatShortDate(points[points.length - 1].date);
     const xLabels = `
-      <text x="${padL}" y="${h - 6}" text-anchor="start" font-family="IBM Plex Mono, monospace" font-size="9.5" fill="var(--label-3)">${firstDate}</text>
-      <text x="${padL + innerW}" y="${h - 6}" text-anchor="end" font-family="IBM Plex Mono, monospace" font-size="9.5" fill="var(--label-3)">${lastDate}</text>
+      <text x="${padL}" y="${h - 6}" text-anchor="start" font-family="IBM Plex Mono, monospace" font-size="11" fill="var(--label-3)">${firstDate}</text>
+      <text x="${padL + innerW}" y="${h - 6}" text-anchor="end" font-family="IBM Plex Mono, monospace" font-size="11" fill="var(--label-3)">${lastDate}</text>
     `;
 
     return `<svg width="100%" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true">

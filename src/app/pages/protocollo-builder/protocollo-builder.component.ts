@@ -223,7 +223,7 @@ export class ProtocolloBuilderComponent implements OnInit, OnDestroy, DoCheck {
         // scritto qualcosa si chiede, come per le altre modifiche non salvate.
         const ee = this.editingExercise!;
         if (ee.isNew && this.esercizioScritto(ee.ex)) {
-          const ok = await this.confirm.confirm('Scartare questo esercizio? Non e\' ancora nel giorno.', {
+          const ok = await this.confirm.confirm('Scartare questo esercizio? Non è ancora nel giorno.', {
             confirmLabel: 'Scarta', dangerous: true
           });
           if (!ok) return;
@@ -349,7 +349,7 @@ export class ProtocolloBuilderComponent implements OnInit, OnDestroy, DoCheck {
     } catch (e: any) {
       console.error('Errore caricamento protocollo:', e);
       this.errorMsg = e?.message === 'TIMEOUT'
-        ? 'La connessione sta impiegando troppo tempo. Il protocollo e\' salvato: controlla la rete e riprova.'
+        ? 'La connessione sta impiegando troppo tempo. Il protocollo è salvato: controlla la rete e riprova.'
         : 'Errore nel caricamento del protocollo. Riprova.';
     } finally {
       this.loading = false;

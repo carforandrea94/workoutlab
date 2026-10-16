@@ -30,7 +30,7 @@
       <div class="weekpicker">
         <div class="wk-info">
           <div class="wk-label">Settimana {{ currentWeek }} di {{ weekPlan.length }} &nbsp;·&nbsp; {{ getWaveInfo() }}</div>
-          <div class="wk-sub">{{ todayWeekday }} &nbsp;·&nbsp; WAVE LOADING — S{{ currentWeek }}</div>
+          <div class="wk-sub">{{ todayWeekday }}<ng-container *ngIf="metodo"> &nbsp;·&nbsp; {{ metodo }}</ng-container></div>
           <div class="weekdots">
             <span *ngFor="let w of weeks" [class.completed]="w < currentWeek" [class.active]="w === currentWeek"></span>
           </div>
@@ -53,8 +53,8 @@
               </div>
             </div>
             <span class="daycheck" *ngIf="isDoneThisWeek(day.id)"
-              title="Allenamento gia' fatto questa settimana"
-              aria-label="Allenamento gia' fatto questa settimana">
+              title="Allenamento già fatto questa settimana"
+              aria-label="Allenamento già fatto questa settimana">
               <lucide-icon name="check" [size]="14"></lucide-icon>
             </span>
           </div>

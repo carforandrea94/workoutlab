@@ -106,7 +106,7 @@ describe('googleErrorMessage', () => {
   });
 
   it('con il provider spento lo dice, invece di un errore generico', () => {
-    expect(googleErrorMessage({ code: 'auth/operation-not-allowed' })).toContain("non e' attivo");
+    expect(googleErrorMessage({ code: 'auth/operation-not-allowed' })).toContain("non è attivo");
   });
 
   it("un'email gia' registrata con la password manda alla password", () => {
@@ -124,6 +124,6 @@ describe('googleErrorMessage', () => {
 
 describe('deleteAccountErrorMessage con Google', () => {
   it("una conferma annullata dice che l'account non e' stato chiuso", () => {
-    expect(deleteAccountErrorMessage({ code: 'auth/popup-closed-by-user' })).toContain("non e' stato chiuso");
+    expect(deleteAccountErrorMessage({ code: 'auth/popup-closed-by-user' })).toContain("non è stato chiuso");
   });
 });

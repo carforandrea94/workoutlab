@@ -518,7 +518,7 @@
                     <ion-input type="text" [(ngModel)]="item.name" placeholder="Alimento"></ion-input>
                   </div>
                   <div class="measure-input-wrap builder-qty">
-                    <ion-input type="text" [(ngModel)]="item.qty" placeholder="Quantita'"></ion-input>
+                    <ion-input type="text" [(ngModel)]="item.qty" placeholder="Quantità"></ion-input>
                   </div>
                   <ion-button class="delete-btn tap44" (click)="clearComboItem(getActiveCombo(em), cat, $event)" aria-label="Svuota questo alimento">✕</ion-button>
                   <div class="dragghost" *cdkDragPlaceholder></div>
@@ -546,7 +546,7 @@
                         <ion-input type="text" [(ngModel)]="a.name" placeholder="Alimento alternativo"></ion-input>
                       </div>
                       <div class="measure-input-wrap builder-qty">
-                        <ion-input type="text" [(ngModel)]="a.qty" placeholder="Quantita'"></ion-input>
+                        <ion-input type="text" [(ngModel)]="a.qty" placeholder="Quantità"></ion-input>
                       </div>
                       <ion-button class="delete-btn tap44" (click)="removeItemAltEntry(item2, a)" aria-label="Togli l'alimento alternativo">✕</ion-button>
                       <div class="dragghost" *cdkDragPlaceholder></div>
@@ -586,7 +586,7 @@
                       <ion-input type="text" [(ngModel)]="item.name" placeholder="Alimento"></ion-input>
                     </div>
                     <div class="measure-input-wrap builder-qty">
-                      <ion-input type="text" [(ngModel)]="item.qty" placeholder="Quantita'"></ion-input>
+                      <ion-input type="text" [(ngModel)]="item.qty" placeholder="Quantità"></ion-input>
                     </div>
                     <ion-button class="delete-btn tap44" (click)="removeAltItem(em, cat, item)" aria-label="Togli questo alimento">✕</ion-button>
                     <!-- Il posto dove la riga andrebbe a finire: la riga vera lo
@@ -656,7 +656,7 @@
         <p class="sectiontitle">Indicazioni</p>
         <div class="infocard">
           <ion-textarea class="bacheca-textarea" [rows]="5" [autoGrow]="true" [(ngModel)]="runGoal.note"
-            placeholder="Es. una lunga lenta la domenica, ripetute il martedi'…"></ion-textarea>
+            placeholder="Es. una lunga lenta la domenica, ripetute il martedì…"></ion-textarea>
         </div>
       </ng-container>
 

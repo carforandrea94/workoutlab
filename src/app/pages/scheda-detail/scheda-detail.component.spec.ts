@@ -14,6 +14,7 @@ function makeComponent(opts: { sessionSuQuestoGiorno: boolean; inPausa?: boolean
   const startRestTimer = vi.fn();
   const stopRestTimer = vi.fn();
   const patchField = vi.fn(() => Promise.resolve());
+  const confirm = vi.fn(async (..._args: any[]) => opts.conferma ?? true);
 
   const sessionState = {
     matchesDay: () => opts.sessionSuQuestoGiorno,
@@ -33,7 +34,7 @@ function makeComponent(opts: { sessionSuQuestoGiorno: boolean; inPausa?: boolean
     state,
     { patchField } as any,           // AppStateService
     {} as any,                       // WorkoutSessionsService
-    { confirm: vi.fn(async () => opts.conferma ?? true) } as any,   // ConfirmDialogService
+    { confirm } as any,   // ConfirmDialogService
     { detectChanges: () => {} } as any,
     {} as any,                       // ToastService
     sessionState,
@@ -41,7 +42,7 @@ function makeComponent(opts: { sessionSuQuestoGiorno: boolean; inPausa?: boolean
   ));
 
   component.day = { id: 'day1', label: 'Petto', rec: '90"', ex: [] } as any;
-  return { component, startRestTimer, stopRestTimer, patchField, sessionState, state };
+  return { component, startRestTimer, stopRestTimer, patchField, sessionState, state, confirm };
 }
 
 function makeVm() {
@@ -1095,5 +1096,36 @@ describe('SchedaDetailComponent — la prossima serie, per la fascia in fondo', 
     component.onSetCheck(panca, 0);
     component.setLoad(panca, 1, 60);
     expect(serie()).toEqual(expect.objectContaining({ numero: 2, carico: 60 }));
+  });
+});
+
+/**
+ * Buttare via la sessione costa un allenamento intero. I due tasti della conferma
+ * non devono dire la stessa cosa: "Annulla sessione" e "Annulla" a un dito di
+ * distanza si scambiavano.
+ */
+describe('SchedaDetailComponent — la conferma di scarto della sessione', () => {
+  it('i due tasti hanno verbi diversi: butta via, o continua', async () => {
+    const { component, confirm } = makeComponent({ sessionSuQuestoGiorno: true });
+    component.exercises = [];
+    await component.cancelSession();
+
+    const [messaggio, opzioni] = confirm.mock.calls[0] as [string, any];
+    expect(opzioni.confirmLabel).toBe('Butta via la sessione');
+    expect(opzioni.cancelLabel).toBe('Continua l\'allenamento');
+    expect(opzioni.dangerous).toBe(true);
+    // E non c'e' piu' nessun "Annulla" ne' nel messaggio ne' nei tasti.
+    expect(messaggio).toContain('buttare via la sessione');
+    expect(messaggio).not.toMatch(/annull/i);
+    expect(`${opzioni.confirmLabel} ${opzioni.cancelLabel}`).not.toMatch(/annull/i);
+  });
+
+  it('il messaggio dice cosa si perde, con le lettere accentate', async () => {
+    const { component, confirm } = makeComponent({ sessionSuQuestoGiorno: true });
+    component.exercises = [];
+    await component.cancelSession();
+    expect((confirm.mock.calls[0] as any[])[0]).toBe(
+      'Vuoi buttare via la sessione in corso? Il tempo andrà perso e l\'allenamento non verrà salvato nello storico.'
+    );
   });
 });

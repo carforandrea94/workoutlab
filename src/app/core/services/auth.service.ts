@@ -300,7 +300,7 @@ export class AuthService {
       const profile = this.currentUser();
       if (!user || !profile) throw new Error('Sessione scaduta. Accedi di nuovo.');
       if (this.usesPassword()) {
-        if (!user.email) throw new Error("Questo account non ha un'email: non si puo' confermare la password.");
+        if (!user.email) throw new Error("Questo account non ha un'email: non si può confermare la password.");
         await reauthenticateWithCredential(
           user, EmailAuthProvider.credential(user.email, password ?? '')
         );

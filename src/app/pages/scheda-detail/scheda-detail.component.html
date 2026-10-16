@@ -24,7 +24,10 @@
       <ion-button class="savebtn mt-3" (click)="loadAll()">Riprova</ion-button>
     </div>
 
-    <div *ngIf="!loading && !errorMsg && notFound" class="history-empty">Seduta non trovata.</div>
+    <div *ngIf="!loading && !errorMsg && notFound" class="history-empty">
+      Seduta non trovata.<br>
+      <ion-button class="savebtn mt-3" (click)="tornaAlloStorico()">Torna allo storico</ion-button>
+    </div>
 
     <!-- Lo storico: la seduta e' gia' salvata, quindi qui non c'e' niente da
          avviare e niente da chiudere. Sopra c'e' quando e' stata fatta, con la

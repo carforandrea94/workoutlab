@@ -31,7 +31,7 @@
               aria-describedby="email-err"></ion-input>
           </div>
           <p class="fielderr" id="email-err" *ngIf="emailCtrl.invalid && (emailCtrl.touched || f.submitted)">
-            <span *ngIf="emailCtrl.errors?.['required']">L'email e' obbligatoria.</span>
+            <span *ngIf="emailCtrl.errors?.['required']">L'email è obbligatoria.</span>
             <span *ngIf="emailCtrl.errors?.['email']">Email non valida.</span>
           </p>
         </div>
@@ -54,7 +54,7 @@
             </button>
           </div>
           <p class="fielderr" id="pass-err" *ngIf="passCtrl.invalid && (passCtrl.touched || f.submitted)">
-            <span *ngIf="passCtrl.errors?.['required']">La password e' obbligatoria.</span>
+            <span *ngIf="passCtrl.errors?.['required']">La password è obbligatoria.</span>
           </p>
         </div>
 

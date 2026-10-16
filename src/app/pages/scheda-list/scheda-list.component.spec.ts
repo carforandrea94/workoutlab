@@ -21,14 +21,14 @@ describe('SchedaListComponent — da dove si parte', () => {
     { id: 'd3', label: 'Gambe', rec: '120"', ex: [{}, {}, {}] }
   ];
 
-  function monta(opzioni: { fatti?: string[]; sessioneSu?: string | null; bozze?: string[] } = {}) {
+  function monta(opzioni: { fatti?: string[]; sessioneSu?: string | null; bozze?: string[]; giorni?: any[]; settimane?: any[] } = {}) {
     const fatti = new Set(opzioni.fatti ?? []);
     const attiva = signal<any>(opzioni.sessioneSu ? { dayId: opzioni.sessioneSu } : null);
     TestBed.configureTestingModule({
       imports: [SchedaListComponent],
       providers: [
         ...providerPagina(),
-        { provide: WorkoutDataService, useValue: { days: giorni, WEEK_PLAN: [{ sets: 4, reps: 10 }], hasCustomProtocol: false, protocolName: '' } },
+        { provide: WorkoutDataService, useValue: { days: opzioni.giorni ?? giorni, WEEK_PLAN: opzioni.settimane ?? [{ sets: 4, reps: 10 }], hasCustomProtocol: false, protocolName: '' } },
         { provide: WorkoutStateService, useValue: { currentWeek: 1 } },
         { provide: AppStateService, useValue: { load: async () => ({ workoutDrafts: Object.fromEntries((opzioni.bozze ?? []).map(d => [d, {}])) }) } },
         { provide: WeeklyProgressService, useValue: { refresh: vi.fn(), isDone: (id: string) => fatti.has(id) } },
@@ -82,5 +82,57 @@ describe('SchedaListComponent — da dove si parte', () => {
     await vi.waitFor(() => expect(fixture.componentInstance.hasDraft('d1')).toBe(true));
     fixture.detectChanges();
     expect(tag(0)).toEqual(['Prossimo', '● bozza']);
+  });
+});
+
+/**
+ * La riga sotto il nome della scheda diceva sempre "WAVE LOADING — S8", anche con
+ * un protocollo a serie fisse, e ripeteva la settimana gia' scritta sopra.
+ */
+describe('SchedaListComponent — la testata della settimana', () => {
+  const conScheme = (...schemi: string[]) => [
+    { id: 'd1', label: 'Petto', rec: '90"', ex: schemi.map(scheme => ({ scheme })) }
+  ];
+  const testata = (root: HTMLElement) => ({
+    label: root.querySelector('.wk-label')!.textContent!.replace(/\s+/g, ' ').trim(),
+    sub: root.querySelector('.wk-sub')!.textContent!.replace(/\s+/g, ' ').trim()
+  });
+
+  function monta(giorni: any[], settimane: any[] = [{ sets: 3, reps: 10 }]) {
+    TestBed.configureTestingModule({
+      imports: [SchedaListComponent],
+      providers: [
+        ...providerPagina(),
+        { provide: WorkoutDataService, useValue: { days: giorni, WEEK_PLAN: settimane, hasCustomProtocol: false, protocolName: '' } },
+        { provide: WorkoutStateService, useValue: { currentWeek: 1 } },
+        { provide: AppStateService, useValue: { load: async () => ({ workoutDrafts: {} }) } },
+        { provide: WeeklyProgressService, useValue: { refresh: vi.fn(), isDone: () => false } },
+        { provide: WorkoutSessionStateService, useValue: { activeSession: signal<any>(null), isActiveForDay: () => false } }
+      ]
+    });
+    const fixture = TestBed.createComponent(SchedaListComponent);
+    fixture.detectChanges();
+    return fixture.nativeElement as HTMLElement;
+  }
+
+  it('il metodo c\'e\' solo se il protocollo ha esercizi a onda', () => {
+    expect(testata(monta(conScheme('wave', 'plain'))).sub).toMatch(/ · Wave loading$/);
+  });
+
+  it('con serie fisse la riga dice solo il giorno, senza inventare un metodo', () => {
+    const { sub } = testata(monta(conScheme('plain', 'plain')));
+    expect(sub).not.toMatch(/wave/i);
+    expect(sub).not.toContain('·');
+  });
+
+  it('non ripete la settimana, che sta gia\' sopra', () => {
+    const { sub } = testata(monta(conScheme('wave')));
+    expect(sub).not.toMatch(/\bS1\b/);
+  });
+
+  it('le ripetizioni si chiamano "rip.", come nel resto dell\'app', () => {
+    const { label } = testata(monta(conScheme('wave'), [{ sets: 3, reps: 10 }]));
+    expect(label).toBe('Settimana 1 di 1 · 3×10 rip.');
+    expect(label).not.toMatch(/reps/);
   });
 });

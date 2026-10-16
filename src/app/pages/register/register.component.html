@@ -19,7 +19,7 @@
       <ng-container *ngIf="completa && !completaGoogle">
         <div class="authtitle">Manca un passaggio</div>
         <div class="authsub">
-          Il tuo account esiste gia', ma l'iscrizione non si era conclusa.
+          Il tuo account esiste già, ma l'iscrizione non si era conclusa.
           Finiscila qui: non devi rifare nulla.
         </div>
         <p class="authinfo" *ngIf="emailInSospeso">Stai entrando come <b>{{ emailInSospeso }}</b></p>
@@ -37,7 +37,7 @@
               aria-describedby="reg-nome-err"></ion-input>
           </div>
           <p class="fielderr" id="reg-nome-err" *ngIf="nameCtrl.invalid && (nameCtrl.touched || f.submitted)">
-            <span *ngIf="nameCtrl.errors?.['required']">Il nome e' obbligatorio.</span>
+            <span *ngIf="nameCtrl.errors?.['required']">Il nome è obbligatorio.</span>
             <span *ngIf="nameCtrl.errors?.['minlength']">Il nome deve avere almeno 2 caratteri.</span>
           </p>
         </div>
@@ -55,7 +55,7 @@
               aria-describedby="reg-email-err"></ion-input>
           </div>
           <p class="fielderr" id="reg-email-err" *ngIf="emailCtrl.invalid && (emailCtrl.touched || f.submitted)">
-            <span *ngIf="emailCtrl.errors?.['required']">L'email e' obbligatoria.</span>
+            <span *ngIf="emailCtrl.errors?.['required']">L'email è obbligatoria.</span>
             <span *ngIf="emailCtrl.errors?.['email']">Email non valida.</span>
           </p>
         </div>
@@ -79,7 +79,7 @@
             </button>
           </div>
           <p class="fielderr" id="reg-password-err" *ngIf="passCtrl.invalid && (passCtrl.touched || f.submitted)">
-            <span *ngIf="passCtrl.errors?.['required']">La password e' obbligatoria.</span>
+            <span *ngIf="passCtrl.errors?.['required']">La password è obbligatoria.</span>
             <span *ngIf="passCtrl.errors?.['minlength']">Almeno 6 caratteri.</span>
           </p>
         </div>
@@ -111,7 +111,7 @@
         </ion-button>
       </form>
 
-      <a class="authlink" *ngIf="!completa" routerLink="/login" routerDirection="root">Hai gia' un account? Accedi</a>
+      <a class="authlink" *ngIf="!completa" routerLink="/login" routerDirection="root">Hai già un account? Accedi</a>
 
       <ng-container *ngIf="completa">
         <ion-button type="button" class="authlink quiet" (click)="annulla()">Annulla ed esci</ion-button>

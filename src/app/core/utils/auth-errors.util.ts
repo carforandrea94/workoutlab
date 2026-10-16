@@ -22,7 +22,7 @@ export function loginErrorMessage(e: any): string {
     case 'auth/network-request-failed':
       return 'Nessuna connessione. Controlla la rete e riprova.';
     case 'auth/user-disabled':
-      return "Questo account e' stato disattivato.";
+      return "Questo account è stato disattivato.";
     default:
       return e?.message || 'Errore durante l\'accesso. Riprova.';
   }
@@ -44,17 +44,17 @@ export function googleErrorMessage(e: any): string | null {
     case 'auth/popup-blocked':
       return 'Il browser ha bloccato la finestra di Google. Consenti i popup per questo sito e riprova.';
     case 'auth/operation-not-allowed':
-      return "L'accesso con Google non e' attivo per questa app.";
+      return "L'accesso con Google non è attivo per questa app.";
     case 'auth/unauthorized-domain':
-      return "Da questo indirizzo non si puo' accedere con Google.";
+      return "Da questo indirizzo non si può accedere con Google.";
     case 'auth/account-exists-with-different-credential':
-      return "Esiste gia' un account con questa email: accedi con la password.";
+      return "Esiste già un account con questa email: accedi con la password.";
     case 'auth/network-request-failed':
       return 'Nessuna connessione. Controlla la rete e riprova.';
     case 'auth/too-many-requests':
       return 'Troppi tentativi. Riprova tra qualche minuto.';
     case 'auth/user-disabled':
-      return "Questo account e' stato disattivato.";
+      return "Questo account è stato disattivato.";
     default:
       return 'Accesso con Google non riuscito. Riprova.';
   }
@@ -92,11 +92,11 @@ export function deleteAccountErrorMessage(e: any): string {
       return 'Nessuna connessione. Controlla la rete e riprova.';
     case 'auth/popup-closed-by-user':
     case 'auth/cancelled-popup-request':
-      return "Conferma annullata: l'account non e' stato chiuso.";
+      return "Conferma annullata: l'account non è stato chiuso.";
     case 'auth/popup-blocked':
       return 'Il browser ha bloccato la finestra di Google. Consenti i popup per questo sito e riprova.';
     case 'permission-denied':
-      return 'Non e\' stato possibile cancellare i tuoi dati. Riprova fra poco.';
+      return 'Non è stato possibile cancellare i tuoi dati. Riprova fra poco.';
     default:
       return e?.message || 'Non sono riuscito a chiudere l\'account. Riprova.';
   }

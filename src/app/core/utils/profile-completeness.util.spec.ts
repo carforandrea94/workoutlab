@@ -69,8 +69,8 @@ describe('validaProfilo', () => {
   });
 
   it('non accetta una data futura, ne\' una precedente al 1920', () => {
-    expect(validaProfilo({ ...valido(), birthDate: '2026-10-15' }, OGGI).birthDate).toContain('non e\' valida');
-    expect(validaProfilo({ ...valido(), birthDate: '1919-12-31' }, OGGI).birthDate).toContain('non e\' valida');
+    expect(validaProfilo({ ...valido(), birthDate: '2026-10-15' }, OGGI).birthDate).toContain('non è valida');
+    expect(validaProfilo({ ...valido(), birthDate: '1919-12-31' }, OGGI).birthDate).toContain('non è valida');
   });
 
   it('accetta la data di oggi', () => {
