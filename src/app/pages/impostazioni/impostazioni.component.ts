@@ -11,6 +11,7 @@ import { ThemeService } from '../../services/theme.service';
 import { ToastService } from '../../services/toast.service';
 import { WorkoutSessionStateService } from '../../services/workout-session-state.service';
 import { AppStateService } from '../../services/app-state.service';
+import { SegnaleService } from '../../services/segnale.service';
 import { isIosSafariNotStandalone } from '../../core/utils/platform.util';
 import { todayLocalISO } from '../../core/utils/date.util';
 import { deleteAccountErrorMessage } from '../../core/utils/auth-errors.util';
@@ -146,7 +147,8 @@ export class ImpostazioniComponent implements OnInit {
     private toast: ToastService,
     private cdr: ChangeDetectorRef,
     private sessionState: WorkoutSessionStateService,
-    private appState: AppStateService
+    private appState: AppStateService,
+    public segnale: SegnaleService
   ) {}
 
   ngOnInit(): void {

@@ -8,6 +8,7 @@ import { WorkoutDataService } from '../services/workout-data.service';
 import { WorkoutSessionStateService } from '../services/workout-session-state.service';
 import { RestBarComponent } from '../components/rest-bar/rest-bar.component';
 import { SchermoAccesoService } from '../services/schermo-acceso.service';
+import { SegnaleService } from '../services/segnale.service';
 
 interface Tab { id: string; label: string; icon: string; }
 
@@ -124,7 +125,9 @@ export class TabsPage implements OnInit, OnDestroy {
     private nav: NavController,
     // Non si usa qui: va solo istanziato, e la barra e' sempre in pagina. Da li'
     // in poi tiene lo schermo acceso finche' c'e' un allenamento in corso.
-    _schermoAcceso: SchermoAccesoService
+    _schermoAcceso: SchermoAccesoService,
+    // Idem: ascolta i tocchi per sbloccare l'audio, e deve esserci dal primo.
+    _segnale: SegnaleService
   ) {
     // Il contenuto delle pagine tiene sotto uno spazio per la barra: senza barra
     // (e senza la fascia del recupero, che ne prende il posto) lo rende.
@@ -135,6 +138,14 @@ export class TabsPage implements OnInit, OnDestroy {
     // oltre, altrimenti l'ultima card resta in parte coperta.
     effect(() => {
       document.documentElement.classList.toggle('con-pillola', this.sessione() !== null);
+    });
+    // La fascia del recupero e' fissa sopra il contenuto e piu' alta della
+    // barra che sostituisce: il CSS ne tiene conto per portare in vista, col
+    // Tab, quello che altrimenti resterebbe sotto. paginaGiorno non serve a
+    // niente se non a far rileggere l'effetto quando si entra in un giorno.
+    effect(() => {
+      this.paginaGiorno();
+      document.documentElement.classList.toggle('con-fascia', this.showRestBar);
     });
   }
 

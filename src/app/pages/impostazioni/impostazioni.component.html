@@ -98,6 +98,33 @@
       </p>
     </div>
 
+    <!-- Il telefono e' sulla panca o in tasca: a fine recupero il segnale deve
+         arrivare dall'orecchio o dal tatto, non dagli occhi. Vale per il
+         dispositivo, non per l'account: il suono serve in palestra, non sul portatile. -->
+    <p class="sectiontitle">Recupero</p>
+    <div class="infocard">
+      <div class="rows">
+        <div class="account-row">
+          <ion-toggle class="settingtoggle" labelPlacement="start" justify="space-between"
+            [checked]="segnale.suono()" (ionChange)="segnale.impostaSuono($event.detail.checked)">
+            Suono a fine recupero
+          </ion-toggle>
+        </div>
+        <!-- Dove il browser non sa vibrare (iPhone dalla Home) l'interruttore non farebbe niente. -->
+        <div class="account-row" *ngIf="segnale.vibrazioneDisponibile">
+          <ion-toggle class="settingtoggle" labelPlacement="start" justify="space-between"
+            [checked]="segnale.vibrazione()" (ionChange)="segnale.impostaVibrazione($event.detail.checked)">
+            Vibrazione
+          </ion-toggle>
+        </div>
+      </div>
+      <p class="settings-hint">
+        Il segnale parte quando finisce il recupero e quando finisce la pausa nel cluster.
+        Vale per questo dispositivo.<ng-container *ngIf="!segnale.vibrazioneDisponibile">
+        Da qui la vibrazione non è disponibile: resta il suono.</ng-container>
+      </p>
+    </div>
+
     <!-- L'altezza invece serve alle formule di composizione corporea, che vivono
          nelle Misure. -->
     <p class="sectiontitle">Corpo</p>

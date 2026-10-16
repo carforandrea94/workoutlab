@@ -43,3 +43,39 @@ describe('styles.css — soglie di leggibilita\'', () => {
     expect(regola).not.toMatch(/opacity\s*:\s*0?\.[0-9]+/);
   });
 });
+
+/**
+ * Barra, fascia del recupero e pillola sono fisse sopra il contenuto: per il
+ * browser quello che sta sotto e' gia' "in vista", e il Tab non lo scorreva mai
+ * piu' su (7 tappe su 49 in sessione finivano dietro la fascia). Il margine di
+ * scorrimento dice quanto del fondo e' coperto.
+ */
+describe('styles.css — il Tab porta in vista quello che sta sotto la barra', () => {
+  let css = '';
+  beforeAll(async () => {
+    const nome = 'node:fs';
+    const fs = await import(/* @vite-ignore */ nome);
+    css = fs.readFileSync('src/styles.css', 'utf8');
+  });
+
+  it('il contenuto che scorre ha un margine di scorrimento in basso, fatto di quanto e\' coperto', () => {
+    const regola = css.match(/ion-content::part\(scroll\)\{[^}]*\}/)?.[0] ?? '';
+    expect(regola).toMatch(/scroll-padding-bottom:\s*calc\(var\(--coperto-base\)\s*\+\s*var\(--coperto-pillola\)/);
+  });
+
+  it('con la fascia del recupero il coperto e\' la sua altezza, piu\' alta di quella della barra', () => {
+    expect(css).toMatch(/:root\.con-fascia\{--coperto-base:calc\(var\(--restbar-h\)\s*\+\s*var\(--tabbar-gap\)\)/);
+    const alt = (token: string) => parseFloat(css.match(new RegExp(`--${token}:\\s*([0-9.]+)px`))![1]);
+    expect(alt('restbar-h')).toBeGreaterThan(alt('tabbar-h'));
+  });
+
+  it('senza barra il coperto e\' solo l\'area sicura, e la pillola ne aggiunge', () => {
+    expect(css).toMatch(/:root\.senza-tabbar\{--coperto-base:var\(--safe-b\)/);
+    expect(css).toMatch(/:root\.con-pillola\{--coperto-pillola:\s*[0-9]+px/);
+  });
+
+  it('il campo "Aggiungi alimento" mostra il focus', () => {
+    // Era l'unico campo dell'app senza segno di focus (ion-input non ha outline proprio).
+    expect(css).toMatch(/\.shop-addrow ion-input:focus-within\{[^}]*border-color:var\(--accent\)/);
+  });
+});

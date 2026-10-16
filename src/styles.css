@@ -360,6 +360,15 @@ ion-content{--background:var(--bg);--color:var(--label);--padding-bottom:calc(va
    quanto ne occupa (44 + 10), cosi' l'ultima card non resta coperta. */
 :root.con-pillola ion-content{--padding-bottom:calc(var(--tabbar-h) + var(--tabbar-gap) + 28px + 54px);}
 :root.con-pillola.senza-tabbar ion-content{--padding-bottom:calc(var(--safe-b) + 28px + 54px);}
+/* Barra, fascia del recupero e pillola sono fisse sopra il contenuto: per il
+   browser quello che sta sotto e' "in vista", e il Tab non lo porta mai piu'
+   su. Il margine di scorrimento gli dice quanto del fondo e' coperto, e dove
+   serve (la fascia e' piu' alta della barra) lo sa dalla classe sulla radice. */
+:root{--coperto-base:calc(var(--tabbar-h) + var(--tabbar-gap));--coperto-pillola:0px;}
+:root.senza-tabbar{--coperto-base:var(--safe-b);}
+:root.con-fascia{--coperto-base:calc(var(--restbar-h) + var(--tabbar-gap));}
+:root.con-pillola{--coperto-pillola:54px;}
+ion-content::part(scroll){scroll-padding-bottom:calc(var(--coperto-base) + var(--coperto-pillola) + 12px);}
 @media (prefers-reduced-motion:reduce){.tabbar,.tabbar.tabbar-nascosta,.tabfade,.tabfade.tabbar-nascosta{transition:none;}}
 /* HIG iOS, Accessibility: dimensione predefinita dei controlli 44x44 pt,
    minimo assoluto 28x28. Oggi il bersaglio e' 48x119, ma nasce dalla
@@ -1522,7 +1531,8 @@ ion-spinner{color:var(--label-3);}
 
 ion-textarea.bacheca-textarea{--background:transparent;--color:var(--label);--placeholder-color:var(--label-3);--placeholder-opacity:1;--padding-start:12px;--padding-end:12px;--padding-top:12px;--padding-bottom:12px;width:100%;min-height:80px;padding:0;background:var(--surface-raise);border:1px solid var(--border-line);border-radius:var(--r-md);font-family:'Inter',sans-serif;font-size:var(--text-md);}
 
-.shop-addrow ion-input{--padding-start:14px;--padding-end:14px;--padding-top:12px;--padding-bottom:12px;--background:var(--surface-card);--color:var(--label);--placeholder-color:var(--label-3);--placeholder-opacity:1;flex:1;min-width:0;min-height:0;border-radius:var(--r-lg);border:1px solid var(--border-line);font-family:'Inter',sans-serif;font-size:var(--text-md);}
+.shop-addrow ion-input:focus-within{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent);}
+.shop-addrow ion-input{overflow:hidden;--padding-start:14px;--padding-end:14px;--padding-top:12px;--padding-bottom:12px;--background:var(--surface-card);--color:var(--label);--placeholder-color:var(--label-3);--placeholder-opacity:1;flex:1;min-width:0;min-height:0;border-radius:var(--r-lg);border:1px solid var(--border-line);font-family:'Inter',sans-serif;font-size:var(--text-md);}
 
 .combo-select ion-select{width:100%;min-height:44px;--padding-start:13px;--padding-end:13px;--padding-top:0;--padding-bottom:0;--color:var(--label);--placeholder-color:var(--label);border:1px solid var(--border-line);border-radius:var(--r-md);background:var(--surface-raise);font-family:'IBM Plex Mono',monospace;font-size:var(--text-sm);font-weight:600;}
 ion-select.rmpick-sel{width:112px;min-height:40px;--padding-start:10px;--padding-end:10px;--padding-top:8px;--padding-bottom:8px;--color:var(--label);--placeholder-color:var(--label);border:1px solid var(--border-line);border-radius:var(--r-sm);background:var(--surface-card);font-family:'IBM Plex Mono',monospace;font-size:var(--text-sm);font-weight:600;}

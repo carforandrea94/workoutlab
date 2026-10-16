@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, vi } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { WorkoutStateService } from './workout-state.service';
+import { PREFERENZE_SEGNALE_KEY, ambienteSuonoReale } from '../core/utils/segnale.util';
 
 /**
  * La settimana di protocollo e' quella del calendario, da lunedi' a domenica:
@@ -130,5 +131,106 @@ describe('WorkoutStateService — il recupero finito resta', () => {
 
     expect(s.restTimer().finished).toBe(false);
     expect(s.restTimer().remaining).toBe(40);
+  });
+});
+
+
+/**
+ * Su iPhone installato dalla Home il recupero finiva in silenzio: la vibrazione
+ * non c'e' e la notifica di sistema non parte a schermo acceso. Il segnale deve
+ * partire allo scadere, e rispettare quello che si e' scelto nelle Impostazioni.
+ */
+describe('WorkoutStateService — il segnale allo scadere del recupero', () => {
+  let oscillatori: any[];
+  let vibrate: ReturnType<typeof vi.fn>;
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    localStorage.removeItem(PREFERENZE_SEGNALE_KEY);
+    oscillatori = [];
+    vibrate = vi.fn(() => true);
+    Object.defineProperty(navigator, 'vibrate', { value: vibrate, configurable: true, writable: true });
+    // Il contesto "sbloccato" da un tocco, come lo lascia il servizio dopo il primo "Fatta".
+    ambienteSuonoReale().contesto = {
+      state: 'running', currentTime: 1, destination: {},
+      resume: async () => {},
+      createOscillator: () => {
+        const o = { type: '', frequency: { setValueAtTime: () => {} }, connect: () => {}, start: () => {}, stop: () => {} };
+        oscillatori.push(o);
+        return o;
+      },
+      createGain: () => ({ gain: { setValueAtTime: () => {}, linearRampToValueAtTime: () => {}, exponentialRampToValueAtTime: () => {} }, connect: () => {} }),
+      createBuffer: () => ({}),
+      createBufferSource: () => ({ buffer: null, connect: () => {}, start: () => {} })
+    };
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+    delete (navigator as any).vibrate;
+    ambienteSuonoReale().contesto = null;
+    localStorage.removeItem(PREFERENZE_SEGNALE_KEY);
+  });
+
+  const crea = () => TestBed.runInInjectionContext(() =>
+    new WorkoutStateService({} as any, { authReady: () => false, currentUser: () => null } as any)
+  );
+
+  it('allo scadere suona le due note e vibra', () => {
+    const s = crea();
+    s.startRestTimer(5, 'Panca piana', 'd1');
+    vi.advanceTimersByTime(5000);
+
+    expect(oscillatori).toHaveLength(2);
+    expect(vibrate).toHaveBeenCalledWith([200, 100, 200]);
+  });
+
+  it('una volta sola, anche se il conto continua a girare', () => {
+    const s = crea();
+    s.startRestTimer(5, 'Panca piana', 'd1');
+    vi.advanceTimersByTime(60_000);
+
+    expect(oscillatori).toHaveLength(2);
+    expect(vibrate).toHaveBeenCalledTimes(1);
+  });
+
+  it('prima dello scadere non fa niente', () => {
+    const s = crea();
+    s.startRestTimer(60, 'Panca piana', 'd1');
+    vi.advanceTimersByTime(59_000);
+
+    expect(oscillatori).toHaveLength(0);
+    expect(vibrate).not.toHaveBeenCalled();
+  });
+
+  it('con il suono spento nelle Impostazioni vibra e basta', () => {
+    localStorage.setItem(PREFERENZE_SEGNALE_KEY, JSON.stringify({ suono: false, vibrazione: true }));
+    const s = crea();
+    s.startRestTimer(5, 'Panca piana', 'd1');
+    vi.advanceTimersByTime(5000);
+
+    expect(oscillatori).toHaveLength(0);
+    expect(vibrate).toHaveBeenCalled();
+  });
+
+  it('con tutto spento tace, ma la fascia dice comunque "Vai"', () => {
+    localStorage.setItem(PREFERENZE_SEGNALE_KEY, JSON.stringify({ suono: false, vibrazione: false }));
+    const s = crea();
+    s.startRestTimer(5, 'Panca piana', 'd1');
+    vi.advanceTimersByTime(5000);
+
+    expect(oscillatori).toHaveLength(0);
+    expect(vibrate).not.toHaveBeenCalled();
+    expect(s.restTimer().finished).toBe(true);
+  });
+
+  it('fermare il recupero prima dello scadere non fa suonare niente', () => {
+    const s = crea();
+    s.startRestTimer(5, 'Panca piana', 'd1');
+    vi.advanceTimersByTime(2000);
+    s.stopRestTimer();
+    vi.advanceTimersByTime(10_000);
+
+    expect(oscillatori).toHaveLength(0);
+    expect(vibrate).not.toHaveBeenCalled();
   });
 });
