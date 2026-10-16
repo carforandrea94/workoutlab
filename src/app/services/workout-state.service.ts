@@ -2,7 +2,7 @@ import { Injectable, signal, effect } from '@angular/core';
 import { AppStateService } from './app-state.service';
 import { AuthService } from '../core/services/auth.service';
 import { isIosSafariNotStandalone } from '../core/utils/platform.util';
-import { vibra } from '../core/utils/vibrazione.util';
+import { segnala } from '../core/utils/segnale.util';
 import { todayLocalISO, mondayOf } from '../core/utils/date.util';
 
 export interface RestTimerState {
@@ -182,7 +182,7 @@ export class WorkoutStateService {
     if (remaining <= 0 && !this.restFinishedHandled) {
       this.restFinishedHandled = true;
       if (this.ticker) { clearInterval(this.ticker); this.ticker = null; }
-      vibra('fine-recupero');
+      segnala('fine-recupero');
       this.notifyRestFinished();
       // Il "Vai" NON si spegne da solo: una volta era un banner di quattro
       // secondi, e chi guardava la panca o il telefono in tasca lo perdeva.

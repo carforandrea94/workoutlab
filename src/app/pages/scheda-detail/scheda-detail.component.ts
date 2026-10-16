@@ -32,7 +32,7 @@ import {
 import { ProssimaSerie } from '../../services/workout-state.service';
 import { IONIC_PAGE } from '../../core/ionic-page';
 import { TastoDirective } from '../../core/tasto.directive';
-import { vibra } from '../../core/utils/vibrazione.util';
+import { segnala } from '../../core/utils/segnale.util';
 import { IonFooter, IonModal, NavController, IonSegment, IonSegmentButton, IonSelect, IonSelectOption, IonSpinner, IonButton } from '@ionic/angular';
 
 interface ExerciseVM {
@@ -720,7 +720,7 @@ export class SchedaDetailComponent implements OnInit, OnDestroy {
     if (row.done && !this.isStorico) {
       this.state.startRestTimer(vm.restSeconds, vm.ex.name, this.day.id);
       // Un colpo leggero: dice che la serie e' entrata, senza guardare lo schermo.
-      vibra('serie');
+      segnala('serie');
     }
   }
 
@@ -927,7 +927,7 @@ export class SchedaDetailComponent implements OnInit, OnDestroy {
         this.fermaTicker();
         // Una vibrazione alla fine del minimo, come per il recupero lungo: il
         // telefono e' in tasca o sulla panca, non davanti agli occhi.
-        vibra('fine-pausa');
+        segnala('fine-pausa');
         return;
       }
       this.pauseElapsed.set(passati);
@@ -1032,7 +1032,7 @@ export class SchedaDetailComponent implements OnInit, OnDestroy {
     // corto di dentro. Nello storico non tocca niente: e' una correzione.
     if (!this.isStorico) {
       this.state.startRestTimer(vm.restSeconds, vm.ex.name, this.day.id);
-      vibra('serie');
+      segnala('serie');
     }
     this.avanzaSeFinito(vm);
   }

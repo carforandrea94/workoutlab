@@ -43,3 +43,80 @@ describe('styles.css — soglie di leggibilita\'', () => {
     expect(regola).not.toMatch(/opacity\s*:\s*0?\.[0-9]+/);
   });
 });
+
+/**
+ * Barra, fascia del recupero e pillola sono fisse sopra il contenuto: per il
+ * browser quello che sta sotto e' gia' "in vista", e il Tab non lo scorreva mai
+ * piu' su (7 tappe su 49 in sessione finivano dietro la fascia). Il margine di
+ * scorrimento dice quanto del fondo e' coperto.
+ */
+describe('styles.css — il Tab porta in vista quello che sta sotto la barra', () => {
+  let css = '';
+  beforeAll(async () => {
+    const nome = 'node:fs';
+    const fs = await import(/* @vite-ignore */ nome);
+    css = fs.readFileSync('src/styles.css', 'utf8');
+  });
+
+  it('il contenuto che scorre ha un margine di scorrimento in basso, fatto di quanto e\' coperto', () => {
+    const regola = css.match(/ion-content::part\(scroll\)\{[^}]*\}/)?.[0] ?? '';
+    expect(regola).toMatch(/scroll-padding-bottom:\s*calc\(var\(--coperto-base\)\s*\+\s*var\(--coperto-pillola\)/);
+  });
+
+  it('con la fascia del recupero il coperto e\' la sua altezza', () => {
+    expect(css).toMatch(/:root\.con-fascia\{--coperto-base:calc\(var\(--restbar-h\)\s*\+\s*var\(--tabbar-gap\)\)/);
+  });
+
+  it('senza barra il coperto e\' solo l\'area sicura, e la pillola ne aggiunge', () => {
+    expect(css).toMatch(/:root\.senza-tabbar\{--coperto-base:var\(--safe-b\)/);
+    expect(css).toMatch(/:root\.con-pillola\{--coperto-pillola:\s*[0-9]+px/);
+  });
+
+  it('il campo "Aggiungi alimento" mostra il focus', () => {
+    // Era l'unico campo dell'app senza segno di focus (ion-input non ha outline proprio).
+    expect(css).toMatch(/\.shop-addrow ion-input:focus-within\{[^}]*border-color:var\(--accent\)/);
+  });
+});
+
+/**
+ * ion-tab-bar e' content-box: --tabbar-h misura lo spazio dei tasti, e
+ * imbottitura e bordo si sommano (60 + 12 + 2 = 74). La pillola della sessione
+ * contava 60 e finiva 4 px dentro la barra: tutto cio' che si appoggia sopra la
+ * barra, o le lascia posto, deve partire dall'altezza che occupa davvero.
+ */
+describe('styles.css — la barra in basso si misura per quanto occupa davvero', () => {
+  let css = '';
+  beforeAll(async () => {
+    const nome = 'node:fs';
+    const fs = await import(/* @vite-ignore */ nome);
+    css = fs.readFileSync('src/styles.css', 'utf8');
+  });
+  const px = (token: string) => parseFloat(css.match(new RegExp(`--${token}:\\s*([0-9.]+)px`))![1]);
+
+  it('l\'altezza vera e\' quella dei tasti piu\' imbottitura e bordo', () => {
+    expect(css).toMatch(/--tabbar-outer:\s*calc\(var\(--tabbar-h\)\s*\+\s*var\(--tabbar-pad\)\s*\*\s*2\s*\+\s*2px\)/);
+    // Il bordo e' di 1 px per lato: se cambia, il "+ 2px" va con lui.
+    expect(css).toMatch(/\.tabbar\{[^}]*border:\s*1px solid/);
+  });
+
+  it('la barra e\' davvero content-box, o il token non serve', () => {
+    // Se qualcuno le da border-box, --tabbar-outer sovrastima e la pillola si stacca.
+    expect(css).not.toMatch(/\.tabbar\{[^}]*box-sizing:\s*border-box/);
+  });
+
+  it('la pillola della sessione sta sopra la barra, non dentro', () => {
+    expect(css).toMatch(/\.sessionpill\{[^}]*transform:translateY\(calc\(-1 \* \(var\(--tabbar-outer\) \+ 10px\)\)\)/);
+  });
+
+  it('nessuno spazio sopra la barra si calcola ancora con la sola altezza dei tasti', () => {
+    const senzaCommenti = css.replace(/\/\*[\s\S]*?\*\//g, '');
+    const regole = senzaCommenti.match(/[^{}]*\{[^}]*--tabbar-h[^}]*\}/g) ?? [];
+    // L'unico posto dove --tabbar-h puo' restare e' la barra stessa (height) e la sua definizione.
+    const intrusi = regole.filter(r => !/^\s*\.tabbar\{/.test(r) && !/--tabbar-outer:|--tabbar-h:\s*60px/.test(r));
+    expect(intrusi).toEqual([]);
+  });
+
+  it('la fascia del recupero resta la piu\' alta, ma di poco: prende il posto della barra', () => {
+    expect(px('restbar-h')).toBeGreaterThanOrEqual(px('tabbar-h') + 2 * px('tabbar-pad') + 2);
+  });
+});

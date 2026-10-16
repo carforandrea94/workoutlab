@@ -26,7 +26,7 @@ describe('TabsPage — barra nascosta e tocco sulla tab (disegno vero)', () => {
     { path: 'scheda/day/:n', component: Vuota }
   ];
 
-  afterEach(() => document.documentElement.classList.remove('senza-tabbar', 'con-pillola'));
+  afterEach(() => document.documentElement.classList.remove('senza-tabbar', 'con-pillola', 'con-fascia'));
 
   async function monta(opzioni: { sessioneSuGiorno?: boolean; sessione?: { dayId: string; dayLabel?: string; pausedAt?: string | null } } = {}) {
     // La sessione in corso: o quella sul giorno 0 (comodo per i test della fascia),
@@ -112,6 +112,45 @@ describe('TabsPage — barra nascosta e tocco sulla tab (disegno vero)', () => {
     expect(document.documentElement.classList.contains('senza-tabbar')).toBe(false);
     expect(barra().style.display).toBe('none');
     expect(root.querySelector('app-rest-bar')).toBeTruthy();
+  });
+
+  describe('la fascia del recupero e il margine di scorrimento', () => {
+    // La fascia e' piu' alta della barra che sostituisce e sta fissa sopra il
+    // contenuto: col Tab, quello che le finisce sotto non scorreva in vista. Il
+    // CSS ricava il margine di scorrimento dalla classe sulla radice.
+    const conFascia = () => document.documentElement.classList.contains('con-fascia');
+
+    it('sul giorno che si sta allenando la radice lo dice', async () => {
+      const { vai } = await monta({ sessioneSuGiorno: true });
+      await vai('/scheda/day/0');
+      expect(conFascia()).toBe(true);
+    });
+
+    it('sulle radici e fuori dal giorno della sessione non c\'e\'', async () => {
+      const { vai } = await monta({ sessioneSuGiorno: true });
+      expect(conFascia()).toBe(false);
+      await vai('/scheda/day/0');
+      await vai('/dieta');
+      expect(conFascia()).toBe(false);
+    });
+
+    it('su un giorno senza sessione la fascia non c\'e\' e la classe nemmeno', async () => {
+      const { vai } = await monta({ sessioneSuGiorno: false });
+      await vai('/scheda/day/0');
+      expect(conFascia()).toBe(false);
+    });
+
+    it('finita la sessione la classe se ne va con la fascia', async () => {
+      const { vai, attiva, fixture } = await monta({ sessioneSuGiorno: true });
+      await vai('/scheda/day/0');
+      expect(conFascia()).toBe(true);
+
+      attiva.set(null);
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      expect(conFascia()).toBe(false);
+    });
   });
 
   it('su un giorno senza sessione è una pagina interna come le altre', async () => {

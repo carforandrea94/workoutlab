@@ -37,6 +37,11 @@ function ambienteReale(): Ambiente {
   };
 }
 
+/** Se da questo dispositivo la vibrazione arriva davvero: nell'app nativa o dove il browser ha navigator.vibrate. */
+export function vibrazioneDisponibile(ambiente: Ambiente = ambienteReale()): boolean {
+  return ambiente.nativa || !!ambiente.vibrate;
+}
+
 export function vibra(tipo: Vibrazione, ambiente: Ambiente = ambienteReale()): void {
   if (ambiente.nativa) {
     // Nessuno aspetta l'esito: se l'aptico non c'e' (iPad, simulatore) non e' un errore.
