@@ -1,6 +1,6 @@
 import {
   SerieRow, MAX_SETS_PER_EXERCISE, MAX_BLOCKS_PER_SET, canAddSet, buildExtraSet,
-  canRemoveSet, removeSetAt, mergeDraftRows
+  canRemoveSet, removeSetAt, mergeDraftRows, abbinaBozze
 } from './extra-sets.util';
 
 function planned(reps = '10', over: Partial<SerieRow> = {}): SerieRow {
@@ -194,5 +194,92 @@ describe('mergeDraftRows — i blocchi a cluster', () => {
   it('una serie senza blocchi non se li inventa dalla bozza', () => {
     const out = mergeDraftRows(piano(1), [{ blocks: [{ reps: '8', done: true }] }]);
     expect(out[0].blocks).toBeUndefined();
+  });
+});
+
+/**
+ * Nel builder gli esercizi di un giorno si riordinano: una bozza lasciata a meta'
+ * allenamento non deve finire sull'esercizio sbagliato. Le righe qui sono
+ * etichette per riconoscerle, non serie vere.
+ */
+describe('abbinaBozze', () => {
+  const r = (tag: string) => [{ reps: tag }];
+  const b = (name: string | undefined, tag: string) => (name === undefined ? { rows: r(tag) } : { name, rows: r(tag) });
+
+  it('senza riordino ogni bozza resta al suo esercizio', () => {
+    const out = abbinaBozze(['A', 'B', 'C'], [b('A', 'a'), b('B', 'b'), b('C', 'c')]);
+    expect(out).toEqual([r('a'), r('b'), r('c')]);
+  });
+
+  it('dopo un riordino segue il nome, non la posizione', () => {
+    // Bozze scritte quando il giorno era C, A, B; ora e' A, B, C.
+    const out = abbinaBozze(['A', 'B', 'C'], [b('C', 'c'), b('A', 'a'), b('B', 'b')]);
+    expect(out).toEqual([r('a'), r('b'), r('c')]);
+  });
+
+  it('le bozze di prima, senza nome, valgono per posizione come sempre', () => {
+    const out = abbinaBozze(['A', 'B', 'C'], [b(undefined, 'x'), b(undefined, 'y'), b(undefined, 'z')]);
+    expect(out).toEqual([r('x'), r('y'), r('z')]);
+  });
+
+  it('con bozze miste, quelle col nome vincono sul posto e le altre prendono quello che resta', () => {
+    const out = abbinaBozze(['A', 'B', 'C'], [b('B', 'b'), b(undefined, 'y'), b(undefined, 'z')]);
+    // B va a B; la bozza senza nome in posizione 1 trova il posto occupato, quella in 2 va a C.
+    expect(out).toEqual([undefined, r('b'), r('z')]);
+  });
+
+  it('due esercizi con lo stesso nome si abbinano nell\'ordine', () => {
+    const out = abbinaBozze(['Croci', 'Panca', 'Croci'], [b('Croci', '1'), b('Croci', '2'), b('Panca', 'p')]);
+    expect(out[0]).toEqual(r('1'));
+    expect(out[2]).toEqual(r('2'));
+    expect(out[1]).toEqual(r('p'));
+  });
+
+  it('due esercizi con lo stesso nome, riordinati, non si scambiano: il posto uguale ha la precedenza', () => {
+    const out = abbinaBozze(['Croci', 'Croci'], [b('Croci', '1'), b('Croci', '2')]);
+    expect(out).toEqual([r('1'), r('2')]);
+  });
+
+  it('a parita\' di nome una bozza tiene il posto che aveva, non il primo libero', () => {
+    // Era Panca, Croci; Panca e' diventata Croci: la bozza della seconda Croci resta alla seconda.
+    const out = abbinaBozze(['Croci', 'Croci'], [b('Panca', 'p'), b('Croci', 'b')]);
+    expect(out).toEqual([undefined, r('b')]);
+  });
+
+  it('un esercizio tolto non passa i suoi chili a quello che gli scivola al posto', () => {
+    // Era A, B, C; B e' stato tolto: ora A, C.
+    const out = abbinaBozze(['A', 'C'], [b('A', 'a'), b('B', 'b'), b('C', 'c')]);
+    expect(out).toEqual([r('a'), r('c')]);
+  });
+
+  it('un esercizio rinominato senza spostarlo tiene i suoi chili', () => {
+    const out = abbinaBozze(['A', 'B2', 'C'], [b('A', 'a'), b('B', 'b'), b('C', 'c')]);
+    expect(out).toEqual([r('a'), r('b'), r('c')]);
+  });
+
+  it('un esercizio rinominato e spostato non ruba il posto a un altro', () => {
+    // Era A, B; ora B, X: la bozza di A non ha piu' un esercizio e il posto 0 e' di B.
+    const out = abbinaBozze(['B', 'X'], [b('A', 'a'), b('B', 'b')]);
+    expect(out).toEqual([r('b'), undefined]);
+  });
+
+  it('piu\' bozze che esercizi (giorno accorciato in fondo): quelle in piu\' si perdono', () => {
+    const out = abbinaBozze(['A'], [b('A', 'a'), b('B', 'b')]);
+    expect(out).toEqual([r('a')]);
+  });
+
+  it('meno bozze che esercizi (giorno allungato): gli esercizi nuovi restano senza', () => {
+    const out = abbinaBozze(['A', 'B', 'N'], [b('A', 'a'), b('B', 'b')]);
+    expect(out).toEqual([r('a'), r('b'), undefined]);
+  });
+
+  it('gli spazi attorno al nome non contano', () => {
+    const out = abbinaBozze(['B ', ' A'], [b('A', 'a'), b('B', 'b')]);
+    expect(out).toEqual([r('b'), r('a')]);
+  });
+
+  it('senza bozze o senza esercizi non fa niente', () => {
+    expect(abbinaBozze(['A', 'B'], [])).toEqual([undefined, undefined]);
+    expect(abbinaBozze([], [b('A', 'a')])).toEqual([]);
   });
 });

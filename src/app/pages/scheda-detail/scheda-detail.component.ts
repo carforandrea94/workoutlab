@@ -26,7 +26,7 @@ import {
 } from '../../core/utils/load-estimate.util';
 import { ToastService } from '../../services/toast.service';
 import {
-  SerieRow, BlockRow, canAddSet, buildExtraSet, canRemoveSet, removeSetAt, mergeDraftRows
+  SerieRow, BlockRow, canAddSet, buildExtraSet, canRemoveSet, removeSetAt, mergeDraftRows, abbinaBozze
 } from '../../core/utils/extra-sets.util';
 
 import { ProssimaSerie } from '../../services/workout-state.service';
@@ -449,11 +449,12 @@ export class SchedaDetailComponent implements OnInit, OnDestroy {
     return `${this.day.id}:${exName}`;
   }
 
-  private loadDraft(draft: { rows: WorkoutDraftRow[] }[] | undefined): void {
+  private loadDraft(draft: { rows: WorkoutDraftRow[]; name?: string }[] | undefined): void {
     if (!draft) return;
-    draft.forEach((dex, i) => {
+    // Per nome e non per posizione: nel builder gli esercizi si riordinano.
+    abbinaBozze(this.exercises.map(vm => vm.ex.name), draft).forEach((righe, i) => {
       const vm = this.exercises[i];
-      if (vm) vm.rows = mergeDraftRows(vm.rows, dex.rows);
+      if (righe && vm) vm.rows = mergeDraftRows(vm.rows, righe);
     });
   }
 
@@ -1300,7 +1301,7 @@ export class SchedaDetailComponent implements OnInit, OnDestroy {
   }
 
   private saveDraft(): void {
-    const data = this.exercises.map(vm => ({ rows: vm.rows }));
+    const data = this.exercises.map(vm => ({ name: vm.ex.name, rows: vm.rows }));
     this.appState.patchField(`workoutDrafts.${this.day.id}`, data).catch(() => { /* gia' segnalato da AppStateService */ });
   }
 

@@ -33,7 +33,8 @@ export interface ActiveWorkoutSession {
 export type ThemeMode = 'dark' | 'light';
 
 export interface AppState {
-  workoutDrafts: Record<string, { rows: WorkoutDraftRow[] }[]>;
+  /** Una bozza per esercizio, nell'ordine in cui il giorno li aveva. `name` e' l'esercizio a cui appartiene: il builder puo' riordinarli. Manca nelle bozze di prima. */
+  workoutDrafts: Record<string, { rows: WorkoutDraftRow[]; name?: string }[]>;
   restOverrides: Record<string, number>;
   measureDraft: Record<string, Record<string, string | null>> | null;
   shoppingChecked: Record<string, boolean>;

@@ -108,6 +108,67 @@ export function removeSetAt(rows: readonly SerieRow[], idx: number): SerieRow[] 
   return rows.filter((_, i) => i !== idx);
 }
 
+/** La bozza di un esercizio: le sue righe, e il nome che l'esercizio aveva quando e' stata scritta (manca nelle bozze di prima). */
+export interface DraftEsercizio {
+  name?: string;
+  rows: readonly DraftRow[];
+}
+
+/**
+ * A quale esercizio appartiene ogni bozza.
+ *
+ * Le bozze si salvano in fila, una per esercizio, nell'ordine di allora. Ma nel
+ * builder gli esercizi di un giorno si riordinano: una bozza lasciata a meta'
+ * allenamento finirebbe sull'esercizio sbagliato, con i chili della panca sul
+ * tricipiti. Dove la bozza ha il nome si cerca per nome (a parita' di nome,
+ * nell'ordine in cui compaiono); quelle di prima, senza nome, valgono per
+ * posizione, come sempre. Una bozza col nome di un esercizio che non c'e' piu'
+ * (rinominato o tolto) prende il suo vecchio posto solo se nessun'altra bozza lo
+ * ha reclamato, cosi' un esercizio rinominato tiene i suoi chili e uno tolto non
+ * li passa a quello che gli e' scivolato al posto.
+ *
+ * Ritorna, per ogni esercizio attuale, le righe della sua bozza (o undefined).
+ */
+export function abbinaBozze(
+  nomi: readonly string[],
+  bozze: readonly DraftEsercizio[]
+): (readonly DraftRow[] | undefined)[] {
+  const norm = (n: string | undefined) => (n ?? '').trim();
+  const out: (readonly DraftRow[] | undefined)[] = nomi.map(() => undefined);
+  const presi = new Set<number>();
+  const abbinata = new Set<number>();
+
+  // 1. Per nome, preferendo il posto che aveva se e' ancora lo stesso.
+  bozze.forEach((b, i) => {
+    if (b.name === undefined) return;
+    const nome = norm(b.name);
+    const k = norm(nomi[i]) === nome && !presi.has(i)
+      ? i
+      : nomi.findIndex((n, j) => norm(n) === nome && !presi.has(j));
+    if (k < 0) return;
+    out[k] = b.rows;
+    presi.add(k);
+    abbinata.add(i);
+  });
+  // 2. Le bozze senza nome: per posizione.
+  bozze.forEach((b, i) => {
+    if (b.name !== undefined || i >= nomi.length || presi.has(i)) return;
+    out[i] = b.rows;
+    presi.add(i);
+    abbinata.add(i);
+  });
+  // 3. Le bozze di un esercizio che non c'e' piu' con quel nome: il vecchio
+  //    posto, se e' libero e nessuna bozza lo ha reclamato per nome.
+  bozze.forEach((b, i) => {
+    if (abbinata.has(i) || i >= nomi.length || presi.has(i)) return;
+    const reclamato = bozze.some(x => x.name !== undefined && norm(x.name) === norm(nomi[i]));
+    if (reclamato) return;
+    out[i] = b.rows;
+    presi.add(i);
+  });
+  return out;
+}
+
 /**
  * Riporta la bozza sulle serie del piano.
  *

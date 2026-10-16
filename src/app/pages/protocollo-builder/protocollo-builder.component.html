@@ -143,11 +143,19 @@
           </div>
         </div>
 
-        <p class="sectiontitle mt-4">Esercizi</p>
+        <div class="sec-head mt-4">
+          <p class="sectiontitle">Esercizi</p>
+          <!-- Con un esercizio solo non c'e' niente da riordinare. Il nome del tasto
+               cambia da solo (Riordina / Fine), come Modifica / Fine su iOS. -->
+          <ion-button type="button" class="riordina-btn tap44" *ngIf="ed.day.ex.length > 1" (click)="toggleRiordino()">
+            {{ riordinando ? 'Fine' : 'Riordina' }}
+          </ion-button>
+        </div>
 
         <!-- Il tasto sta sopra l'elenco, non sotto: in un giorno da sette esercizi
-             bisognava attraversarli tutti per arrivare ad aggiungere l'ottavo. -->
-        <ion-button type="button" class="confirmbtn cancel w-full mb-3" (click)="addExercise(ed.day)">
+             bisognava attraversarli tutti per arrivare ad aggiungere l'ottavo.
+             Mentre si riordina sparisce: aprirebbe l'editor in mezzo al lavoro. -->
+        <ion-button type="button" class="confirmbtn cancel w-full mb-3" *ngIf="!riordinando" (click)="addExercise(ed.day)">
           + Aggiungi esercizio
         </ion-button>
 
@@ -155,9 +163,18 @@
           Nessun esercizio ancora.
         </div>
 
-        <ion-list class="grouplist mb-3" *ngIf="ed.day.ex.length > 0">
-          <ion-item class="cardrow press-fx" lines="none" [button]="true"
-            *ngFor="let ex of ed.day.ex; let ei = index" (click)="editExercise(ed.day, ex)">
+        <ng-container *ngIf="riordinando">
+          <p class="riordina-aiuto" id="riordina-aiuto">Trascina dalla maniglia, oppure usa le frecce su e giù.</p>
+          <!-- Per chi non vede lo schermo: dice dove e' finito l'esercizio spostato. -->
+          <div class="sr-only" aria-live="polite" aria-atomic="true">{{ annuncioRiordino }}</div>
+        </ng-container>
+
+        <ion-list class="grouplist mb-3" *ngIf="ed.day.ex.length > 0"
+          cdkDropList [cdkDropListData]="ed.day.ex" [cdkDropListDisabled]="!riordinando"
+          (cdkDropListDropped)="rilasciaEsercizio(ed.day, $event)">
+          <ion-item class="cardrow" [class.press-fx]="!riordinando" lines="none" [button]="!riordinando"
+            *ngFor="let ex of ed.day.ex; let ei = index" cdkDrag [cdkDragDisabled]="!riordinando"
+            (click)="editExercise(ed.day, ex)">
             <div class="cardrow-body protocol-row">
               <!-- Il numero di riferimento, come lo vede il cliente: e' con quello
                    che ci si dice a che esercizio si e' arrivati. -->
@@ -166,7 +183,17 @@
                 <div class="lbl">{{ ex.name || 'Esercizio senza nome' }}</div>
                 <div class="meta">{{ ex.muscle }} &nbsp;·&nbsp; {{ exerciseSummary(ex) }}</div>
               </div>
+              <!-- La presa e' un elemento suo, come per gli alimenti: la riga e' un
+                   bersaglio per aprire l'esercizio, e tutta la riga come presa
+                   vorrebbe dire trascinarlo senza volerlo. -->
+              <button *ngIf="riordinando" type="button" class="draghandle riordina-presa" cdkDragHandle
+                [attr.aria-label]="'Sposta ' + (ex.name || 'esercizio senza nome')" aria-describedby="riordina-aiuto"
+                (keydown.arrowup)="spostaEsercizio(ed.day, ei, -1, $event)"
+                (keydown.arrowdown)="spostaEsercizio(ed.day, ei, 1, $event)">
+                <lucide-icon name="grip-vertical" [size]="20"></lucide-icon>
+              </button>
             </div>
+            <div class="dragghost dragghost-riga" *cdkDragPlaceholder></div>
           </ion-item>
         </ion-list>
 
