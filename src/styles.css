@@ -531,8 +531,8 @@ ion-button.rest-stepbtn:active{transform:scale(0.92);}
    velo al tocco, testo com'e' scritto, margini a zero - e sotto, ciascuno, i
    suoi colori e le sue misure. Le variabili -- sono quelle di ion-button; il
    resto (larghezza, margini, allineamento) e' CSS normale sull'host. */
-ion-button.setdone,ion-button.setundo,ion-button.setremove,ion-button.setadd,ion-button.clusterundo,ion-button.closing-discard,ion-button.rest-defaultbtn,ion-button.runsave,ion-button.runremove,ion-button.runadd-inline,ion-button.shop-clear,ion-button.shop-addbtn,ion-button.googlebtn{--box-shadow:none;--padding-start:0;--padding-end:0;--padding-top:0;--padding-bottom:0;--background-activated-opacity:0;--background-hover-opacity:0;--background-focused-opacity:.12;min-height:0;text-transform:none;display:block;}
-:where(ion-button.setdone,ion-button.setundo,ion-button.setremove,ion-button.setadd,ion-button.clusterundo,ion-button.closing-discard,ion-button.rest-defaultbtn,ion-button.runsave,ion-button.runremove,ion-button.runadd-inline,ion-button.shop-clear,ion-button.shop-addbtn,ion-button.googlebtn){margin:0;}
+ion-button.setdone,ion-button.setundo,ion-button.setremove,ion-button.setadd,ion-button.clusterundo,ion-button.closing-discard,ion-button.rest-defaultbtn,ion-button.runsave,ion-button.runremove,ion-button.runadd-inline,ion-button.shop-clear,ion-button.riordina-btn,ion-button.shop-addbtn,ion-button.googlebtn{--box-shadow:none;--padding-start:0;--padding-end:0;--padding-top:0;--padding-bottom:0;--background-activated-opacity:0;--background-hover-opacity:0;--background-focused-opacity:.12;min-height:0;text-transform:none;display:block;}
+:where(ion-button.setdone,ion-button.setundo,ion-button.setremove,ion-button.setadd,ion-button.clusterundo,ion-button.closing-discard,ion-button.rest-defaultbtn,ion-button.runsave,ion-button.runremove,ion-button.runadd-inline,ion-button.shop-clear,ion-button.riordina-btn,ion-button.shop-addbtn,ion-button.googlebtn){margin:0;}
 ion-button.rest-defaultbtn{--background:transparent;--color:var(--label-2);--border-radius:var(--r-md);--border-width:1px;--border-style:dashed;--border-color:var(--border-line);--padding-start:10px;--padding-end:10px;--padding-top:10px;--padding-bottom:10px;width:100%;margin-bottom:16px;font-family:'Inter',sans-serif;font-size:var(--text-sm);font-weight:600;}
 ion-button.rest-defaultbtn:hover{--color:var(--label);--border-color:var(--label-2);}
 .ex .content-inner{padding:0 16px 16px;border-top:1px solid var(--separator);}
@@ -936,7 +936,7 @@ ion-button.authlink.quiet{margin-top:6px;--color:var(--label-3);text-decoration:
 .shop-top{display:flex;align-items:center;gap:12px;margin-bottom:14px;}
 .shop-count{font-family:'IBM Plex Mono',monospace;font-size:var(--text-sm);color:var(--label-2);flex-shrink:0;}
 .shop-bar{flex:1;min-width:0;height:5px;border-radius:var(--r-pill);--background:var(--surface-raise);--progress-background:var(--accent);overflow:hidden;}
-ion-button.shop-clear{--background:var(--surface-raise);--color:var(--label-2);--border-radius:var(--r-pill);--border-width:1px;--border-style:solid;--border-color:var(--border-line);--padding-start:13px;--padding-end:13px;--padding-top:7px;--padding-bottom:7px;flex-shrink:0;min-height:36px;font-family:'IBM Plex Mono',monospace;font-size:var(--text-2xs);font-weight:400;white-space:nowrap;}
+ion-button.shop-clear,ion-button.riordina-btn{--background:var(--surface-raise);--color:var(--label-2);--border-radius:var(--r-pill);--border-width:1px;--border-style:solid;--border-color:var(--border-line);--padding-start:13px;--padding-end:13px;--padding-top:7px;--padding-bottom:7px;flex-shrink:0;min-height:36px;font-family:'IBM Plex Mono',monospace;font-size:var(--text-2xs);font-weight:400;white-space:nowrap;}
 
 /* La ricerca: la barra di iOS (ion-searchbar), con i colori dell'app. Il bordo
    sta sul contenitore del campo, che Ionic espone come parte. */
@@ -1031,6 +1031,17 @@ ion-button.shop-addbtn:active{filter:brightness(0.92);}
 .draghandle{flex-shrink:0;display:flex;align-items:center;justify-content:center;width:34px;height:44px;margin-left:-6px;border:none;background:none;color:var(--label-3);cursor:grab;touch-action:none;}
 .draghandle:active{cursor:grabbing;}
 .builder-item.cdk-drag-dragging .draghandle{color:var(--accent);}
+.draghandle:focus-visible{outline:2px solid var(--accent);outline-offset:-2px;border-radius:var(--r-sm);}
+/* --- Riordinare gli esercizi di un giorno ---
+   Stessa presa degli alimenti, ma sulla riga di un'ion-list: la riga e' una card
+   alta, e quello che resta al suo posto mentre la si trascina deve avere la sua
+   stessa forma. Il distacco fra le righe lo da' gia' il gap della lista. */
+.sec-head{display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.riordina-aiuto{font-size:var(--text-xs);line-height:1.5;color:var(--label-3);margin:0 4px 12px;}
+.riordina-presa{width:44px;margin:0;color:var(--label-2);}
+.dragghost.dragghost-riga{height:76px;margin:0;border-radius:var(--r-xl);}
+ion-item.cardrow.cdk-drag-preview{border-radius:var(--r-xl);opacity:1;}
+ion-item.cardrow.cdk-drag-preview .riordina-presa{color:var(--accent);}
 /* La riga che segue il dito: staccata dal foglio, con l'ombra che lo dice. */
 .cdk-drag-preview{box-shadow:var(--shadow-float);border-radius:var(--r-sm);background:var(--surface-raise);opacity:.96;}
 .cdk-drag-preview .delete-btn{visibility:hidden;}

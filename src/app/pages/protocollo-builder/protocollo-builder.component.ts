@@ -93,6 +93,16 @@ export class ProtocolloBuilderComponent implements OnInit, OnDestroy, DoCheck {
   editingMeal: NamedMeal | null = null;
   editingExercise: { day: Day; ex: Exercise; isNew: boolean } | null = null;
 
+  /**
+   * Gli esercizi di un giorno si riordinano in un modo a parte, come "Modifica"
+   * su iOS: in modo normale la riga apre l'esercizio, e metterci sopra anche una
+   * maniglia vorrebbe dire un pulsante dentro un pulsante, e un dito che apre
+   * l'editor mentre voleva trascinare. Qui le righe non si aprono e hanno la presa.
+   */
+  riordinando = false;
+  /** Cosa dire a chi non vede lo schermo dopo uno spostamento: "Panca piana: posizione 2 di 8". */
+  annuncioRiordino = '';
+
   readonly muscles = ['Petto', 'Spalle', 'Tricipiti', 'Dorso', 'Bicipiti', 'Gambe', 'Core'];
 
   /** L'obiettivo di corsa esiste sempre dopo load(): il template puo' legarsi senza guardie. */
@@ -372,12 +382,14 @@ export class ProtocolloBuilderComponent implements OnInit, OnDestroy, DoCheck {
 
   openDay(day: Day, index: number): void {
     this.editingDay = { day, index };
+    this.fineRiordino();
     this.cdr.detectChanges();
   }
 
   /** Torna all'elenco. Non scrive niente: il salvataggio e' un gesto a parte. */
   closeDay(): void {
     this.editingDay = null;
+    this.fineRiordino();
     this.cdr.detectChanges();
   }
 
@@ -392,6 +404,7 @@ export class ProtocolloBuilderComponent implements OnInit, OnDestroy, DoCheck {
     if (!ok) return;
     this.protocol?.workout.days.splice(i, 1);
     if (this.editingDay?.index === i) this.editingDay = null;
+    this.fineRiordino();
     this.cdr.detectChanges();
   }
 
@@ -400,6 +413,56 @@ export class ProtocolloBuilderComponent implements OnInit, OnDestroy, DoCheck {
     const n = day.ex.length;
     if (n === 0) return 'Nessun esercizio';
     return n === 1 ? '1 esercizio' : `${n} esercizi`;
+  }
+
+  // --- Riordinare gli esercizi di un giorno ---
+  //
+  // L'ordine e' quello in cui si fanno: e' il numero che il cliente vede sul
+  // badge e quello con cui ci si dice a che punto si e'. Si riordina solo qui,
+  // non nell'allenamento: li' un esercizio fatto fuori ordine si fa e basta, e
+  // spostare le righe mentre si e' a meta' vorrebbe dire perderle.
+
+  /** Entra o esce dal modo "Riordina". */
+  toggleRiordino(): void {
+    this.riordinando = !this.riordinando;
+    this.annuncioRiordino = '';
+    this.cdr.detectChanges();
+  }
+
+  private fineRiordino(): void {
+    this.riordinando = false;
+    this.annuncioRiordino = '';
+  }
+
+  /** Il rilascio del trascinamento: l'esercizio va dove e' stato lasciato. */
+  rilasciaEsercizio(day: Day, e: CdkDragDrop<Exercise[]>): void {
+    if (e.previousIndex === e.currentIndex) return;
+    moveItemInArray(day.ex, e.previousIndex, e.currentIndex);
+    this.annunciaSpostamento(day, e.currentIndex);
+    this.cdr.detectChanges();
+  }
+
+  /**
+   * Un posto su o giu' dalla tastiera, con le frecce sulla maniglia: la presa
+   * col dito non ha un equivalente per chi non lo usa. Al bordo non succede
+   * niente. Spostato l'esercizio cambia posto anche il suo elemento, e col
+   * nodo se ne va il focus: si rimette sulla stessa maniglia, che e' dove chi
+   * usa la tastiera sta lavorando.
+   */
+  spostaEsercizio(day: Day, indice: number, passo: -1 | 1, evento?: Event): void {
+    // Le frecce scorrerebbero anche la pagina.
+    evento?.preventDefault();
+    const arrivo = indice + passo;
+    if (arrivo < 0 || arrivo >= day.ex.length) return;
+    moveItemInArray(day.ex, indice, arrivo);
+    this.annunciaSpostamento(day, arrivo);
+    this.cdr.detectChanges();
+    (evento?.target as HTMLElement | null)?.focus?.();
+  }
+
+  private annunciaSpostamento(day: Day, posizione: number): void {
+    const nome = day.ex[posizione]?.name?.trim() || 'Esercizio senza nome';
+    this.annuncioRiordino = `${nome}: posizione ${posizione + 1} di ${day.ex.length}`;
   }
 
   // --- Editor esercizio (nome, muscolo, schema, progressione settimanale se wave) ---
@@ -411,6 +474,8 @@ export class ProtocolloBuilderComponent implements OnInit, OnDestroy, DoCheck {
   }
 
   editExercise(day: Day, ex: Exercise): void {
+    // Nel modo Riordina le righe non si aprono.
+    if (this.riordinando) return;
     this.editingExercise = { day, ex, isNew: false };
     this.cdr.detectChanges();
   }

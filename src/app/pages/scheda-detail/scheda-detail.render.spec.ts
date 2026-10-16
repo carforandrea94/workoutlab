@@ -39,7 +39,7 @@ describe('SchedaDetailComponent — accessibilita\' delle testate (disegno vero)
     HTMLElement.prototype.scrollIntoView = function () {} as any;
   });
 
-  async function monta(vista: 'list' | 'slider', sessioneAvviata = false, altraSessione = false) {
+  async function monta(vista: 'list' | 'slider', sessioneAvviata = false, altraSessione = false, bozze?: unknown[], patchField: (...a: any[]) => Promise<void> = async () => {}) {
     const start = vi.fn();
     const viewMode = signal<'list' | 'slider'>(vista);
     TestBed.configureTestingModule({
@@ -58,8 +58,8 @@ describe('SchedaDetailComponent — accessibilita\' delle testate (disegno vero)
           prossimaSerie: signal(null)
         } },
         { provide: AppStateService, useValue: {
-          load: async () => ({ restOverrides: {}, loadPercent: null, workoutDrafts: {} }),
-          patchField: async () => {}
+          load: async () => ({ restOverrides: {}, loadPercent: null, workoutDrafts: bozze ? { day1: bozze } : {} }),
+          patchField
         } },
         { provide: WorkoutSessionsService, useValue: { listForDay: async () => [] } },
         { provide: ConfirmDialogService, useValue: {} },
@@ -276,6 +276,33 @@ describe('SchedaDetailComponent — accessibilita\' delle testate (disegno vero)
 
       bottone.click();
       expect(naviga).toHaveBeenCalledWith(['/scheda/storico']);
+    });
+  });
+
+  describe('le bozze dopo un riordino del giorno nel builder', () => {
+    const serie = (reps: string, load: string) => ({ reps, load, done: true });
+    const bozzaDi = (name: string | undefined, load: string) =>
+      ({ ...(name === undefined ? {} : { name }), rows: [serie('8', load), serie('8', load)] });
+    const caricoDi = (c: any) => c.exercises.map((vm: any) => vm.rows[0].load);
+
+    it('i chili scritti restano sul loro esercizio anche se l\'ordine e\' cambiato', async () => {
+      // Salvata quando il giorno era Dip, Panca piana, Croci; ora e' Panca piana, Croci, Dip.
+      const { fixture } = await monta('list', true, false, [bozzaDi('Dip', '30'), bozzaDi('Panca piana', '60'), bozzaDi('Croci', '20')]);
+      expect(caricoDi(fixture.componentInstance)).toEqual(['60', '20', '30']);
+    });
+
+    it('le bozze di prima, senza nome, valgono per posizione come sempre', async () => {
+      const { fixture } = await monta('list', true, false, [bozzaDi(undefined, '1'), bozzaDi(undefined, '2'), bozzaDi(undefined, '3')]);
+      expect(caricoDi(fixture.componentInstance)).toEqual(['1', '2', '3']);
+    });
+
+    it('salvando la bozza scrive il nome di ogni esercizio, perche\' possa ritrovarlo', async () => {
+      const patch = vi.fn(async () => {});
+      const { fixture } = await monta('list', true, false, undefined, patch);
+      (fixture.componentInstance as any).saveDraft();
+      const chiamata = (patch.mock.calls as any[][]).find(c => c[0] === 'workoutDrafts.day1');
+      expect(chiamata).toBeTruthy();
+      expect((chiamata![1] as any[]).map(d => d.name)).toEqual(['Panca piana', 'Croci', 'Dip']);
     });
   });
 });
