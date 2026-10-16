@@ -86,7 +86,7 @@ import { IONIC_LINKS } from '../../core/ionic-page';
       padding-top: 12px; margin-top: 13px; border-top: 1px solid var(--border-line);
     }
     .tonnrow { display: flex; align-items: center; gap: 10px; }
-    .tonnrow-lbl { font-size: 11.5px; color: var(--label-2); width: 66px; flex-shrink: 0; }
+    .tonnrow-lbl { font-size: var(--text-xs); color: var(--label-2); width: 66px; flex-shrink: 0; }
     .tonnrow-bar {
       flex-grow: 1; height: 5px; border-radius: var(--r-pill);
       background: var(--surface-raise); overflow: hidden; display: block;

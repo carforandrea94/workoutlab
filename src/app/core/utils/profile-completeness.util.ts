@@ -73,26 +73,26 @@ export function validaProfilo(input: InputProfilo, oggi: string): ErroriProfilo 
 
   const nome = input.nome.trim();
   const cognome = input.cognome.trim();
-  if (!nome) errori.nome = 'Il nome e\' obbligatorio.';
-  else if (nome.length > 80) errori.nome = 'Il nome e\' troppo lungo.';
-  if (!cognome) errori.cognome = 'Il cognome e\' obbligatorio.';
-  else if (cognome.length > 80) errori.cognome = 'Il cognome e\' troppo lungo.';
+  if (!nome) errori.nome = 'Il nome è obbligatorio.';
+  else if (nome.length > 80) errori.nome = 'Il nome è troppo lungo.';
+  if (!cognome) errori.cognome = 'Il cognome è obbligatorio.';
+  else if (cognome.length > 80) errori.cognome = 'Il cognome è troppo lungo.';
   // Il nome intero e' un campo solo, e le regole lo tengono sotto gli 80.
   if (!errori.nome && !errori.cognome && componiNome(nome, cognome).length > 80) {
     errori.cognome = 'Nome e cognome insieme sono troppo lunghi.';
   }
 
   if (!input.birthDate) {
-    errori.birthDate = 'La data di nascita e\' obbligatoria.';
+    errori.birthDate = 'La data di nascita è obbligatoria.';
   } else if (!dataEsiste(input.birthDate) || input.birthDate < NASCITA_MIN || input.birthDate > oggi) {
-    errori.birthDate = 'La data di nascita non e\' valida.';
+    errori.birthDate = 'La data di nascita non è valida.';
   }
 
   if (input.sex !== 'm' && input.sex !== 'f') errori.sex = 'Scegli un\'opzione.';
 
   const altezza = input.heightCm === '' || input.heightCm === null ? NaN : Number(input.heightCm);
   if (input.heightCm === '' || input.heightCm === null || !isFinite(altezza)) {
-    errori.heightCm = 'L\'altezza e\' obbligatoria.';
+    errori.heightCm = 'L\'altezza è obbligatoria.';
   } else if (altezza < HEIGHT_MIN_CM || altezza > HEIGHT_MAX_CM) {
     errori.heightCm = `L'altezza deve stare fra ${HEIGHT_MIN_CM} e ${HEIGHT_MAX_CM} cm.`;
   }

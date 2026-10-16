@@ -1243,6 +1243,11 @@ export class SchedaDetailComponent implements OnInit, OnDestroy {
     this.nav.navigateBack(['/scheda']);
   }
 
+  /** "Seduta non trovata" non deve essere un vicolo cieco: l'unica cosa sensata da fare e' tornare all'elenco. */
+  tornaAlloStorico(): void {
+    this.nav.navigateBack(['/scheda/storico']);
+  }
+
   onInput(): void {
     this.scheduleDraft();
   }
@@ -1474,8 +1479,8 @@ export class SchedaDetailComponent implements OnInit, OnDestroy {
     if (this.isSessionOnThisDay && !this.allSetsDone) {
       const left = this.remainingSets;
       return left === 1
-        ? 'Termina e salva: manca 1 serie da spuntare, verra\' chiesta conferma'
-        : `Termina e salva: mancano ${left} serie da spuntare, verra' chiesta conferma`;
+        ? 'Termina e salva: manca 1 serie da spuntare, verrà chiesta conferma'
+        : `Termina e salva: mancano ${left} serie da spuntare, verrà chiesta conferma`;
     }
     return 'Termina la sessione e salva l\'allenamento';
   }
@@ -1497,9 +1502,12 @@ export class SchedaDetailComponent implements OnInit, OnDestroy {
   }
 
   async cancelSession(): Promise<void> {
+    // I due tasti non devono dire la stessa cosa: "Annulla sessione" (butta via
+    // tutto) e "Annulla" (rinuncia a farlo) a un dito di distanza si scambiavano
+    // facilmente, e uno dei due costa un allenamento intero.
     const ok = await this.confirm.confirm(
-      'Vuoi annullare la sessione in corso? Il tempo verra\' perso e l\'allenamento non verra\' salvato nello storico.',
-      { confirmLabel: 'Annulla sessione', dangerous: true }
+      'Vuoi buttare via la sessione in corso? Il tempo andrà perso e l\'allenamento non verrà salvato nello storico.',
+      { confirmLabel: 'Butta via la sessione', cancelLabel: 'Continua l\'allenamento', dangerous: true }
     );
     if (!ok) return;
     this.sessionState.cancel();
@@ -1615,7 +1623,7 @@ export class SchedaDetailComponent implements OnInit, OnDestroy {
   onDateChange(): void {
     if (!this.storicoDate || this.storicoDate > this.maxDate) {
       this.statoSalvataggio = 'errore';
-      this.erroreSalvataggio = 'Data non valida: una seduta non puo\' essere senza data o nel futuro.';
+      this.erroreSalvataggio = 'Data non valida: una seduta non può essere senza data o nel futuro.';
       return;
     }
     this.scheduleDraft();
@@ -1668,8 +1676,8 @@ export class SchedaDetailComponent implements OnInit, OnDestroy {
       // a dire la verita' su dov'e'.
       this.storicoDate = this.sedutaSalvata.date;
       this.statoSalvataggio = 'errore';
-      this.erroreSalvataggio = 'In quella data c\'e\' gia\' una seduta di questo giorno: la data non e\' stata cambiata.';
-      this.toast.error('Esiste gia\' una seduta in questa data.');
+      this.erroreSalvataggio = 'In quella data c\'e\' già una seduta di questo giorno: la data non è stata cambiata.';
+      this.toast.error('Esiste già una seduta in questa data.');
     } else {
       this.statoSalvataggio = 'errore';
       this.erroreSalvataggio = 'Non salvato. Controlla la rete: la correzione resta a schermo.';

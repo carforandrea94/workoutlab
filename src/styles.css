@@ -133,8 +133,8 @@
   --tabbar-gap: 22px;
   /* Scala tipografica: ogni componente aggancia un gradino, cosi' la prossima
      aggiunta non inventa un valore nuovo. */
-  --text-2xs:10px;
-  --text-xs:11.5px;
+  --text-2xs:11px;   /* il minimo: etichette in maiuscolo e dettagli. Sotto, a un metro e con la luce di una palestra, non si legge (era 10) */
+  --text-xs:12px;    /* metadati e note (era 11,5) */
   --text-sm:13px;
   --text-md:14.5px;
   --text-lg:16px;
@@ -1338,7 +1338,7 @@ ion-picker.heightpicker{margin-bottom:18px;}
 .wheel-band .unit{font-family:'IBM Plex Mono',monospace;font-size:var(--text-sm);color:var(--label-3);}
 .wheel{position:relative;height:220px;overflow-y:auto;overscroll-behavior-y:contain;scroll-snap-type:y mandatory;padding:88px 0;scrollbar-width:none;-webkit-overflow-scrolling:touch;}
 .wheel::-webkit-scrollbar{display:none;}
-.wheel-item{display:flex;align-items:center;justify-content:center;width:100%;height:44px;scroll-snap-align:center;border:none;background:none;cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:var(--text-lg);font-weight:600;color:var(--label-3);opacity:.45;transition:color .15s ease,opacity .15s ease;}
+.wheel-item{display:flex;align-items:center;justify-content:center;width:100%;height:44px;scroll-snap-align:center;border:none;background:none;cursor:pointer;font-family:'IBM Plex Mono',monospace;font-size:var(--text-lg);font-weight:600;color:var(--label-3);transition:color .15s ease;}
 .wheel-item.on{color:var(--label);opacity:1;font-size:var(--text-2xl);font-weight:700;}
 .wheel:focus-visible{outline:2px solid var(--accent);outline-offset:-2px;border-radius:var(--r-sm);}
 /* Cio' che e' cliccabile e non e' un <button> (vedi tasto.directive.ts): da

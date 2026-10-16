@@ -318,7 +318,7 @@ export class ImpostazioniComponent implements OnInit {
 
     const intero = componiNome(nuovoNome, nuovoCognome);
     if (!intero) {
-      this.toast.error('Il nome non puo\' restare vuoto.');
+      this.toast.error('Il nome non può restare vuoto.');
       this.cdr.detectChanges();
       return;
     }

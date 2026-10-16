@@ -97,7 +97,7 @@ export class RegisterComponent {
       if (e?.message === 'TIMEOUT') {
         this.errorMsg = 'La richiesta sta impiegando troppo tempo. Riprova.';
       } else if (e?.code === 'auth/email-already-in-use') {
-        this.errorMsg = 'Questa email e\' gia\' registrata.';
+        this.errorMsg = 'Questa email è già registrata.';
       } else if (e?.code === 'auth/invalid-email') {
         this.errorMsg = 'Email non valida.';
       } else {

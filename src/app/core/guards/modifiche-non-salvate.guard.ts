@@ -35,7 +35,7 @@ export const uscitaSenzaPerdite: CanDeactivateFn<ConModificheNonSalvate> = (pagi
   const conferme = inject(ConfirmDialogService);
   if (!pagina.haModificheNonSalvate()) return true;
   if (pilaDi(prossimo.url) !== pilaDi(stato.url)) return true;
-  return conferme.confirm('Uscire senza salvare? Quello che hai scritto andra\' perso.', {
+  return conferme.confirm('Uscire senza salvare? Quello che hai scritto andrà perso.', {
     confirmLabel: 'Esci senza salvare',
     dangerous: true
   });

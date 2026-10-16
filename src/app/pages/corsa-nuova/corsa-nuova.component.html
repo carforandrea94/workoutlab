@@ -44,8 +44,8 @@
       </div>
 
       <div class="measure-field mt-3">
-        <label>Come e' andata</label>
-        <ion-segment class="seg labelseg fullseg" [value]="effort" aria-label="Come e' andata">
+        <label>Come è andata</label>
+        <ion-segment class="seg labelseg fullseg" [value]="effort" aria-label="Come è andata">
           <ion-segment-button *ngFor="let e of efforts" [value]="e.id" (click)="effort = e.id">{{ e.label }}</ion-segment-button>
         </ion-segment>
       </div>

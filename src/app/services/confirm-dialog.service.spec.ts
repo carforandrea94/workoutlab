@@ -78,3 +78,34 @@ describe('ConfirmDialogService — domande su cui andare avanti', () => {
     expect(await servizio('backdrop').service.confirm('Continuare?', opts)).toBe(false);
   });
 });
+
+describe('ConfirmDialogService — le etichette dei due tasti', () => {
+  it('chi rinuncia si chiama "Annulla" di default, in tutti e due i tipi di conferma', async () => {
+    const a = servizio('cancel'); await a.service.confirm('Eliminare?');
+    expect((a.sheets.create.mock.calls[0] as any[])[0].buttons[1]).toEqual({ text: 'Annulla', role: 'cancel' });
+
+    const b = servizio('cancel'); await b.service.confirm('Continuare?', { dangerous: false, confirmLabel: 'Continua' });
+    expect((b.alerts.create.mock.calls[0] as any[])[0].buttons[0]).toEqual({ text: 'Annulla', role: 'cancel' });
+  });
+
+  it('se la conferma parla di annullare, chi rinuncia ha un altro verbo', async () => {
+    const a = servizio('cancel');
+    await a.service.confirm('Buttare via la sessione?', { confirmLabel: 'Butta via la sessione', cancelLabel: 'Continua l\'allenamento' });
+    expect((a.sheets.create.mock.calls[0] as any[])[0].buttons).toEqual([
+      { text: 'Butta via la sessione', role: 'destructive' },
+      { text: 'Continua l\'allenamento', role: 'cancel' }
+    ]);
+
+    const b = servizio('cancel');
+    await b.service.confirm('Continuare?', { dangerous: false, confirmLabel: 'Importa', cancelLabel: 'Lascia stare' });
+    expect((b.alerts.create.mock.calls[0] as any[])[0].buttons).toEqual([
+      { text: 'Lascia stare', role: 'cancel' },
+      { text: 'Importa', role: 'confirm' }
+    ]);
+  });
+
+  it('cambiare l\'etichetta non cambia cosa conta come conferma', async () => {
+    expect(await servizio('cancel').service.confirm('?', { cancelLabel: 'Continua' })).toBe(false);
+    expect(await servizio('destructive').service.confirm('?', { cancelLabel: 'Continua' })).toBe(true);
+  });
+});

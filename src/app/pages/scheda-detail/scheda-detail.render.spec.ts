@@ -12,6 +12,7 @@ import { WorkoutSessionsService } from '../../services/workout-sessions.service'
 import { WorkoutSessionStateService } from '../../services/workout-session-state.service';
 import { ConfirmDialogService } from '../../services/confirm-dialog.service';
 import { ToastService } from '../../services/toast.service';
+import { NavController } from '@ionic/angular';
 
 /**
  * Le testate degli esercizi sono UN template (#exHeader) usato da due viste.
@@ -251,6 +252,30 @@ describe('SchedaDetailComponent — accessibilita\' delle testate (disegno vero)
       expect((await monta('list', true)).root.querySelector('.session-bar-btn')).not.toBeNull();
       TestBed.resetTestingModule();
       expect((await monta('list', false, true)).root.querySelector('.session-bar-btn')).toBeNull();
+    });
+  });
+
+  /**
+   * "Seduta non trovata." era un vicolo cieco: un testo e basta. Succede aprendo
+   * una seduta che nel frattempo e' stata cancellata (da un altro dispositivo, o
+   * dal link di una notifica).
+   */
+  describe('seduta non trovata', () => {
+    it('ha una via d\'uscita: torna allo storico', async () => {
+      const { fixture, root } = await monta('list');
+      const c = fixture.componentInstance;
+      const naviga = vi.spyOn(TestBed.inject(NavController), 'navigateBack').mockResolvedValue(true as any);
+      c.notFound = true;
+      // Come fa il componente stesso (l'app non usa zone.js): senza, il disegno resta com'era.
+      (c as any).cdr.detectChanges();
+
+      const vuoto = Array.from(root.querySelectorAll<HTMLElement>('.history-empty')).find(e => /Seduta non trovata/.test(e.textContent ?? ''))!;
+      expect(vuoto).toBeTruthy();
+      const bottone = vuoto.querySelector<HTMLElement>('ion-button')!;
+      expect(bottone.textContent!.trim()).toBe('Torna allo storico');
+
+      bottone.click();
+      expect(naviga).toHaveBeenCalledWith(['/scheda/storico']);
     });
   });
 });

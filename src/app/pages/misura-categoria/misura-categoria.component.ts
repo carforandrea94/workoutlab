@@ -230,9 +230,9 @@ export class MisuraCategoriaComponent implements OnInit, OnDestroy, ConModifiche
       this.uscitaConsentita = true;
       this.nav.navigateBack(['/misure/storico', this.dateValue]);
     } else if (result === 'collision') {
-      this.errorMsg = 'Esiste gia\' una misurazione di questo tipo in questa data.';
+      this.errorMsg = 'Esiste già una misurazione di questo tipo in questa data.';
       this.cdr.detectChanges();
-      this.toast.error('Esiste gia\' una misurazione di questo tipo in questa data.');
+      this.toast.error('Esiste già una misurazione di questo tipo in questa data.');
     } else {
       this.toast.error('Errore durante il salvataggio. Riprova.');
     }

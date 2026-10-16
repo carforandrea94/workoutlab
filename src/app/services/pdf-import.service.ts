@@ -729,7 +729,7 @@ export class PdfImportService {
       if (m) verdureSeen.add(m[1].replace(/\s+/g, ' '));
     }
     if (verdureSeen.size > 0) {
-      notes.push(`Verdure fresche libere ad ogni pasto principale (quantita' indicativa dal PDF: ${Array.from(verdureSeen).join(' / ')}).`);
+      notes.push(`Verdure fresche libere ad ogni pasto principale (quantità indicativa dal PDF: ${Array.from(verdureSeen).join(' / ')}).`);
     }
 
     const idx = lines.findIndex(l => /^consigli di base$/i.test(l));
