@@ -6,6 +6,7 @@ import { IonTabs, IonTabBar, IonTabButton, NavController } from '@ionic/angular'
 import { LucideAngularModule } from 'lucide-angular';
 import { WorkoutDataService } from '../services/workout-data.service';
 import { WorkoutSessionStateService } from '../services/workout-session-state.service';
+import { WorkoutStateService } from '../services/workout-state.service';
 import { RestBarComponent } from '../components/rest-bar/rest-bar.component';
 import { SchermoAccesoService } from '../services/schermo-acceso.service';
 import { SegnaleService } from '../services/segnale.service';
@@ -121,6 +122,7 @@ export class TabsPage implements OnInit, OnDestroy {
     private router: Router,
     private workoutData: WorkoutDataService,
     private sessionState: WorkoutSessionStateService,
+    private workoutState: WorkoutStateService,
     private host: ElementRef<HTMLElement>,
     private nav: NavController,
     // Non si usa qui: va solo istanziato, e la barra e' sempre in pagina. Da li'
@@ -159,9 +161,17 @@ export class TabsPage implements OnInit, OnDestroy {
    * Solo sul giorno che si sta ALLENANDO: con una sessione aperta su un altro
    * giorno quella schermata e' in sola lettura, e togliere la navigazione a
    * chi sta solo guardando sarebbe un dispetto.
+   *
+   * Nello slider c'e' solo mentre il recupero conta: il resto del tempo quel
+   * posto e' del tasto della serie ("Fatta", "Torna alla serie"), che la pagina
+   * del giorno mette in basso. I due si danno il cambio nello stesso punto.
+   * Nell'elenco il tasto sta in ogni card e la fascia resta sempre, come prima.
    */
   get showRestBar(): boolean {
-    return this.dayIdOnScreen !== null && this.sessionState.isActiveForDay(this.dayIdOnScreen);
+    if (this.dayIdOnScreen === null || !this.sessionState.isActiveForDay(this.dayIdOnScreen)) return false;
+    if (this.workoutState.viewMode() !== 'slider') return true;
+    const t = this.workoutState.restTimer();
+    return !!t.show && !t.finished;
   }
 
   /** Dentro una pagina interna la barra sparisce, tranne dove ne fa le veci la fascia del recupero. */

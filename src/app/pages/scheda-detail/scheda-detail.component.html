@@ -57,178 +57,197 @@
     </ng-container>
 
     <ng-template #exDetail let-vm="vm">
-      <p class="note" *ngIf="vm.ex.note">{{ vm.ex.note }}</p>
+      <!-- La nota del coach dice come fare il movimento ("picco 2 secondi"):
+           prima era il testo piu' piccolo e piu' grigio della card. -->
+      <div class="coach-nota" *ngIf="vm.ex.note">
+        <lucide-icon name="message-square-quote" [size]="16" aria-hidden="true"></lucide-icon>
+        <span class="coach-nota-testo">
+          <span class="coach-nota-k">Nota del coach<span class="sr-only">: </span></span>
+          <span class="coach-nota-v">{{ vm.ex.note }}</span>
+        </span>
+      </div>
 
-      <!-- Finche' la sessione non parte i campi sono spenti: senza una riga che lo
-           dica, sembrerebbero rotti. -->
-      <p class="setslocked-hint" *ngIf="setsLocked">
-        <lucide-icon name="play" [size]="13"></lucide-icon>
-        Avvia la sessione per registrare ripetizioni e carichi.
-      </p>
+      <!-- Prima dell'avvio la card e' da leggere: il programma, serie per serie.
+           Prima c'erano i comandi della sessione spenti (ruote, "Fatta", i blocchi)
+           con sopra una riga che diceva di avviarla: sembravano attivi e non lo erano. -->
+      <ng-container *ngIf="anteprima; else serieDellaSessione">
+        <p class="piano-cap" *ngIf="didascaliaCluster(vm) as d">{{ d }}</p>
+        <div class="piano" role="table" [attr.aria-label]="'Programma di ' + vm.ex.name"
+          [style.--colonne]="blocchiAnteprima(vm).length">
+          <div class="piano-riga piano-testa" role="row" *ngIf="vm.cluster">
+            <span class="piano-n" role="columnheader"><span class="sr-only">Serie</span></span>
+            <span role="columnheader" *ngFor="let k of blocchiAnteprima(vm)">Blocco {{ k }}</span>
+          </div>
+          <div class="piano-riga" role="row" *ngFor="let row of vm.rows; let j = index">
+            <span class="piano-n" role="rowheader">{{ j + 1 }}</span>
+            <span role="cell" *ngFor="let c of celleAnteprima(vm, row)">{{ c }}</span>
+          </div>
+        </div>
+        <p class="piano-fonte" *ngIf="pesiUltimaVolta(vm)">
+          <lucide-icon name="history" [size]="13" aria-hidden="true"></lucide-icon>
+          Pesi dell'ultima volta, {{ vm.ultima?.data }}
+        </p>
+        <div class="suggestion-chip" *ngIf="vm.isFirst && vm.warmup" [innerHTML]="vm.warmup"></div>
+      </ng-container>
 
-      <div class="setlist">
-        <ng-container *ngFor="let row of vm.rows; let j = index">
+      <ng-template #serieDellaSessione>
+        <div class="setlist">
+          <ng-container *ngFor="let row of vm.rows; let j = index">
 
-          <!-- Chiusa: una riga sola. Toccarla la riapre, che e' come si corregge. -->
-          <button type="button" class="setline" *ngIf="vm.activeRow !== j"
-            [class.done]="row.done" [disabled]="setsLocked" (click)="setActive(vm, j)">
-            <span class="setline-n">{{ j + 1 }}</span>
-            <span class="setline-val">{{ rowSummary(row) }}</span>
-            <span class="setline-extra" *ngIf="row.extra">in più</span>
-            <lucide-icon *ngIf="row.done" name="check" [size]="14" class="setline-tick"></lucide-icon>
-          </button>
+            <!-- Chiusa: una riga sola. Toccarla la riapre, che e' come si corregge. -->
+            <button type="button" class="setline" *ngIf="vm.activeRow !== j"
+              [class.done]="row.done" [disabled]="setsLocked" (click)="setActive(vm, j)">
+              <span class="setline-n">{{ j + 1 }}</span>
+              <span class="setline-val">{{ rowSummary(row) }}</span>
+              <span class="setline-extra" *ngIf="row.extra">in più</span>
+              <lucide-icon *ngIf="row.done" name="check" [size]="14" class="setline-tick"></lucide-icon>
+              <!-- La matita dice che una serie fatta si riapre: e' cosi' che si torna a correggerla. -->
+              <lucide-icon *ngIf="row.done" name="pencil" [size]="14" class="setline-edit" aria-hidden="true"></lucide-icon>
+            </button>
 
-          <!-- Aperta: l'unica coi comandi grandi. -->
-          <div class="setcard" *ngIf="vm.activeRow === j">
-            <div class="setcard-head">
-              <span class="setcard-title">Serie {{ j + 1 }} di {{ vm.rows.length }}</span>
-              <span class="setcard-hint" *ngIf="isCluster(vm, row)">{{ clusterHint(vm) }}</span>
-              <span class="setcard-hint" *ngIf="!isCluster(vm, row) && row.extra">aggiunta da te</span>
-              <span class="setcard-hint" *ngIf="!isCluster(vm, row) && !row.extra && !row.load && row.loadPlaceholder">suggerito</span>
-            </div>
-
-            <!-- La serie a cluster: i blocchi, e la pausa che li separa.
-                 La pausa e' un MINIMO, quindi il conto scende fino a zero e poi
-                 sale: "tempo scaduto" spingerebbe a ripartire prima di essere
-                 pronti, che e' l'opposto di perche' il coach l'ha scritta. -->
-            <ng-container *ngIf="isCluster(vm, row)">
-              <div class="clusterpause" *ngIf="isPausing(vm, j)" [class.over]="pauseOver(vm)">
-                <span class="clusterpause-val">{{ pauseText(vm) }}</span>
-                <span class="clusterpause-cap">{{ pauseOver(vm) ? 'pausa passata, quando vuoi' : 'pausa dentro la serie' }}</span>
+            <!-- Aperta: l'unica coi comandi grandi. -->
+            <div class="setcard" *ngIf="vm.activeRow === j">
+              <div class="setcard-head">
+                <span class="setcard-title">Serie {{ j + 1 }} di {{ vm.rows.length }}</span>
+                <span class="setcard-hint" *ngIf="isCluster(vm, row)">{{ clusterHint(vm) }}</span>
+                <span class="setcard-hint fatta" *ngIf="!isCluster(vm, row) && row.done">
+                  <lucide-icon name="check" [size]="12" aria-hidden="true"></lucide-icon>fatta
+                </span>
+                <span class="setcard-hint" *ngIf="!isCluster(vm, row) && !row.done && row.extra">aggiunta da te</span>
+                <!-- Da dove viene il numero nella ruota ("come il 03/10"). Quando ci
+                     sono altre fonti (il massimale, il programma) e' il tasto che le
+                     apre: prima erano quattro numeri da leggere insieme sotto la serie. -->
+                <ng-container *ngIf="!isCluster(vm, row) && !row.done && !row.extra && fonteCarico(vm, j) as fonte">
+                  <button type="button" class="setcard-fonte" *ngIf="opzioniCarico(vm, j).length; else fonteTesto"
+                    [disabled]="setsLocked" (click)="apriCarico(vm, j)"
+                    [attr.aria-label]="'Carico: ' + fonte + '. Scegli da dove partire'">
+                    {{ fonte }}<lucide-icon name="chevrons-up-down" [size]="13" aria-hidden="true"></lucide-icon>
+                  </button>
+                  <ng-template #fonteTesto><span class="setcard-hint">{{ fonte }}</span></ng-template>
+                </ng-container>
               </div>
 
-              <div class="blockstrip">
-                <button type="button" class="blockchip" *ngFor="let b of row.blocks; let k = index"
-                  [class.done]="b.done" [class.now]="!b.done && blockIndex(row) === k"
-                  [disabled]="setsLocked || !b.done" (click)="undoBlock(vm, j, k)"
-                  [attr.aria-label]="b.done ? 'Togli la spunta al blocco ' + (k + 1) : null">
-                  <span class="blockchip-top">
-                    <span class="blockchip-v">{{ b.reps || b.ripPlaceholder || '—' }}</span>
-                    <lucide-icon *ngIf="b.done" name="check" [size]="13" class="blockchip-tick"></lucide-icon>
-                  </span>
-                  <span class="blockchip-kg" *ngIf="b.load || b.loadPlaceholder">{{ b.load || b.loadPlaceholder }} kg</span>
-                </button>
+              <!-- La serie a cluster: i blocchi, e la pausa che li separa.
+                   La pausa e' un MINIMO, quindi il conto scende fino a zero e poi
+                   sale: "tempo scaduto" spingerebbe a ripartire prima di essere
+                   pronti, che e' l'opposto di perche' il coach l'ha scritta. -->
+              <ng-container *ngIf="isCluster(vm, row)">
+                <div class="clusterpause" *ngIf="isPausing(vm, j)" [class.over]="pauseOver(vm)">
+                  <span class="clusterpause-val">{{ pauseText(vm) }}</span>
+                  <span class="clusterpause-cap">{{ pauseOver(vm) ? 'pausa passata, quando vuoi' : 'pausa dentro la serie' }}</span>
+                </div>
+
+                <div class="blockstrip">
+                  <button type="button" class="blockchip" *ngFor="let b of row.blocks; let k = index"
+                    [class.done]="b.done" [class.now]="!b.done && blockIndex(row) === k"
+                    [disabled]="setsLocked || !b.done" (click)="undoBlock(vm, j, k)"
+                    [attr.aria-label]="b.done ? 'Togli la spunta al blocco ' + (k + 1) : null">
+                    <span class="blockchip-top">
+                      <span class="blockchip-v">{{ b.reps || b.ripPlaceholder || '—' }}</span>
+                      <lucide-icon *ngIf="b.done" name="check" [size]="13" class="blockchip-tick"></lucide-icon>
+                    </span>
+                    <span class="blockchip-kg" *ngIf="b.load || b.loadPlaceholder">{{ b.load || b.loadPlaceholder }} kg</span>
+                  </button>
+                </div>
+              </ng-container>
+
+              <!-- Ripetizioni e carico, due ruote affiancate - in quest'ordine,
+                   come si dice una serie: dodici per trenta. Si scorre per i cambi
+                   piccoli e si tocca il numero al centro per scriverlo: senza la
+                   scrittura, con un passo da mezzo chilo, arrivare a un carico
+                   lontano sarebbero sessanta tacche. -->
+              <div class="wheelduo">
+                <app-number-wheel *ngIf="!isCluster(vm, row)"
+                  [value]="numero(row.reps)" [placeholder]="numero(row.ripPlaceholder)"
+                  [min]="1" [max]="100" [step]="1" unit="rip." [disabled]="setsLocked"
+                  [label]="'Ripetizioni della serie ' + (j + 1)"
+                  (valueChange)="setReps(vm, j, $event)"></app-number-wheel>
+
+                <app-number-wheel *ngIf="isCluster(vm, row) && block(row) as b"
+                  [value]="numero(b.reps)" [placeholder]="numero(b.ripPlaceholder)"
+                  [min]="1" [max]="100" [step]="1" unit="rip." [disabled]="setsLocked"
+                  label="Ripetizioni del blocco in corso"
+                  (valueChange)="setBlockReps(vm, j, $event)"></app-number-wheel>
+
+                <app-number-wheel *ngIf="!isCluster(vm, row)"
+                  [value]="numero(row.load)" [placeholder]="numero(row.loadPlaceholder)"
+                  [min]="0" [max]="1000" [step]="0.5" unit="kg" [disabled]="setsLocked"
+                  [label]="'Carico della serie ' + (j + 1) + ', in chili'"
+                  (valueChange)="setLoad(vm, j, $event)"></app-number-wheel>
+
+                <!-- In un cluster il carico e' del BLOCCO: di solito e' lo stesso in
+                     tutti, ma al terzo si cala, e la serie deve poterlo dire. -->
+                <app-number-wheel *ngIf="isCluster(vm, row) && block(row) as b"
+                  [value]="numero(b.load)" [placeholder]="numero(b.loadPlaceholder)"
+                  [min]="0" [max]="1000" [step]="0.5" unit="kg" [disabled]="setsLocked"
+                  label="Carico del blocco in corso, in chili"
+                  (valueChange)="setBlockLoad(vm, j, $event)"></app-number-wheel>
               </div>
-            </ng-container>
 
-            <!-- Ripetizioni e carico, due ruote affiancate - in quest'ordine,
-                 come si dice una serie: dodici per trenta. Si scorre per i cambi
-                 piccoli e si tocca il numero al centro per scriverlo: senza la
-                 scrittura, con un passo da mezzo chilo, arrivare a un carico
-                 lontano sarebbero sessanta tacche. -->
-            <div class="wheelduo">
-              <app-number-wheel *ngIf="!isCluster(vm, row)"
-                [value]="numero(row.reps)" [placeholder]="numero(row.ripPlaceholder)"
-                [min]="1" [max]="100" [step]="1" unit="rip." [disabled]="setsLocked"
-                [label]="'Ripetizioni della serie ' + (j + 1)"
-                (valueChange)="setReps(vm, j, $event)"></app-number-wheel>
+              <!-- Il comando della serie. Nello slider, ad allenamento avviato, sta
+                   in basso sotto il pollice (tastoInBasso); qui resta per l'elenco e
+                   per lo storico, dove un tasto in basso non saprebbe di quale card parla. -->
+              <ng-container *ngIf="!tastoInBasso">
+              <ion-button type="button" class="setdone" *ngIf="!row.done && !isCluster(vm, row)" [disabled]="setsLocked"
+                (click)="confirmSet(vm, j)">Fatta</ion-button>
 
-              <app-number-wheel *ngIf="isCluster(vm, row) && block(row) as b"
-                [value]="numero(b.reps)" [placeholder]="numero(b.ripPlaceholder)"
-                [min]="1" [max]="100" [step]="1" unit="rip." [disabled]="setsLocked"
-                label="Ripetizioni del blocco in corso"
-                (valueChange)="setBlockReps(vm, j, $event)"></app-number-wheel>
+              <!-- A esaurimento, dopo ogni blocco le scelte sono due e sono pari:
+                   un altro, oppure basta. Stanno affiancate e dello stesso peso,
+                   perche' prima il "chiudo" era un tasto tratteggiato sotto a uno
+                   rosso, e non si capiva che la serie si poteva finire. -->
+              <div class="clusterfork" *ngIf="!row.done && isCluster(vm, row) && canCloseCluster(vm, row)">
+                <ion-button type="button" class="setdone" [disabled]="setsLocked"
+                  (click)="doneBlock(vm, j)">Fatto il {{ blockLabel(vm, row).toLowerCase() }}</ion-button>
+                <ion-button type="button" class="setdone calmo" [disabled]="setsLocked"
+                  (click)="closeClusterSet(vm, j)"
+                  aria-label="Non ne escono altri, chiudi la serie">Chiudo la serie</ion-button>
+              </div>
 
-              <app-number-wheel *ngIf="!isCluster(vm, row)"
-                [value]="numero(row.load)" [placeholder]="numero(row.loadPlaceholder)"
-                [min]="0" [max]="1000" [step]="0.5" unit="kg" [disabled]="setsLocked"
-                [label]="'Carico della serie ' + (j + 1) + ', in chili'"
-                (valueChange)="setLoad(vm, j, $event)"></app-number-wheel>
-
-              <!-- In un cluster il carico e' del BLOCCO: di solito e' lo stesso in
-                   tutti, ma al terzo si cala, e la serie deve poterlo dire. -->
-              <app-number-wheel *ngIf="isCluster(vm, row) && block(row) as b"
-                [value]="numero(b.load)" [placeholder]="numero(b.loadPlaceholder)"
-                [min]="0" [max]="1000" [step]="0.5" unit="kg" [disabled]="setsLocked"
-                label="Carico del blocco in corso, in chili"
-                (valueChange)="setBlockLoad(vm, j, $event)"></app-number-wheel>
-            </div>
-
-            <ion-button type="button" class="setdone" *ngIf="!row.done && !isCluster(vm, row)" [disabled]="setsLocked"
-              (click)="confirmSet(vm, j)">Fatta</ion-button>
-
-            <!-- A esaurimento, dopo ogni blocco le scelte sono due e sono pari:
-                 un altro, oppure basta. Stanno affiancate e dello stesso peso,
-                 perche' prima il "chiudo" era un tasto tratteggiato sotto a uno
-                 rosso, e non si capiva che la serie si poteva finire. -->
-            <div class="clusterfork" *ngIf="!row.done && isCluster(vm, row) && canCloseCluster(vm, row)">
-              <ion-button type="button" class="setdone" [disabled]="setsLocked"
+              <!-- A blocchi contati non c'e' niente da decidere: la serie si chiude
+                   da sola quando sono tutti fatti. -->
+              <ion-button type="button" class="setdone"
+                *ngIf="!row.done && isCluster(vm, row) && !canCloseCluster(vm, row)" [disabled]="setsLocked"
                 (click)="doneBlock(vm, j)">Fatto il {{ blockLabel(vm, row).toLowerCase() }}</ion-button>
-              <ion-button type="button" class="setdone calmo" [disabled]="setsLocked"
-                (click)="closeClusterSet(vm, j)"
-                aria-label="Non ne escono altri, chiudi la serie">Chiudo la serie</ion-button>
+              </ng-container>
+
+              <!-- A esaurimento i blocchi li aggiunge chi si allena, quindi deve
+                   poterne togliere uno: un tocco di troppo su "fatto il blocco"
+                   altrimenti non si disfa. Sta qui in fondo, con le altre cose che
+                   si disfano, non in mezzo alle due scelte. -->
+              <ion-button type="button" class="clusterundo" *ngIf="canRemoveBlock(vm, row)"
+                [disabled]="setsLocked" (click)="removeBlock(vm, j)">
+                Togli l'ultimo blocco
+              </ion-button>
+
+              <ion-button type="button" class="setundo" *ngIf="row.done && !isCluster(vm, row)" [disabled]="setsLocked"
+                (click)="undoSet(vm, j)">Togli la spunta</ion-button>
+              <ion-button type="button" class="setundo" *ngIf="row.done && isCluster(vm, row)" [disabled]="setsLocked"
+                (click)="reopenClusterSet(vm, j)">Riapri questa serie</ion-button>
+
+              <ion-button type="button" class="setremove" *ngIf="canRemove(vm, j)" [disabled]="setsLocked"
+                (click)="removeSet(vm, j)">Togli questa serie</ion-button>
             </div>
 
-            <!-- A blocchi contati non c'e' niente da decidere: la serie si chiude
-                 da sola quando sono tutti fatti. -->
-            <ion-button type="button" class="setdone"
-              *ngIf="!row.done && isCluster(vm, row) && !canCloseCluster(vm, row)" [disabled]="setsLocked"
-              (click)="doneBlock(vm, j)">Fatto il {{ blockLabel(vm, row).toLowerCase() }}</ion-button>
+          </ng-container>
+        </div>
 
-            <!-- A esaurimento i blocchi li aggiunge chi si allena, quindi deve
-                 poterne togliere uno: un tocco di troppo su "fatto il blocco"
-                 altrimenti non si disfa. Sta qui in fondo, con le altre cose che
-                 si disfano, non in mezzo alle due scelte. -->
-            <ion-button type="button" class="clusterundo" *ngIf="canRemoveBlock(vm, row)"
-              [disabled]="setsLocked" (click)="removeBlock(vm, j)">
-              Togli l'ultimo blocco
-            </ion-button>
+        <!-- Una serie in piu' di quelle scritte dal coach: quelle del piano restano
+             dove sono, questa la si toglie quando si vuole. -->
+        <ion-button type="button" class="setadd" *ngIf="canAdd(vm)" [disabled]="setsLocked"
+          (click)="addSet(vm)">
+          <lucide-icon name="plus" [size]="16"></lucide-icon>
+          Aggiungi una serie
+        </ion-button>
 
-            <ion-button type="button" class="setundo" *ngIf="row.done && !isCluster(vm, row)" [disabled]="setsLocked"
-              (click)="undoSet(vm, j)">Togli la spunta</ion-button>
-            <ion-button type="button" class="setundo" *ngIf="row.done && isCluster(vm, row)" [disabled]="setsLocked"
-              (click)="reopenClusterSet(vm, j)">Riapri questa serie</ion-button>
+        <!-- Insights -->
+        <div class="ex-insights" [class.show]="vm.insightVisible && vm.insight">
+          <ng-container *ngIf="vm.insight">
+            <div *ngIf="vm.insight.lastText" class="lastsession">{{ vm.insight.lastText }}</div>
 
-            <ion-button type="button" class="setremove" *ngIf="canRemove(vm, j)" [disabled]="setsLocked"
-              (click)="removeSet(vm, j)">Togli questa serie</ion-button>
-          </div>
-
-        </ng-container>
-      </div>
-
-      <!-- Una serie in piu' di quelle scritte dal coach: quelle del piano restano
-           dove sono, questa la si toglie quando si vuole. -->
-      <ion-button type="button" class="setadd" *ngIf="canAdd(vm)" [disabled]="setsLocked"
-        (click)="addSet(vm)">
-        <lucide-icon name="plus" [size]="16"></lucide-icon>
-        Aggiungi una serie
-      </ion-button>
-
-      <!-- Insights -->
-      <div class="ex-insights" [class.show]="vm.insightVisible && vm.insight">
-        <ng-container *ngIf="vm.insight">
-          <div *ngIf="vm.insight.lastText" class="lastsession">{{ vm.insight.lastText }}</div>
-
-          <!-- Che peso mettere: si sceglie per quante ripetizioni lo si vuole e il
-               numero cambia. Sotto, in piccolo, da dove viene. -->
-          <div class="rmpick" *ngIf="vm.insight.rmRows">
-            <div class="rmpick-row">
-              <span class="rmpick-selwrap">
-                <ion-select interface="popover" class="rmpick-sel" [(ngModel)]="vm.rmPick"
-                  [ngModelOptions]="{ standalone: true }"
-                  aria-label="Per quante ripetizioni vuoi il carico">
-                  <ion-select-option *ngFor="let r of vm.insight.rmRows" [value]="r.reps">{{ r.reps }} rip.</ion-select-option>
-                </ion-select>
-              </span>
-              <span class="rmpick-out">{{ rmLoad(vm) }} kg</span>
-              <span class="rmpick-pct" *ngIf="rmRow(vm) as r">{{ r.percent }}%</span>
-            </div>
-            <!-- La percentuale scelta per tutto il programma. Non tocca il campo
-                 del peso: li' resta quello che hai sollevato l'ultima volta. -->
-            <p class="rmpick-prog" *ngIf="vm.insight.programLoad as pl">
-              Al {{ pl.percent }}% del massimale: <b>{{ kg(pl.load) }} kg</b> · circa {{ pl.reps }} rip.
-            </p>
-            <p class="rmpick-nota" *ngIf="notaScostamento(vm) as nota">{{ nota }}</p>
-
-            <p class="rmpick-from" *ngIf="vm.insight.oneRmText" [innerHTML]="vm.insight.oneRmText"></p>
-            <p class="rmpick-soft" *ngIf="vm.rmPick > rmSoftOver">
-              Sopra le {{ rmSoftOver }} ripetizioni la stima si allarga: prendilo
-              come indicazione, non come numero.
-            </p>
-          </div>
-          <div class="suggestion-chip" *ngIf="vm.isFirst && vm.warmup" [innerHTML]="vm.warmup"></div>
-        </ng-container>
-      </div>
+            <div class="suggestion-chip" *ngIf="vm.isFirst && vm.warmup" [innerHTML]="vm.warmup"></div>
+          </ng-container>
+        </div>
+      </ng-template>
     </ng-template>
 
     <!-- La testata dell'esercizio, una sola volta per due viste: elenco e slider
@@ -237,10 +256,12 @@
     <ng-template #exHeader let-vm="vm" let-i="i" let-toggle="toggle">
       <!-- Il numero porta anche l'avanzamento: l'anello segue il contorno del
            badge e si chiude man mano che spunti le serie. Segue la forma del
-           badge invece di essere un cerchio dentro un quadrato smussato. -->
-      <div class="ex-icon ex-num ring" [style.background]="getMuscleInfo(vm.ex.muscle).dim">
+           badge invece di essere un cerchio dentro un quadrato smussato. Il
+           fondo e la traccia sono neutri: colorati col muscolo, erano la cosa
+           piu' accesa della card per l'informazione che serve meno. -->
+      <div class="ex-icon ex-num ring">
         <svg class="ex-ring" viewBox="0 0 44 44" aria-hidden="true" focusable="false">
-          <path d="M22 1.5 H32 A10.5 10.5 0 0 1 42.5 12 V32 A10.5 10.5 0 0 1 32 42.5 H12 A10.5 10.5 0 0 1 1.5 32 V12 A10.5 10.5 0 0 1 12 1.5 H22" [style.stroke]="getMuscleInfo(vm.ex.muscle).color + '44'"></path>
+          <path class="traccia" d="M22 1.5 H32 A10.5 10.5 0 0 1 42.5 12 V32 A10.5 10.5 0 0 1 32 42.5 H12 A10.5 10.5 0 0 1 1.5 32 V12 A10.5 10.5 0 0 1 12 1.5 H22"></path>
           <path class="done" d="M22 1.5 H32 A10.5 10.5 0 0 1 42.5 12 V32 A10.5 10.5 0 0 1 32 42.5 H12 A10.5 10.5 0 0 1 1.5 32 V12 A10.5 10.5 0 0 1 12 1.5 H22" pathLength="100"
             [attr.stroke-dasharray]="donePct(vm) + ' 100'"></path>
         </svg>
@@ -254,8 +275,10 @@
         <div class="ex-name" *ngIf="toggle" appTasto [attr.aria-expanded]="vm.open">{{ vm.ex.name }}</div>
         <div class="ex-name" *ngIf="!toggle">{{ vm.ex.name }}</div>
         <div class="ex-tags">
-          <span class="ex-muscle" *ngIf="vm.ex.muscle" [style.background]="getMuscleInfo(vm.ex.muscle).color">
-            {{ vm.ex.muscle }}
+          <!-- Il muscolo e' un'etichetta, non un allarme: un pallino del suo
+               colore e il nome. Prima era una pastiglia satura. -->
+          <span class="ex-muscle" *ngIf="vm.ex.muscle">
+            <i class="ex-muscle-dot" [style.background]="getMuscleInfo(vm.ex.muscle).color" aria-hidden="true"></i>{{ vm.ex.muscle }}
           </span>
           <!-- Il recupero si mostra e si cambia con lo stesso elemento: prima il
                valore stava in un chip e il bottone per modificarlo era un tondo
@@ -351,34 +374,62 @@
       </div>
     </ng-container>
 
-    <!-- Sessione: unico posto da cui si comanda, sopra i pallini e nel flusso con
-         le card, non sospesa sopra di loro. Vale per entrambe le viste; lo storico
-         usa un altro componente e non la mostra. -->
-    <div class="session-bar" *ngIf="day && !loading && !summary && !isStorico && (isSessionOnThisDay || hasOtherSession)">
-      <span class="session-bar-dot" [class.live]="isSessionOnThisDay"></span>
+    <!-- Gli step: un numero per esercizio, la spunta su quelli finiti e la
+         bandiera per la chiusura. Portano alla card, e sono anche l'avanzamento
+         dell'allenamento. Prima erano otto trattini uguali. -->
+    <ng-template #passi>
+      <ion-segment class="seg labelseg passi" [value]="'p' + sliderIndex" (ionChange)="vaiAlPasso($event.detail.value)"
+        [scrollable]="slideCount > 9" aria-label="Esercizi di oggi">
+        <ion-segment-button *ngFor="let vm of exercises; let i = index" [value]="'p' + i">
+          <span class="passo">{{ i + 1 }}<lucide-icon *ngIf="isComplete(vm)" class="passo-tick" name="check" [size]="11" aria-hidden="true"></lucide-icon><span class="sr-only">: {{ vm.ex.name }}{{ isComplete(vm) ? ', finito' : '' }}</span></span>
+        </ion-segment-button>
+        <ion-segment-button *ngIf="isSessionOnThisDay" [value]="'p' + exercises.length">
+          <span class="passo"><lucide-icon name="flag" [size]="14" aria-hidden="true"></lucide-icon><span class="sr-only">Chiusura dell'allenamento</span></span>
+        </ion-segment-button>
+      </ion-segment>
+    </ng-template>
 
-      <!-- Se la sessione e' su un altro giorno l'etichetta ci porta: senza card non
-           ci sarebbe piu' modo di raggiungerla. -->
+    <!-- La sessione e gli esercizi in una card sola: il tempo (la cosa da
+         leggere, quindi grande e a sinistra), quanti esercizi sono finiti, la
+         pausa, e sotto gli step. In corsa la pausa e' un contorno: e' il gesto
+         che serve meno. In pausa "riprendi" e' il tasto pieno. -->
+    <div class="sessione-card" *ngIf="day && !loading && !summary && isSessionOnThisDay" [class.in-pausa]="sessionState.isPaused()">
+      <div class="sessione-riga">
+        <span class="sessione-tempo">
+          <span class="sessione-dot" aria-hidden="true"></span>
+          <span class="sessione-t">{{ formatDuration(sessionState.elapsedSec()) }}</span>
+          <span class="sessione-pausa" *ngIf="sessionState.isPaused()">In pausa</span>
+        </span>
+        <span class="sessione-conto" *ngIf="exercises.length && !errorMsg">
+          <b>{{ eserciziFiniti }}</b> di {{ exercises.length }} esercizi<lucide-icon *ngIf="eserciziFiniti === exercises.length"
+            name="check" [size]="14" class="sessione-ok" aria-hidden="true"></lucide-icon>
+        </span>
+        <button class="session-bar-btn tap44 tap44-v" [class.ghost]="!sessionState.isPaused()"
+          (click)="onPlayPause()" [attr.aria-label]="playPauseLabel">
+          <lucide-icon *ngIf="!isSessionRunning" name="play" [size]="18" class="filled"></lucide-icon>
+          <lucide-icon *ngIf="isSessionRunning" name="pause" [size]="18" class="filled"></lucide-icon>
+        </button>
+      </div>
+      <ng-container *ngIf="state.viewMode() === 'slider' && slideCount > 1">
+        <ng-container *ngTemplateOutlet="passi"></ng-container>
+      </ng-container>
+    </div>
+
+    <!-- La sessione e' su un altro giorno: l'etichetta ci porta, perche' senza
+         card non ci sarebbe piu' modo di raggiungerla. Se quel giorno il
+         protocollo non l'ha piu', si puo' solo chiuderla. -->
+    <div class="session-bar" *ngIf="day && !loading && !summary && !isStorico && hasOtherSession">
+      <span class="session-bar-dot"></span>
       <button class="session-bar-label link" *ngIf="otherSessionDayIndex !== null" (click)="goToOtherSession()">
         Giorno {{ otherSessionDayIndex + 1 }}
       </button>
       <span class="session-bar-label" *ngIf="otherSessionDayIndex === null">{{ sessionBarLabel }}</span>
-
-      <span class="session-bar-time"
-        [class.idle]="!isSessionOnThisDay"
-        [class.paused]="sessionState.isPaused()">
-        {{ isSessionOnThisDay ? sessionState.formatDuration(sessionState.elapsedSec()) : '0:00' }}
-      </span>
-
-      <!-- Avvia / metti in pausa / riprendi: un solo tasto, l'icona dice cosa fara'.
-           Salvare e buttare via non stanno piu' qui: erano due tondi identici uno
-           accanto all'altro, e uno dei due distrugge il lavoro. -->
-      <button class="session-bar-btn tap44 tap44-v" *ngIf="isSessionOnThisDay"
-        (click)="onPlayPause()" [attr.aria-label]="playPauseLabel">
-        <lucide-icon *ngIf="!isSessionRunning" name="play" [size]="18" class="filled"></lucide-icon>
-        <lucide-icon *ngIf="isSessionRunning" name="pause" [size]="18" class="filled"></lucide-icon>
-      </button>
+      <span class="session-bar-time idle">0:00</span>
     </div>
+
+    <!-- Il recupero finito si annuncia da qui: nello slider la fascia, che lo
+         annunciava, sparisce in quel momento per lasciare il posto al tasto. -->
+    <span class="sr-only" aria-live="polite">{{ annuncioRecupero }}</span>
 
     <!-- Vista elenco (accordion) -->
     <ng-container *ngIf="day && !loading && !errorMsg && !summary && state.viewMode() === 'list'">
@@ -410,17 +461,10 @@
 
     <!-- Vista slider (card scorrevoli, una per volta) -->
     <div class="exslider-wrap" *ngIf="day && !loading && !errorMsg && !summary && state.viewMode() === 'slider'">
-      <div class="exslider-dashes" *ngIf="slideCount > 1">
-        <span *ngFor="let vm of exercises; let i = index"
-          class="exslider-dash" [class.active]="i === sliderIndex" [class.done]="isComplete(vm)"
-          appTasto [attr.aria-label]="'Vai all\'esercizio ' + (i + 1)" [attr.aria-current]="i === sliderIndex ? 'true' : null"
-          (click)="scrollToIndex(i)"></span>
-        <!-- Tondo invece che trattino: quella slide non e' un esercizio. -->
-        <span class="exslider-dash finish" *ngIf="isSessionOnThisDay"
-          [class.active]="sliderIndex === exercises.length"
-          appTasto aria-label="Vai alla chiusura dell'allenamento" [attr.aria-current]="sliderIndex === exercises.length ? 'true' : null"
-          (click)="scrollToIndex(exercises.length)"></span>
-      </div>
+      <!-- Senza sessione su questo giorno gli step stanno da soli: il tempo non c'e' ancora. -->
+      <ng-container *ngIf="!isSessionOnThisDay && slideCount > 1">
+        <ng-container *ngTemplateOutlet="passi"></ng-container>
+      </ng-container>
 
       <div class="exslider" #sliderEl (scroll)="onSliderScroll()">
         <div class="ex exslide" *ngFor="let vm of exercises; let i = index">
@@ -475,6 +519,35 @@
       </div>
      </ng-template>
     </ion-modal>
+
+    <!-- Che peso metto: le fonti di un peso per questa serie, ognuna col suo
+         numero. Quella scelta va nella ruota, e da li' si corregge. -->
+    <ion-modal class="sheet-modal" *ngIf="day && !isStorico" [isOpen]="foglioCaricoAperto"
+      [breakpoints]="[0, 1]" [initialBreakpoint]="1" (didDismiss)="caricoChiuso()">
+     <ng-template>
+      <div class="bottomsheet scelta-sheet carico-sheet" *ngIf="foglioCarico as f">
+        <p class="confirmtext sheet-title">Che peso metto · serie {{ f.serie + 1 }}</p>
+        <ion-radio-group [value]="sceltaCarico(f)" (ionChange)="scegliCarico(f, $event.detail.value, $event.detail.event)"
+          [attr.aria-label]="'Carico della serie ' + (f.serie + 1) + ' di ' + f.vm.ex.name">
+          <ion-item class="scelta-opt" lines="full" *ngFor="let o of opzioniCarico(f.vm, f.serie)">
+            <ion-radio class="scelta-radio" [value]="o.chiave" justify="space-between" labelPlacement="start">
+              <span class="carico-voce">
+                <span class="carico-testo">
+                  <span class="carico-titolo">{{ o.titolo }}</span>
+                  <span class="carico-dettaglio">{{ o.dettaglio }}</span>
+                  <span class="carico-avviso" *ngIf="o.avviso">
+                    <lucide-icon name="info" [size]="13" aria-hidden="true"></lucide-icon>{{ o.avviso }}
+                  </span>
+                </span>
+                <span class="carico-kg">{{ kg(o.kg) }} kg</span>
+              </span>
+            </ion-radio>
+          </ion-item>
+        </ion-radio-group>
+        <p class="carico-fonte" *ngIf="f.vm.insight?.oneRmText as t" [innerHTML]="t"></p>
+      </div>
+     </ng-template>
+    </ion-modal>
   </div>
 </ion-content>
 
@@ -488,5 +561,28 @@
       <lucide-icon name="play" [size]="18" class="filled"></lucide-icon>
       Inizia allenamento
     </ion-button>
+  </div>
+</ion-footer>
+
+<!-- Il comando della serie, sotto il pollice: nello slider, ad allenamento
+     avviato. Durante il recupero qui c'e' la fascia col conto alla rovescia (la
+     disegna la barra delle tab): i due si danno il cambio nello stesso posto.
+     A recupero finito la fascia se ne va e sopra il tasto resta la riga
+     "Recupero finito" finche' non si segna la serie. -->
+<ion-footer class="salva-footer ion-no-border" *ngIf="!recuperoInCorsa && azione as a">
+  <div class="salva">
+    <p class="fine-recupero" *ngIf="recuperoFinito">
+      <lucide-icon name="check" [size]="15" aria-hidden="true"></lucide-icon>Recupero finito
+    </p>
+    <div class="salva-due" [class.doppio]="a.tipo === 'blocco' && a.chiudibile">
+      <ion-button type="button" class="setdone salva-btn" (click)="eseguiAzione(a)">
+        <!-- Un elemento solo dentro il pulsante: e' una flexbox, e fra due suoi figli lo spazio sparirebbe. -->
+        <span *ngIf="testoAzione(a) as t">{{ t.testo }}<span class="salva-sub" *ngIf="t.sub"> · {{ t.sub }}</span></span>
+      </ion-button>
+      <!-- A esaurimento, dopo ogni blocco le scelte sono due e sono pari: un
+           altro, oppure basta. -->
+      <ion-button type="button" class="setdone calmo salva-btn" *ngIf="a.tipo === 'blocco' && a.chiudibile"
+        (click)="eseguiAzione(a, true)" aria-label="Non ne escono altri, chiudi la serie">Chiudo la serie</ion-button>
+    </div>
   </div>
 </ion-footer>

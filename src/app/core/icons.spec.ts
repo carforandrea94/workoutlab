@@ -21,9 +21,9 @@ class IconHost {
 /** Gli stessi nomi che compaiono nei template, in kebab-case. */
 const USED = [
   'arrow-left-right', 'chart-line', 'check', 'chevron-down', 'chevron-left', 'chevron-right', 'chevrons-up-down', 'circle-plus',
-  'dumbbell', 'eye', 'eye-off', 'file-text', 'file-up', 'gallery-horizontal',
+  'dumbbell', 'eye', 'eye-off', 'file-text', 'file-up', 'flag', 'gallery-horizontal',
   'grip-vertical', 'history', 'info',
-  'list', 'pause', 'play', 'plus', 'ruler', 'save',
+  'list', 'message-square-quote', 'pause', 'pencil', 'play', 'plus', 'ruler', 'save',
   'settings',
   'shopping-cart', 'sport-shoe', 'square-pen', 'timer', 'trash-2', 'user',
   'utensils', 'x'

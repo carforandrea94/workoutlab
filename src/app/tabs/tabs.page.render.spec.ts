@@ -7,6 +7,7 @@ import { providerPagina } from '../../test-support/pagina';
 import { TabsPage } from './tabs.page';
 import { WorkoutDataService } from '../services/workout-data.service';
 import { WorkoutSessionStateService } from '../services/workout-session-state.service';
+import { WorkoutStateService } from '../services/workout-state.service';
 
 @Component({ standalone: true, template: '<p>pagina</p>' })
 class Vuota {}
@@ -28,7 +29,10 @@ describe('TabsPage — barra nascosta e tocco sulla tab (disegno vero)', () => {
 
   afterEach(() => document.documentElement.classList.remove('senza-tabbar', 'con-pillola', 'con-fascia'));
 
-  async function monta(opzioni: { sessioneSuGiorno?: boolean; sessione?: { dayId: string; dayLabel?: string; pausedAt?: string | null } } = {}) {
+  async function monta(opzioni: { sessioneSuGiorno?: boolean; sessione?: { dayId: string; dayLabel?: string; pausedAt?: string | null }; vista?: 'list' | 'slider' } = {}) {
+    // La vista del giorno e il recupero: nello slider la fascia c'e' solo mentre il recupero conta.
+    const viewMode = signal<'list' | 'slider'>(opzioni.vista ?? 'list');
+    const restTimer = signal<any>({ show: false, finished: false, remaining: 90, fillPct: 100, exName: null, dayId: null });
     // La sessione in corso: o quella sul giorno 0 (comodo per i test della fascia),
     // o una descritta per intero (la pillola dipende da quale giorno e' e se e' in pausa).
     const attiva = signal<any>(opzioni.sessione ?? (opzioni.sessioneSuGiorno ? { dayId: 'day1', pausedAt: null } : null));
@@ -42,6 +46,10 @@ describe('TabsPage — barra nascosta e tocco sulla tab (disegno vero)', () => {
           isActiveForDay: (id: string) => attiva()?.dayId === id,
           elapsedSec: signal(1390),
           formatDuration: () => '23:10'
+        } },
+        { provide: WorkoutStateService, useValue: {
+          viewMode, restTimer, prossimaSerie: signal(null),
+          formatTime: (n: number) => `0:${String(n).padStart(2, '0')}`, stopRestTimer: () => {}
         } }
       ]
     });
@@ -59,7 +67,7 @@ describe('TabsPage — barra nascosta e tocco sulla tab (disegno vero)', () => {
       await fixture.whenStable();
       fixture.detectChanges();
     };
-    return { fixture, root, barra, vai, router, attiva };
+    return { viewMode, restTimer, fixture, root, barra, vai, router, attiva };
   }
 
   it('ogni tab ha il suo href: serve a renderla focalizzabile col Tab, non a navigare', async () => {
@@ -150,6 +158,43 @@ describe('TabsPage — barra nascosta e tocco sulla tab (disegno vero)', () => {
       await fixture.whenStable();
 
       expect(conFascia()).toBe(false);
+    });
+  });
+
+  /**
+   * Nello slider il posto in basso e' del tasto della serie, che mette la pagina
+   * del giorno: la fascia gli da' il cambio solo mentre il recupero conta.
+   */
+  describe('nello slider la fascia c\'e\' solo durante il recupero', () => {
+    const conFascia = () => document.documentElement.classList.contains('con-fascia');
+
+    it('senza recupero non c\'e\' (e nemmeno la barra delle tab: e\' una pagina interna)', async () => {
+      const { barra, vai, root } = await monta({ sessioneSuGiorno: true, vista: 'slider' });
+      await vai('/scheda/day/0');
+      expect(root.querySelector('app-rest-bar')).toBeNull();
+      expect(barra().classList.contains('tabbar-nascosta')).toBe(true);
+      expect(conFascia()).toBe(false);
+    });
+
+    it('parte il recupero e c\'e\'; finito, se ne va e torna il tasto della pagina', async () => {
+      const { vai, root, restTimer, fixture } = await monta({ sessioneSuGiorno: true, vista: 'slider' });
+      await vai('/scheda/day/0');
+
+      restTimer.set({ show: true, finished: false, remaining: 40, fillPct: 50, exName: 'Panca', dayId: 'day1' });
+      fixture.detectChanges();
+      expect(root.querySelector('app-rest-bar')).toBeTruthy();
+      expect(conFascia()).toBe(true);
+
+      restTimer.set({ show: true, finished: true, remaining: 0, fillPct: 0, exName: 'Panca', dayId: 'day1' });
+      fixture.detectChanges();
+      expect(root.querySelector('app-rest-bar')).toBeNull();
+      expect(conFascia()).toBe(false);
+    });
+
+    it('nell\'elenco resta sempre, come prima', async () => {
+      const { vai, root } = await monta({ sessioneSuGiorno: true, vista: 'list' });
+      await vai('/scheda/day/0');
+      expect(root.querySelector('app-rest-bar')).toBeTruthy();
     });
   });
 

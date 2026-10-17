@@ -21,9 +21,12 @@ import {
 import { todayLocalISO } from '../../core/utils/date.util';
 import { findClosestSlideIndex, scrollToSlide } from '../../core/utils/horizontal-slider.util';
 import {
-  PerformedSet, oneRepMaxOf, rmTable, RmRow, RM_TABLE_MAX_REPS, MAX_TRUSTED_REPS,
+  PerformedSet, oneRepMaxOf, rmTable, MAX_TRUSTED_REPS,
   loadAtPercent, repsAtPercent, numeroSevero
 } from '../../core/utils/load-estimate.util';
+import {
+  AzioneInBasso, OpzioneCarico, UltimaVolta, azioneInBasso, fonteDelCarico, opzioneScelta, opzioniCarico
+} from '../../core/utils/carico-serie.util';
 import { ToastService } from '../../services/toast.service';
 import {
   SerieRow, BlockRow, canAddSet, buildExtraSet, canRemoveSet, removeSetAt, mergeDraftRows, abbinaBozze
@@ -33,7 +36,9 @@ import { ProssimaSerie } from '../../services/workout-state.service';
 import { IONIC_PAGE } from '../../core/ionic-page';
 import { TastoDirective } from '../../core/tasto.directive';
 import { segnala } from '../../core/utils/segnale.util';
-import { IonFooter, IonModal, NavController, IonSegment, IonSegmentButton, IonSelect, IonSelectOption, IonSpinner, IonButton } from '@ionic/angular';
+import {
+  IonFooter, IonModal, NavController, IonSegment, IonSegmentButton, IonSpinner, IonButton, IonRadioGroup, IonRadio, IonItem
+} from '@ionic/angular';
 
 interface ExerciseVM {
   ex: Exercise;
@@ -53,15 +58,23 @@ interface ExerciseVM {
   /** Serie a cluster: la forma di OGNI serie di questo esercizio. null = serie
    *  normali, un blocco per serie. */
   cluster: ClusterSpec | null;
-  /** Per quante ripetizioni si sta chiedendo il carico. Parte dalle
-   *  ripetizioni previste oggi, che e' la domanda che ci si fa per prima. */
-  rmPick: number;
+  /** L'ultima seduta in cui l'esercizio c'era: da li' vengono i pesi suggeriti. */
+  ultima: UltimaVolta | null;
+}
+
+/** Il foglio "Che peso metto" aperto: su quale serie di quale esercizio. */
+interface FoglioCarico {
+  vm: ExerciseVM;
+  serie: number;
 }
 
 @Component({
   selector: 'app-scheda-detail',
   standalone: true,
-  imports: [IonButton, IonFooter, TastoDirective, IonSegment, IonSegmentButton, IonSelect, IonSelectOption, IonSpinner, ...IONIC_PAGE, IonModal, CommonModule, FormsModule, LucideAngularModule, NumberWheelComponent],
+  imports: [
+    IonButton, IonFooter, TastoDirective, IonSegment, IonSegmentButton, IonSpinner, ...IONIC_PAGE, IonModal,
+    IonRadioGroup, IonRadio, IonItem, CommonModule, FormsModule, LucideAngularModule, NumberWheelComponent
+  ],
   templateUrl: './scheda-detail.component.html'
 })
 export class SchedaDetailComponent implements OnInit, OnDestroy {
@@ -85,9 +98,11 @@ export class SchedaDetailComponent implements OnInit, OnDestroy {
     return this.modo === 'storico';
   }
 
+  /** Il nome del giorno ("Petto e tricipiti"): "Giorno 4" non diceva cosa si allena. */
   get titolo(): string {
     if (this.isStorico) return 'Dettaglio seduta';
-    return this.day ? `Giorno ${this.dayIndex + 1}` : 'Allenamento';
+    if (!this.day) return 'Allenamento';
+    return this.day.label?.trim() || `Giorno ${this.dayIndex + 1}`;
   }
 
   /** Storico: l'id del documento della seduta aperta. */
@@ -162,6 +177,19 @@ export class SchedaDetailComponent implements OnInit, OnDestroy {
         this.sliderIndex = 0;
         setTimeout(() => this.scrollToIndex(0), 0);
       }
+    });
+    // Nello slider la fascia del recupero e il tasto in basso si danno il cambio
+    // nello stesso posto. Finito o fermato il recupero la fascia sparisce: se il
+    // focus era li' (la X, da tastiera) non deve restare sul vuoto, torna sul tasto.
+    let inCorsaPrima = false;
+    effect(() => {
+      const t = this.state.restTimer();
+      const inCorsa = !!t.show && !t.finished;
+      if (inCorsaPrima && !inCorsa && typeof document !== 'undefined') {
+        const a = document.activeElement;
+        if (!a || a === document.body || a.closest?.('app-rest-bar')) this.portaFocus('ion-footer.salva-footer ion-button');
+      }
+      inCorsaPrima = inCorsa;
     });
   }
 
@@ -314,7 +342,7 @@ export class SchedaDetailComponent implements OnInit, OnDestroy {
         // dentro il loro "10 x 80 kg", e si apre quella da correggere.
         activeRow: null,
         insightVisible: false, insight: null,
-        restSeconds: 0, isFirst: exIdx === 0, warmup: null, cluster, rmPick: 1
+        restSeconds: 0, isFirst: exIdx === 0, warmup: null, cluster, ultima: null
       };
     });
   }
@@ -430,7 +458,7 @@ export class SchedaDetailComponent implements OnInit, OnDestroy {
       }));
       const override = restOverrides[this.restKey(ex.name)];
       const restSeconds = override && override > 0 ? override : protocolDefault;
-      return { ex, rows, open: true, activeRow: 0, insightVisible: false, insight: null, restSeconds, isFirst: exIdx === 0, warmup: null, cluster, rmPick: 1 };
+      return { ex, rows, open: true, activeRow: 0, insightVisible: false, insight: null, restSeconds, isFirst: exIdx === 0, warmup: null, cluster, ultima: null };
     });
   }
 
@@ -465,17 +493,6 @@ export class SchedaDetailComponent implements OnInit, OnDestroy {
    *  spenta. Arriva dall'account, quindi vale su ogni giorno e ogni esercizio. */
   private percentualeProgramma: number | null = null;
 
-  /** La riga scelta nel menu dei massimali, o null se non c'e' una stima. */
-  rmRow(vm: ExerciseVM): RmRow | null {
-    return vm.insight?.rmRows?.find(r => r.reps === vm.rmPick) ?? null;
-  }
-
-  /** Il carico per le ripetizioni scelte, scritto come si scrive qui. */
-  rmLoad(vm: ExerciseVM): string {
-    const r = this.rmRow(vm);
-    return r ? this.kg(r.load) : '—';
-  }
-
   /** "24/09" da una data ISO, o stringa vuota se la data non c'e'. */
   private giornoMese(iso: string | undefined): string {
     if (!iso) return '';
@@ -507,26 +524,6 @@ export class SchedaDetailComponent implements OnInit, OnDestroy {
     return { percent: p, load, reps: repsAtPercent(p) };
   }
 
-  /**
-   * Quando la percentuale fissa e il piano del giorno dicono cose diverse.
-   *
-   * E' il prezzo di una percentuale sola per tutto il programma: l'80% del
-   * massimale e' un peso da otto ripetizioni, e su un giorno da dieci le
-   * dieci non escono. Dirlo qui costa una riga; scoprirlo sotto il bilanciere
-   * costa una serie. Sotto le due ripetizioni di scarto si tace: e' dentro
-   * l'errore della stima.
-   */
-  notaScostamento(vm: ExerciseVM): string | null {
-    const pl = vm.insight?.programLoad;
-    // Un cluster non e' una serie dritta: nessuna di queste formule lo legge,
-    // e infatti dalla stima resta fuori.
-    if (!pl || vm.cluster) return null;
-    const previste = parseInt(vm.rows[0]?.ripPlaceholder ?? '', 10);
-    if (!isFinite(previste) || previste <= 0) return null;
-    if (Math.abs(previste - pl.reps) < 2) return null;
-    return `Oggi il piano ne chiede ${previste}: a questo peso ne escono circa ${pl.reps}.`;
-  }
-
   private loadInsights(daySessions: { id: string; session: WorkoutSession }[]): void {
     if (daySessions.length === 0) return;
     const sessions = daySessions.map(s => s.session);
@@ -537,6 +534,7 @@ export class SchedaDetailComponent implements OnInit, OnDestroy {
       // Collect max loads per session for this exercise
       const maxLoads: number[] = [];
       let lastSessionData: { load: string | null; reps: string | null; blocks?: { load: string | null }[] }[] = [];
+      let lastSessionDate = '';
       /** Carico e ripetizioni della stessa serie vanno tenuti insieme: e' la
        *  coppia, non il solo carico, a dire quanto e' stato faticoso. Divise
        *  per sessione, perche' il massimale parla dell'ultima volta e non di
@@ -570,7 +568,19 @@ export class SchedaDetailComponent implements OnInit, OnDestroy {
           load: sr.load, reps: sr.reps,
           blocks: sr.blocks?.map(b => ({ load: b.load }))
         }));
+        lastSessionDate = s.date;
       });
+
+      // Da dove vengono i pesi suggeriti: serve alla riga "come il 03/10" e
+      // alla prima scelta del foglio. Un cluster ha il peso nei blocchi, non
+      // nella serie: li' l'ultima volta resta fuori.
+      const dataUltima = this.giornoMese(lastSessionDate);
+      if (lastSessionData.length > 0 && dataUltima) {
+        vm.ultima = {
+          data: dataUltima,
+          serie: lastSessionData.map(sr => ({ load: sr.blocks?.length ? null : sr.load, reps: sr.reps }))
+        };
+      }
 
       // Set load placeholder from last session
       if (lastSessionData.length > 0) {
@@ -599,8 +609,6 @@ export class SchedaDetailComponent implements OnInit, OnDestroy {
         lastText = dd ? `Ultimo (${dd}): ${maxLoad > 0 ? maxLoad + ' kg' : '—'}` : '';
       }
 
-      const targetReps = parseInt(vm.rows[0]?.ripPlaceholder ?? '', 10);
-
       // Il massimale stimato dall'ultima volta che l'esercizio e' stato fatto.
       // Non e' una misura: e' quello che la formula ricava dalla serie migliore
       // di quella sessione, e vale quanto vale la serie da cui viene - per
@@ -628,11 +636,6 @@ export class SchedaDetailComponent implements OnInit, OnDestroy {
           if (delta !== 0) oneRmText += ` · ${delta > 0 ? '+' : '−'}${this.kg(Math.abs(delta))} kg`;
         }
       }
-
-      // Il menu parte dalle ripetizioni previste oggi: e' la domanda che ci si
-      // fa per prima davanti al bilanciere, e cosi' il numero giusto e' gia'
-      // li' senza toccare niente.
-      vm.rmPick = targetReps >= 1 && targetReps <= RM_TABLE_MAX_REPS ? targetReps : 1;
 
       // L'ultima volta si scrive solo se non c'e' la stima: quando c'e', la
       // riga da cui nasce dice gia' peso e data, e ripeterli costa una riga
@@ -1163,7 +1166,25 @@ export class SchedaDetailComponent implements OnInit, OnDestroy {
       if (reps) return `${reps} rip.`;
       return load ? `${load} kg` : 'fatta';
     }
-    return 'da fare';
+    // Da fare: quello che c'e' in programma ("10 × 33 kg"), che si legge in
+    // grigio. "Da fare" non diceva niente che il numero della riga non dicesse.
+    if (row.blocks?.length) {
+      const conPeso = row.blocks.some(b => b.load || b.loadPlaceholder);
+      const blocchi = row.blocks.map(b => {
+        const r = b.reps || b.ripPlaceholder;
+        const l = b.load || b.loadPlaceholder;
+        return l ? `${r}×${l}` : r;
+      }).filter(v => !!v);
+      return blocchi.length ? `${blocchi.join(' + ')} ${conPeso ? 'kg' : 'rip.'}` : 'da fare';
+    }
+    return this.cella(reps, load);
+  }
+
+  /** "10 × 33 kg", "10 rip.", "33 kg": una serie in programma, scritta per esteso. */
+  private cella(reps: string, load: string): string {
+    if (reps && load) return `${reps} × ${load} kg`;
+    if (reps) return `${reps} rip.`;
+    return load ? `${load} kg` : 'da fare';
   }
 
   loadFor(row: SerieRow): string {
@@ -1322,6 +1343,219 @@ export class SchedaDetailComponent implements OnInit, OnDestroy {
 
   getMuscleInfo(muscle: string) {
     return this.workoutData.MUSCLES[muscle] ?? { color: '#64D2FF', dim: 'rgba(100,210,255,0.16)' };
+  }
+
+  // ---- La card della sessione e gli step ----
+
+  /** Gli esercizi con tutte le serie spuntate: e' il conto della card in alto. */
+  get eserciziFiniti(): number {
+    return this.exercises.filter(vm => this.isComplete(vm)).length;
+  }
+
+  /** Dagli step in cima: porta la card di quell'esercizio, o la chiusura. */
+  vaiAlPasso(valore: unknown): void {
+    const i = typeof valore === 'string' ? parseInt(valore.replace(/^p/, ''), 10) : NaN;
+    if (!isFinite(i) || i < 0 || i >= this.slideCount || i === this.sliderIndex) return;
+    this.sliderIndex = i;
+    this.scrollToIndex(i);
+  }
+
+  // ---- Prima dell'avvio: il programma da leggere ----
+  //
+  // Prima la card mostrava i comandi della sessione spenti (le ruote, "Fatta",
+  // i blocchi), con sopra una riga che diceva di avviarla: sembravano attivi e
+  // non lo erano. Finche' la sessione non parte la card e' una cosa da leggere.
+
+  get anteprima(): boolean {
+    return this.setsLocked;
+  }
+
+  /** Le colonne della tabella: una per blocco in un cluster, una sola altrimenti. */
+  blocchiAnteprima(vm: ExerciseVM): number[] {
+    const n = vm.cluster ? Math.max(1, ...vm.rows.map(r => r.blocks?.length ?? 0)) : 1;
+    return Array.from({ length: n }, (_, i) => i + 1);
+  }
+
+  celleAnteprima(vm: ExerciseVM, row: SerieRow): string[] {
+    if (vm.cluster && row.blocks?.length) {
+      return row.blocks.map(b => this.cella(b.reps || b.ripPlaceholder, b.load || b.loadPlaceholder));
+    }
+    return [this.cella(row.reps || row.ripPlaceholder, row.load || row.loadPlaceholder)];
+  }
+
+  /** Come e' fatta ogni serie a cluster, in una frase. */
+  didascaliaCluster(vm: ExerciseVM): string | null {
+    const c = vm.cluster;
+    if (!c) return null;
+    const pausa = formatClusterRest(c.restSec);
+    return c.end === 'open'
+      ? `Ogni serie: blocchi da ${c.blocks[0]} a esaurimento, con ${pausa} di pausa fra l'uno e l'altro.`
+      : `Ogni serie: ${c.blocks.length} ${c.blocks.length === 1 ? 'blocco' : 'blocchi'}, con ${pausa} di pausa fra l'uno e l'altro.`;
+  }
+
+  /** I pesi della tabella vengono dall'ultima seduta: si dice di quando. Solo
+   *  se nella tabella ce n'e' uno: in un cluster i pesi sono quelli dei blocchi. */
+  pesiUltimaVolta(vm: ExerciseVM): boolean {
+    if (!vm.ultima) return false;
+    return vm.rows.some(r => vm.cluster && r.blocks?.length
+      ? r.blocks.some(b => !!b.loadPlaceholder)
+      : !!r.loadPlaceholder);
+  }
+
+  // ---- Che peso metto ----
+
+  foglioCarico: FoglioCarico | null = null;
+  foglioCaricoAperto = false;
+
+  /** Le fonti di un peso per questa serie. Vuoto su un cluster (li' il peso e'
+   *  del blocco) e nello storico (li' c'e' quello che hai fatto, non un suggerimento). */
+  opzioniCarico(vm: ExerciseVM, serie: number): OpzioneCarico[] {
+    const row = vm.rows[serie];
+    if (!row || vm.cluster || this.isStorico) return [];
+    return opzioniCarico({
+      serie,
+      ultima: vm.ultima,
+      ripetizioni: this.numero(row.reps) ?? this.numero(row.ripPlaceholder),
+      rmRows: vm.insight?.rmRows ?? null,
+      programma: vm.insight?.programLoad ?? null,
+      previste: numeroSevero(row.ripPlaceholder),
+      soglia: this.rmSoftOver
+    });
+  }
+
+  /** La riga in cima alla serie: da dove viene il numero nella ruota. */
+  fonteCarico(vm: ExerciseVM, serie: number): string | null {
+    const row = vm.rows[serie];
+    if (!row) return null;
+    const opzioni = this.opzioniCarico(vm, serie);
+    return fonteDelCarico(opzioni, row.load, row.loadPlaceholder) ?? (opzioni.length ? 'scegli il peso' : null);
+  }
+
+  apriCarico(vm: ExerciseVM, serie: number): void {
+    if (this.setsLocked || !this.opzioniCarico(vm, serie).length) return;
+    this.foglioCarico = { vm, serie };
+    this.foglioCaricoAperto = true;
+  }
+
+  caricoChiuso(): void {
+    this.foglioCaricoAperto = false;
+    this.foglioCarico = null;
+  }
+
+  /** L'opzione col peso che c'e' nella ruota; nessuna se l'hai girata tu. */
+  sceltaCarico(f: FoglioCarico): string {
+    const row = f.vm.rows[f.serie];
+    const kg = row ? this.numero(row.load) ?? this.numero(row.loadPlaceholder) : null;
+    return opzioneScelta(this.opzioniCarico(f.vm, f.serie), kg)?.chiave ?? '';
+  }
+
+  /**
+   * Scegliere col dito mette il numero nella ruota e chiude il foglio. Con le
+   * frecce no: nel gruppo di radio le frecce spostano E scelgono, e chi usa la
+   * tastiera deve poter scorrere le opzioni senza che il foglio si chiuda alla
+   * prima. Conferma con Spazio, esce con Esc. Come nella Dieta.
+   */
+  scegliCarico(f: FoglioCarico, chiave: string, evento?: Event): void {
+    const o = this.opzioniCarico(f.vm, f.serie).find(x => x.chiave === chiave);
+    if (!o) return;
+    this.setLoad(f.vm, f.serie, o.kg);
+    if (!(typeof KeyboardEvent !== 'undefined' && evento instanceof KeyboardEvent)) this.foglioCaricoAperto = false;
+    this.cdr.detectChanges();
+  }
+
+  // ---- Il tasto in basso ----
+  //
+  // Nello slider, ad allenamento avviato, il comando della serie sta in basso,
+  // sotto il pollice, nel posto in cui prima c'e' "Inizia allenamento" e
+  // durante il recupero c'e' la fascia col conto alla rovescia: un posto solo
+  // per il prossimo gesto. Nell'elenco (tante card insieme, un tasto in basso
+  // non saprebbe di quale parla) e nello storico resta nella card.
+
+  get tastoInBasso(): boolean {
+    return this.state.viewMode() === 'slider' && !this.isStorico && !!this.day && !this.loading
+      && !this.errorMsg && !this.summary && this.isSessionOnThisDay;
+  }
+
+  /** Il recupero sta contando: in basso c'e' la fascia, non il tasto. */
+  get recuperoInCorsa(): boolean {
+    const t = this.state.restTimer();
+    return !!t.show && !t.finished;
+  }
+
+  /** Il recupero e' finito e la serie dopo non e' ancora segnata. */
+  get recuperoFinito(): boolean {
+    const t = this.state.restTimer();
+    return !!t.show && !!t.finished;
+  }
+
+  /** La fascia sparisce a fine recupero: chi usa un lettore di schermo lo sente da qui. */
+  get annuncioRecupero(): string {
+    return this.tastoInBasso && this.recuperoFinito ? 'Recupero finito: vai con la serie successiva.' : '';
+  }
+
+  /** Cosa fa il tasto in basso per la card che si sta guardando; null sulla chiusura. */
+  get azione(): AzioneInBasso | null {
+    if (!this.tastoInBasso) return null;
+    const vm = this.exercises[this.sliderIndex];
+    if (!vm) return null;
+    const row = vm.activeRow !== null ? vm.rows[vm.activeRow] : undefined;
+    const cluster = row && !row.done && this.isCluster(vm, row)
+      ? { etichetta: this.blockLabel(vm, row), chiudibile: this.canCloseCluster(vm, row) }
+      : null;
+    return azioneInBasso({
+      righe: vm.rows, attiva: vm.activeRow, cluster,
+      ultimo: this.sliderIndex === this.exercises.length - 1
+    });
+  }
+
+  /** Le parole del tasto: quella che si fa, e in piccolo su cosa. */
+  testoAzione(a: AzioneInBasso): { testo: string; sub: string | null } {
+    switch (a.tipo) {
+      case 'fatta': return { testo: 'Fatta', sub: `serie ${a.serie} di ${a.totale}` };
+      case 'blocco': return { testo: `Fatto il ${a.etichetta.toLowerCase()}`, sub: null };
+      case 'torna': return { testo: `Torna alla serie ${a.serie}`, sub: null };
+      case 'avanti': return { testo: a.chiusura ? 'Vai alla chiusura' : 'Prossimo esercizio', sub: null };
+    }
+  }
+
+  /** Il tasto in basso. `chiudi` e' il secondo tasto di un cluster a esaurimento: "Chiudo la serie". */
+  eseguiAzione(a: AzioneInBasso, chiudi = false): void {
+    const vm = this.exercises[this.sliderIndex];
+    if (!vm) return;
+    const daTastiera = this.focusNelPiede();
+    const j = vm.activeRow;
+    switch (a.tipo) {
+      case 'fatta':
+        if (j !== null) this.confirmSet(vm, j);
+        break;
+      case 'blocco':
+        if (j !== null) { if (chiudi) this.closeClusterSet(vm, j); else this.doneBlock(vm, j); }
+        break;
+      case 'torna':
+        vm.activeRow = a.serie - 1;
+        break;
+      case 'avanti':
+        this.vaAllaSlide(this.sliderIndex + 1);
+        break;
+    }
+    this.cdr.detectChanges();
+    // Il tasto se ne va col recupero che parte: da tastiera il focus passa alla
+    // X della fascia, l'unica cosa che c'e' li'.
+    if (daTastiera && this.recuperoInCorsa) this.portaFocus('app-rest-bar .restbar-x');
+  }
+
+  private focusNelPiede(): boolean {
+    const a = typeof document !== 'undefined' ? document.activeElement : null;
+    return !!a?.closest?.('ion-footer.salva-footer');
+  }
+
+  /** Porta il focus su un controllo appena ridisegnato; su un ion-button, sul pulsante vero dentro. */
+  private portaFocus(selettore: string): void {
+    setTimeout(() => {
+      const el = document.querySelector<HTMLElement>(selettore);
+      const dentro = el?.shadowRoot?.querySelector<HTMLElement>('button') ?? el;
+      dentro?.focus();
+    }, 0);
   }
 
   openRestModal(vm: ExerciseVM, event: Event): void {

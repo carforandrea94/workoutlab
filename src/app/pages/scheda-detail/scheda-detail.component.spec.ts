@@ -25,7 +25,8 @@ function makeComponent(opts: { sessionSuQuestoGiorno: boolean; inPausa?: boolean
   } as any;
 
   const prossimaSerie = signal<any>(null);
-  const state = { viewMode: () => 'list', saveStatus: () => 'idle', startRestTimer, stopRestTimer, prossimaSerie } as any;
+  const restTimer = signal<any>({ show: false, finished: false });
+  const state = { viewMode: () => 'list', saveStatus: () => 'idle', startRestTimer, stopRestTimer, prossimaSerie, restTimer } as any;
 
   const component = TestBed.runInInjectionContext(() => new SchedaDetailComponent(
     {} as any,                       // ActivatedRoute: ngOnInit non viene chiamato
@@ -306,29 +307,37 @@ describe('SchedaDetailComponent — la tabella dei massimali per esercizio', () 
     expect(vm.insight.rmRows).toBeNull();
   });
 
-  it('il menu parte dalle ripetizioni previste oggi', () => {
-    // Il protocollo di prova chiede 10 ripetizioni: la domanda che ci si fa
-    // per prima ha gia' la risposta, senza toccare niente.
+  // La tabella si legge dal foglio "Che peso metto": la stima e' per le
+  // ripetizioni nella ruota, che e' la domanda che ci si fa davanti al bilanciere.
+  const stima = (component: any, vm: any) => component.opzioniCarico(vm, 0).find((o: any) => o.chiave === 'rm');
+
+  it('nel foglio la stima parte dalle ripetizioni previste oggi', () => {
+    // Il protocollo di prova chiede 10 ripetizioni: la risposta e' gia' li'.
     const { component, vm } = conSessione([{ load: '80', reps: '6' }]);
-    expect(vm.rmPick).toBe(10);
-    expect(component.rmLoad(vm)).toBe('70');     // 75% di 93
-    expect(component.rmRow(vm)!.percent).toBe(75);
+    expect(stima(component, vm)).toMatchObject({ titolo: 'Per 10 ripetizioni', kg: 70, breve: '75% del massimale' });
   });
 
-  it('cambiando le ripetizioni cambia il peso', () => {
+  it('girando le ripetizioni nella ruota cambia il peso', () => {
     const { component, vm } = conSessione([{ load: '80', reps: '6' }]);
-    vm.rmPick = 1;
-    expect(component.rmLoad(vm)).toBe('93');     // la riga "1" E' il massimale
-    vm.rmPick = 6;
-    expect(component.rmLoad(vm)).toBe('80');     // il peso davvero sollevato
-    vm.rmPick = 3;
-    expect(component.rmLoad(vm)).toBe('88');
+    component.setReps(vm, 0, 1);
+    expect(stima(component, vm).kg).toBe(93);     // la riga "1" E' il massimale
+    component.setReps(vm, 0, 6);
+    expect(stima(component, vm).kg).toBe(80);     // il peso davvero sollevato
+    component.setReps(vm, 0, 3);
+    expect(stima(component, vm).kg).toBe(88);
   });
 
-  it('senza stima il menu non ha niente da dire', () => {
+  it('senza stima il foglio non la inventa, ma l\'ultima volta resta', () => {
     const { component, vm } = conSessione([{ load: '40', reps: '20' }]);
-    expect(component.rmRow(vm)).toBeNull();
-    expect(component.rmLoad(vm)).toBe('—');
+    expect(stima(component, vm)).toBeUndefined();
+    expect(component.opzioniCarico(vm, 0).map((o: any) => o.chiave)).toEqual(['ultima']);
+  });
+
+  it('l\'ultima volta e\' la prima scelta: la serie con lo stesso numero, con la data', () => {
+    const { component, vm } = conSessione([{ load: '80', reps: '6' }]);
+    expect(component.opzioniCarico(vm, 0)[0]).toMatchObject({
+      chiave: 'ultima', kg: 80, dettaglio: 'Serie 1 del 24/09, 6 ripetizioni', breve: 'come il 24/09'
+    });
   });
 });
 
@@ -368,7 +377,7 @@ function makeStorico(opts: {
     { snapshot: { data: { modo: 'storico' } }, paramMap: { subscribe: () => null } } as any,
     { navigateBack, navigateForward } as any,
     { days: opts.giorni ?? [], MUSCLES: {} } as any,
-    { viewMode: () => 'list', saveStatus: () => 'idle', startRestTimer, prossimaSerie: signal<any>(null) } as any,
+    { viewMode: () => 'list', saveStatus: () => 'idle', startRestTimer, prossimaSerie: signal<any>(null), restTimer: signal<any>({ show: false, finished: false }) } as any,
     { patchField: vi.fn(() => Promise.resolve()) } as any,
     { get, moveSession, delete: cancella, sessionId } as any,
     { confirm } as any,
@@ -650,10 +659,13 @@ describe('SchedaDetailComponent — la percentuale del massimale', () => {
     expect(vm.rows[0].loadPlaceholder).toBe('85');
   });
 
+  // Nel foglio "Che peso metto" il programma e' una delle scelte, col suo avviso.
+  const programma = (component: any, vm: any) => component.opzioniCarico(vm, 0).find((o: any) => o.chiave === 'programma');
+
   it('avverte quando la percentuale e il piano del giorno non coincidono', () => {
     // Il protocollo di prova chiede 10 ripetizioni; l'80% e' un peso da 8.
     const { component, vm } = conPercentuale(80);
-    expect(component.notaScostamento(vm)).toBe(
+    expect(programma(component, vm).avviso).toBe(
       'Oggi il piano ne chiede 10: a questo peso ne escono circa 8.'
     );
   });
@@ -662,21 +674,20 @@ describe('SchedaDetailComponent — la percentuale del massimale', () => {
     // Il 75% E' la riga delle dieci ripetizioni: niente da segnalare.
     const { component, vm } = conPercentuale(75);
     expect(vm.insight.programLoad.reps).toBe(10);
-    expect(component.notaScostamento(vm)).toBeNull();
+    expect(programma(component, vm).avviso).toBeNull();
   });
 
   it('tace per una ripetizione di scarto: e\' dentro l\'errore della stima', () => {
     const { component, vm } = conPercentuale(77.5);
     expect(vm.insight.programLoad.reps).toBe(9);
-    expect(component.notaScostamento(vm)).toBeNull();
+    expect(programma(component, vm).avviso).toBeNull();
   });
 
-  it('su un cluster non si pronuncia', () => {
-    // "8+8" non e' una serie dritta: nessuna di queste formule la legge, e
-    // infatti dalla stima resta fuori.
+  it('su un cluster il foglio non si apre: li\' il peso e\' del blocco', () => {
+    // "8+8" non e' una serie dritta: nessuna di queste formule la legge.
     const { component, vm } = conPercentuale(80);
     vm.cluster = { blocks: [8, 8], restSec: 20, end: 'fixed' };
-    expect(component.notaScostamento(vm)).toBeNull();
+    expect(component.opzioniCarico(vm, 0)).toEqual([]);
   });
 });
 
@@ -1127,5 +1138,78 @@ describe('SchedaDetailComponent — la conferma di scarto della sessione', () =>
     expect((confirm.mock.calls[0] as any[])[0]).toBe(
       'Vuoi buttare via la sessione in corso? Il tempo andrà perso e l\'allenamento non verrà salvato nello storico.'
     );
+  });
+});
+
+/**
+ * Le parole della pagina dopo il riordino della schermata: il titolo e' il
+ * nome del giorno, le serie da fare dicono il programma, e prima dell'avvio
+ * un cluster si legge blocco per blocco.
+ */
+describe('SchedaDetailComponent — titolo, programma e anteprima', () => {
+  it('il titolo e\' il nome del giorno; senza nome torna "Giorno N"', () => {
+    const { component } = makeComponent({ sessionSuQuestoGiorno: true });
+    expect(component.titolo).toBe('Petto');
+    component.day = { id: 'day1', label: '  ', rec: '', ex: [] } as any;
+    component.dayIndex = 3;
+    expect(component.titolo).toBe('Giorno 4');
+  });
+
+  it('una serie da fare dice il programma, non "da fare"', () => {
+    const { component } = makeComponent({ sessionSuQuestoGiorno: true });
+    const riga = (r: any) => ({ reps: '', load: '', done: false, ripPlaceholder: '', loadPlaceholder: '', extra: false, ...r });
+    expect(component.rowSummary(riga({ ripPlaceholder: '10', loadPlaceholder: '33' }))).toBe('10 × 33 kg');
+    expect(component.rowSummary(riga({ ripPlaceholder: '10' }))).toBe('10 rip.');
+    expect(component.rowSummary(riga({}))).toBe('da fare');
+    // Un cluster dice i suoi blocchi.
+    const blocchi = [
+      { reps: '', load: '', ripPlaceholder: '8', loadPlaceholder: '62', done: false },
+      { reps: '', load: '', ripPlaceholder: '8', loadPlaceholder: '30', done: false }
+    ];
+    expect(component.rowSummary(riga({ ripPlaceholder: '8+8', blocks: blocchi }))).toBe('8×62 + 8×30 kg');
+  });
+
+  it('prima dell\'avvio un cluster si legge blocco per blocco, con la sua pausa', () => {
+    const { component } = makeComponent({ sessionSuQuestoGiorno: false });
+    const vm = makeVm();
+    vm.cluster = { blocks: [8, 8], restSec: 30, end: 'fixed' };
+    vm.rows = [{
+      reps: '', load: '', done: false, ripPlaceholder: '8+8', loadPlaceholder: '', extra: false,
+      blocks: [
+        { reps: '', load: '', ripPlaceholder: '8', loadPlaceholder: '62', done: false },
+        { reps: '', load: '', ripPlaceholder: '8', loadPlaceholder: '30', done: false }
+      ]
+    }];
+    expect(component.anteprima).toBe(true);
+    expect(component.blocchiAnteprima(vm)).toEqual([1, 2]);
+    expect(component.celleAnteprima(vm, vm.rows[0])).toEqual(['8 × 62 kg', '8 × 30 kg']);
+    expect(component.didascaliaCluster(vm)).toMatch(/^Ogni serie: 2 blocchi, con 30.* di pausa fra l'uno e l'altro\.$/);
+  });
+
+  it('a esaurimento la didascalia lo dice', () => {
+    const { component } = makeComponent({ sessionSuQuestoGiorno: false });
+    const vm = makeVm();
+    vm.cluster = { blocks: [5], restSec: 20, end: 'open' };
+    expect(component.didascaliaCluster(vm)).toMatch(/^Ogni serie: blocchi da 5 a esaurimento/);
+    vm.cluster = null;
+    expect(component.didascaliaCluster(vm)).toBeNull();
+  });
+
+  it('"pesi dell\'ultima volta" solo se nella tabella c\'e\' un peso: in un cluster, quello dei blocchi', () => {
+    const { component } = makeComponent({ sessionSuQuestoGiorno: false });
+    const vm = makeVm();
+    vm.ultima = { data: '03/10', serie: [] };
+    expect(component.pesiUltimaVolta(vm)).toBe(true);           // 36 kg dalla volta scorsa
+    vm.cluster = { blocks: [8], restSec: 30, end: 'open' };
+    vm.rows[0].blocks = [{ reps: '', load: '', ripPlaceholder: '8', loadPlaceholder: '', done: false }];
+    expect(component.pesiUltimaVolta(vm)).toBe(false);          // la serie ha un peso, i blocchi no
+    vm.rows[0].blocks[0].loadPlaceholder = '30';
+    expect(component.pesiUltimaVolta(vm)).toBe(true);
+    vm.ultima = null;
+    expect(component.pesiUltimaVolta(vm)).toBe(false);
+  });
+
+  it('a sessione avviata l\'anteprima non c\'e\'; nello storico nemmeno', () => {
+    expect(makeComponent({ sessionSuQuestoGiorno: true }).component.anteprima).toBe(false);
   });
 });
