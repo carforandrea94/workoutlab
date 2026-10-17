@@ -65,7 +65,6 @@ export function eRadiceDiTab(url: string, tabs: readonly { id: string }[] = TABS
   imports: [IonTabs, IonTabBar, IonTabButton, LucideAngularModule, RestBarComponent],
   template: `
     <ion-tabs (ionTabsDidChange)="selected.set($event.tab)">
-      <div class="tabfade" [class.tabbar-nascosta]="nascondiBarra"></div>
       <ion-tab-bar slot="bottom" class="tabbar tabbar-5" [class.tabbar-nascosta]="nascondiBarra"
         [style.display]="showRestBar ? 'none' : null">
         <div class="pill" [class]="'pill p' + selectedIndex()"></div>

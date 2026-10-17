@@ -85,17 +85,17 @@ describe('TabsPage — barra nascosta e tocco sulla tab (disegno vero)', () => {
     const { barra, root } = await monta();
 
     expect(barra().classList.contains('tabbar-nascosta')).toBe(false);
-    expect(root.querySelector('.tabfade')!.classList.contains('tabbar-nascosta')).toBe(false);
+    // La barra e' di vetro: niente sfumatura sotto, che coprirebbe quello che le passa dietro.
+    expect(root.querySelector('.tabfade')).toBeNull();
     expect(document.documentElement.classList.contains('senza-tabbar')).toBe(false);
   });
 
-  it('dentro una pagina interna scivola via, con la sfumatura e lo spazio sotto il contenuto', async () => {
-    const { barra, root, vai } = await monta();
+  it('dentro una pagina interna scivola via, e il contenuto riprende lo spazio sotto', async () => {
+    const { barra, vai } = await monta();
 
     await vai('/dieta/lista-spesa');
 
     expect(barra().classList.contains('tabbar-nascosta')).toBe(true);
-    expect(root.querySelector('.tabfade')!.classList.contains('tabbar-nascosta')).toBe(true);
     expect(document.documentElement.classList.contains('senza-tabbar')).toBe(true);
   });
 

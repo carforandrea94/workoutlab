@@ -143,3 +143,69 @@ describe('styles.css — il fondo della pagina e le card dello slider', () => {
     expect(css).toMatch(/\.exslider\{[^}]*align-items:flex-start/);
   });
 });
+
+/**
+ * Il vetro delle barre che galleggiano sopra la pagina (barra delle tab,
+ * fascia del recupero, pillola della sessione). Le card restano piene: il
+ * vetro dietro un testo fa dipendere il contrasto da cosa ci scorre sotto, ed
+ * e' per questo che una volta era stato tolto. Qui si tiene il conto: con
+ * l'accento pieno che passa sotto la barra (il caso peggiore realistico), le
+ * scritte piccole delle barre restano sopra 4,5:1.
+ */
+describe('styles.css — il vetro delle barre', () => {
+  let css = '';
+  let scuro = '';
+  let chiaro = '';
+  beforeAll(async () => {
+    const nome = 'node:fs';
+    const fs = await import(/* @vite-ignore */ nome);
+    css = fs.readFileSync('src/styles.css', 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+    scuro = css.match(/:root\s*\{([\s\S]*?)\n\}/)![1];
+    chiaro = css.match(/:root\[data-theme="light"\]\s*\{([\s\S]*?)\n\}/)![1];
+  });
+
+  type Rgba = [number, number, number, number];
+  const colore = (blocco: string, token: string): Rgba => {
+    const v = blocco.match(new RegExp(`--${token}:\\s*([^;]+);`))?.[1].trim();
+    if (!v) throw new Error(`--${token} non trovato`);
+    const hex = v.match(/^#([0-9a-f]{6})$/i);
+    if (hex) return [0, 2, 4].map(i => parseInt(hex[1].slice(i, i + 2), 16) / 255).concat(1) as Rgba;
+    const rgba = v.match(/^rgba\(\s*(\d+),\s*(\d+),\s*(\d+),\s*([0-9.]+)\s*\)$/);
+    if (!rgba) throw new Error(`--${token}: "${v}" non e' un colore pieno o rgba`);
+    return [+rgba[1] / 255, +rgba[2] / 255, +rgba[3] / 255, +rgba[4]];
+  };
+  const sopra = (c: Rgba, fondo: Rgba): Rgba => [0, 1, 2].map(i => c[3] * c[i] + (1 - c[3]) * fondo[i]).concat(1) as Rgba;
+  const luce = (c: Rgba) => {
+    const f = (v: number) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4);
+    return 0.2126 * f(c[0]) + 0.7152 * f(c[1]) + 0.0722 * f(c[2]);
+  };
+  const rapporto = (a: Rgba, b: Rgba) => {
+    const [x, y] = [luce(a), luce(b)].sort((p, q) => q - p);
+    return (x + 0.05) / (y + 0.05);
+  };
+
+  for (const [tema, blocco] of [['scuro', () => scuro], ['chiaro', () => chiaro]] as const) {
+    it(`tema ${tema}: con l'accento sotto, etichette e accento sul vetro restano sopra 4,5:1`, () => {
+      const accento = colore(blocco(), 'brand');
+      const vetro = sopra(colore(blocco(), 'glass-bg'), accento);
+      expect(colore(blocco(), 'glass-bg')[3]).toBeLessThan(1);   // e' davvero vetro
+      expect(rapporto(sopra(colore(blocco(), 'label-3'), vetro), vetro)).toBeGreaterThanOrEqual(4.5);
+      expect(rapporto(accento, vetro)).toBeGreaterThanOrEqual(4.5);
+    });
+  }
+
+  it('la sfocatura sta solo sulle barre che galleggiano, non sulle card', () => {
+    const regole = css.match(/[^{}]*\{[^{}]*backdrop-filter[^{}]*\}/g) ?? [];
+    const selettori = regole.map(r => r.slice(0, r.indexOf('{')).trim());
+    expect(selettori.sort()).toEqual(['.restbar', '.sessionpill', '.tabbar']);
+  });
+
+  it('senza backdrop-filter, o con "riduci trasparenza" e "aumenta contrasto", le barre tornano piene', () => {
+    expect(css).toMatch(/@supports not \(\(backdrop-filter:blur\(1px\)\) or \(-webkit-backdrop-filter:blur\(1px\)\)\)\{\s*:root,:root\[data-theme="light"\]\{--glass-bg:var\(--surface-chrome\)/);
+    expect(css).toMatch(/@media \(prefers-reduced-transparency:reduce\),\(prefers-contrast:more\)\{\s*:root,:root\[data-theme="light"\]\{--glass-bg:var\(--surface-chrome\);--glass-edge:var\(--border-line\);--glass-filter:none;\}/);
+  });
+
+  it('niente sfumatura sotto la barra: coprirebbe quello che passa dietro il vetro', () => {
+    expect(css).not.toMatch(/\.tabfade/);
+  });
+});
