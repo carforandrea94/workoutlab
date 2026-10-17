@@ -459,24 +459,10 @@ ion-item-sliding.cardrow ion-item-option{--background:var(--state-danger);--colo
 .daymeta{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 16px;margin-bottom:14px;background:var(--surface-card);border:1px solid var(--border-line);border-radius:var(--r-xl);box-shadow:var(--shadow-card);font-family:'IBM Plex Mono',monospace;font-size:var(--text-xs);color:var(--label-2);letter-spacing:.04em;text-transform:uppercase;}
 .exlist{display:flex;flex-direction:column;gap:12px;}
 .exslider-wrap{display:flex;flex-direction:column;}
-.exslider{display:flex;gap:12px;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:2px;}
+.exslider{display:flex;align-items:flex-start;gap:12px;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:2px;}
 .exslider::-webkit-scrollbar{display:none;}
 .exslide{flex:0 0 100%;width:100%;scroll-snap-align:center;scroll-snap-stop:always;}
 .ex-summary.noclick{cursor:default;}
-.exslider-dashes{display:flex;align-items:center;justify-content:center;gap:6px;margin-bottom:14px;}
-.exslider-dash{width:12px;height:3px;border-radius:var(--r-pill);background:var(--border-line);cursor:pointer;transition:all .18s ease;}
-.exslider-dash.done{background:var(--accent);}
-.exslider-dash.active{width:24px;background:var(--accent);}
-/* L'ultima slide non e' un esercizio ma la chiusura: il suo segno e' un
-   tondo vuoto, cosi' si vede che la fila di trattini e' finita. */
-.exslider-dash.finish{width:9px;height:9px;border-radius:50%;background:none;border:1.5px solid var(--border-line);}
-/* I trattini sono alti 3px: a dito non si prendevano. Il bersaglio cresce senza
-   cambiare il disegno - in alto quanto basta, in basso fin dove finisce il
-   margine prima della card (14px: se ne usano 10, per non rubare il tocco alla
-   card), ai lati di 2px dei 6 che li separano, cosi' non si pestano. */
-.exslider-dash{position:relative;}
-.exslider-dash::after{content:"";position:absolute;left:-2px;right:-2px;top:-16px;bottom:-10px;}
-.exslider-dash.finish.active{width:9px;background:var(--accent);border-color:var(--accent);}
 .ex{background:var(--surface-card);border:1px solid var(--border-line);border-radius:var(--r-xl);overflow:hidden;-webkit-mask-image:-webkit-radial-gradient(white,black);mask-image:radial-gradient(white,black);position:relative;box-shadow:var(--shadow-card);}
 .ex-summary{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;cursor:pointer;-webkit-user-select:none;user-select:none;}
 .ex-icon{width:44px;height:44px;border-radius:var(--r-md);flex-shrink:0;font-size:var(--text-xl);display:flex;align-items:center;justify-content:center;border:1px solid var(--border-line);}
@@ -502,7 +488,10 @@ ion-item-sliding.cardrow ion-item-option{--background:var(--state-danger);--colo
   display:inline-flex;align-items:center;min-height:24px;padding:0 8px;
   font-family:'IBM Plex Mono',monospace;font-size:var(--text-xs);font-weight:600;
   border-radius:var(--r-xs);white-space:nowrap;}
-.ex-muscle{letter-spacing:.04em;color:var(--ink-on-vivid);}
+/* Il muscolo e' un'etichetta: un pallino del suo colore e il nome, non una
+   pastiglia satura (era la cosa piu' accesa della card). */
+.ex-muscle{gap:6px;padding:0;font-family:'Inter',sans-serif;font-size:var(--text-sm);font-weight:600;color:var(--label-2);}
+.ex-muscle-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
 .ex-chip{color:var(--label);background:var(--surface-raise);border:1px solid var(--border-line);}
 .ex-meta{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0;}
 .ex-schemebadge{letter-spacing:.06em;text-transform:uppercase;color:var(--label-2);background:var(--surface-raise);border:1px solid var(--border-line);}
@@ -536,7 +525,6 @@ ion-button.setdone,ion-button.setundo,ion-button.setremove,ion-button.setadd,ion
 ion-button.rest-defaultbtn{--background:transparent;--color:var(--label-2);--border-radius:var(--r-md);--border-width:1px;--border-style:dashed;--border-color:var(--border-line);--padding-start:10px;--padding-end:10px;--padding-top:10px;--padding-bottom:10px;width:100%;margin-bottom:16px;font-family:'Inter',sans-serif;font-size:var(--text-sm);font-weight:600;}
 ion-button.rest-defaultbtn:hover{--color:var(--label);--border-color:var(--label-2);}
 .ex .content-inner{padding:0 16px 16px;border-top:1px solid var(--separator);}
-.ex .note{font-size:var(--text-xs);color:var(--label-3);margin-top:10px;line-height:1.4;}
 .settable-head{display:grid;grid-template-columns:38px 1fr 1fr 32px;gap:8px;align-items:center;padding:12px 2px 8px;font-family:'IBM Plex Mono',monospace;font-size:var(--text-2xs);letter-spacing:.08em;text-transform:uppercase;color:var(--label-3);}
 .settable-head span:last-child,.settable-row .set-check{justify-self:center;}
 .settable-row{display:grid;grid-template-columns:38px 1fr 1fr 32px;gap:8px;align-items:center;padding:5px 2px;}
@@ -676,8 +664,6 @@ ion-button.closing-discard.button-disabled{opacity:.4;}
 .wrapup-rec-txt .nm{font-size:var(--text-sm);font-weight:600;color:var(--label);}
 .wrapup-rec-txt .dt{font-family:'IBM Plex Mono',monospace;font-size:var(--text-2xs);color:var(--label-3);}
 
-.setslocked-hint{display:flex;align-items:center;gap:7px;margin-top:12px;padding:9px 11px;border:1px solid var(--border-line);border-radius:var(--r-sm);background:var(--surface-raise);font-size:var(--text-xs);line-height:1.35;color:var(--label-2);}
-.setslocked-hint svg{flex-shrink:0;color:var(--accent);}
 
 /* Nello storico non c'e' un tasto salva: la seduta esiste gia' e ogni
    correzione si scrive da sola. Questa riga e' l'unica cosa che lo dice, per
@@ -1101,30 +1087,6 @@ ion-button.navback{--color:var(--label);}
 .suggestion-chip.stima{background:var(--surface-raise);border-color:var(--border-line);color:var(--label-2);font-size:var(--text-xs);font-family:'IBM Plex Mono',monospace;line-height:1.5;}
 .suggestion-chip.stima b{color:var(--label);}
 
-/* Il peso da caricare, dentro la serie e subito sotto le ripetizioni. Si
-   sceglie per quante ripetizioni lo si vuole e il numero cambia: e' la stessa
-   domanda che ci si fa davanti al bilanciere, nello stesso posto.
-   La freccia e' disegnata qui perche' l'app azzera l'appearance dei controlli
-   nativi, quindi il menu non ne avrebbe nessuna. */
-.rmpick{margin-top:2px;display:flex;flex-direction:column;gap:6px;}
-.rmpick-row{display:flex;align-items:center;gap:10px;min-width:0;}
-/* Da dove viene il numero. Prima erano due righe sopra il menu - "Ultimo
-   (24/09): 80 kg" e il massimale - che dicevano la stessa cosa due volte: la
-   data e il peso stanno gia' qui dentro. */
-.rmpick-from{margin:0;font-family:'IBM Plex Mono',monospace;font-size:var(--text-2xs);color:var(--label-3);line-height:1.5;}
-.rmpick-from b{color:var(--label);font-weight:700;}
-.rmpick-selwrap{position:relative;display:flex;align-items:center;flex-shrink:0;}
-/* Larghezza ferma: il menu e' largo quanto la voce piu' lunga, altrimenti la
-   riga si sposta ogni volta che si cambia numero. */
-.rmpick-out{font-family:'IBM Plex Mono',monospace;font-size:var(--text-lg);font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums;margin-left:auto;white-space:nowrap;}
-.rmpick-pct{font-family:'IBM Plex Mono',monospace;font-size:var(--text-xs);color:var(--label-3);font-variant-numeric:tabular-nums;}
-.rmpick-soft{margin:8px 0 0;font-size:var(--text-2xs);color:var(--label-3);line-height:1.45;}
-/* La percentuale del programma: si legge accanto al menu, non al posto suo.
-   Stessa riga tipografica della provenienza, col peso in evidenza. */
-.rmpick-prog{margin:0;font-family:'IBM Plex Mono',monospace;font-size:var(--text-2xs);color:var(--label-2);line-height:1.5;}
-.rmpick-prog b{color:var(--accent);font-weight:700;font-size:var(--text-xs);}
-/* Quando la percentuale e il piano del giorno non dicono la stessa cosa. */
-.rmpick-nota{margin:2px 0 0;padding-left:8px;border-left:2px solid var(--border-line);font-family:'IBM Plex Mono',monospace;font-size:var(--text-2xs);color:var(--label-2);line-height:1.5;}
 .savebar{margin-top:16px;}
 .savebar.dual{display:flex;gap:10px;}
 .savebar.dual .savebtn{width:auto;flex:1;}
@@ -1363,12 +1325,96 @@ ion-button.setdone.salva-btn.fatto{--background:var(--surface-raise);--color:var
 .restbar.finished .restbar-track span{background:var(--state-success);}
 
 /* Avvio dell'allenamento: il comando principale della pagina, in basso, dove
-   poi comparira' la fascia del recupero (stessi margini e stessa pillola). */
+   poi comparira' la fascia del recupero (stessi margini e stessa pillola).
+   Niente sfumatura sopra: il contenuto finisce netto dove inizia il footer
+   (la banda scura copriva il fondo dell'ultima card). */
 ion-footer.avvio-footer,ion-footer.salva-footer{background:var(--bg);}
 .avvio,.salva{position:relative;max-width:640px;margin:0 auto;padding:10px 16px var(--tabbar-gap);}
-.avvio::before,.salva::before{content:"";position:absolute;left:0;right:0;bottom:100%;height:24px;pointer-events:none;background:linear-gradient(to top,var(--bg),transparent);}
 ion-button.setdone.avvio-btn,ion-button.setdone.salva-btn{--border-radius:var(--r-pill);min-height:56px;font-size:var(--text-lg);}
 ion-button.avvio-btn lucide-icon{margin-right:8px;}
+
+/* ===== Allenamento: la serie sotto il pollice =====
+   Nello slider, ad allenamento avviato, il tasto della serie sta qui in basso,
+   e durante il recupero gli da' il cambio la fascia col conto alla rovescia. */
+.salva-sub{font-weight:500;opacity:.75;}
+.salva-due{display:flex;flex-direction:column;}
+.salva-due.doppio{flex-direction:row;gap:10px;}
+.salva-due.doppio ion-button.salva-btn{flex:1;min-width:0;--padding-start:10px;--padding-end:10px;font-size:var(--text-md);}
+/* A recupero finito resta sopra il tasto finche' non si segna la serie: come
+   il "Vai" della fascia, non si spegne da solo. */
+.fine-recupero{display:flex;align-items:center;justify-content:center;gap:6px;margin:0 0 10px;font-size:var(--text-sm);font-weight:600;color:var(--state-success);}
+
+/* La sessione e gli step in una card sola. Il tempo e' la cosa da leggere:
+   grande, a sinistra, in chiaro. Il conto e' degli esercizi finiti. */
+.sessione-card{margin-bottom:12px;padding:10px 10px 10px 16px;border-radius:var(--r-xl);background:var(--surface-card);border:1px solid var(--border-line);box-shadow:var(--shadow-card);}
+.sessione-riga{display:flex;align-items:center;gap:12px;}
+.sessione-tempo{display:flex;align-items:center;gap:9px;min-width:0;white-space:nowrap;}
+.sessione-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);flex-shrink:0;transition:background .25s ease;}
+.sessione-t{font-family:'IBM Plex Mono',monospace;font-size:var(--text-2xl);font-weight:700;letter-spacing:-.01em;color:var(--label);font-variant-numeric:tabular-nums;transition:color .25s ease;}
+.sessione-pausa{display:inline-flex;align-items:center;min-height:22px;padding:0 8px;border-radius:var(--r-pill);border:1px solid var(--border-line);background:var(--surface-raise);font-family:'IBM Plex Mono',monospace;font-size:var(--text-2xs);font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--label-2);}
+.sessione-conto{flex:1;min-width:0;text-align:right;font-size:var(--text-sm);color:var(--label-2);white-space:nowrap;}
+.sessione-conto b{font-family:'IBM Plex Mono',monospace;font-weight:700;color:var(--label);}
+.sessione-ok{display:inline-flex;vertical-align:-2px;margin-left:5px;color:var(--accent);}
+.sessione-card.in-pausa .sessione-t{color:var(--label-3);}
+.sessione-card.in-pausa .sessione-dot{background:var(--label-3);}
+.sessione-card.in-pausa ion-segment.passi{opacity:.6;}
+.sessione-card ion-segment.passi{margin:10px 0 0 -6px;width:calc(100% + 6px);border-color:transparent;}
+@media (prefers-reduced-motion: reduce){.sessione-dot,.sessione-t{transition:none;}}
+
+/* Gli step: un numero per esercizio, la spunta sui finiti, la bandiera per
+   la chiusura. Stanno in una riga sola; da dieci in su scorrono. */
+ion-segment.passi{width:100%;margin-bottom:12px;}
+ion-segment.seg.labelseg.passi ion-segment-button{flex:1 1 0;min-width:34px;padding:0;}
+ion-segment.passi[scrollable] ion-segment-button{flex:0 0 auto;min-width:40px;}
+.passo{display:inline-flex;align-items:center;gap:3px;font-variant-numeric:tabular-nums;}
+.passo-tick{display:flex;color:var(--accent);}
+ion-segment.passi ion-segment-button.segment-button-checked .passo-tick{color:var(--accent-contrast);}
+.passo lucide-icon{display:flex;}
+
+/* La nota del coach: un'indicazione, non una didascalia. */
+.coach-nota{display:flex;align-items:flex-start;gap:10px;margin-top:12px;padding:10px 12px;border-radius:var(--r-md);background:var(--surface-raise);border:1px solid var(--border-line);}
+.coach-nota lucide-icon{display:flex;color:var(--accent);margin-top:2px;flex-shrink:0;}
+.coach-nota-testo{display:flex;flex-direction:column;gap:2px;min-width:0;}
+.coach-nota-k{font-size:var(--text-xs);color:var(--label-3);}
+.coach-nota-v{font-size:var(--text-md);font-weight:600;line-height:1.35;color:var(--label);overflow-wrap:anywhere;}
+
+/* Da dove viene il carico nella ruota: quando ci sono altre fonti e' il tasto
+   che apre il foglio "Che peso metto". */
+.setcard-hint.fatta{display:inline-flex;align-items:center;gap:4px;color:var(--accent);}
+.setcard-hint.fatta lucide-icon{display:flex;}
+button.setcard-fonte{position:relative;display:inline-flex;align-items:center;gap:4px;margin:0;padding:0;border:0;background:none;font-family:'IBM Plex Mono',monospace;font-size:var(--text-2xs);font-weight:600;color:var(--accent);cursor:pointer;white-space:nowrap;}
+button.setcard-fonte lucide-icon{display:flex;}
+/* Il bersaglio arriva a 44 px senza spostare la riga. */
+button.setcard-fonte::after{content:"";position:absolute;left:-8px;right:-8px;top:-14px;bottom:-14px;}
+button.setcard-fonte:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:var(--r-xs);}
+button.setcard-fonte:disabled{color:var(--label-3);cursor:default;}
+/* Una serie fatta si riapre per correggerla: la matita lo dice. */
+.setline-edit{display:flex;color:var(--label-3);flex-shrink:0;}
+
+/* Prima dell'avvio: il programma da leggere, non dei campi spenti. */
+.piano-cap{margin:14px 0 8px;font-size:var(--text-sm);line-height:1.45;color:var(--label-2);}
+.piano{margin-top:12px;border:1px solid var(--border-line);border-radius:var(--r-md);overflow:hidden;}
+.piano-cap + .piano{margin-top:0;}
+.piano-riga{display:grid;grid-template-columns:28px repeat(var(--colonne, 1), minmax(0, 1fr));align-items:center;border-top:1px solid var(--separator);}
+.piano-riga:first-child{border-top:0;}
+.piano-riga > span{padding:10px;font-family:'IBM Plex Mono',monospace;font-size:var(--text-sm);font-weight:600;color:var(--label);font-variant-numeric:tabular-nums;overflow-wrap:anywhere;}
+.piano-riga > span.piano-n{padding-left:12px;padding-right:0;color:var(--label-3);}
+.piano-testa{background:var(--surface-raise);}
+.piano-testa > span{padding-top:8px;padding-bottom:8px;font-size:var(--text-2xs);letter-spacing:.08em;text-transform:uppercase;color:var(--label-3);}
+.piano-fonte{display:flex;align-items:center;gap:7px;margin:12px 0 0;font-family:'IBM Plex Mono',monospace;font-size:var(--text-xs);color:var(--label-3);}
+.piano-fonte lucide-icon{display:flex;}
+.piano-fonte + .suggestion-chip,.piano + .suggestion-chip{margin-top:14px;}
+
+/* Il foglio "Che peso metto": le stesse righe del foglio dei pasti, col peso a destra. */
+.carico-voce{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;padding:8px 0;}
+.carico-testo{display:flex;flex-direction:column;gap:3px;min-width:0;white-space:normal;}
+.carico-titolo{font-size:var(--text-md);font-weight:700;color:var(--label);}
+.carico-dettaglio{font-size:var(--text-xs);line-height:1.4;color:var(--label-3);}
+.carico-avviso{display:flex;align-items:flex-start;gap:5px;font-size:var(--text-xs);line-height:1.4;color:var(--label-2);}
+.carico-avviso lucide-icon{display:flex;margin-top:1px;flex-shrink:0;}
+.carico-kg{font-family:'IBM Plex Mono',monospace;font-size:var(--text-lg);font-weight:700;color:var(--label);font-variant-numeric:tabular-nums;white-space:nowrap;}
+.carico-fonte{margin:12px 0 0;font-family:'IBM Plex Mono',monospace;font-size:var(--text-2xs);line-height:1.5;color:var(--label-3);}
+.carico-fonte b{color:var(--label-2);font-weight:700;}
 
 /* Pillola della sessione in corso, fuori dalla pagina del suo giorno. Sta
    sopra la tabbar (o al suo posto dove la tabbar e' nascosta) ed e' tutta un
@@ -1430,7 +1476,7 @@ ion-picker.heightpicker{margin-bottom:18px;}
 .tasto:focus:not(:focus-visible){outline:none;}
 .tasto:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
 /* Controlli Ionic con un bordo proprio (non dentro .measure-input-wrap, che si evidenzia da solo): da tastiera Ionic mette .ion-focused sull'host. */
-ion-select.rmpick-sel.ion-focused,.combo-select ion-select.ion-focused{outline:2px solid var(--accent);outline-offset:2px;}
+.combo-select ion-select.ion-focused{outline:2px solid var(--accent);outline-offset:2px;}
 /* La ricerca non ha shadow DOM (e' "scoped"): ::part non esiste, si va sull'<input> vero. */
 ion-searchbar.shop-search.searchbar-has-focus .searchbar-input{box-shadow:0 0 0 2px var(--accent);}
 input.daterow:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
@@ -1539,7 +1585,8 @@ input.daterow:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
    normalizza la lunghezza: nessun perimetro da ricalcolare se un domani
    cambia la misura del badge o il suo raggio. Il badge dello storico resta
    senza anello — li' la seduta e' chiusa, sarebbe pieno sempre. */
-.ex-num.ring{position:relative;border-color:transparent;}
+.ex-num.ring{position:relative;border-color:transparent;background:var(--surface-raise);}
+.ex-ring .traccia{stroke:var(--border-line);}
 .ex-ring{position:absolute;inset:0;width:100%;height:100%;fill:none;stroke-width:3;}
 .ex-ring .done{stroke:var(--accent);transition:stroke-dasharray .4s var(--spring-soft);}
 .ex-num.ring > span{position:relative;}
@@ -1609,7 +1656,6 @@ ion-textarea.bacheca-textarea{--background:transparent;--color:var(--label);--pl
 .shop-addrow ion-input{overflow:hidden;--padding-start:14px;--padding-end:14px;--padding-top:12px;--padding-bottom:12px;--background:var(--surface-card);--color:var(--label);--placeholder-color:var(--label-3);--placeholder-opacity:1;flex:1;min-width:0;min-height:0;border-radius:var(--r-lg);border:1px solid var(--border-line);font-family:'Inter',sans-serif;font-size:var(--text-md);}
 
 .combo-select ion-select{width:100%;min-height:44px;--padding-start:13px;--padding-end:13px;--padding-top:0;--padding-bottom:0;--color:var(--label);--placeholder-color:var(--label);border:1px solid var(--border-line);border-radius:var(--r-md);background:var(--surface-raise);font-family:'IBM Plex Mono',monospace;font-size:var(--text-sm);font-weight:600;}
-ion-select.rmpick-sel{width:112px;min-height:40px;--padding-start:10px;--padding-end:10px;--padding-top:8px;--padding-bottom:8px;--color:var(--label);--placeholder-color:var(--label);border:1px solid var(--border-line);border-radius:var(--r-sm);background:var(--surface-card);font-family:'IBM Plex Mono',monospace;font-size:var(--text-sm);font-weight:600;}
 
 /* Casella da spuntare (privacy): ion-checkbox con i colori dell'app. */
 .authcheck ion-checkbox{--size:22px;--border-width:1.5px;--border-radius:var(--r-xs);--border-color:var(--border-line);--border-color-checked:var(--accent);--background:var(--surface-raise);--background-checked:var(--accent);--checkmark-color:var(--accent-contrast);--checkmark-width:2px;min-height:44px;font-size:var(--text-sm);line-height:1.45;color:var(--label-2);}

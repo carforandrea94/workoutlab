@@ -120,3 +120,26 @@ describe('styles.css — la barra in basso si misura per quanto occupa davvero',
     expect(px('restbar-h')).toBeGreaterThanOrEqual(px('tabbar-h') + 2 * px('tabbar-pad') + 2);
   });
 });
+
+/**
+ * Sopra i tasti in basso ("Inizia allenamento", "Fatta", "Ho mangiato questo")
+ * c'era una sfumatura nera che copriva il fondo dell'ultima card: il contenuto
+ * finisce netto dove comincia il footer. E nell'allenamento le card sono alte
+ * quanto il loro contenuto, come nella Dieta.
+ */
+describe('styles.css — il fondo della pagina e le card dello slider', () => {
+  let css = '';
+  beforeAll(async () => {
+    const nome = 'node:fs';
+    const fs = await import(/* @vite-ignore */ nome);
+    css = fs.readFileSync('src/styles.css', 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  });
+
+  it('niente sfumatura sopra i tasti in basso', () => {
+    expect(css).not.toMatch(/\.(avvio|salva)::before/);
+  });
+
+  it('le card dello slider non si allungano tutte sulla piu\' alta', () => {
+    expect(css).toMatch(/\.exslider\{[^}]*align-items:flex-start/);
+  });
+});
