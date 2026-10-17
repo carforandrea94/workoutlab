@@ -49,7 +49,6 @@ const WAVE_BARS: number[] = Array.from({ length: BAR_COUNT }, (_, i) => {
   standalone: true,
   imports: [CommonModule, LucideAngularModule],
   template: `
-    <div class="tabfade"></div>
     <div class="restbar" [class.running]="running" [class.finished]="timer.finished" [class.con-prossima]="!running && !!dettaglioProssima">
       <div class="restbar-row">
         <span class="restbar-time" *ngIf="running" role="timer">

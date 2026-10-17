@@ -63,6 +63,17 @@
      da cosa ci scorreva sotto e cambiava mentre la pagina scorreva. Ora sono
      colori pieni e i rapporti valgono sempre gli stessi. */
   --surface-chrome:#1A1D22;            /* tabbar e rocker: galleggiano sopra la pagina */
+  /* Il vetro, solo per cio' che galleggia sopra la pagina e ci si muove sotto
+     (barra delle tab, fascia del recupero, pillola della sessione): il colore
+     di --surface-chrome con un po' di trasparenza, e dietro la pagina sfocata.
+     Le card restano piene (vedi sopra). L'opacita' non e' di gusto: e' la
+     piu' bassa a cui i testi delle barre restano sopra 4,5:1 anche con
+     l'accento pieno che passa sotto (il caso peggiore realistico). Sotto il
+     78% il timer e le etichette piccole non ci stanno piu'. */
+  --glass-bg:rgba(26,29,34,0.78);
+  --glass-edge:rgba(255,255,255,0.14);
+  --glass-hi:rgba(255,255,255,0.07);     /* il filo di luce sul bordo alto */
+  --glass-filter:blur(22px) saturate(170%);
   --surface-card:#181B20;
   --border-line:rgba(255,255,255,0.11);
   /* Due sole ombre in tutta l'app: --shadow-card posa una superficie sul
@@ -201,6 +212,11 @@
   --state-danger-soft:#F9F2F3;     /* 4,9:1 per --state-danger-text */
   --state-danger-soft-border:#E5C4C8;
   --surface-chrome:#FFFFFF;
+  /* In chiaro il vetro dev'essere piu' pieno: --label-3 e' gia' vicino alla
+     soglia sul bianco, e sotto l'86% con l'accento dietro scende sotto 4,5:1. */
+  --glass-bg:rgba(255,255,255,0.86);
+  --glass-edge:rgba(22,26,28,0.10);
+  --glass-hi:rgba(255,255,255,0.75);
   --surface-card:#FFFFFF;
   --border-line:rgba(22,26,28,0.10);
   --shadow-card:0 1px 2px rgba(22,26,28,0.07);
@@ -232,7 +248,7 @@
 :root:not([data-theme="light"]){color-scheme:dark;}
 
 /* La barra a tab di Ionic e' una pillola fissa: tolgo il suo layout standard. */
-ion-tab-bar.tabbar{--background:var(--surface-chrome);--border:1px solid var(--border-line);contain:none;}
+ion-tab-bar.tabbar{--background:var(--glass-bg);--border:1px solid var(--glass-edge);contain:none;}
 ion-tab-button.tabbtn{--color:var(--label-3);--color-selected:var(--accent);--padding-top:0;--padding-bottom:0;--background-focused:var(--surface-raise);--background-focused-opacity:1;background:transparent;}
 ion-tab-button.tabbtn.tab-selected,ion-tab-button.tabbtn.active{color:var(--accent);}
 /* Da tastiera il focus sta sull'<a> dentro il bottone (vedi il href in tabs.page.ts): l'anello lo disegna la sua parte "native", a pillola come la barra (con un offset negativo il raggio a pillola lo cancella). */
@@ -341,16 +357,10 @@ ion-content{--background:var(--bg);--color:var(--label);--padding-bottom:calc(va
 .wrap{position:relative;z-index:1;max-width:640px;margin:0 auto;padding:0 16px;}
 
 /* ===== BOTTOM TAB BAR ===== */
-.tabbar{position:fixed;left:16px;right:16px;bottom:var(--tabbar-gap);z-index:60;height:var(--tabbar-h);background:var(--surface-chrome);border:1px solid var(--border-line);border-radius:var(--r-pill);box-shadow:var(--shadow-float);display:flex;align-items:center;padding:var(--tabbar-pad);max-width:608px;margin:0 auto;}
-/* Sfumatura in fondo, speculare a quella della navbar: cio' che scorre non si
-   taglia di netto contro la pillola, si spegne nel fondo della pagina.
-   Deve stare FRA il contenuto (z-index 1) e la tabbar (60), quindi e' un
-   elemento a se' e non uno pseudo-elemento della tabbar: dentro la tabbar
-   nemmeno z-index:-1 la manderebbe dietro, perche' lo sfondo e il bordo
-   dell'elemento che apre il contesto di impilamento si dipingono per primi e
-   i figli negativi vengono subito dopo — la sfumatura finiva sopra la
-   pillola e la cancellava. */
-.tabfade{position:fixed;left:0;right:0;bottom:0;z-index:55;height:calc(var(--tabbar-outer) + var(--tabbar-gap) + 70px);pointer-events:none;background:linear-gradient(to top, var(--bg) 0%, var(--bg) 55%, transparent 100%);}
+.tabbar{position:fixed;left:16px;right:16px;bottom:var(--tabbar-gap);z-index:60;height:var(--tabbar-h);background:var(--glass-bg);border:1px solid var(--glass-edge);border-radius:var(--r-pill);box-shadow:inset 0 1px 0 var(--glass-hi),var(--shadow-float);-webkit-backdrop-filter:var(--glass-filter);backdrop-filter:var(--glass-filter);display:flex;align-items:center;padding:var(--tabbar-pad);max-width:608px;margin:0 auto;}
+/* Niente sfumatura in fondo: la barra e' di vetro, e quello che scorre le
+   passa sotto sfocato invece di spegnersi in una banda del colore del fondo
+   (che copriva il fondo dell'ultima card e toglieva al vetro cosa mostrare). */
 /* Nelle pagine interne la barra scivola via (TabsPage mette .tabbar-nascosta, e
    senza-tabbar sulla radice, che rende al contenuto lo spazio che teneva per
    lei). La curva e' quella delle transizioni di pagina (vedi page-transition.ts):
@@ -358,8 +368,6 @@ ion-content{--background:var(--bg);--color:var(--label);--padding-bottom:calc(va
    del Tab e dallo screen reader a fine corsa. */
 .tabbar{transition:transform .42s cubic-bezier(0.32,0.72,0,1),opacity .3s ease,visibility 0s;}
 .tabbar.tabbar-nascosta{transform:translateY(calc(var(--tabbar-outer) + var(--tabbar-gap) + 28px));opacity:0;visibility:hidden;pointer-events:none;transition:transform .42s cubic-bezier(0.32,0.72,0,1),opacity .25s ease,visibility 0s .42s;}
-.tabfade{transition:opacity .3s ease,visibility 0s;}
-.tabfade.tabbar-nascosta{opacity:0;visibility:hidden;transition:opacity .3s ease,visibility 0s .3s;}
 :root.senza-tabbar ion-content{--padding-bottom:calc(var(--safe-b) + 28px);}
 /* La pillola della sessione sta sopra la barra: il contenuto scorre oltre di
    quanto ne occupa (44 + 10), cosi' l'ultima card non resta coperta. */
@@ -374,7 +382,7 @@ ion-content{--background:var(--bg);--color:var(--label);--padding-bottom:calc(va
 :root.con-fascia{--coperto-base:calc(var(--restbar-h) + var(--tabbar-gap));}
 :root.con-pillola{--coperto-pillola:54px;}
 ion-content::part(scroll){scroll-padding-bottom:calc(var(--coperto-base) + var(--coperto-pillola) + 12px);}
-@media (prefers-reduced-motion:reduce){.tabbar,.tabbar.tabbar-nascosta,.tabfade,.tabfade.tabbar-nascosta{transition:none;}}
+@media (prefers-reduced-motion:reduce){.tabbar,.tabbar.tabbar-nascosta{transition:none;}}
 /* HIG iOS, Accessibility: dimensione predefinita dei controlli 44x44 pt,
    minimo assoluto 28x28. Oggi il bersaglio e' 48x119, ma nasce dalla
    sottrazione fra due token: senza questo pavimento, abbassare --tabbar-h o
@@ -1300,7 +1308,7 @@ ion-button.setdone.salva-btn.fatto{--background:var(--surface-raise);--color:var
 /* La fascia del recupero prende il posto e i margini della tabbar, e sta
    dentro la stessa imbottitura in fondo al contenuto. E' piu' alta (76 contro
    60) perche' il conto e' il numero piu' grande dello schermo. */
-.restbar{position:fixed;left:16px;right:16px;bottom:var(--tabbar-gap);z-index:60;height:var(--restbar-h);background:var(--surface-chrome);border:1px solid var(--border-line);border-radius:var(--r-pill);box-shadow:var(--shadow-float);max-width:608px;margin:0 auto;padding:10px 14px 10px 24px;display:flex;flex-direction:column;justify-content:center;gap:6px;animation:fade .25s ease;}
+.restbar{position:fixed;left:16px;right:16px;bottom:var(--tabbar-gap);z-index:60;height:var(--restbar-h);background:var(--glass-bg);border:1px solid var(--glass-edge);border-radius:var(--r-pill);box-shadow:inset 0 1px 0 var(--glass-hi),var(--shadow-float);-webkit-backdrop-filter:var(--glass-filter);backdrop-filter:var(--glass-filter);max-width:608px;margin:0 auto;padding:10px 14px 10px 24px;display:flex;flex-direction:column;justify-content:center;gap:6px;animation:fade .25s ease;}
 .restbar-row{display:flex;align-items:center;gap:12px;min-height:36px;}
 .restbar-time{font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:var(--text-timer);line-height:1;letter-spacing:-.02em;color:var(--accent);font-variant-numeric:tabular-nums;flex-shrink:0;min-width:4.4ch;}
 .restbar.finished .restbar-time{color:var(--state-success);}
@@ -1419,7 +1427,7 @@ button.setcard-fonte:disabled{color:var(--label-3);cursor:default;}
 /* Pillola della sessione in corso, fuori dalla pagina del suo giorno. Sta
    sopra la tabbar (o al suo posto dove la tabbar e' nascosta) ed e' tutta un
    bottone: tocchi e torni sulla sessione. */
-.sessionpill{position:fixed;left:16px;right:16px;bottom:var(--tabbar-gap);z-index:58;height:44px;max-width:608px;margin:0 auto;display:flex;align-items:center;gap:8px;padding:0 14px 0 16px;border-radius:var(--r-pill);border:1px solid var(--border-line);background:var(--surface-chrome);box-shadow:var(--shadow-float);color:var(--label);font-family:inherit;cursor:pointer;text-align:left;transform:translateY(calc(-1 * (var(--tabbar-outer) + 10px)));transition:transform .42s cubic-bezier(0.32,0.72,0,1);}
+.sessionpill{position:fixed;left:16px;right:16px;bottom:var(--tabbar-gap);z-index:58;height:44px;max-width:608px;margin:0 auto;display:flex;align-items:center;gap:8px;padding:0 14px 0 16px;border-radius:var(--r-pill);border:1px solid var(--glass-edge);background:var(--glass-bg);box-shadow:inset 0 1px 0 var(--glass-hi),var(--shadow-float);-webkit-backdrop-filter:var(--glass-filter);backdrop-filter:var(--glass-filter);color:var(--label);font-family:inherit;cursor:pointer;text-align:left;transform:translateY(calc(-1 * (var(--tabbar-outer) + 10px)));transition:transform .42s cubic-bezier(0.32,0.72,0,1);}
 .sessionpill.senza-barra{transform:none;}
 .sessionpill:active{filter:brightness(var(--press-brightness));}
 .sessionpill-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex-shrink:0;}
@@ -1685,3 +1693,14 @@ ion-button.googlebtn .googlelogo{flex-shrink:0;display:block;margin-right:10px;}
 /* Schermata dei dati mancanti: il sesso occupa tutta la riga, come gli altri campi. */
 .authfield ion-segment.obseg{width:100%;}
 .authfield ion-segment.obseg ion-segment-button{flex:1;max-width:none;}
+
+/* ===== Il vetro delle barre: quando non c'e', le barre tornano piene =====
+   Senza backdrop-filter il colore semitrasparente lascerebbe leggere la pagina
+   sotto le scritte senza sfocarla. "Riduci trasparenza" e "Aumenta contrasto"
+   del sistema chiedono superfici piene: si danno. */
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  :root,:root[data-theme="light"]{--glass-bg:var(--surface-chrome);--glass-edge:var(--border-line);}
+}
+@media (prefers-reduced-transparency:reduce),(prefers-contrast:more){
+  :root,:root[data-theme="light"]{--glass-bg:var(--surface-chrome);--glass-edge:var(--border-line);--glass-filter:none;}
+}
