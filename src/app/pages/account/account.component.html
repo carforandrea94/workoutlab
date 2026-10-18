@@ -6,7 +6,8 @@
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true" class="liste-ios">
+<!-- scrollEvents: scorrendo, la barra delle tab si fa piccola (vedi tabs.page.ts). -->
+<ion-content [fullscreen]="true" [scrollEvents]="true" class="liste-ios">
   <ion-header collapse="condense" class="ion-no-border">
     <ion-toolbar>
       <ion-title size="large">

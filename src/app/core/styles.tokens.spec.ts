@@ -80,7 +80,7 @@ describe('styles.css — il Tab porta in vista quello che sta sotto la barra', (
 
 /**
  * ion-tab-bar e' content-box: --tabbar-h misura lo spazio dei tasti, e
- * imbottitura e bordo si sommano (60 + 12 + 2 = 74). La pillola della sessione
+ * imbottitura e bordo si sommano (52 + 12 + 2 = 66). La pillola della sessione
  * contava 60 e finiva 4 px dentro la barra: tutto cio' che si appoggia sopra la
  * barra, o le lascia posto, deve partire dall'altezza che occupa davvero.
  */
@@ -112,7 +112,7 @@ describe('styles.css — la barra in basso si misura per quanto occupa davvero',
     const senzaCommenti = css.replace(/\/\*[\s\S]*?\*\//g, '');
     const regole = senzaCommenti.match(/[^{}]*\{[^}]*--tabbar-h[^}]*\}/g) ?? [];
     // L'unico posto dove --tabbar-h puo' restare e' la barra stessa (height) e la sua definizione.
-    const intrusi = regole.filter(r => !/^\s*\.tabbar\{/.test(r) && !/--tabbar-outer:|--tabbar-h:\s*60px/.test(r));
+    const intrusi = regole.filter(r => !/^\s*\.tabbar\{/.test(r) && !/--tabbar-outer:|--tabbar-h:\s*\d+px/.test(r));
     expect(intrusi).toEqual([]);
   });
 
@@ -313,5 +313,52 @@ describe('styles.css — le liste iOS delle tab', () => {
 
   it('le liste raggruppate stanno nei 16px di .wrap, senza il margine in piu\' di Ionic', () => {
     expect(css).toContain('.liste-ios ion-list.list-inset,.liste-ios ion-accordion-group.accordion-group-expand-inset{margin:0 0 20px;');
+  });
+});
+
+/**
+ * La barra come quella di Instagram: pillola di sole icone, larga quanto le
+ * sue icone, che scorrendo in giu' si stringe (riduci-barra.ts). Ridotta resta
+ * una barra da toccare: il bersaglio non scende sotto i 44 pt delle HIG.
+ */
+describe('styles.css — la barra come quella di Instagram', () => {
+  let css = '';
+  beforeAll(async () => {
+    const nome = 'node:fs';
+    const fs = await import(/* @vite-ignore */ nome);
+    css = fs.readFileSync('src/styles.css', 'utf8');
+  });
+  const num = (token: string) => parseFloat(css.match(new RegExp(`--${token}:\\s*([0-9.]+)`))![1]);
+
+  it('ridotta, ogni tasto resta almeno 44 x 44', () => {
+    expect(num('tabbar-ridotta')).toBeLessThan(1);
+    expect(num('tabbar-h') * num('tabbar-ridotta')).toBeGreaterThanOrEqual(44);
+    expect(num('tabbtn-w') * num('tabbar-ridotta')).toBeGreaterThanOrEqual(44);
+  });
+
+  it('si stringe con scale verso il fondo, con una transizione, e col focus da tastiera torna intera', () => {
+    expect(css).toContain('.tabbar.ridotta{scale:var(--tabbar-ridotta);}');
+    expect(css).toContain('.tabbar.ridotta:has(.ion-focused){scale:1;}');
+    expect(css).toMatch(/\.tabbar\{[^}]*transform-origin:50% 100%/);
+    expect(css).toMatch(/\n\.tabbar\{transition:[^}]*scale \.38s/);
+  });
+
+  it('larga quanto le sue quattro icone, non quanto lo schermo; la pillola della sessione uguale', () => {
+    expect(css).toMatch(/--tabbar-w:\s*calc\(4 \* var\(--tabbtn-w\)\)/);
+    // La barra e' content-box: il suo max-width conta solo i tasti. La pillola
+    // (border-box) e' larga quanto la barra intera, bordo compreso.
+    expect(css).toMatch(/\.tabbar\{[^}]*max-width:var\(--tabbar-w\)/);
+    expect(css).toMatch(/--tabbar-outer-w:\s*calc\(var\(--tabbar-w\)\s*\+\s*var\(--tabbar-pad\)\s*\*\s*2\s*\+\s*2px\)/);
+    expect(css).toMatch(/\.sessionpill\{[^}]*max-width:var\(--tabbar-outer-w\)/);
+  });
+
+  it('il nome della tab non si vede ma non e\' tolto allo screen reader', () => {
+    const r = css.match(/\.tabbar \.tabbtn \.tablabel\{[^}]*\}/)?.[0] ?? '';
+    expect(r).toContain('clip-path:inset(50%)');
+    expect(r).not.toContain('display:none');
+  });
+
+  it('con la barra ridotta la pillola della sessione scende con lei', () => {
+    expect(css).toContain(':root.barra-ridotta .sessionpill:not(.senza-barra){transform:translateY(calc(-1 * (var(--tabbar-outer) * var(--tabbar-ridotta) + 10px)));}');
   });
 });

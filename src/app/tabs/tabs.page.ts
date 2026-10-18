@@ -10,6 +10,7 @@ import { RestBarComponent } from '../components/rest-bar/rest-bar.component';
 import { SchermoAccesoService } from '../services/schermo-acceso.service';
 import { SegnaleService } from '../services/segnale.service';
 import { TrascinaTab } from './trascina-tab';
+import { RiduciBarra } from './riduci-barra';
 import { IconaComponent } from '../components/icona/icona.component';
 import { NomeIcona } from '../core/icone';
 
@@ -67,6 +68,14 @@ export function eRadiceDiTab(url: string, tabs: readonly { id: string }[] = TABS
  * alza come una lente, segue il dito e alzandolo apre la tab sotto (il gesto e'
  * in trascina-tab.ts). Il contenuto non scorre di lato: cambia di colpo, come
  * nelle app di sistema.
+ *
+ * Misure e comportamento sono quelli della barra di Instagram: una pillola di
+ * vetro staccata dai bordi, solo icone (il nome della tab resta per lo screen
+ * reader), che scorrendo in giu' una pagina si fa un poco piu' piccola e torna
+ * intera scorrendo in su, in cima, cambiando tab o col focus da tastiera (la
+ * decisione e' in riduci-barra.ts). Le pagine radice danno la loro posizione
+ * con scrollEvents; l'evento si ascolta a mano, come quelli del dito, per non
+ * rifare il controllo della vista a ogni fotogramma.
  */
 @Component({
   selector: 'app-tabs',
@@ -75,12 +84,12 @@ export function eRadiceDiTab(url: string, tabs: readonly { id: string }[] = TABS
   template: `
     <ion-tabs (ionTabsDidChange)="tabCambiata($event.tab)">
       <ion-tab-bar slot="bottom" class="tabbar tabbar-4" [class.tabbar-nascosta]="nascondiBarra"
-        [class.trascina]="lente() !== null" [style.display]="showRestBar ? 'none' : null">
+        [class.ridotta]="ridotta()" [class.trascina]="lente() !== null" [style.display]="showRestBar ? 'none' : null">
         <div class="pill" [class]="'pill p' + indiceInVista()"></div>
         @for (t of tabs; track t.id; let i = $index) {
           <ion-tab-button [tab]="t.id" [href]="'/' + t.id" class="tabbtn" [class.active]="indiceInVista() === i"
             [class.sotto-lente]="lente() === i" (click)="alToccoTab(t.id)">
-            <span class="ic"><app-icona [name]="t.icon" [size]="23" [piena]="true"></app-icona></span>
+            <span class="ic"><app-icona [name]="t.icon" [size]="26" [piena]="true"></app-icona></span>
             <span class="tablabel">{{ t.label }}</span>
           </ion-tab-button>
         }
@@ -116,6 +125,9 @@ export class TabsPage implements OnInit, AfterViewInit, OnDestroy {
   private trascina: TrascinaTab | null = null;
   /** In una pagina dentro la tab, non sulla sua radice. */
   readonly paginaInterna = signal(false);
+  /** Si sta scorrendo in giu' una pagina radice: la barra si fa piccola. */
+  readonly ridotta = signal(false);
+  private readonly riduci = new RiduciBarra(r => this.ridotta.set(r));
   /** Sulla pagina di un giorno (/scheda/day/N): li' la sessione si vede gia', con la fascia o con "Inizia". */
   readonly paginaGiorno = signal(false);
 
@@ -168,6 +180,11 @@ export class TabsPage implements OnInit, AfterViewInit, OnDestroy {
       this.paginaGiorno();
       document.documentElement.classList.toggle('con-fascia', this.showRestBar);
     });
+    // La pillola della sessione sta appoggiata sulla barra: quando la barra si
+    // stringe scende con lei, invece di restare sospesa piu' in alto.
+    effect(() => {
+      document.documentElement.classList.toggle('barra-ridotta', this.ridotta());
+    });
   }
 
   readonly tabs = TABS;
@@ -202,7 +219,25 @@ export class TabsPage implements OnInit, AfterViewInit, OnDestroy {
   tabCambiata(tab: string): void {
     this.selected.set(tab);
     this.inArrivo.set(null);
+    this.ridotta.set(false);
   }
+
+  /**
+   * Una pagina radice scorre (ionScroll di ion-content, con scrollEvents). Il
+   * massimo lo da' l'elemento che scorre davvero, la parte "scroll" dentro
+   * ion-content: serve a non scambiare il rimbalzo in fondo per uno
+   * scorrimento verso l'alto. Non dal dettaglio dell'evento: Ionic lo manda un
+   * fotogramma dopo, e a quel punto il browser ha gia' tolto il target allo
+   * scroll nato nello shadow DOM.
+   */
+  private alloScorrere = (e: Event): void => {
+    if (this.paginaInterna()) return;
+    const contenuto = e.target;
+    const y = (e as CustomEvent<{ scrollTop?: number }>).detail?.scrollTop;
+    if (!(contenuto instanceof HTMLElement) || typeof y !== 'number') return;
+    const el = contenuto.shadowRoot?.querySelector<HTMLElement>('[part="scroll"]');
+    this.riduci.scorri(contenuto, y, el ? el.scrollHeight - el.clientHeight : Infinity);
+  };
 
   /**
    * Solo sul giorno che si sta ALLENANDO: con una sessione aperta su un altro
@@ -251,6 +286,7 @@ export class TabsPage implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngAfterViewInit(): void {
+    this.host.nativeElement.addEventListener('ionScroll', this.alloScorrere);
     const barra = this.host.nativeElement.querySelector<HTMLElement>('ion-tab-bar');
     if (!barra) return;
     this.trascina = new TrascinaTab(
@@ -264,6 +300,7 @@ export class TabsPage implements OnInit, AfterViewInit, OnDestroy {
   ngOnDestroy(): void {
     this.routeSub?.unsubscribe();
     this.trascina?.distruggi();
+    this.host.nativeElement.removeEventListener('ionScroll', this.alloScorrere);
   }
 
   private leggiUrl(url: string): void {
@@ -271,6 +308,7 @@ export class TabsPage implements OnInit, AfterViewInit, OnDestroy {
     const giorno = u.match(/^\/scheda\/day\/(\d+)$/);
     this.dayIdOnScreen = giorno ? (this.workoutData.days[+giorno[1]]?.id ?? null) : null;
     this.paginaInterna.set(!eRadiceDiTab(u));
+    this.ridotta.set(false);
     this.paginaGiorno.set(/^\/scheda\/day\/\d+$/.test(u));
   }
 }

@@ -107,12 +107,24 @@
    */
   --safe-b-sys: min(env(safe-area-inset-bottom, 0px), 34px);
   --safe-b: max(var(--safe-b-sys), 14px);
-  /* Le HIG non danno un'altezza per la tab bar iOS: la sezione iOS descrive
-     solo il comportamento, e l'altezza in UIKit non si imposta. L'unico
-     numero da rispettare e' la dimensione del bersaglio (vedi .tabbtn), che
-     da qui si ricava come --tabbar-h meno due volte --tabbar-pad. Sotto
-     56 px il bersaglio scende sotto i 44 pt predefiniti. */
-  --tabbar-h: 60px;
+  /* La barra e' quella di Instagram: una pillola di vetro con le sole icone,
+     piu' bassa e piu' stretta della barra a tutta larghezza con le etichette.
+     --tabbar-h e' l'altezza dei tasti (e quindi del bersaglio, vedi .tabbtn):
+     senza etichetta bastano 52 px per un'icona da 26 con aria intorno, e
+     anche ridotta (sotto) il bersaglio resta sopra i 44 pt delle HIG. */
+  --tabbar-h: 52px;
+  /* Quanto e' largo ogni tasto: la barra e' larga quanto le sue icone, non
+     quanto lo schermo (su uno schermo stretto si ferma comunque ai 16 px di
+     margine). Quattro tab: Scheda, Dieta, Corsa, Account. */
+  --tabbtn-w: 72px;
+  /* Come per l'altezza: --tabbar-w e' lo spazio dei tasti (la barra e'
+     content-box), --tabbar-outer-w quanto e' larga davvero, bordo compreso. */
+  --tabbar-w: calc(4 * var(--tabbtn-w));
+  --tabbar-outer-w: calc(var(--tabbar-w) + var(--tabbar-pad) * 2 + 2px);
+  /* Scorrendo in giu' la barra si stringe di tanto (vedi riduci-barra.ts):
+     abbastanza da lasciare piu' pagina, non tanto da sembrare un'altra barra.
+     52 x 0,85 = 44,2: il bersaglio ridotto e' ancora di 44. */
+  --tabbar-ridotta: .85;
   /* La fascia del recupero e' piu' alta della tabbar che sostituisce: il conto
      e' il numero piu' grande dello schermo. Sta comunque dentro l'imbottitura in
      fondo al contenuto (--tabbar-outer + 22 + 28). */
@@ -122,8 +134,8 @@
      e bastava cambiarne uno per vederla sbordare. */
   --tabbar-pad: 6px;
   /* L'altezza che la barra occupa davvero. ion-tab-bar e' content-box: --tabbar-h
-     e' lo spazio dei tasti, e imbottitura e bordo vengono in piu' (60 + 12 + 2 =
-     74). Quello che si appoggia sopra la barra o le lascia posto va misurato da
+     e' lo spazio dei tasti, e imbottitura e bordo vengono in piu' (52 + 12 + 2 =
+     66). Quello che si appoggia sopra la barra o le lascia posto va misurato da
      qui: la pillola della sessione, che contava 60, finiva 4 px dentro la barra. */
   --tabbar-outer: calc(var(--tabbar-h) + var(--tabbar-pad) * 2 + 2px);
   /*
@@ -367,7 +379,7 @@ ion-content{--background:var(--bg);--color:var(--label);--padding-bottom:calc(va
 .wrap{position:relative;z-index:1;max-width:640px;margin:0 auto;padding:0 16px;}
 
 /* ===== BOTTOM TAB BAR ===== */
-.tabbar{position:fixed;left:16px;right:16px;bottom:var(--tabbar-gap);z-index:60;height:var(--tabbar-h);background:var(--glass-bg);border:1px solid var(--glass-edge);border-radius:var(--r-pill);box-shadow:inset 0 1px 0 var(--glass-hi),var(--shadow-float);-webkit-backdrop-filter:var(--glass-filter);backdrop-filter:var(--glass-filter);display:flex;align-items:center;padding:var(--tabbar-pad);max-width:608px;margin:0 auto;}
+.tabbar{position:fixed;left:16px;right:16px;bottom:var(--tabbar-gap);z-index:60;height:var(--tabbar-h);background:var(--glass-bg);border:1px solid var(--glass-edge);border-radius:var(--r-pill);box-shadow:inset 0 1px 0 var(--glass-hi),var(--shadow-float);-webkit-backdrop-filter:var(--glass-filter);backdrop-filter:var(--glass-filter);display:flex;align-items:center;padding:var(--tabbar-pad);max-width:var(--tabbar-w);margin:0 auto;transform-origin:50% 100%;}
 /* Niente sfumatura in fondo: la barra e' di vetro, e quello che scorre le
    passa sotto sfocato invece di spegnersi in una banda del colore del fondo
    (che copriva il fondo dell'ultima card e toglieva al vetro cosa mostrare). */
@@ -376,8 +388,17 @@ ion-content{--background:var(--bg);--color:var(--label);--padding-bottom:calc(va
    lei). La curva e' quella delle transizioni di pagina (vedi page-transition.ts):
    la barra parte e arriva insieme alla pagina. visibility la toglie dall'ordine
    del Tab e dallo screen reader a fine corsa. */
-.tabbar{transition:transform .42s cubic-bezier(0.32,0.72,0,1),opacity .3s ease,visibility 0s;}
-.tabbar.tabbar-nascosta{transform:translateY(calc(var(--tabbar-outer) + var(--tabbar-gap) + 28px));opacity:0;visibility:hidden;pointer-events:none;transition:transform .42s cubic-bezier(0.32,0.72,0,1),opacity .25s ease,visibility 0s .42s;}
+.tabbar{transition:transform .42s cubic-bezier(0.32,0.72,0,1),scale .38s cubic-bezier(0.32,0.72,0,1),opacity .3s ease,visibility 0s;}
+.tabbar.tabbar-nascosta{transform:translateY(calc(var(--tabbar-outer) + var(--tabbar-gap) + 28px));opacity:0;visibility:hidden;pointer-events:none;transition:transform .42s cubic-bezier(0.32,0.72,0,1),scale .38s cubic-bezier(0.32,0.72,0,1),opacity .25s ease,visibility 0s .42s;}
+/* Scorrendo in giu' la barra si stringe verso il fondo (TabsPage mette
+   .ridotta, vedi riduci-barra.ts): tutte le icone restano, piu' piccole, e si
+   toccano come prima. Con scale, non con altezza e larghezza: si muove solo
+   l'immagine della barra, senza rifare l'impaginazione a ogni fotogramma, e il
+   gesto del dito misura i tasti come li vede. Col focus da tastiera dentro
+   (Ionic mette .ion-focused sul tasto) torna intera: chi naviga col Tab deve
+   vedere bene dove e'. */
+.tabbar.ridotta{scale:var(--tabbar-ridotta);}
+.tabbar.ridotta:has(.ion-focused){scale:1;}
 :root.senza-tabbar ion-content{--padding-bottom:calc(var(--safe-b) + 28px);}
 /* La pillola della sessione sta sopra la barra: il contenuto scorre oltre di
    quanto ne occupa (44 + 10), cosi' l'ultima card non resta coperta. */
@@ -394,16 +415,17 @@ ion-content{--background:var(--bg);--color:var(--label);--padding-bottom:calc(va
 ion-content::part(scroll){scroll-padding-bottom:calc(var(--coperto-base) + var(--coperto-pillola) + 12px);}
 @media (prefers-reduced-motion:reduce){.tabbar,.tabbar.tabbar-nascosta{transition:none;}}
 /* HIG iOS, Accessibility: dimensione predefinita dei controlli 44x44 pt,
-   minimo assoluto 28x28. Oggi il bersaglio e' 48x119, ma nasce dalla
+   minimo assoluto 28x28. Oggi il bersaglio e' 52x72 (44x61 con la barra
+   ridotta), ma nasce dalla
    sottrazione fra due token: senza questo pavimento, abbassare --tabbar-h o
    allargare --tabbar-pad lo porterebbe sotto i 44 senza che si veda. */
 .tabbar .tabbtn{flex:1;height:100%;min-height:44px;min-width:44px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border:none;background:transparent;color:var(--label-3);cursor:pointer;border-radius:var(--r-pill);position:relative;-webkit-user-select:none;user-select:none;transition:color .18s ease;}
 .tabbar .tabbtn .ic{display:block;color:currentColor;}
-/* L'etichetta sotto l'icona, come chiedono le HIG ("Include tab labels to
-   help with navigation... Use single words whenever possible"). Prende il
-   colore dal tasto, quindi segue da sola lo stato attivo. Il piu' stretto dei
-   quattro casi e' 4,63:1, sopra la soglia 4,5 del testo piccolo. */
-.tabbar .tablabel{font-size:var(--text-2xs);font-weight:600;letter-spacing:.01em;line-height:1.1;white-space:nowrap;}
+/* Solo icone, come Instagram: il nome della tab non si vede ma resta nel
+   tasto, ed e' quello che legge lo screen reader (e il nome che il tasto ha
+   per chi lo cerca). Nascosto cosi', non con display:none, che lo toglierebbe
+   anche a loro. */
+.tabbar .tabbtn .tablabel{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;}
 .tabbar .tabbtn.active{color:var(--accent);}
 .tabbar .pill{position:absolute;top:var(--tabbar-pad);left:var(--tabbar-pad);height:calc(100% - var(--tabbar-pad) * 2);width:calc(50% - var(--tabbar-pad));background:var(--bg-card-2);border:1px solid var(--border-line);border-radius:var(--r-pill);z-index:0;transition:transform .4s var(--spring),scale .4s var(--spring),box-shadow .25s ease;}
 .tabbar .pill.p1{transform:translateX(100%);}
@@ -1445,8 +1467,11 @@ button.setcard-fonte:disabled{color:var(--label-3);cursor:default;}
 /* Pillola della sessione in corso, fuori dalla pagina del suo giorno. Sta
    sopra la tabbar (o al suo posto dove la tabbar e' nascosta) ed e' tutta un
    bottone: tocchi e torni sulla sessione. */
-.sessionpill{position:fixed;left:16px;right:16px;bottom:var(--tabbar-gap);z-index:58;height:44px;max-width:608px;margin:0 auto;display:flex;align-items:center;gap:8px;padding:0 14px 0 16px;border-radius:var(--r-pill);border:1px solid var(--glass-edge);background:var(--glass-bg);box-shadow:inset 0 1px 0 var(--glass-hi),var(--shadow-float);-webkit-backdrop-filter:var(--glass-filter);backdrop-filter:var(--glass-filter);color:var(--label);font-family:inherit;cursor:pointer;text-align:left;transform:translateY(calc(-1 * (var(--tabbar-outer) + 10px)));transition:transform .42s cubic-bezier(0.32,0.72,0,1);}
+.sessionpill{position:fixed;left:16px;right:16px;bottom:var(--tabbar-gap);z-index:58;height:44px;max-width:var(--tabbar-outer-w);margin:0 auto;display:flex;align-items:center;gap:8px;padding:0 14px 0 16px;border-radius:var(--r-pill);border:1px solid var(--glass-edge);background:var(--glass-bg);box-shadow:inset 0 1px 0 var(--glass-hi),var(--shadow-float);-webkit-backdrop-filter:var(--glass-filter);backdrop-filter:var(--glass-filter);color:var(--label);font-family:inherit;cursor:pointer;text-align:left;transform:translateY(calc(-1 * (var(--tabbar-outer) + 10px)));transition:transform .42s cubic-bezier(0.32,0.72,0,1);}
 .sessionpill.senza-barra{transform:none;}
+/* Con la barra ridotta la pillola scende con lei: resta appoggiata alla stessa
+   distanza, non sospesa sopra un vuoto. */
+:root.barra-ridotta .sessionpill:not(.senza-barra){transform:translateY(calc(-1 * (var(--tabbar-outer) * var(--tabbar-ridotta) + 10px)));}
 .sessionpill:active{filter:brightness(var(--press-brightness));}
 .sessionpill-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex-shrink:0;}
 .sessionpill.in-pausa .sessionpill-dot{background:var(--label-3);}
