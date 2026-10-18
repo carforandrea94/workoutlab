@@ -77,6 +77,6 @@ export class MisureComponent implements OnInit {
   }
 
   goTo(id: MeasureCategory): void {
-    this.nav.navigateForward(['/misure', id]);
+    this.nav.navigateForward(['/account/misure', id]);
   }
 }

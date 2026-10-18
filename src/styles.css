@@ -310,7 +310,7 @@ ion-toolbar ion-buttons{margin:0;}
 ion-toolbar ion-buttons[slot=start]{margin-right:12px;}
 ion-toolbar ion-buttons[slot=end]{margin-left:10px;}
 .navtitle{font-weight:800;font-size:var(--text-title);letter-spacing:-.015em;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-/* Il titolo grande delle cinque pagine radice (ion-header collapse="condense"):
+/* Il titolo grande delle quattro pagine radice (ion-header collapse="condense"):
    sta sotto alla barra, a tutta larghezza, e scorrendo lascia il posto al
    titolo piccolo della barra - che e' quello di sempre. Ionic gestisce da se'
    lo scambio e lo stiramento quando si tira giu'; qui solo il disegno. Il

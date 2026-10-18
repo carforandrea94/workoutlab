@@ -92,20 +92,28 @@ describe('TabsPage — barra nascosta e tocco sulla tab (disegno vero)', () => {
     const href = Array.from(root.querySelectorAll<HTMLElement>('ion-tab-button'))
       .map(b => [(b as any).tab, (b as any).href]);
     expect(href).toEqual([
-      ['scheda', '/scheda'], ['dieta', '/dieta'], ['corsa', '/corsa'], ['misure', '/misure'], ['account', '/account']
+      ['scheda', '/scheda'], ['dieta', '/dieta'], ['corsa', '/corsa'], ['account', '/account']
     ]);
+  });
+
+  it('quattro tab, e la pastiglia larga un quarto: Misure si apre da Account', async () => {
+    const { barra } = await monta();
+    expect(Array.from(barra().querySelectorAll<HTMLElement & { tab?: string }>('ion-tab-button')).map(b => b.tab))
+      .toEqual(['scheda', 'dieta', 'corsa', 'account']);
+    expect(barra().classList.contains('tabbar-4')).toBe(true);
+    expect(barra().classList.contains('tabbar-5')).toBe(false);
   });
 
   it('le icone della barra: su iOS piene, come i simboli che iOS mette nelle sue barre', async () => {
     const { root } = await monta({ stile: 'ios' });
     const icone = Array.from(root.querySelectorAll<HTMLElement & { icon?: string }>('ion-tab-bar app-icona ion-icon')).map(i => i.icon);
-    expect(icone).toEqual([ICONE.barbell.piena, ICONE.restaurant.piena, ICONE.scarpa.piena, ICONE.body.piena, ICONE.person.piena]);
+    expect(icone).toEqual([ICONE.barbell.piena, ICONE.restaurant.piena, ICONE.scarpa.piena, ICONE.person.piena]);
   });
 
   it('le icone della barra: su Android quelle Material', async () => {
     const { root } = await monta({ stile: 'md' });
     const icone = Array.from(root.querySelectorAll<HTMLElement & { icon?: string }>('ion-tab-bar app-icona ion-icon')).map(i => i.icon);
-    expect(icone).toEqual([ICONE.barbell.md, ICONE.restaurant.md, ICONE.scarpa.md, ICONE.body.md, ICONE.person.md]);
+    expect(icone).toEqual([ICONE.barbell.md, ICONE.restaurant.md, ICONE.scarpa.md, ICONE.person.md]);
   });
 
   it('sulla radice la barra c\'e\' e lo spazio sotto il contenuto e\' tenuto', async () => {
@@ -150,8 +158,8 @@ describe('TabsPage — barra nascosta e tocco sulla tab (disegno vero)', () => {
   });
 
   describe('scorrere col dito sulla barra, come su iOS 26', () => {
-    // Cinque tasti larghi 70 px da x = 20: Scheda 20-90, Dieta 90-160,
-    // Corsa 160-230, Misure 230-300, Account 300-370. Il gesto vero e' in
+    // Quattro tasti larghi 70 px da x = 20: Scheda 20-90, Dieta 90-160,
+    // Corsa 160-230, Account 230-300. Il gesto vero e' in
     // trascina-tab.spec.ts; qui conta cosa ne fa la barra.
     const centro = (i: number) => 20 + 70 * i + 35;
 
@@ -184,7 +192,7 @@ describe('TabsPage — barra nascosta e tocco sulla tab (disegno vero)', () => {
       expect(barra().classList.contains('trascina')).toBe(true);
       expect(pill().classList.contains('p3')).toBe(true);
       // Il colore va con la lente, non resta sulla tab aperta.
-      expect(attive()).toEqual(['misure']);
+      expect(attive()).toEqual(['account']);
       expect(tasti[3].classList.contains('sotto-lente')).toBe(true);
       expect(tasti.filter(t => t.classList.contains('sotto-lente')).length).toBe(1);
     });
@@ -196,25 +204,25 @@ describe('TabsPage — barra nascosta e tocco sulla tab (disegno vero)', () => {
 
       dito('pointerup', centro(3));
 
-      expect(select).toHaveBeenCalledWith('misure');
+      expect(select).toHaveBeenCalledWith('account');
       expect(barra().classList.contains('trascina')).toBe(false);
       // La navigazione non e' ancora arrivata: la pastiglia non torna su Dieta.
       expect(pill().classList.contains('p3')).toBe(true);
-      expect(attive()).toEqual(['misure']);
+      expect(attive()).toEqual(['account']);
 
-      fixture.componentInstance.tabCambiata('misure');
+      fixture.componentInstance.tabCambiata('account');
       arriva();
       await fixture.whenStable();
       fixture.detectChanges();
       expect(pill().classList.contains('p3')).toBe(true);
-      expect(fixture.componentInstance.selected()).toBe('misure');
+      expect(fixture.componentInstance.selected()).toBe('account');
     });
 
     it('se la tab non si apre, la pastiglia torna su quella aperta', async () => {
       const { dito, pill, fixture, arriva, attive } = await conBarra();
       dito('pointerdown', centro(1));
-      dito('pointermove', centro(4));
-      dito('pointerup', centro(4));
+      dito('pointermove', centro(2));
+      dito('pointerup', centro(2));
 
       arriva(false);
       await fixture.whenStable();

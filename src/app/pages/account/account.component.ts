@@ -43,10 +43,18 @@ export class AccountComponent {
     return (this.auth.currentUser()?.displayName ?? '?').charAt(0).toUpperCase();
   }
 
-  /** La pagina resta viva fra una tab e l'altra: le misure registrate altrove si rileggono al rientro. */
+  /**
+   * La pagina resta viva fra una tab e l'altra, e sotto di lei si aprono le
+   * misure: quelle registrate altrove (o appena salvate in Misure) si
+   * rileggono al rientro.
+   */
   ionViewWillEnter(): void {
     if (!this.primoIngresso) this.forma?.refresh();
     this.primoIngresso = false;
+  }
+
+  goToMisure(): void {
+    this.nav.navigateForward(['/account/misure']);
   }
 
   goToImpostazioni(): void {

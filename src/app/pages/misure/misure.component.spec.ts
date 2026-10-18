@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { vi } from 'vitest';
+import { NavController } from '@ionic/angular';
 import { providerPagina } from '../../../test-support/pagina';
 import { MisureComponent, riassuntoCategoria } from './misure.component';
 import { MeasurementDataService } from '../../services/measurement-data.service';
@@ -60,6 +61,30 @@ describe('MisureComponent — le righe', () => {
     expect(r[1].nome).toBe('Centimetri');
     expect(r[1].meta).toMatch(/^Ultima volta: /);
     expect(r[2]).toEqual({ nome: 'Pliche', meta: 'Nessuna misura' });
+  });
+
+  it('e\' una pagina dentro Account: freccia indietro verso Account, niente titolo grande da radice', async () => {
+    const { fixture } = await monta(async () => []);
+    const root: HTMLElement = fixture.nativeElement;
+    const indietro = root.querySelector<HTMLElement & { defaultHref?: string }>('ion-header ion-buttons[slot=start] ion-back-button');
+    expect(indietro?.defaultHref).toBe('/account');
+    expect(indietro?.getAttribute('aria-label')).toBe('Indietro');
+    expect(root.querySelector('ion-header[collapse=condense]')).toBeNull();
+  });
+
+  it('una categoria si apre nella pila di Account', async () => {
+    const { fixture } = await monta(async () => []);
+    const nav = TestBed.inject(NavController);
+    const avanti = vi.spyOn(nav, 'navigateForward').mockResolvedValue(true);
+    (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>('.cardrow')[2].click();
+    expect(avanti).toHaveBeenCalledWith(['/account/misure', 'pliche']);
+  });
+
+  it('andamento e storico, in testata, stanno sotto /account/misure', async () => {
+    const { fixture } = await monta(async () => []);
+    const link = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('ion-buttons[slot=end] ion-button'))
+      .map(b => b.getAttribute('routerLink'));
+    expect(link).toEqual(['/account/misure/analytics', '/account/misure/storico']);
   });
 
   it('se la lettura fallisce le righe restano, senza dire "nessuna misura" a torto', async () => {

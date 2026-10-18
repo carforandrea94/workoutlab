@@ -23,7 +23,6 @@ const TABS: Tab[] = [
   { id: 'scheda', label: 'Scheda', icon: 'barbell' },
   { id: 'dieta', label: 'Dieta', icon: 'restaurant' },
   { id: 'corsa', label: 'Corsa', icon: 'scarpa' },
-  { id: 'misure', label: 'Misure', icon: 'body' },
   { id: 'account', label: 'Account', icon: 'person' }
 ];
 
@@ -48,7 +47,7 @@ export function eRadiceDiTab(url: string, tabs: readonly { id: string }[] = TABS
  * L'aspetto e' quello della pillola dell'app originale (le classi .tabbar,
  * .tabbtn e .pill di styles.css), non la barra standard di Ionic.
  *
- * La barra c'e' sulle cinque pagine radice e scivola via in quelle interne
+ * La barra c'e' sulle quattro pagine radice e scivola via in quelle interne
  * (come fa iOS quando una pagina "nasconde la barra inferiore"): dentro un
  * giorno, un editor, uno storico serve lo spazio, e per cambiare sezione si
  * torna indietro. Toccare di nuovo la tab gia' aperta, sulla radice, riporta
@@ -75,7 +74,7 @@ export function eRadiceDiTab(url: string, tabs: readonly { id: string }[] = TABS
   imports: [IonTabs, IonTabBar, IonTabButton, IconaComponent, RestBarComponent],
   template: `
     <ion-tabs (ionTabsDidChange)="tabCambiata($event.tab)">
-      <ion-tab-bar slot="bottom" class="tabbar tabbar-5" [class.tabbar-nascosta]="nascondiBarra"
+      <ion-tab-bar slot="bottom" class="tabbar tabbar-4" [class.tabbar-nascosta]="nascondiBarra"
         [class.trascina]="lente() !== null" [style.display]="showRestBar ? 'none' : null">
         <div class="pill" [class]="'pill p' + indiceInVista()"></div>
         @for (t of tabs; track t.id; let i = $index) {

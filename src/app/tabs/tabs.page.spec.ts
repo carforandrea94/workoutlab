@@ -1,12 +1,12 @@
 import { eRadiceDiTab } from './tabs.page';
 
 /**
- * La barra delle tab c'e' solo sulle cinque pagine radice: ogni altro
+ * La barra delle tab c'e' solo sulle quattro pagine radice: ogni altro
  * indirizzo e' una pagina interna, dove scivola via.
  */
 describe('eRadiceDiTab', () => {
-  it('le cinque radici', () => {
-    for (const url of ['/scheda', '/dieta', '/corsa', '/misure', '/account']) {
+  it('le quattro radici', () => {
+    for (const url of ['/scheda', '/dieta', '/corsa', '/account']) {
       expect(eRadiceDiTab(url)).toBe(true);
     }
   });
@@ -22,8 +22,13 @@ describe('eRadiceDiTab', () => {
     expect(eRadiceDiTab('/scheda/storico')).toBe(false);
     expect(eRadiceDiTab('/dieta/lista-spesa')).toBe(false);
     expect(eRadiceDiTab('/corsa/nuova?id=abc')).toBe(false);
-    expect(eRadiceDiTab('/misure/peso')).toBe(false);
+    expect(eRadiceDiTab('/account/misure')).toBe(false);
+    expect(eRadiceDiTab('/account/misure/peso')).toBe(false);
     expect(eRadiceDiTab('/account/impostazioni')).toBe(false);
+  });
+
+  it('Misure non e\' piu\' una tab: e\' una pagina dentro Account', () => {
+    expect(eRadiceDiTab('/misure')).toBe(false);
   });
 
   it('un indirizzo che somiglia a una radice senza esserlo non conta', () => {

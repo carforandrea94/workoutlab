@@ -1,27 +1,23 @@
 <ion-header class="ion-no-border">
   <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/account" aria-label="Indietro"></ion-back-button>
+    </ion-buttons>
     <ion-title>
       <div class="navtitle">Misure</div>
     </ion-title>
     <ion-buttons slot="end">
-      <ion-button class="navicon" routerLink="/misure/analytics" routerDirection="forward" aria-label="Andamento" title="Andamento">
+      <ion-button class="navicon" routerLink="/account/misure/analytics" routerDirection="forward" aria-label="Andamento" title="Andamento">
         <app-icona name="analytics" [size]="18"></app-icona>
       </ion-button>
-      <ion-button class="navicon" routerLink="/misure/storico" routerDirection="forward" aria-label="Storico" title="Storico">
+      <ion-button class="navicon" routerLink="/account/misure/storico" routerDirection="forward" aria-label="Storico" title="Storico">
         <app-icona name="time" [size]="18"></app-icona>
       </ion-button>
     </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense" class="ion-no-border">
-    <ion-toolbar>
-      <ion-title size="large">
-        <div class="navtitle">Misure</div>
-      </ion-title>
-    </ion-toolbar>
-  </ion-header>
+<ion-content>
   <div class="wrap">
     <ion-list class="grouplist">
       <ion-item class="cardrow press-fx" lines="none" [button]="true"
