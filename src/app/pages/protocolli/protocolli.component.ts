@@ -1,5 +1,4 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
-import { LucideAngularModule } from 'lucide-angular';
 import { CommonModule } from '@angular/common';
 import { ProtocolService } from '../../services/protocol.service';
 import { ConfirmDialogService } from '../../services/confirm-dialog.service';
@@ -8,6 +7,7 @@ import { IONIC_PAGE } from '../../core/ionic-page';
 import { IONIC_REFRESH, completaRefresh } from '../../core/ionic-refresh';
 import { IONIC_SLIDING } from '../../core/ionic-sliding';
 import { NavController, IonSpinner, IonButton } from '@ionic/angular';
+import { IconaComponent } from '../../components/icona/icona.component';
 
 /**
  * I protocolli dell'utente: scheda, dieta e obiettivo di corsa. Ne vale uno
@@ -16,7 +16,7 @@ import { NavController, IonSpinner, IonButton } from '@ionic/angular';
 @Component({
   selector: 'app-protocolli',
   standalone: true,
-  imports: [IonButton, IonSpinner, ...IONIC_PAGE, ...IONIC_REFRESH, ...IONIC_SLIDING, CommonModule, LucideAngularModule],
+  imports: [IonButton, IonSpinner, ...IONIC_PAGE, ...IONIC_REFRESH, ...IONIC_SLIDING, CommonModule, IconaComponent],
   templateUrl: './protocolli.component.html'
 })
 export class ProtocolliComponent implements OnInit {

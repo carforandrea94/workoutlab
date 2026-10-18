@@ -1,16 +1,16 @@
 import { Component, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
-import { LucideAngularModule } from 'lucide-angular';
 import { FormaCardComponent } from '../../components/forma-card/forma-card.component';
 import { AuthService } from '../../core/services/auth.service';
 import { IONIC_PAGE } from '../../core/ionic-page';
 import { IonItem, NavController } from '@ionic/angular';
+import { IconaComponent } from '../../components/icona/icona.component';
 
 @Component({
   selector: 'app-account',
   standalone: true,
-  imports: [IonItem, ...IONIC_PAGE, CommonModule, LucideAngularModule, FormaCardComponent],
+  imports: [IonItem, ...IONIC_PAGE, CommonModule, IconaComponent, FormaCardComponent],
   templateUrl: './account.component.html',
   styles: [`
     .account-header { display: flex; align-items: center; gap: 14px; }

@@ -1,5 +1,4 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
-import { LucideAngularModule } from 'lucide-angular';
 import { CommonModule } from '@angular/common';
 
 import { MeasurementDataService } from '../../services/measurement-data.service';
@@ -20,7 +19,7 @@ interface EntryRow {
 @Component({
   selector: 'app-misure-storico',
   standalone: true,
-  imports: [IonButton, IonSpinner, ...IONIC_PAGE, ...IONIC_REFRESH, ...IONIC_SLIDING, CommonModule, LucideAngularModule],
+  imports: [IonButton, IonSpinner, ...IONIC_PAGE, ...IONIC_REFRESH, ...IONIC_SLIDING, CommonModule],
   templateUrl: './misure-storico.component.html'
 })
 export class MisureStoricoComponent implements OnInit {

@@ -1,5 +1,4 @@
 import { Component, OnInit, ChangeDetectorRef, ElementRef, ViewChild, effect } from '@angular/core';
-import { LucideAngularModule } from 'lucide-angular';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { DietDataService } from '../../services/diet-data.service';
@@ -19,6 +18,7 @@ import {
   NavController, IonSegment, IonSegmentButton, IonButton, IonFooter, IonModal, IonRadioGroup, IonRadio,
   IonItem, IonProgressBar
 } from '@ionic/angular';
+import { IconaComponent } from '../../components/icona/icona.component';
 
 interface MealVM {
   meal: NamedMeal;
@@ -36,7 +36,7 @@ type Foglio = { tipo: 'combo'; vm: MealVM } | { tipo: 'macro'; vm: MealVM; cat: 
   standalone: true,
   imports: [
     IonSegment, IonSegmentButton, IonButton, IonFooter, IonModal, IonRadioGroup, IonRadio, IonItem, IonProgressBar,
-    ...IONIC_PAGE, CommonModule, LucideAngularModule, TastoDirective
+    ...IONIC_PAGE, CommonModule, IconaComponent, TastoDirective
   ],
   templateUrl: './dieta-detail.component.html'
 })

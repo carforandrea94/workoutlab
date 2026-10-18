@@ -10,8 +10,8 @@
     </ion-title>
     <ion-buttons slot="end">
       <ion-segment class="seg" [value]="state.viewMode()">
-        <ion-segment-button value="list" (click)="state.setViewMode('list')" aria-label="Vista elenco" title="Elenco"><lucide-icon name="list" [size]="16"></lucide-icon></ion-segment-button>
-        <ion-segment-button value="slider" (click)="state.setViewMode('slider')" aria-label="Vista slider" title="Slider"><lucide-icon name="gallery-horizontal" [size]="16"></lucide-icon></ion-segment-button>
+        <ion-segment-button value="list" (click)="state.setViewMode('list')" aria-label="Vista elenco" title="Elenco"><app-icona name="list" [size]="16"></app-icona></ion-segment-button>
+        <ion-segment-button value="slider" (click)="state.setViewMode('slider')" aria-label="Vista slider" title="Slider"><app-icona name="albums" [size]="16"></app-icona></ion-segment-button>
       </ion-segment>
     </ion-buttons>
   </ion-toolbar>
@@ -32,7 +32,7 @@
         [attr.aria-label]="'Combinazione ' + combo(vm)?.label + ', ' + indiceCombo(vm) + ' di ' + vm.meal.combinations.length + '. Cambia combinazione'">
         <span class="comborow-k">Combinazione</span>
         <span class="comborow-v">{{ combo(vm)?.label }} <small>· {{ indiceCombo(vm) }} di {{ vm.meal.combinations.length }}</small></span>
-        <lucide-icon name="chevrons-up-down" [size]="16"></lucide-icon>
+        <app-icona name="chevron-expand" [size]="16"></app-icona>
       </button>
 
       <ng-container *ngFor="let cat of foodCategories">
@@ -49,7 +49,7 @@
             </div>
             <ion-button class="cambia-btn" *ngIf="r.n > 0" (click)="apriMacro(vm, cat)"
               [attr.aria-label]="'Cambia ' + foodCategoryLabels[cat] + ': ' + (r.s?.name || 'nessuno') + ', ' + r.n + (r.n === 1 ? ' alternativa' : ' alternative')">
-              <lucide-icon name="arrow-left-right" [size]="14"></lucide-icon>
+              <app-icona name="swap-horizontal" [size]="14"></app-icona>
               Cambia
             </ion-button>
           </div>
@@ -78,7 +78,7 @@
             <div class="meal-summary con-spunta" appTasto [attr.aria-expanded]="vm.open" (click)="toggleMeal(vm)">
               <span>{{ vm.meal.name }}</span>
               <span class="chevron">
-                <lucide-icon name="chevron-down" [size]="12"></lucide-icon>
+                <app-icona name="chevron-down" [size]="12"></app-icona>
               </span>
             </div>
             <div class="meal-check tap44" [class.done]="vm.completed" appTasto="checkbox" [attr.aria-checked]="vm.completed"
@@ -99,7 +99,7 @@
         <ion-segment class="seg labelseg mealnav" scrollable [value]="pastoCorrente?.meal?.id"
           (ionChange)="vaiAlPasto($event.detail.value)" aria-label="Pasti di oggi">
           <ion-segment-button *ngFor="let vm of meals" [value]="vm.meal.id">
-            <span class="mealnav-lab">{{ vm.meal.name }}<lucide-icon *ngIf="vm.completed" class="mealnav-tick" name="check" [size]="12" aria-hidden="true"></lucide-icon><span class="sr-only" *ngIf="vm.completed">, fatto</span></span>
+            <span class="mealnav-lab">{{ vm.meal.name }}<app-icona *ngIf="vm.completed" class="mealnav-tick" name="checkmark" [size]="12"></app-icona><span class="sr-only" *ngIf="vm.completed">, fatto</span></span>
           </ion-segment-button>
         </ion-segment>
       </div>
@@ -111,7 +111,7 @@
           <div class="meal-summary noclick">
             <span>{{ vm.meal.name }}</span>
             <span class="meal-stato">
-              <lucide-icon *ngIf="vm.completed" name="check" [size]="13" aria-hidden="true"></lucide-icon>
+              <app-icona *ngIf="vm.completed" name="checkmark" [size]="13"></app-icona>
               {{ vm.completed ? 'fatto' : 'da fare' }}
             </span>
           </div>

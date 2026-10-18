@@ -8,6 +8,7 @@ import { TabsPage } from './tabs.page';
 import { WorkoutDataService } from '../services/workout-data.service';
 import { WorkoutSessionStateService } from '../services/workout-session-state.service';
 import { WorkoutStateService } from '../services/workout-state.service';
+import { ICONE, STILE_ICONE, StileIcone } from '../core/icone';
 
 @Component({ standalone: true, template: '<p>pagina</p>' })
 class Vuota {}
@@ -42,7 +43,7 @@ describe('TabsPage — barra nascosta e tocco sulla tab (disegno vero)', () => {
     return { scrollToTop, pagina };
   }
 
-  async function monta(opzioni: { sessioneSuGiorno?: boolean; sessione?: { dayId: string; dayLabel?: string; pausedAt?: string | null }; vista?: 'list' | 'slider' } = {}) {
+  async function monta(opzioni: { sessioneSuGiorno?: boolean; sessione?: { dayId: string; dayLabel?: string; pausedAt?: string | null }; vista?: 'list' | 'slider'; stile?: StileIcone } = {}) {
     // La vista del giorno e il recupero: nello slider la fascia c'e' solo mentre il recupero conta.
     const viewMode = signal<'list' | 'slider'>(opzioni.vista ?? 'list');
     const restTimer = signal<any>({ show: false, finished: false, remaining: 90, fillPct: 100, exName: null, dayId: null });
@@ -53,6 +54,7 @@ describe('TabsPage — barra nascosta e tocco sulla tab (disegno vero)', () => {
       imports: [TabsPage],
       providers: [
         ...providerPagina(rotte),
+        ...(opzioni.stile ? [{ provide: STILE_ICONE, useValue: opzioni.stile }] : []),
         { provide: WorkoutDataService, useValue: { days: [{ id: 'day1', label: 'Petto' }, { id: 'day2', label: 'Gambe' }] } },
         { provide: WorkoutSessionStateService, useValue: {
           activeSession: attiva,
@@ -92,6 +94,18 @@ describe('TabsPage — barra nascosta e tocco sulla tab (disegno vero)', () => {
     expect(href).toEqual([
       ['scheda', '/scheda'], ['dieta', '/dieta'], ['corsa', '/corsa'], ['misure', '/misure'], ['account', '/account']
     ]);
+  });
+
+  it('le icone della barra: su iOS piene, come i simboli che iOS mette nelle sue barre', async () => {
+    const { root } = await monta({ stile: 'ios' });
+    const icone = Array.from(root.querySelectorAll<HTMLElement & { icon?: string }>('ion-tab-bar app-icona ion-icon')).map(i => i.icon);
+    expect(icone).toEqual([ICONE.barbell.piena, ICONE.restaurant.piena, ICONE.footsteps.piena, ICONE.body.piena, ICONE.person.piena]);
+  });
+
+  it('le icone della barra: su Android quelle Material', async () => {
+    const { root } = await monta({ stile: 'md' });
+    const icone = Array.from(root.querySelectorAll<HTMLElement & { icon?: string }>('ion-tab-bar app-icona ion-icon')).map(i => i.icon);
+    expect(icone).toEqual([ICONE.barbell.md, ICONE.restaurant.md, ICONE.footsteps.md, ICONE.body.md, ICONE.person.md]);
   });
 
   it('sulla radice la barra c\'e\' e lo spazio sotto il contenuto e\' tenuto', async () => {

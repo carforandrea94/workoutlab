@@ -5,13 +5,13 @@
     </ion-title>
     <ion-buttons slot="end">
       <ion-button class="navicon" routerLink="/scheda/protocolli" routerDirection="forward" aria-label="Protocolli" title="Protocolli">
-        <lucide-icon name="file-text" [size]="18"></lucide-icon>
+        <app-icona name="document-text" [size]="18"></app-icona>
       </ion-button>
       <ion-button class="navicon" routerLink="/scheda/storico" routerDirection="forward" aria-label="Storico" title="Storico">
-        <lucide-icon name="history" [size]="18"></lucide-icon>
+        <app-icona name="time" [size]="18"></app-icona>
       </ion-button>
       <ion-button class="navicon" routerLink="/scheda/info" routerDirection="forward" aria-label="Info" title="Info">
-        <lucide-icon name="info" [size]="18"></lucide-icon>
+        <app-icona name="information-circle" [size]="18"></app-icona>
       </ion-button>
     </ion-buttons>
   </ion-toolbar>
@@ -52,10 +52,10 @@
                 <span class="meta-tag" *ngIf="!inCorso(day.id) && hasDraft(day.id)">● bozza</span>
               </div>
             </div>
-            <span class="daycheck" *ngIf="isDoneThisWeek(day.id)"
+            <span class="daycheck" *ngIf="isDoneThisWeek(day.id)" role="img"
               title="Allenamento già fatto questa settimana"
               aria-label="Allenamento già fatto questa settimana">
-              <lucide-icon name="check" [size]="14"></lucide-icon>
+              <app-icona name="checkmark" [size]="14"></app-icona>
             </span>
           </div>
         </ion-item>

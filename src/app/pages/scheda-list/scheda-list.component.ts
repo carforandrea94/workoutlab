@@ -1,5 +1,4 @@
 import { Component, OnInit, signal } from '@angular/core';
-import { LucideAngularModule } from 'lucide-angular';
 import { CommonModule } from '@angular/common';
 
 import { WorkoutDataService } from '../../services/workout-data.service';
@@ -10,11 +9,12 @@ import { WorkoutSessionStateService } from '../../services/workout-session-state
 import { IONIC_PAGE, IONIC_LINKS } from '../../core/ionic-page';
 import { IONIC_LIST } from '../../core/ionic-list';
 import { NavController, IonButton } from '@ionic/angular';
+import { IconaComponent } from '../../components/icona/icona.component';
 
 @Component({
   selector: 'app-scheda-list',
   standalone: true,
-  imports: [IonButton, ...IONIC_LIST, ...IONIC_PAGE, ...IONIC_LINKS, CommonModule, LucideAngularModule],
+  imports: [IonButton, ...IONIC_LIST, ...IONIC_PAGE, ...IONIC_LINKS, CommonModule, IconaComponent],
   templateUrl: './scheda-list.component.html'
 })
 export class SchedaListComponent implements OnInit {

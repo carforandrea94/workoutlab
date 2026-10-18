@@ -1,5 +1,4 @@
 import { Component, OnInit, OnDestroy, ChangeDetectorRef, ElementRef, Optional, ViewChild, effect, signal } from '@angular/core';
-import { LucideAngularModule } from 'lucide-angular';
 import { NumberWheelComponent } from '../../components/number-wheel/number-wheel.component';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -39,6 +38,7 @@ import { segnala } from '../../core/utils/segnale.util';
 import {
   IonFooter, IonModal, NavController, IonSegment, IonSegmentButton, IonSpinner, IonButton, IonRadioGroup, IonRadio, IonItem
 } from '@ionic/angular';
+import { IconaComponent } from '../../components/icona/icona.component';
 
 interface ExerciseVM {
   ex: Exercise;
@@ -73,7 +73,7 @@ interface FoglioCarico {
   standalone: true,
   imports: [
     IonButton, IonFooter, TastoDirective, IonSegment, IonSegmentButton, IonSpinner, ...IONIC_PAGE, IonModal,
-    IonRadioGroup, IonRadio, IonItem, CommonModule, FormsModule, LucideAngularModule, NumberWheelComponent
+    IonRadioGroup, IonRadio, IonItem, CommonModule, FormsModule, IconaComponent, NumberWheelComponent
   ],
   templateUrl: './scheda-detail.component.html'
 })

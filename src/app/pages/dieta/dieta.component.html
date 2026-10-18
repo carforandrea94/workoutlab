@@ -5,7 +5,7 @@
     </ion-title>
     <ion-buttons slot="end">
       <ion-button class="navicon" routerLink="/dieta/lista-spesa" routerDirection="forward" aria-label="Lista della spesa" title="Lista della spesa">
-        <lucide-icon name="shopping-cart" [size]="18"></lucide-icon>
+        <app-icona name="cart" [size]="18"></app-icona>
       </ion-button>
     </ion-buttons>
   </ion-toolbar>
@@ -36,7 +36,7 @@
           *ngFor="let card of cards" (click)="openCard(card)">
           <div class="cardrow-body">
             <div class="badge">
-              <lucide-icon name="utensils" [size]="18"></lucide-icon>
+              <app-icona name="restaurant" [size]="18"></app-icona>
             </div>
             <div class="info">
               <div class="lbl">{{ card.plan.name }}</div>

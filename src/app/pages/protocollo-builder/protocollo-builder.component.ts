@@ -1,5 +1,4 @@
 import { Component, OnInit, OnDestroy, DoCheck, ChangeDetectorRef, ElementRef, Optional, ViewChild } from '@angular/core';
-import { LucideAngularModule } from 'lucide-angular';
 import { CommonModule } from '@angular/common';
 import {
   CdkDropListGroup, CdkDropList, CdkDrag, CdkDragHandle, CdkDragPlaceholder,
@@ -35,6 +34,7 @@ import {
 import { ConModificheNonSalvate } from '../../core/guards/modifiche-non-salvate.guard';
 import { senzaSwipeIndietro } from '../../core/swipe-indietro';
 import { NomeCampoDirective } from '../../core/nome-campo.directive';
+import { IconaComponent } from '../../components/icona/icona.component';
 
 type Tab = SchedaBuilder;
 
@@ -54,7 +54,7 @@ export type ZonaDrop =
   selector: 'app-protocollo-builder',
   standalone: true,
   imports: [NomeCampoDirective, IonButton, TastoDirective, ...IONIC_LIST, IonInput, IonTextarea, IonSelect, IonSelectOption, IonSpinner, IonSegment, IonSegmentButton, ...IONIC_PAGE, ...IONIC_LINKS,
-    CommonModule, FormsModule, LucideAngularModule,
+    CommonModule, FormsModule, IconaComponent,
     CdkDropListGroup, CdkDropList, CdkDrag, CdkDragHandle, CdkDragPlaceholder
   ],
   templateUrl: './protocollo-builder.component.html'

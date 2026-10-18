@@ -3,7 +3,6 @@ import { NavigationEnd, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { filter } from 'rxjs/operators';
 import { IonTabs, IonTabBar, IonTabButton, NavController } from '@ionic/angular';
-import { LucideAngularModule } from 'lucide-angular';
 import { WorkoutDataService } from '../services/workout-data.service';
 import { WorkoutSessionStateService } from '../services/workout-session-state.service';
 import { WorkoutStateService } from '../services/workout-state.service';
@@ -11,16 +10,21 @@ import { RestBarComponent } from '../components/rest-bar/rest-bar.component';
 import { SchermoAccesoService } from '../services/schermo-acceso.service';
 import { SegnaleService } from '../services/segnale.service';
 import { TrascinaTab } from './trascina-tab';
+import { IconaComponent } from '../components/icona/icona.component';
+import { NomeIcona } from '../core/icone';
 
-interface Tab { id: string; label: string; icon: string; }
+interface Tab { id: string; label: string; icon: NomeIcona; }
 
-/** Le schede, nell'ordine della barra. */
+/**
+ * Le schede, nell'ordine della barra. Su iOS le icone della barra sono piene,
+ * come i simboli che iOS mette nelle sue barre delle tab (vedi core/icone.ts).
+ */
 const TABS: Tab[] = [
-  { id: 'scheda', label: 'Scheda', icon: 'dumbbell' },
-  { id: 'dieta', label: 'Dieta', icon: 'utensils' },
-  { id: 'corsa', label: 'Corsa', icon: 'sport-shoe' },
-  { id: 'misure', label: 'Misure', icon: 'ruler' },
-  { id: 'account', label: 'Account', icon: 'user' }
+  { id: 'scheda', label: 'Scheda', icon: 'barbell' },
+  { id: 'dieta', label: 'Dieta', icon: 'restaurant' },
+  { id: 'corsa', label: 'Corsa', icon: 'footsteps' },
+  { id: 'misure', label: 'Misure', icon: 'body' },
+  { id: 'account', label: 'Account', icon: 'person' }
 ];
 
 /**
@@ -68,7 +72,7 @@ export function eRadiceDiTab(url: string, tabs: readonly { id: string }[] = TABS
 @Component({
   selector: 'app-tabs',
   standalone: true,
-  imports: [IonTabs, IonTabBar, IonTabButton, LucideAngularModule, RestBarComponent],
+  imports: [IonTabs, IonTabBar, IonTabButton, IconaComponent, RestBarComponent],
   template: `
     <ion-tabs (ionTabsDidChange)="tabCambiata($event.tab)">
       <ion-tab-bar slot="bottom" class="tabbar tabbar-5" [class.tabbar-nascosta]="nascondiBarra"
@@ -77,7 +81,7 @@ export function eRadiceDiTab(url: string, tabs: readonly { id: string }[] = TABS
         @for (t of tabs; track t.id; let i = $index) {
           <ion-tab-button [tab]="t.id" [href]="'/' + t.id" class="tabbtn" [class.active]="indiceInVista() === i"
             [class.sotto-lente]="lente() === i" (click)="alToccoTab(t.id)">
-            <span class="ic"><lucide-icon [name]="t.icon" [size]="23"></lucide-icon></span>
+            <span class="ic"><app-icona [name]="t.icon" [size]="23" [piena]="true"></app-icona></span>
             <span class="tablabel">{{ t.label }}</span>
           </ion-tab-button>
         }
@@ -93,7 +97,7 @@ export function eRadiceDiTab(url: string, tabs: readonly { id: string }[] = TABS
           <span class="sessionpill-dot" aria-hidden="true"></span>
           <span class="sessionpill-stato">{{ s.inPausa ? 'In pausa' : 'In corso' }}</span>
           <span class="sessionpill-tempo">{{ s.tempo }}</span>
-          <span class="sessionpill-vai">Riprendi <lucide-icon name="chevron-right" [size]="14"></lucide-icon></span>
+          <span class="sessionpill-vai">Riprendi <app-icona name="chevron-forward" [size]="14"></app-icona></span>
         </button>
       }
     </ion-tabs>

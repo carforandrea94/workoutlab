@@ -133,7 +133,7 @@
         <span class="account-row-label">Altezza</span>
         <span class="heightrow-right">
           <span class="account-row-value" [class.unset]="!heightSet">{{ heightLabel }}</span>
-          <lucide-icon name="chevron-right" [size]="13"></lucide-icon>
+          <app-icona name="chevron-forward" [size]="13"></app-icona>
         </span>
       </button>
       <p class="settings-hint">
@@ -170,7 +170,7 @@
         Non si annulla.
       </p>
       <ion-button type="button" class="dangerbtn" (click)="openDeleteSheet()">
-        <lucide-icon name="trash-2" [size]="17"></lucide-icon>
+        <app-icona name="trash" [size]="17"></app-icona>
         Elimina account
       </ion-button>
     </div>

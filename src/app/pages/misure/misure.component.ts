@@ -7,7 +7,7 @@ import { quandoBreve } from '../../core/utils/date.util';
 import { IONIC_PAGE, IONIC_LINKS } from '../../core/ionic-page';
 import { IONIC_LIST } from '../../core/ionic-list';
 import { NavController, IonButton } from '@ionic/angular';
-import { LucideAngularModule } from 'lucide-angular';
+import { IconaComponent } from '../../components/icona/icona.component';
 
 interface CategoryTile {
   id: MeasureCategory;
@@ -33,7 +33,7 @@ export function riassuntoCategoria(categoria: MeasureCategory, storico: Measurem
 @Component({
   selector: 'app-misure',
   standalone: true,
-  imports: [IonButton, ...IONIC_LIST, ...IONIC_PAGE, ...IONIC_LINKS, LucideAngularModule, CommonModule],
+  imports: [IonButton, ...IONIC_LIST, ...IONIC_PAGE, ...IONIC_LINKS, IconaComponent, CommonModule],
   templateUrl: './misure.component.html'
 })
 export class MisureComponent implements OnInit {

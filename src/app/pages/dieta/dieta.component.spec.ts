@@ -61,8 +61,8 @@ describe('DietaComponent — le card dei piani', () => {
 
   it('l\'icona dice "piano alimentare", non "aggiungi"', async () => {
     const { root } = await monta();
-    const icone = Array.from(root.querySelectorAll('.diet-card .badge lucide-icon')).map(i => i.getAttribute('name'));
-    expect(icone).toEqual(['utensils', 'utensils']);
+    const icone = Array.from(root.querySelectorAll('.diet-card .badge app-icona')).map(i => i.getAttribute('name'));
+    expect(icone).toEqual(['restaurant', 'restaurant']);
   });
 
   it('rientrando sulla pagina si rilegge: dal dettaglio si puo\' aver segnato un pasto', async () => {

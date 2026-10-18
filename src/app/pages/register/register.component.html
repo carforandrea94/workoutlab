@@ -75,7 +75,7 @@
             <button type="button" class="pwtoggle" (click)="togglePassword()"
               [attr.aria-pressed]="showPassword"
               [attr.aria-label]="showPassword ? 'Nascondi la password' : 'Mostra la password'">
-              <lucide-icon [name]="showPassword ? 'eye-off' : 'eye'" [size]="18"></lucide-icon>
+              <app-icona [name]="showPassword ? 'eye-off' : 'eye'" [size]="18"></app-icona>
             </button>
           </div>
           <p class="fielderr" id="reg-password-err" *ngIf="passCtrl.invalid && (passCtrl.touched || f.submitted)">
