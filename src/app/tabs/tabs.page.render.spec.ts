@@ -28,7 +28,7 @@ describe('TabsPage — barra nascosta e tocco sulla tab (disegno vero)', () => {
     { path: 'scheda/day/:n', component: Vuota }
   ];
 
-  afterEach(() => document.documentElement.classList.remove('senza-tabbar', 'con-pillola', 'con-fascia'));
+  afterEach(() => document.documentElement.classList.remove('senza-tabbar', 'con-pillola', 'con-fascia', 'barra-ridotta'));
 
   /** Mette nell'outlet una pagina finta con il suo ion-content, come la lascia Ionic. */
   function conContenuto(root: HTMLElement) {
@@ -413,6 +413,92 @@ describe('TabsPage — barra nascosta e tocco sulla tab (disegno vero)', () => {
 
       expect(vecchia.scrollToTop).not.toHaveBeenCalled();
       expect(visibile.scrollToTop).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  /**
+   * Come su Instagram: scorrendo in giu' una pagina radice la barra si fa
+   * piccola, tornando su torna intera. Ionic manda ionScroll da ion-content;
+   * qui lo manda una pagina finta, con l'elemento che scorre nel dettaglio.
+   */
+  describe('scorrendo, la barra si fa piccola', () => {
+    // ion-content con dentro (nel suo shadow DOM) la parte che scorre: 3000 px
+    // di contenuto in una finestra di 800, quindi si scorre fino a 2200.
+    function scorritore(root: HTMLElement) {
+      const { pagina } = conContenuto(root);
+      const contenuto = pagina.querySelector('ion-content')!;
+      const el = document.createElement('div');
+      Object.defineProperty(el, 'scrollHeight', { value: 3000 });
+      Object.defineProperty(el, 'clientHeight', { value: 800 });
+      Object.defineProperty(contenuto, 'shadowRoot', { value: { querySelector: (s: string) => s === '[part="scroll"]' ? el : null } });
+      return (y: number) => contenuto.dispatchEvent(new CustomEvent('ionScroll', {
+        bubbles: true, composed: true, detail: { scrollTop: y }
+      }));
+    }
+    const ridotta = (barra: HTMLElement) => barra.classList.contains('ridotta');
+    const suHtml = () => document.documentElement.classList.contains('barra-ridotta');
+
+    it('in giu\' si fa piccola (anche per la pillola, dalla radice); in su torna intera', async () => {
+      const { fixture, root, barra } = await monta();
+      const scorri = scorritore(root);
+      scorri(200); scorri(260);
+      fixture.detectChanges();
+      expect(ridotta(barra())).toBe(true);
+      expect(suHtml()).toBe(true);
+
+      scorri(180);
+      fixture.detectChanges();
+      expect(ridotta(barra())).toBe(false);
+      expect(suHtml()).toBe(false);
+    });
+
+    it('cambiando tab torna intera', async () => {
+      const { fixture, root, barra } = await monta();
+      const scorri = scorritore(root);
+      scorri(200); scorri(260);
+      fixture.detectChanges();
+      fixture.componentInstance.tabCambiata('scheda');
+      fixture.detectChanges();
+      expect(ridotta(barra())).toBe(false);
+    });
+
+    it('cambiando pagina torna intera, e nelle pagine interne lo scorrimento non conta', async () => {
+      const { fixture, root, barra, vai } = await monta();
+      const scorri = scorritore(root);
+      scorri(200); scorri(260);
+      fixture.detectChanges();
+      await vai('/dieta/lista-spesa');
+      expect(ridotta(barra())).toBe(false);
+
+      scorri(400); scorri(600);
+      fixture.detectChanges();
+      expect(ridotta(barra())).toBe(false);
+    });
+
+    it('il rimbalzo in fondo non la riapre: conta quanto si scorre davvero', async () => {
+      const { fixture, root, barra } = await monta();
+      const scorri = scorritore(root);
+      scorri(2100); scorri(2200);
+      // iOS va oltre il fondo (2200) e torna.
+      scorri(2290); scorri(2200);
+      fixture.detectChanges();
+      expect(ridotta(barra())).toBe(true);
+    });
+
+    it('un ionScroll senza la posizione non la tocca', async () => {
+      const { fixture, root, barra } = await monta();
+      const scorri = scorritore(root);
+      scorri(200); scorri(260);
+      root.querySelector('ion-content')!.dispatchEvent(new CustomEvent('ionScroll', { bubbles: true, detail: {} }));
+      fixture.detectChanges();
+      expect(ridotta(barra())).toBe(true);
+    });
+
+    it('solo icone, come Instagram: il nome della tab resta nel tasto per lo screen reader', async () => {
+      const { barra } = await monta();
+      const tasti = Array.from(barra().querySelectorAll<HTMLElement>('ion-tab-button'));
+      expect(tasti.map(t => t.querySelector('.tablabel')!.textContent!.trim())).toEqual(['Scheda', 'Dieta', 'Corsa', 'Account']);
+      expect(tasti.map(t => t.querySelector<HTMLElement>('app-icona')!.style.width)).toEqual(['26px', '26px', '26px', '26px']);
     });
   });
 
