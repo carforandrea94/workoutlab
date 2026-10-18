@@ -29,6 +29,19 @@ describe('TabsPage — barra nascosta e tocco sulla tab (disegno vero)', () => {
 
   afterEach(() => document.documentElement.classList.remove('senza-tabbar', 'con-pillola', 'con-fascia'));
 
+  /** Mette nell'outlet una pagina finta con il suo ion-content, come la lascia Ionic. */
+  function conContenuto(root: HTMLElement) {
+    const scrollToTop = vi.fn(async () => {});
+    const outlet = root.querySelector('ion-router-outlet')!;
+    const pagina = document.createElement('div');
+    pagina.className = 'ion-page';
+    const contenuto = document.createElement('ion-content') as any;
+    contenuto.scrollToTop = scrollToTop;
+    pagina.appendChild(contenuto);
+    outlet.appendChild(pagina);
+    return { scrollToTop, pagina };
+  }
+
   async function monta(opzioni: { sessioneSuGiorno?: boolean; sessione?: { dayId: string; dayLabel?: string; pausedAt?: string | null }; vista?: 'list' | 'slider' } = {}) {
     // La vista del giorno e il recupero: nello slider la fascia c'e' solo mentre il recupero conta.
     const viewMode = signal<'list' | 'slider'>(opzioni.vista ?? 'list');
@@ -122,6 +135,129 @@ describe('TabsPage — barra nascosta e tocco sulla tab (disegno vero)', () => {
     expect(root.querySelector('app-rest-bar')).toBeTruthy();
   });
 
+  describe('scorrere col dito sulla barra, come su iOS 26', () => {
+    // Cinque tasti larghi 70 px da x = 20: Scheda 20-90, Dieta 90-160,
+    // Corsa 160-230, Misure 230-300, Account 300-370. Il gesto vero e' in
+    // trascina-tab.spec.ts; qui conta cosa ne fa la barra.
+    const centro = (i: number) => 20 + 70 * i + 35;
+
+    async function conBarra() {
+      const m = await monta();
+      m.fixture.componentInstance.selected.set('dieta');
+      m.fixture.detectChanges();
+      const tasti = Array.from(m.root.querySelectorAll<HTMLElement>('ion-tab-button.tabbtn'));
+      tasti.forEach((t, i) => {
+        t.getBoundingClientRect = () => ({ left: 20 + 70 * i, right: 90 + 70 * i, width: 70, top: 0, bottom: 60, height: 60, x: 20 + 70 * i, y: 0, toJSON: () => ({}) }) as DOMRect;
+      });
+      const ionTabs = (m.fixture.componentInstance as any).ionTabs;
+      let arriva: (v: boolean) => void = () => {};
+      const select = vi.spyOn(ionTabs, 'select').mockImplementation(() => new Promise<boolean>(r => { arriva = r; }));
+      const dito = (tipo: string, x: number, su: Element = tasti[1]) => {
+        su.dispatchEvent(new PointerEvent(tipo, { clientX: x, clientY: 30, pointerId: 1, isPrimary: true, button: 0, bubbles: true, cancelable: true }));
+        m.fixture.detectChanges();
+      };
+      const pill = () => m.root.querySelector<HTMLElement>('.pill')!;
+      const attive = () => tasti.filter(t => t.classList.contains('active')).map(t => (t as any).tab);
+      return { ...m, tasti, select, dito, pill, attive, arriva: (v = true) => arriva(v) };
+    }
+
+    it('scorrendo, la pastiglia diventa una lente sopra la tab sotto il dito', async () => {
+      const { dito, barra, pill, tasti, attive } = await conBarra();
+
+      dito('pointerdown', centro(1));
+      dito('pointermove', centro(3));
+
+      expect(barra().classList.contains('trascina')).toBe(true);
+      expect(pill().classList.contains('p3')).toBe(true);
+      // Il colore va con la lente, non resta sulla tab aperta.
+      expect(attive()).toEqual(['misure']);
+      expect(tasti[3].classList.contains('sotto-lente')).toBe(true);
+      expect(tasti.filter(t => t.classList.contains('sotto-lente')).length).toBe(1);
+    });
+
+    it('alzando il dito si apre la tab sotto, e la pastiglia l\'aspetta li\'', async () => {
+      const { dito, barra, pill, select, attive, fixture, arriva } = await conBarra();
+      dito('pointerdown', centro(1));
+      dito('pointermove', centro(3));
+
+      dito('pointerup', centro(3));
+
+      expect(select).toHaveBeenCalledWith('misure');
+      expect(barra().classList.contains('trascina')).toBe(false);
+      // La navigazione non e' ancora arrivata: la pastiglia non torna su Dieta.
+      expect(pill().classList.contains('p3')).toBe(true);
+      expect(attive()).toEqual(['misure']);
+
+      fixture.componentInstance.tabCambiata('misure');
+      arriva();
+      await fixture.whenStable();
+      fixture.detectChanges();
+      expect(pill().classList.contains('p3')).toBe(true);
+      expect(fixture.componentInstance.selected()).toBe('misure');
+    });
+
+    it('se la tab non si apre, la pastiglia torna su quella aperta', async () => {
+      const { dito, pill, fixture, arriva, attive } = await conBarra();
+      dito('pointerdown', centro(1));
+      dito('pointermove', centro(4));
+      dito('pointerup', centro(4));
+
+      arriva(false);
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      expect(pill().classList.contains('p1')).toBe(true);
+      expect(attive()).toEqual(['dieta']);
+    });
+
+    it('tornati sulla tab aperta e alzato il dito non succede niente: si e\' cambiata idea', async () => {
+      const { dito, select, root, pill, attive } = await conBarra();
+      const { scrollToTop } = conContenuto(root);
+      dito('pointerdown', centro(1));
+      dito('pointermove', centro(3));
+      dito('pointermove', centro(1));
+      dito('pointerup', centro(1));
+
+      expect(select).not.toHaveBeenCalled();
+      expect(scrollToTop).not.toHaveBeenCalled();
+      expect(pill().classList.contains('p1')).toBe(true);
+      expect(attive()).toEqual(['dieta']);
+    });
+
+    it('il clic che segue il trascinamento non arriva alla tab', async () => {
+      const { dito, tasti, root, select } = await conBarra();
+      const { scrollToTop } = conContenuto(root);
+      dito('pointerdown', centro(1));
+      dito('pointermove', centro(3));
+      dito('pointermove', centro(1));
+      dito('pointerup', centro(1));
+
+      // Il browser manda il clic al tasto dove il dito si e' alzato, che e' la tab aperta.
+      tasti[1].dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, detail: 1 }));
+
+      expect(scrollToTop).not.toHaveBeenCalled();
+      expect(select).not.toHaveBeenCalled();
+    });
+
+    it('premuta a lungo senza muoversi, la tab aperta riporta in cima come col tocco', async () => {
+      vi.useFakeTimers();
+      try {
+        const { dito, root, fixture, barra } = await conBarra();
+        const { scrollToTop } = conContenuto(root);
+        dito('pointerdown', centro(1));
+        vi.advanceTimersByTime(300);
+        fixture.detectChanges();
+        expect(barra().classList.contains('trascina')).toBe(true);
+
+        dito('pointerup', centro(1));
+
+        expect(scrollToTop).toHaveBeenCalledWith(350);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+  });
+
   describe('la fascia del recupero e il margine di scorrimento', () => {
     // La fascia e' piu' alta della barra che sostituisce e sta fissa sopra il
     // contenuto: col Tab, quello che le finisce sotto non scorreva in vista. Il
@@ -209,18 +345,6 @@ describe('TabsPage — barra nascosta e tocco sulla tab (disegno vero)', () => {
   });
 
   describe('toccare la tab gia\' aperta', () => {
-    /** Mette nell'outlet una pagina finta con il suo ion-content, come la lascia Ionic. */
-    function conContenuto(root: HTMLElement) {
-      const scrollToTop = vi.fn(async () => {});
-      const outlet = root.querySelector('ion-router-outlet')!;
-      const pagina = document.createElement('div');
-      pagina.className = 'ion-page';
-      const contenuto = document.createElement('ion-content') as any;
-      contenuto.scrollToTop = scrollToTop;
-      pagina.appendChild(contenuto);
-      outlet.appendChild(pagina);
-      return { scrollToTop, pagina };
-    }
     // `tab` è una proprietà del componente, non un attributo.
     const bottone = (root: HTMLElement, id: string) =>
       Array.from(root.querySelectorAll<HTMLElement>('ion-tab-button')).find(b => (b as any).tab === id)!;
