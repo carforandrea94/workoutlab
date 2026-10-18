@@ -463,7 +463,6 @@ ion-tab-bar.tabbar{touch-action:none;-webkit-touch-callout:none;}
 .liste-ios ion-list-header.sezione{--color:var(--label);--background:transparent;padding-inline:4px;min-height:0;margin:0 0 8px;font-size:var(--text-2xl);font-weight:700;letter-spacing:-.01em;}
 .liste-ios ion-list-header.sezione ion-label{margin:0;}
 /* La spiegazione sotto un gruppo, come il testo a pie' di sezione delle Impostazioni di iOS. */
-.liste-ios .nota-gruppo{font-size:var(--text-xs);line-height:1.45;color:var(--label-2);margin:-12px 4px 20px;}
 /* Il segno all'inizio della riga: un riquadro come le icone delle Impostazioni
    di iOS. Col numero del giorno (pieno sul giorno che tocca o su quello in
    corso) o con un'icona (pieno d'accento, il segno nel colore di contrasto). */

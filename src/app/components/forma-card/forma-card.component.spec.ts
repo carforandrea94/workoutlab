@@ -136,6 +136,8 @@ describe('FormaCardComponent — le righe', () => {
     expect(valore('Petto')).toBe(formatKg(9000) + 'kg');
     expect(sotto('Petto')).toBe('ultima seduta 15.10');
     expect(valore('Gambe')).toBe('—');
-    expect(root.querySelector('.nota-gruppo')!.textContent!.replace(/\s+/g, ' ')).toContain('Restano 1 giorni da allenare');
+    // Senza nota sotto il gruppo: il totale si legge da solo.
+    expect(root.querySelector('ion-list.forma-tonnellaggio + p')).toBeNull();
+    expect(root.textContent).not.toContain('Un giro completo del programma');
   });
 });

@@ -127,9 +127,4 @@
       <ion-note slot="end" class="valore" [class.vuoto]="d.kg === null"><ng-container *ngIf="d.kg !== null; else senzaKg">{{ tonnageNumero(d.kg) }}<small>kg</small></ng-container><ng-template #senzaKg>—</ng-template></ion-note>
     </ion-item>
   </ion-list>
-  <p class="nota-gruppo" *ngIf="giro.days.length">
-    Un giro completo del programma: ogni giorno porta la sua ultima seduta, quindi il totale si
-    muove a ogni salvataggio senza mai contare due volte lo stesso giorno.<ng-container *ngIf="giro.missing"> Restano
-    {{ giro.missing }} giorni da allenare almeno una volta.</ng-container>
-  </p>
 </ng-container>
