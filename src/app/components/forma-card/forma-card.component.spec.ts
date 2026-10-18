@@ -132,7 +132,7 @@ describe('FormaCardComponent — le righe', () => {
     });
     fixture.detectChanges();
     // Il numero come lo scrive formatKg (in italiano "9.000"), l'unita' accanto.
-    expect(valore('Un giro del programma')).toBe(formatKg(9000) + 'kg');
+    expect(valore('Totale')).toBe(formatKg(9000) + 'kg');
     expect(valore('Petto')).toBe(formatKg(9000) + 'kg');
     expect(sotto('Petto')).toBe('ultima seduta 15.10');
     expect(valore('Gambe')).toBe('—');
