@@ -22,7 +22,7 @@ interface Tab { id: string; label: string; icon: NomeIcona; }
 const TABS: Tab[] = [
   { id: 'scheda', label: 'Scheda', icon: 'barbell' },
   { id: 'dieta', label: 'Dieta', icon: 'restaurant' },
-  { id: 'corsa', label: 'Corsa', icon: 'stopwatch' },
+  { id: 'corsa', label: 'Corsa', icon: 'corridore' },
   { id: 'misure', label: 'Misure', icon: 'body' },
   { id: 'account', label: 'Account', icon: 'person' }
 ];
