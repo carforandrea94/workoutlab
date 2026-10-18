@@ -99,13 +99,13 @@ describe('TabsPage — barra nascosta e tocco sulla tab (disegno vero)', () => {
   it('le icone della barra: su iOS piene, come i simboli che iOS mette nelle sue barre', async () => {
     const { root } = await monta({ stile: 'ios' });
     const icone = Array.from(root.querySelectorAll<HTMLElement & { icon?: string }>('ion-tab-bar app-icona ion-icon')).map(i => i.icon);
-    expect(icone).toEqual([ICONE.barbell.piena, ICONE.restaurant.piena, ICONE.corridore.piena, ICONE.body.piena, ICONE.person.piena]);
+    expect(icone).toEqual([ICONE.barbell.piena, ICONE.restaurant.piena, ICONE.scarpa.piena, ICONE.body.piena, ICONE.person.piena]);
   });
 
   it('le icone della barra: su Android quelle Material', async () => {
     const { root } = await monta({ stile: 'md' });
     const icone = Array.from(root.querySelectorAll<HTMLElement & { icon?: string }>('ion-tab-bar app-icona ion-icon')).map(i => i.icon);
-    expect(icone).toEqual([ICONE.barbell.md, ICONE.restaurant.md, ICONE.corridore.md, ICONE.body.md, ICONE.person.md]);
+    expect(icone).toEqual([ICONE.barbell.md, ICONE.restaurant.md, ICONE.scarpa.md, ICONE.body.md, ICONE.person.md]);
   });
 
   it('sulla radice la barra c\'e\' e lo spazio sotto il contenuto e\' tenuto', async () => {
