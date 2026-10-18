@@ -38,7 +38,7 @@
 
       <div class="shop-addrow">
         <ion-input type="text" [(ngModel)]="newItemName" (keydown.enter)="addCustomItem()" placeholder="Aggiungi alimento…"></ion-input>
-        <ion-button class="shop-addbtn" (click)="addCustomItem()">+</ion-button>
+        <ion-button class="shop-addbtn" (click)="addCustomItem()" aria-label="Aggiungi alla lista"><app-icona name="add" [size]="22"></app-icona></ion-button>
       </div>
 
       <!-- Il carrello, in cima e chiuso: quello che e' gia' dentro esce dalla

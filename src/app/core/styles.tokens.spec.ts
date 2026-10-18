@@ -404,6 +404,19 @@ describe('styles.css — le pagine interne come le tab', () => {
     expect(regola('ion-button.setadd')).not.toContain('dashed');
   });
 
+  it('"Riordina" e "Svuota" sono azioni di testo in accento, come Modifica/Fine su iOS', () => {
+    const r = regola('ion-button.shop-clear,ion-button.riordina-btn');
+    expect(r).toContain('--background:transparent');
+    expect(r).toContain('--color:var(--accent)');
+    expect(r).toContain('min-height:44px');
+  });
+
+  it('il titolo del riquadro della serie a blocchi e\' un titolo, non un maiuscoletto d\'accento', () => {
+    const r = regola('.cluster-cap');
+    expect(r).toContain('color:var(--label)');
+    expect(r).not.toContain('text-transform');
+  });
+
   it('riquadri e card hanno il raggio e il bordo delle liste, senza ombra', () => {
     for (const sel of ['.infocard', '.history-empty', '.ex', '.meal']) {
       const r = regola(sel);

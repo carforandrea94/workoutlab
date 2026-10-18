@@ -53,6 +53,11 @@ describe('coerenza delle pagine', () => {
     for (const t of modifica) expect(t).toContain('class="azione-riquadro"');
   });
 
+  it('i tasti non usano caratteri al posto delle icone: niente ✕ ne\' + scritti, c\'e\' app-icona', () => {
+    const carattere = /<ion-button[^>]*>\s*(✕|\+)\s*(<\/ion-button>|[A-Za-zÀ-ú{])/;
+    expect(template().filter(f => carattere.test(f.testo)).map(f => f.nome)).toEqual([]);
+  });
+
   it('niente occhielli sopra i titoli: il titolo dice da solo cos\'e\'', () => {
     expect(template().filter(f => /class="[^"]*eyebrow/.test(f.testo)).map(f => f.nome)).toEqual([]);
   });

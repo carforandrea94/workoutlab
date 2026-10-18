@@ -116,6 +116,45 @@ describe('ProtocolloBuilderComponent — disegno vero', () => {
     });
   });
 
+  describe('la dieta, come lista iOS', () => {
+    it('i piani: "Aggiungi piano alimentare" e\' l\'ultima riga del gruppo, e aggiunge un piano', async () => {
+      const { c, root, aggiorna } = await monta();
+      c.vaAScheda('dieta');
+      aggiorna();
+      const gruppo = root.querySelector<HTMLElement>('.grouplist')!;
+      const azione = gruppo.lastElementChild as HTMLElement & { detail?: boolean };
+      expect(azione.matches('ion-item.riga-azione')).toBe(true);
+      expect(azione.textContent!.trim()).toBe('Aggiungi piano alimentare');
+      expect(azione.detail).toBe(false);
+      expect(root.querySelector('.savebar ion-button.savebtn')).toBeNull();
+      const prima = c.protocol!.diet.length;
+      azione.click();
+      aggiorna();
+      expect(c.protocol!.diet.length).toBe(prima + 1);
+    });
+
+    it('senza piani lo dice, e la riga per aggiungerne uno c\'e\' lo stesso', async () => {
+      const { c, root, aggiorna } = await monta();
+      c.protocol!.diet = [];
+      c.vaAScheda('dieta');
+      aggiorna();
+      expect(root.querySelector('.history-empty')!.textContent).toContain('Nessun piano ancora');
+      const gruppo = root.querySelector<HTMLElement>('.grouplist')!;
+      expect(Array.from(gruppo.children).map(e => e.textContent!.trim())).toEqual(['Aggiungi piano alimentare']);
+    });
+
+    it('i pasti di un piano: "Aggiungi pasto" e\' una riga d\'accento, non un tasto pieno', async () => {
+      const { c, root, aggiorna } = await monta();
+      c.vaAScheda('dieta');
+      aggiorna();
+      root.querySelector<HTMLElement>('.daycard.protocol-row')!.click();
+      aggiorna();
+      const azione = Array.from(root.querySelectorAll<HTMLElement>('ion-item.riga-azione')).find(i => i.textContent!.trim() === 'Aggiungi pasto');
+      expect(azione).toBeTruthy();
+      expect(root.querySelector('.savebar ion-button.savebtn')).toBeNull();
+    });
+  });
+
   describe('testata', () => {
     it('sull\'elenco: freccia di sistema e titolo "Protocollo"', async () => {
       const { root, titolo, freccia } = await monta();

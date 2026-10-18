@@ -516,6 +516,9 @@ ion-item.riga-azione{--color:var(--accent);font-weight:600;font-size:var(--text-
 ion-item.riga-azione app-icona{margin-inline-end:14px;color:var(--accent);}
 /* L'azione in fondo a un riquadro ("Modifica peso"): una riga in accento sotto
    le altre, non un tasto pieno per ogni riquadro (erano tre per pagina). */
+ion-button.azione-riquadro app-icona{margin-right:8px;}
+/* In un riquadro ancora vuoto l'azione e' la prima cosa: niente linea sopra il nulla. */
+ion-button.azione-riquadro:first-child{border-top:0;margin-top:-8px;}
 ion-button.azione-riquadro{--background:transparent;--background-activated:var(--surface-press);--background-activated-opacity:1;--background-hover-opacity:0;--color:var(--accent);--border-width:0;--box-shadow:none;--padding-start:0;--padding-end:0;--border-radius:0;width:100%;min-height:48px;margin:6px 0 -8px;border-top:1px solid var(--border-line);font-size:var(--text-lg);font-weight:600;letter-spacing:0;text-transform:none;}
 .daycard{display:flex;align-items:center;gap:12px;padding:10px 16px;min-height:56px;border:1px solid var(--border-line);border-radius:var(--r-lg);background:var(--surface-card);box-shadow:var(--shadow-card);cursor:pointer;-webkit-user-select:none;user-select:none;}
 /* Il giorno che tocca (o quello in corso) ha il numero pieno: e' l'unico
@@ -991,7 +994,7 @@ ion-button.authlink.quiet{margin-top:6px;--color:var(--label-3);text-decoration:
 .shop-top{display:flex;align-items:center;gap:12px;margin-bottom:14px;}
 .shop-count{font-variant-numeric:tabular-nums;font-size:var(--text-sm);color:var(--label-2);flex-shrink:0;}
 .shop-bar{flex:1;min-width:0;height:5px;border-radius:var(--r-pill);--background:var(--surface-raise);--progress-background:var(--accent);overflow:hidden;}
-ion-button.shop-clear,ion-button.riordina-btn{--background:var(--surface-raise);--color:var(--label-2);--border-radius:var(--r-pill);--border-width:1px;--border-style:solid;--border-color:var(--border-line);--padding-start:13px;--padding-end:13px;--padding-top:7px;--padding-bottom:7px;flex-shrink:0;min-height:36px;font-variant-numeric:tabular-nums;font-size:var(--text-2xs);font-weight:400;white-space:nowrap;}
+ion-button.shop-clear,ion-button.riordina-btn{--background:transparent;--background-activated:var(--surface-press);--color:var(--accent);--border-radius:var(--r-sm);--border-width:0;--padding-start:8px;--padding-end:8px;--padding-top:0;--padding-bottom:0;flex-shrink:0;min-height:44px;font-size:var(--text-md);font-weight:600;white-space:nowrap;text-transform:none;}
 
 /* La ricerca: la barra di iOS (ion-searchbar), con i colori dell'app. Il bordo
    sta sul contenitore del campo, che Ionic espone come parte. */
@@ -1046,7 +1049,7 @@ ion-button.shop-addbtn:active{filter:brightness(0.92);}
    UNA serie. Il numero di serie resta il suo campo, sopra. */
 .clusterbox{margin:12px 0;padding:14px;border-radius:var(--r-lg);background:var(--accent-dim);border:1px solid var(--accent);}
 .cluster-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:11px;}
-.cluster-cap{font-size:var(--text-2xs);font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);}
+.cluster-cap{font-size:var(--text-lg);font-weight:600;color:var(--label);}
 .cluster-scheme{font-variant-numeric:tabular-nums;font-size:var(--text-sm);font-weight:700;color:var(--label);}
 .cluster-blocks{display:flex;flex-wrap:wrap;align-items:center;gap:8px;}
 .cluster-block{display:flex;align-items:center;gap:6px;}
@@ -1253,7 +1256,9 @@ ion-button.confirmbtn.restsave,ion-button.confirmbtn.confirm{--background:var(--
 .meal-head > .meal-check{position:absolute;top:50%;right:48px;transform:translateY(-50%);}
 .meal-summary.con-spunta > span:first-child{padding-right:70px;}
 .variant-tabs{display:flex;gap:6px;margin:13px 0 10px;flex-wrap:wrap;}
-.variant-tabs button{font-variant-numeric:tabular-nums;font-size:var(--text-xs);padding:8px 12px;min-height:38px;border-radius:var(--r-sm);border:1px solid var(--border-line);background:var(--surface-raise);color:var(--label-2);cursor:pointer;}
+.variant-tabs button{font-size:var(--text-sm);font-weight:600;padding:8px 12px;min-height:38px;border-radius:var(--r-sm);border:1px solid var(--border-line);background:var(--surface-raise);color:var(--label-2);cursor:pointer;}
+/* L'aggiunta di una combinazione sta coi chip ma e' un'azione: in accento, col +. */
+.variant-tabs button.aggiungi{display:inline-flex;align-items:center;gap:4px;border-color:transparent;background:transparent;color:var(--accent);}
 .variant-tabs button.active{border-color:var(--accent);color:var(--accent);background:var(--accent-dim);}
 /* La scelta della combinazione, lato cliente: un menu invece di una fila di
    pastiglie. Le etichette le scrive il coach e sono libere, quindi una fila
@@ -1359,6 +1364,7 @@ ion-button.setdone.salva-btn.fatto{--background:var(--surface-raise);--color:var
 /* Un avviso: l'icona (non un'emoji) accanto al testo, nel colore d'accento. */
 .infocard.avviso{display:flex;gap:12px;align-items:flex-start;}
 .infocard.avviso app-icona{color:var(--accent);flex-shrink:0;margin-top:1px;}
+.infocard.avviso p{font-size:var(--text-md);color:var(--label);line-height:1.5;}
 
 /* ===== REST TIMER — onda dentro la card dell'esercizio =====
    Le tacchette hanno larghezza fissa in px (non elastica) per restare nitide:
