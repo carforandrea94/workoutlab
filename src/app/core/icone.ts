@@ -6,11 +6,12 @@ import {
   chevronDownOutline, chevronDownSharp, chevronExpand, chevronExpandOutline, chevronExpandSharp, chevronForward,
   chevronForwardOutline, chevronForwardSharp, closeCircle, closeOutline, closeSharp, cloudUploadOutline,
   cloudUploadSharp, createOutline, createSharp, documentTextOutline, documentTextSharp, eyeOffOutline, eyeOffSharp,
-  eyeOutline, eyeSharp, flagOutline, flagSharp, footsteps, footstepsOutline, footstepsSharp,
+  eyeOutline, eyeSharp, flagOutline, flagSharp,
   informationCircleOutline, informationCircleSharp, listOutline, listSharp, pause, pauseOutline, pauseSharp,
   pencilOutline, pencilSharp, person, personOutline, personSharp, play, playOutline, playSharp,
   reorderThreeOutline, reorderTwoSharp, restaurant, restaurantOutline, restaurantSharp, saveOutline, saveSharp,
-  searchOutline, searchSharp, settingsOutline, settingsSharp, swapHorizontalOutline, swapHorizontalSharp,
+  searchOutline, searchSharp, settingsOutline, settingsSharp, stopwatch, stopwatchOutline, stopwatchSharp,
+  swapHorizontalOutline, swapHorizontalSharp,
   timeOutline, timeSharp, timerOutline, timerSharp, trashOutline, trashSharp
 } from 'ionicons/icons';
 
@@ -99,7 +100,6 @@ export const ICONE = {
   'eye': { ios: eyeOutline, md: eyeSharp },
   'eye-off': { ios: eyeOffOutline, md: eyeOffSharp },
   'flag': { ios: flagOutline, md: flagSharp },
-  'footsteps': { ios: footstepsOutline, md: footstepsSharp, piena: footsteps },
   'indietro': { ios: chevronBackOutline, md: arrowBackSharp },
   'information-circle': { ios: informationCircleOutline, md: informationCircleSharp },
   'list': { ios: listOutline, md: listSharp },
@@ -111,6 +111,7 @@ export const ICONE = {
   'riordina': { ios: reorderThreeOutline, md: reorderTwoSharp },
   'save': { ios: saveOutline, md: saveSharp },
   'settings': { ios: settingsOutline, md: settingsSharp },
+  'stopwatch': { ios: stopwatchOutline, md: stopwatchSharp, piena: stopwatch },
   'swap-horizontal': { ios: swapHorizontalOutline, md: swapHorizontalSharp },
   'time': { ios: timeOutline, md: timeSharp },
   'timer': { ios: timerOutline, md: timerSharp },
