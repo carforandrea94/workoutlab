@@ -11,7 +11,7 @@
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true">
+<ion-content [fullscreen]="true" class="liste-ios">
   <ion-header collapse="condense" class="ion-no-border">
     <ion-toolbar>
       <ion-title size="large">
@@ -29,20 +29,18 @@
     </div>
 
     <ng-container *ngIf="hasAnyDietData">
-      <p class="sectiontitle">Piani alimentari</p>
-
-      <ion-list class="grouplist">
-        <ion-item class="cardrow press-fx diet-card" lines="none" [button]="true"
-          *ngFor="let card of cards" (click)="openCard(card)">
-          <div class="cardrow-body">
-            <div class="badge">
-              <app-icona name="restaurant" [size]="18"></app-icona>
-            </div>
-            <div class="info">
-              <div class="lbl">{{ card.plan.name }}</div>
-              <div class="meta">{{ pasti(card) }} &nbsp;·&nbsp; {{ card.itemCount }} alimenti</div>
-            </div>
-          </div>
+      <ion-list-header class="sezione">
+        <ion-label>Piani alimentari</ion-label>
+      </ion-list-header>
+      <ion-list [inset]="true" class="piani">
+        <ion-item class="diet-card" *ngFor="let card of cards" [button]="true" [detail]="true" (click)="openCard(card)">
+          <ion-avatar slot="start" class="riga-segno icona">
+            <app-icona name="restaurant" [size]="20" [piena]="true"></app-icona>
+          </ion-avatar>
+          <ion-label>
+            <h2>{{ card.plan.name }}</h2>
+            <p class="meta">{{ pasti(card) }} · {{ card.itemCount }} alimenti</p>
+          </ion-label>
         </ion-item>
       </ion-list>
     </ng-container>

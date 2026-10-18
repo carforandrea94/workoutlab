@@ -17,7 +17,7 @@
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true" class="scheda-ios">
+<ion-content [fullscreen]="true" class="liste-ios">
   <ion-header collapse="condense" class="ion-no-border">
     <ion-toolbar>
       <ion-title size="large">
@@ -41,12 +41,12 @@
         </ion-item>
       </ion-list>
 
-      <ion-list-header class="scheda-sezione">
+      <ion-list-header class="sezione">
         <ion-label>Allenamenti</ion-label>
       </ion-list-header>
       <ion-list [inset]="true" class="scheda-giorni">
         <ion-item *ngFor="let day of days; let i = index" [button]="true" [detail]="true" (click)="goToDay(i)">
-          <ion-avatar slot="start" class="giorno-num" [class.prossimo]="i === giornoProssimo || inCorso(day.id)">{{ i + 1 }}</ion-avatar>
+          <ion-avatar slot="start" class="giorno-num riga-segno" [class.prossimo]="i === giornoProssimo || inCorso(day.id)">{{ i + 1 }}</ion-avatar>
           <ion-label>
             <h2>{{ day.label }}</h2>
             <p>{{ getExCount(i) }} esercizi · rec {{ day.rec }}</p>
@@ -54,7 +54,7 @@
           <ion-badge slot="end" class="stato" *ngIf="inCorso(day.id)">In corso</ion-badge>
           <ion-badge slot="end" class="stato" *ngIf="!inCorso(day.id) && i === giornoProssimo">Prossimo</ion-badge>
           <ion-badge slot="end" class="stato bozza" *ngIf="!inCorso(day.id) && hasDraft(day.id)">Bozza</ion-badge>
-          <span slot="end" class="giorno-fatto" *ngIf="isDoneThisWeek(day.id)" role="img"
+          <span slot="end" class="giorno-fatto riga-fatto" *ngIf="isDoneThisWeek(day.id)" role="img"
             title="Allenamento già fatto questa settimana"
             aria-label="Allenamento già fatto questa settimana">
             <app-icona name="checkmark-circle" [size]="24" [piena]="true"></app-icona>

@@ -6,7 +6,7 @@
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true">
+<ion-content [fullscreen]="true" class="liste-ios">
   <ion-header collapse="condense" class="ion-no-border">
     <ion-toolbar>
       <ion-title size="large">
@@ -21,86 +21,82 @@
   <div class="wrap">
     <!-- Obiettivo della settimana: c'e' solo se il coach ne ha impostato uno. -->
     <ng-container *ngIf="hasGoal()">
-      <p class="sectiontitle">Questa settimana · {{ weekLabel }}</p>
-
-      <div class="infocard runcard">
-        <div class="rungoal" *ngIf="(state.goal()?.weeklyMinutes ?? 0) > 0">
-          <div class="rungoal-head">
-            <span class="rungoal-lbl">Minuti</span>
-            <span class="rungoal-val">{{ minutesDone }}<span class="of">/{{ state.goal()?.weeklyMinutes }} min</span></span>
-          </div>
-          <div class="runbar"><div class="runbar-fill" [style.width.%]="minutesPct"></div></div>
-        </div>
-
-        <div class="rungoal" *ngIf="(state.goal()?.weeklyRuns ?? 0) > 0">
-          <div class="rungoal-head">
-            <span class="rungoal-lbl">Uscite</span>
-            <span class="rungoal-val">{{ state.thisWeek().runs }}<span class="of">/{{ state.goal()?.weeklyRuns }}</span></span>
-          </div>
-          <div class="runbar"><div class="runbar-fill" [style.width.%]="runsPct"></div></div>
-        </div>
-
-        <p class="rungoal-note" *ngIf="state.goal()?.note">{{ state.goal()?.note }}</p>
-      </div>
+      <ion-list-header class="sezione">
+        <ion-label>Questa settimana<span class="sezione-nota">{{ weekLabel }}</span></ion-label>
+      </ion-list-header>
+      <ion-list [inset]="true" class="obiettivo">
+        <ion-item class="obiettivo-minuti" *ngIf="(state.goal()?.weeklyMinutes ?? 0) > 0">
+          <ion-label>
+            <h2>Minuti</h2>
+            <ion-progress-bar [value]="minutesPct / 100" aria-label="Minuti della settimana"
+              [attr.aria-valuetext]="minutesDone + ' minuti su ' + state.goal()?.weeklyMinutes"></ion-progress-bar>
+          </ion-label>
+          <ion-note slot="end" class="valore">{{ minutesDone }}<small>/{{ state.goal()?.weeklyMinutes }} min</small></ion-note>
+        </ion-item>
+        <ion-item class="obiettivo-uscite" *ngIf="(state.goal()?.weeklyRuns ?? 0) > 0">
+          <ion-label>
+            <h2>Uscite</h2>
+            <ion-progress-bar [value]="runsPct / 100" aria-label="Uscite della settimana"
+              [attr.aria-valuetext]="state.thisWeek().runs + ' uscite su ' + state.goal()?.weeklyRuns"></ion-progress-bar>
+          </ion-label>
+          <ion-note slot="end" class="valore">{{ state.thisWeek().runs }}<small>/{{ state.goal()?.weeklyRuns }}</small></ion-note>
+        </ion-item>
+        <ion-item class="obiettivo-nota" *ngIf="state.goal()?.note">
+          <ion-label class="ion-text-wrap"><p>{{ state.goal()?.note }}</p></ion-label>
+        </ion-item>
+      </ion-list>
     </ng-container>
 
     <!--
       Lo storico, una riga per SETTIMANA invece di una per uscita. Prima era un
       elenco piatto che cresceva per sempre: dopo tre mesi erano quaranta righe
       uguali, senza totali e senza un modo di vedere se si stesse correndo di piu'
-      o di meno.
+      o di meno. E' una fisarmonica raggruppata di Ionic: la settimana in corso
+      e' sempre aperta (readonly), le altre si aprono toccandole.
     -->
-    <p class="sectiontitle">Le settimane</p>
-
-    <div class="weeklist">
-      <div class="week" *ngFor="let w of history().weeks"
-        [class.current]="w.isCurrent" [class.open]="isOpen(w)">
-
-        <!-- La settimana in corso e' sempre aperta: e' quella su cui si lavora. -->
-        <button type="button" class="week-head" *ngIf="!w.isCurrent" (click)="toggle(w)"
-          [attr.aria-expanded]="isOpen(w)">
-          <span class="week-info">
-            <span class="week-label">{{ w.label }}</span>
-            <span class="week-sub">{{ runsLabel(w) }}</span>
-          </span>
-          <span class="week-bar" *ngIf="goalMinutes > 0" aria-hidden="true">
-            <span class="week-bar-fill" [class.full]="reached(w)" [style.width.%]="pct(w)"></span>
-          </span>
-          <span class="week-min" [class.empty]="!w.minutes">{{ w.minutes || '—' }}</span>
-        </button>
-
-        <div class="week-head static" *ngIf="w.isCurrent">
-          <span class="week-info">
-            <span class="week-label">Questa settimana</span>
-            <span class="week-sub">{{ w.label }} · {{ runsLabel(w) }}</span>
-          </span>
-          <span class="week-min" [class.empty]="!w.minutes">{{ w.minutes || '—' }}</span>
-        </div>
-
-        <div class="week-body" *ngIf="isOpen(w)">
-          <button type="button" class="runline" *ngFor="let r of w.runs" (click)="editRun(r.id)">
-            <span class="runline-dot" [style.background]="effortColor(r.run.effort)"
-              [style.width.px]="effortSize(r.run.effort)" [style.height.px]="effortSize(r.run.effort)"
-              aria-hidden="true"></span>
-            <span class="runline-txt">{{ runLineLabel(r.run) }}<span class="runline-effort">{{ effortLabel(r.run.effort) }}</span></span>
-            <span class="runline-min">{{ r.run.durationMin }} min</span>
-          </button>
-
+    <ion-list-header class="sezione">
+      <ion-label>Le settimane</ion-label>
+    </ion-list-header>
+    <ion-accordion-group class="settimane" expand="inset" [multiple]="true" [value]="aperte()"
+      (ionChange)="settimaneCambiate($event)">
+      <ion-accordion *ngFor="let w of history().weeks" class="week" [value]="w.mondayISO"
+        [readonly]="w.isCurrent" [class.current]="w.isCurrent">
+        <ion-item slot="header">
+          <ion-label>
+            <h2>{{ w.isCurrent ? 'Questa settimana' : w.label }}</h2>
+            <p>{{ w.isCurrent ? w.label + ' · ' + runsLabel(w) : runsLabel(w) }}</p>
+            <ion-progress-bar *ngIf="goalMinutes > 0 && !w.isCurrent" [value]="pct(w) / 100" [class.piena]="reached(w)"
+              aria-hidden="true"></ion-progress-bar>
+          </ion-label>
+          <ion-note slot="end" class="valore" [class.vuoto]="!w.minutes">{{ w.minutes || '—' }}<small *ngIf="w.minutes">min</small></ion-note>
+        </ion-item>
+        <ion-list slot="content" class="uscite">
+          <ion-item *ngFor="let r of w.runs" class="runline" [button]="true" [detail]="true" (click)="editRun(r.id)">
+            <span slot="start" class="runline-segno" aria-hidden="true">
+              <span class="runline-dot" [style.background]="effortColor(r.run.effort)"
+                [style.width.px]="effortSize(r.run.effort)" [style.height.px]="effortSize(r.run.effort)"></span>
+            </span>
+            <ion-label>
+              <h2>{{ runLineLabel(r.run) }}</h2>
+              <p>{{ effortLabel(r.run.effort) }}</p>
+            </ion-label>
+            <ion-note slot="end" class="valore">{{ r.run.durationMin }}<small>min</small></ion-note>
+          </ion-item>
           <!-- Il tasto sta DENTRO la settimana, che e' dove l'uscita andra' a
                finire; in una settimana passata porta con se' la sua data, cosi'
                recuperare un'uscita dimenticata non costa di girare il calendario
                all'indietro. -->
-          <ion-button type="button" class="runadd-inline" (click)="addRun(w)">
-            <app-icona name="add" [size]="17"></app-icona>
-            Registra un'uscita
-          </ion-button>
-        </div>
-      </div>
-    </div>
+          <ion-item class="runadd" [button]="true" [detail]="false" lines="none" (click)="addRun(w)">
+            <app-icona slot="start" name="add" [size]="22"></app-icona>
+            <ion-label>Registra un'uscita</ion-label>
+          </ion-item>
+        </ion-list>
+      </ion-accordion>
+    </ion-accordion-group>
 
-    <button type="button" class="week-more" *ngIf="history().hidden && !showAll()" (click)="showAll.set(true)">
+    <ion-button class="week-more" fill="clear" expand="block" *ngIf="history().hidden && !showAll()" (click)="showAll.set(true)">
       Mostra le altre {{ history().hidden }} settimane
-    </button>
+    </ion-button>
 
     <div class="history-empty" *ngIf="state.loaded() && !state.runs().length">
       Nessuna uscita registrata. I minuti si contano da qui.

@@ -61,8 +61,11 @@ describe('DietaComponent — le card dei piani', () => {
 
   it('l\'icona dice "piano alimentare", non "aggiungi"', async () => {
     const { root } = await monta();
-    const icone = Array.from(root.querySelectorAll('.diet-card .badge app-icona')).map(i => i.getAttribute('name'));
+    const icone = Array.from(root.querySelectorAll('.diet-card ion-avatar app-icona')).map(i => i.getAttribute('name'));
     expect(icone).toEqual(['restaurant', 'restaurant']);
+    // Righe che si aprono: il chevron di iOS lo dice prima del tocco.
+    const card = Array.from(root.querySelectorAll<HTMLElement & { button?: boolean; detail?: boolean }>('ion-item.diet-card'));
+    expect(card.map(c => [c.button, c.detail])).toEqual([[true, true], [true, true]]);
   });
 
   it('rientrando sulla pagina si rilegge: dal dettaglio si puo\' aver segnato un pasto', async () => {

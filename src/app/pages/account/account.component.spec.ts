@@ -24,17 +24,19 @@ describe('AccountComponent — le voci', () => {
     const fixture = TestBed.createComponent(AccountComponent);
     fixture.detectChanges();
     const root: HTMLElement = fixture.nativeElement;
-    const voci = () => Array.from(root.querySelectorAll<HTMLElement>('ion-item.method-row'));
+    const voci = () => Array.from(root.querySelectorAll<HTMLElement>('ion-item.voce'));
     return { root, nav, voci };
   }
 
   it('Misure, poi Impostazioni, sotto il riassunto del corpo', () => {
     const { voci, root } = monta();
-    expect(voci().map(v => v.querySelector('.method-title')!.textContent!.trim())).toEqual(['Misure', 'Impostazioni']);
-    expect(voci()[0].querySelector('.method-sub')!.textContent!.trim()).toBe('Peso, centimetri e pliche, con andamento e storico');
+    expect(voci().map(v => v.querySelector('ion-label h2')!.textContent!.trim())).toEqual(['Misure', 'Impostazioni']);
+    expect(voci()[0].querySelector('ion-label p')!.textContent!.trim()).toBe('Peso, centimetri e pliche, con andamento e storico');
     expect(voci()[0].querySelector('app-icona')!.getAttribute('name')).toBe('body');
-    const ordine = Array.from(root.querySelectorAll('app-forma-card, ion-item.method-row'));
+    const ordine = Array.from(root.querySelectorAll('app-forma-card, ion-item.voce'));
     expect(ordine[0].tagName).toBe('APP-FORMA-CARD');
+    // Portano a un'altra pagina: tasto col chevron di iOS.
+    expect(voci().map(v => [(v as any).button, (v as any).detail])).toEqual([[true, true], [true, true]]);
   });
 
   it('Misure apre le misure, nella pila di Account', () => {

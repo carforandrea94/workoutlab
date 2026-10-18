@@ -436,32 +436,44 @@ ion-tab-bar.tabbar{touch-action:none;-webkit-touch-callout:none;}
 @media (prefers-reduced-motion:reduce){.tabbar .pill,.tabbar.trascina .pill,.tabbar .tabbtn .ic{transition:none;}.tabbar.trascina .pill,.tabbar .tabbtn.sotto-lente .ic{scale:none;}}
 
 /* ===== SCHEDA ===== */
-/* La Scheda con i componenti di Ionic in modalita' iOS: liste raggruppate
-   (ion-list inset), intestazione di sezione, etichette su due righe, nota,
-   badge, avatar e barra di avanzamento. Qui solo i colori e le misure del
-   tema: Ionic li prende dai suoi colori chiari di serie (grigi pensati per il
-   fondo bianco), che sul tema scuro sparirebbero. Le liste stanno dentro
-   .wrap, che da' gia' i 16px di lato: il margine di ion-list inset si toglie.
+/* Le pagine delle tab (Scheda, Dieta, Corsa, Account) coi componenti di
+   Ionic in modalita' iOS: liste raggruppate (ion-list inset, ion-accordion-group
+   inset), intestazioni di sezione, etichette su due righe, note, badge, avatar
+   e barre di avanzamento. Qui solo i colori e le misure del tema: Ionic li
+   prende dai suoi colori chiari di serie (grigi pensati per il fondo bianco),
+   che sul tema scuro sparirebbero. Le liste stanno dentro .wrap, che da' gia'
+   i 16px di lato: il margine di ion-list inset si toglie.
    Margini e padding interni di Ionic li azzera il reset in cima al file (vince
    sugli stili dei componenti), quindi quelli che servono sono scritti qui. */
-.scheda-ios ion-list.list-inset{margin:0 0 20px;border-radius:var(--r-lg);border:1px solid var(--border-line);}
-.scheda-ios ion-item{--background:var(--surface-card);--background-activated:var(--surface-press);--background-activated-opacity:1;--background-focused:var(--surface-press);--background-focused-opacity:1;--border-color:var(--border-line);--detail-icon-color:var(--label-3);--detail-icon-opacity:1;--inner-padding-end:12px;--min-height:64px;}
-.scheda-ios ion-label h2{font-weight:600;font-size:var(--text-lg);letter-spacing:-.005em;line-height:1.3;color:var(--label);margin:0 0 2px;}
-.scheda-ios ion-label p{font-size:var(--text-sm);line-height:1.35;color:var(--label-2);margin:0;}
-.scheda-ios ion-note{color:var(--label-2);font-size:var(--text-sm);}
-.scheda-ios ion-progress-bar{height:4px;margin-top:10px;border-radius:var(--r-pill);--background:var(--border-line);--progress-background:var(--accent);}
-.scheda-ios ion-list-header.scheda-sezione{--color:var(--label);--background:transparent;padding-inline:4px;min-height:0;margin:0 0 8px;font-size:var(--text-2xl);font-weight:700;letter-spacing:-.01em;}
-.scheda-ios ion-list-header.scheda-sezione ion-label{margin:0;}
-/* Il numero del giorno: un riquadro come le icone delle Impostazioni di iOS.
-   Il giorno che tocca (o quello in corso) e' pieno: e' il segno di "da dove
-   si parte". */
-.scheda-ios ion-avatar.giorno-num{--border-radius:var(--r-md);width:36px;height:36px;margin-inline-end:14px;display:flex;align-items:center;justify-content:center;background:var(--accent-dim);color:var(--label);font-weight:800;font-size:var(--text-lg);font-variant-numeric:tabular-nums;}
-.scheda-ios ion-avatar.giorno-num.prossimo{background:var(--accent);color:var(--accent-contrast);}
-.scheda-ios ion-badge.stato{--background:var(--accent);--color:var(--accent-contrast);padding:4px 8px;border-radius:var(--r-pill);font-size:var(--text-2xs);font-weight:700;letter-spacing:.01em;margin-inline-start:8px;}
-.scheda-ios ion-badge.stato.bozza{--background:var(--surface-raise);--color:var(--label-2);}
+.liste-ios ion-list.list-inset,.liste-ios ion-accordion-group.accordion-group-expand-inset{margin:0 0 20px;border-radius:var(--r-lg);border:1px solid var(--border-line);overflow:hidden;}
+.liste-ios ion-item{--background:var(--surface-card);--background-activated:var(--surface-press);--background-activated-opacity:1;--background-focused:var(--surface-press);--background-focused-opacity:1;--border-color:var(--border-line);--detail-icon-color:var(--label-3);--detail-icon-opacity:1;--inner-padding-end:12px;--min-height:56px;}
+.liste-ios ion-label{margin:10px 0;}
+.liste-ios ion-label h2{font-weight:600;font-size:var(--text-lg);letter-spacing:-.005em;line-height:1.3;color:var(--label);margin:0 0 2px;}
+.liste-ios ion-label p{font-size:var(--text-sm);line-height:1.35;color:var(--label-2);margin:0;}
+/* Una riga a sola lettura che spiega (la nota del coach, la nota di un gruppo): va a capo. */
+.liste-ios ion-label.ion-text-wrap p{white-space:normal;}
+.liste-ios ion-note{color:var(--label-2);font-size:var(--text-sm);}
+/* Il valore di una riga (82 kg, 1/3, 75 min): e' il contenuto, non un dettaglio. */
+.liste-ios ion-note.valore{color:var(--label);font-size:var(--text-lg);font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap;}
+.liste-ios ion-note.valore small{font-size:var(--text-sm);font-weight:500;color:var(--label-2);margin-left:2px;}
+.liste-ios ion-note.valore.vuoto{color:var(--label-3);font-weight:500;}
+/* Cosa fare quando il valore manca ("Pesati", "Metti l'altezza"): la riga porta li'. */
+.liste-ios ion-note.azione{color:var(--accent);font-weight:600;}
+.liste-ios ion-progress-bar{height:4px;margin-top:8px;border-radius:var(--r-pill);--background:var(--border-line);--progress-background:var(--accent);}
+.liste-ios ion-list-header.sezione{--color:var(--label);--background:transparent;padding-inline:4px;min-height:0;margin:0 0 8px;font-size:var(--text-2xl);font-weight:700;letter-spacing:-.01em;}
+.liste-ios ion-list-header.sezione ion-label{margin:0;}
+/* La spiegazione sotto un gruppo, come il testo a pie' di sezione delle Impostazioni di iOS. */
+.liste-ios .nota-gruppo{font-size:var(--text-xs);line-height:1.45;color:var(--label-2);margin:-12px 4px 20px;}
+/* Il segno all'inizio della riga: un riquadro come le icone delle Impostazioni
+   di iOS. Col numero del giorno (pieno sul giorno che tocca o su quello in
+   corso) o con un'icona (pieno d'accento, il segno nel colore di contrasto). */
+.liste-ios ion-avatar.riga-segno{--border-radius:var(--r-md);width:36px;height:36px;margin-inline-end:14px;display:flex;align-items:center;justify-content:center;background:var(--accent-dim);color:var(--label);font-weight:800;font-size:var(--text-lg);font-variant-numeric:tabular-nums;}
+.liste-ios ion-avatar.riga-segno.prossimo,.liste-ios ion-avatar.riga-segno.icona{background:var(--accent);color:var(--accent-contrast);}
+.liste-ios ion-badge.stato{--background:var(--accent);--color:var(--accent-contrast);padding:4px 8px;border-radius:var(--r-pill);font-size:var(--text-2xs);font-weight:700;letter-spacing:.01em;margin-inline-start:8px;}
+.liste-ios ion-badge.stato.bozza{--background:var(--surface-raise);--color:var(--label-2);}
 /* Gia' fatto questa settimana: la spunta piena accanto al chevron, non al
    posto del numero del giorno, che serve sempre. */
-.scheda-ios .giorno-fatto{display:flex;color:var(--accent);margin-inline-start:8px;}
+.liste-ios .riga-fatto{display:flex;color:var(--accent);margin-inline-start:8px;}
 .sectiontitle{font-family:'IBM Plex Mono',monospace;font-size:var(--text-xs);letter-spacing:.1em;text-transform:uppercase;color:var(--label-3);margin:6px 4px 10px;}
 .grouplist{display:flex;flex-direction:column;gap:12px;}
 .daycard{display:flex;align-items:center;gap:12px;padding:16px;min-height:64px;border:1px solid var(--border-line);border-radius:var(--r-xl);background:var(--surface-card);box-shadow:var(--shadow-card);cursor:pointer;-webkit-user-select:none;user-select:none;}
@@ -565,8 +577,8 @@ ion-button.rest-stepbtn:active{transform:scale(0.92);}
    velo al tocco, testo com'e' scritto, margini a zero - e sotto, ciascuno, i
    suoi colori e le sue misure. Le variabili -- sono quelle di ion-button; il
    resto (larghezza, margini, allineamento) e' CSS normale sull'host. */
-ion-button.setdone,ion-button.setundo,ion-button.setremove,ion-button.setadd,ion-button.clusterundo,ion-button.closing-discard,ion-button.rest-defaultbtn,ion-button.runsave,ion-button.runremove,ion-button.runadd-inline,ion-button.shop-clear,ion-button.riordina-btn,ion-button.shop-addbtn,ion-button.googlebtn{--box-shadow:none;--padding-start:0;--padding-end:0;--padding-top:0;--padding-bottom:0;--background-activated-opacity:0;--background-hover-opacity:0;--background-focused-opacity:.12;min-height:0;text-transform:none;display:block;}
-:where(ion-button.setdone,ion-button.setundo,ion-button.setremove,ion-button.setadd,ion-button.clusterundo,ion-button.closing-discard,ion-button.rest-defaultbtn,ion-button.runsave,ion-button.runremove,ion-button.runadd-inline,ion-button.shop-clear,ion-button.riordina-btn,ion-button.shop-addbtn,ion-button.googlebtn){margin:0;}
+ion-button.setdone,ion-button.setundo,ion-button.setremove,ion-button.setadd,ion-button.clusterundo,ion-button.closing-discard,ion-button.rest-defaultbtn,ion-button.runsave,ion-button.runremove,ion-button.shop-clear,ion-button.riordina-btn,ion-button.shop-addbtn,ion-button.googlebtn{--box-shadow:none;--padding-start:0;--padding-end:0;--padding-top:0;--padding-bottom:0;--background-activated-opacity:0;--background-hover-opacity:0;--background-focused-opacity:.12;min-height:0;text-transform:none;display:block;}
+:where(ion-button.setdone,ion-button.setundo,ion-button.setremove,ion-button.setadd,ion-button.clusterundo,ion-button.closing-discard,ion-button.rest-defaultbtn,ion-button.runsave,ion-button.runremove,ion-button.shop-clear,ion-button.riordina-btn,ion-button.shop-addbtn,ion-button.googlebtn){margin:0;}
 ion-button.rest-defaultbtn{--background:transparent;--color:var(--label-2);--border-radius:var(--r-md);--border-width:1px;--border-style:dashed;--border-color:var(--border-line);--padding-start:10px;--padding-end:10px;--padding-top:10px;--padding-bottom:10px;width:100%;margin-bottom:16px;font-family:'Inter',sans-serif;font-size:var(--text-sm);font-weight:600;}
 ion-button.rest-defaultbtn:hover{--color:var(--label);--border-color:var(--label-2);}
 .ex .content-inner{padding:0 16px 16px;border-top:1px solid var(--separator);}
@@ -760,52 +772,24 @@ ion-button.closing-discard.button-disabled{opacity:.4;}
 .delta{font-family:'IBM Plex Mono',monospace;font-size:var(--text-xs);font-weight:600;color:var(--label-2);}
 
 /* ===================== CORSA ===================== */
-.runcard{margin-bottom:14px;}
-
-/* Obiettivo settimanale: etichetta, numeri, barra. Il rapporto fatto/obiettivo
-   sta tutto sulla stessa riga perche' e' un numero solo, non due. */
-.rungoal{margin-bottom:14px;}
-.rungoal:last-of-type{margin-bottom:16px;}
-.rungoal-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:7px;}
-.rungoal-lbl{font-family:'IBM Plex Mono',monospace;font-size:var(--text-2xs);letter-spacing:.06em;text-transform:uppercase;color:var(--label-3);}
-.rungoal-val{font-family:'IBM Plex Mono',monospace;font-size:var(--text-lg);font-weight:700;color:var(--label);font-variant-numeric:tabular-nums;}
-.rungoal-val .of{font-size:var(--text-xs);font-weight:600;color:var(--label-3);margin-left:2px;}
-.rungoal-note{font-size:var(--text-sm);color:var(--label-2);line-height:1.5;margin-top:14px;padding-top:12px;border-top:1px solid var(--border-line);}
-
-.runbar{height:7px;border-radius:var(--r-pill);background:var(--surface-raise);overflow:hidden;}
-.runbar-fill{height:100%;border-radius:var(--r-pill);background:var(--accent);transition:width .5s var(--spring);}
-
-
-/* Lo storico per settimana. Una riga chiusa dice il periodo, quante uscite e
-   quanti minuti; aperta mostra le sue uscite e il tasto per aggiungerne una.
-   L'elenco piatto che c'era prima cresceva per sempre. */
-.weeklist{display:flex;flex-direction:column;gap:10px;margin-bottom:14px;}
-.week{border-radius:var(--r-xl);background:var(--surface-card);border:1px solid var(--border-line);box-shadow:var(--shadow-card);overflow:hidden;}
-.week.current{border-color:var(--accent);}
-.week-head{display:flex;align-items:center;gap:12px;width:100%;min-height:62px;padding:12px 15px;border:none;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer;}
-.week-head.static{cursor:default;}
-.week-info{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0;}
-.week-label{font-weight:600;font-size:var(--text-md);color:var(--label);}
-.week.current .week-label{font-weight:700;}
-.week-sub{font-family:'IBM Plex Mono',monospace;font-size:var(--text-2xs);color:var(--label-3);}
-.week-bar{display:block;width:74px;height:6px;flex-shrink:0;border-radius:var(--r-pill);background:var(--surface-raise);overflow:hidden;}
-.week-bar-fill{display:block;height:100%;border-radius:var(--r-pill);background:var(--accent);transition:width .4s var(--spring);}
-.week-bar-fill.full{background:var(--state-success);}
-.week-min{width:52px;flex-shrink:0;text-align:right;font-family:'IBM Plex Mono',monospace;font-size:var(--text-md);font-weight:700;color:var(--label);font-variant-numeric:tabular-nums;}
-.week-min.empty{color:var(--label-3);font-weight:600;}
-.week-body{display:flex;flex-direction:column;gap:6px;padding:0 15px 14px;border-top:1px solid var(--separator);padding-top:12px;}
-
-.runline{display:flex;align-items:center;gap:10px;width:100%;min-height:44px;padding:0 11px;border:none;border-radius:var(--r-md);background:var(--surface-raise);color:inherit;font:inherit;text-align:left;cursor:pointer;}
+/* La Corsa e' fatta di liste iOS (.liste-ios sopra): l'obiettivo della
+   settimana e lo storico per settimana, una fisarmonica raggruppata. Qui
+   restano il pallino della fatica e la settimana in corso, sempre aperta. */
+.liste-ios ion-list-header .sezione-nota{font-size:var(--text-sm);font-weight:500;color:var(--label-2);margin-left:6px;letter-spacing:0;}
+.liste-ios ion-accordion{background:var(--surface-card);}
+.liste-ios ion-accordion ion-list.uscite{background:transparent;padding:0;}
+.liste-ios ion-accordion ion-item.runline{--padding-start:16px;--min-height:52px;}
+/* La settimana in corso non si chiude: niente freccia, e il fondo pieno (readonly). */
+.liste-ios ion-accordion.current ion-item[slot=header] .ion-accordion-toggle-icon{display:none;}
+.liste-ios ion-accordion ion-progress-bar.piena{--progress-background:var(--state-success);}
+/* La fatica di un'uscita: colore e misura (vedi EFFORT_STYLE in corsa.component.ts),
+   centrata in uno spazio fisso perche' i testi delle righe restino allineati. */
+.runline-segno{width:14px;height:14px;display:flex;align-items:center;justify-content:center;margin-inline-end:14px;}
 .runline-dot{flex-shrink:0;border-radius:50%;}
-.runline-txt{flex:1;min-width:0;font-family:'IBM Plex Mono',monospace;font-size:var(--text-sm);color:var(--label);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.runline-effort{color:var(--label-3);margin-left:8px;}
-.runline-min{flex-shrink:0;font-family:'IBM Plex Mono',monospace;font-size:var(--text-sm);font-weight:600;color:var(--label-2);font-variant-numeric:tabular-nums;}
-
-ion-button.runadd-inline{--background:var(--accent-dim);--color:var(--accent);--border-radius:var(--r-md);--border-width:1px;--border-style:dashed;--border-color:var(--accent);width:100%;min-height:48px;font-family:'Inter',sans-serif;font-size:var(--text-sm);font-weight:700;}
-ion-button.runadd-inline app-icona{margin-right:8px;}
-
-.week-more{display:block;width:100%;min-height:48px;margin-bottom:18px;border:1px solid var(--border-line);border-radius:var(--r-lg);background:transparent;color:var(--label-2);font-family:'Inter',sans-serif;font-size:var(--text-sm);font-weight:600;cursor:pointer;}
-.week-more:hover{color:var(--label);border-color:var(--label-3);}
+/* Aggiungere un'uscita: la riga d'azione delle liste iOS, segno e testo d'accento. */
+.liste-ios ion-item.runadd{--min-height:48px;color:var(--accent);font-weight:600;}
+.liste-ios ion-item.runadd app-icona{margin-inline-end:12px;}
+.liste-ios ion-button.week-more{--color:var(--accent);margin:-8px 0 20px;font-weight:600;}
 
 ion-button.runremove{--background:transparent;--color:var(--state-danger-text);--border-radius:var(--r-lg);--border-width:1px;--border-style:solid;--border-color:var(--border-line);--padding-start:16px;--padding-end:16px;--padding-top:13px;--padding-bottom:13px;width:100%;margin-top:10px;font-size:var(--text-sm);font-weight:600;}
 ion-button.runremove.button-disabled{opacity:.45;}

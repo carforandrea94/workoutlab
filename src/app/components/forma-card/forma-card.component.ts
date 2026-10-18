@@ -19,101 +19,28 @@ import { WorkoutSessionsService } from '../../services/workout-sessions.service'
 import { WorkoutDataService } from '../../services/workout-data.service';
 import { WeeklyProgressService } from '../../services/weekly-progress.service';
 import { RunningStateService } from '../../services/running-state.service';
+import { IonItem, IonLabel, IonList, IonListHeader, IonNote, IonProgressBar } from '@ionic/angular';
+import { IONIC_LINKS } from '../../core/ionic-page';
 
 /**
- * Le prime due tessere della scheda riepilogativa: quanto pesi e quanto vale
- * il tuo BMI.
+ * Il riepilogo dell'Account: il corpo (peso, BMI, altezza, sesso, massa grassa,
+ * FFMI), il lavoro della settimana e il tonnellaggio, come righe di lista iOS.
  *
- * Ogni tessera sa mancare. Il peso arriva dallo storico misure, che per un
+ * Ogni riga sa mancare. Il peso arriva dallo storico misure, che per un
  * cliente appena iscritto e' vuoto; il BMI ha bisogno anche dell'altezza, che
  * fino a ieri l'app non chiedeva a nessuno — quindi oggi manca a TUTTI i
- * profili esistenti. Una tessera spenta dice cosa le serve e porta dove si
+ * profili esistenti. Una riga senza valore dice cosa le serve e porta dove si
  * rimedia, invece di mostrare un trattino e basta.
  */
-import { IONIC_LINKS } from '../../core/ionic-page';
 
 @Component({
   selector: 'app-forma-card',
   standalone: true,
-  imports: [CommonModule, ...IONIC_LINKS],
+  imports: [CommonModule, IonList, IonListHeader, IonItem, IonLabel, IonNote, IonProgressBar, ...IONIC_LINKS],
   templateUrl: './forma-card.component.html',
-  styles: [`
-    :host { display: block; }
-    .formagrid {
-      display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 11px;
-      margin-bottom: 12px;
-    }
-    .formatile {
-      display: flex; flex-direction: column; padding: 15px;
-      border-radius: var(--r-lg); background: var(--surface-card);
-      border: 1px solid var(--border-line); box-shadow: var(--shadow-card);
-    }
-    .formatile-cap {
-      font-family: 'IBM Plex Mono', monospace; font-size: var(--text-2xs);
-      font-weight: 600; letter-spacing: .14em; text-transform: uppercase;
-      color: var(--label-3);
-    }
-    .formatile-val { display: flex; align-items: baseline; gap: 4px; margin-top: 9px; }
-    .formatile-val .n {
-      font-family: 'IBM Plex Mono', monospace; font-size: var(--text-3xl);
-      font-weight: 700; letter-spacing: -.02em; line-height: 1; color: var(--label);
-    }
-    .formatile-val .n.empty { color: var(--label-3); font-weight: 600; }
-    /* Una parola non sta alla misura di un numero: "Donna" a --text-3xl
-       sfonderebbe la colonna. */
-    .formatile-val .n.word { font-size: var(--text-xl); letter-spacing: 0; }
-    .formatile-val .u {
-      font-family: 'IBM Plex Mono', monospace; font-size: var(--text-xs);
-      font-weight: 500; color: var(--label-3);
-    }
-    /* Una card larga quanto la griglia: la usa il tonnellaggio, che sotto al
-       numero ha un elenco di giorni e in mezza colonna non ci starebbe. */
-    .grassocard {
-      display: flex; flex-direction: column; padding: 15px; margin-bottom: 12px;
-      border-radius: var(--r-lg); background: var(--surface-card);
-      border: 1px solid var(--border-line); box-shadow: var(--shadow-card);
-    }
-    .grassocard-head {
-      display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
-    }
-    .grassocard-head .formatile-val { margin-top: 0; }
-    .grassocard-foot {
-      font-size: var(--text-2xs); line-height: 1.5; color: var(--label-3);
-      margin: 10px 0 0; padding-top: 10px; border-top: 1px solid var(--border-line);
-    }
-    .tonnrows {
-      display: flex; flex-direction: column; gap: 9px;
-      padding-top: 12px; margin-top: 13px; border-top: 1px solid var(--border-line);
-    }
-    .tonnrow { display: flex; align-items: center; gap: 10px; }
-    .tonnrow-lbl { font-size: var(--text-xs); color: var(--label-2); width: 66px; flex-shrink: 0; }
-    .tonnrow-bar {
-      flex-grow: 1; height: 5px; border-radius: var(--r-pill);
-      background: var(--surface-raise); overflow: hidden; display: block;
-    }
-    .tonnrow-bar > span { display: block; height: 100%; border-radius: var(--r-pill); background: var(--accent); }
-    .tonnrow-kg {
-      font-family: 'IBM Plex Mono', monospace; font-size: 12.5px; font-weight: 600;
-      color: var(--label); width: 76px; text-align: right; flex-shrink: 0;
-    }
-    .tonnrow-kg.empty { color: var(--label-3); }
-    .tonnrow-date {
-      font-family: 'IBM Plex Mono', monospace; font-size: var(--text-2xs);
-      color: var(--label-3); width: 36px; text-align: right; flex-shrink: 0;
-    }
-    .formatile-note {
-      font-family: 'IBM Plex Mono', monospace; font-size: var(--text-2xs);
-      font-weight: 600; color: var(--label-3); margin-top: 6px; line-height: 1.35;
-    }
-    /* Il richiamo di una tessera spenta e' un link vero, alto abbastanza da
-       essere toccato: e' l'unica via d'uscita che la tessera offre. */
-    .formatile-link {
-      display: inline-flex; align-items: center; min-height: 44px; margin-top: 2px;
-      color: var(--accent); font-size: var(--text-xs); font-weight: 600;
-      text-decoration: none;
-    }
-    .formatile-link:hover { text-decoration: underline; }
-  `]
+  // Righe, valori e richiami sono quelli delle liste iOS delle tab (.liste-ios in
+  // styles.css): qui solo l'host, che deve occupare la riga.
+  styles: [`:host { display: block; }`]
 })
 export class FormaCardComponent implements OnInit {
   /** Ultimo peso registrato. Signal perche' arriva da Firestore e l'app e'
@@ -228,8 +155,9 @@ export class FormaCardComponent implements OnInit {
     return kg === null ? 0 : (kg / this.tonnageMax) * 100;
   }
 
-  tonnageKg(kg: number | null): string {
-    return kg === null ? '—' : formatKg(kg) + ' kg';
+  /** Il numero da solo, per la riga: l'unita' la scrive piccola il template. */
+  tonnageNumero(kg: number): string {
+    return formatKg(kg);
   }
 
   tonnageDate(iso: string): string {

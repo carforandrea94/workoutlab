@@ -1,145 +1,148 @@
-<p class="sectiontitle mt-0">Il corpo</p>
+<!-- Il riepilogo del corpo e del lavoro, come gruppi di righe delle
+     Impostazioni di iOS: il nome a sinistra, il valore a destra, sotto il nome
+     cosa vuol dire. Una riga senza valore dice cosa le serve e, se si puo'
+     rimediare, porta dove si rimedia (la riga intera, col chevron). -->
+<ion-list-header class="sezione">
+  <ion-label>Il corpo</ion-label>
+</ion-list-header>
+<ion-list [inset]="true" class="forma-corpo">
+  <ion-item *ngIf="weightKg() !== null; else pesoMancante">
+    <ion-label>
+      <h2>Peso</h2>
+      <p>{{ weightDelta !== null ? weightDeltaLabel : 'prima pesata' }}</p>
+    </ion-label>
+    <ion-note slot="end" class="valore">{{ weightLabel }}<small>kg</small></ion-note>
+  </ion-item>
+  <ng-template #pesoMancante>
+    <ion-item [button]="true" [detail]="true" routerLink="/account/misure/peso" routerDirection="forward">
+      <ion-label><h2>Peso</h2></ion-label>
+      <ion-note slot="end" class="azione">Pesati</ion-note>
+    </ion-item>
+  </ng-template>
 
-<div class="formagrid">
-  <div class="formatile">
-    <div class="formatile-cap">Peso</div>
-    <div class="formatile-val" *ngIf="weightKg() !== null; else noWeight">
-      <span class="n">{{ weightLabel }}</span><span class="u">kg</span>
-    </div>
-    <ng-template #noWeight>
-      <div class="formatile-val"><span class="n empty">—</span></div>
-    </ng-template>
-    <div class="formatile-note" *ngIf="weightKg() !== null && weightDelta !== null">{{ weightDeltaLabel }}</div>
-    <div class="formatile-note" *ngIf="weightKg() !== null && weightDelta === null">prima pesata</div>
-    <a class="formatile-link" *ngIf="weightKg() === null" routerLink="/account/misure/peso" routerDirection="forward">Pesati</a>
-  </div>
+  <ion-item *ngIf="bmi !== null || heightCm; else bmiSenzaAltezza">
+    <ion-label>
+      <h2>BMI</h2>
+      <p>{{ bmi !== null ? bmiNote : 'serve una pesata' }}</p>
+    </ion-label>
+    <ion-note slot="end" class="valore" [class.vuoto]="bmi === null">{{ bmi !== null ? bmiLabel : '—' }}</ion-note>
+  </ion-item>
+  <ng-template #bmiSenzaAltezza>
+    <ion-item [button]="true" [detail]="true" routerLink="/account/impostazioni" routerDirection="forward">
+      <ion-label><h2>BMI</h2></ion-label>
+      <ion-note slot="end" class="azione">Metti l'altezza</ion-note>
+    </ion-item>
+  </ng-template>
 
-  <div class="formatile">
-    <div class="formatile-cap">BMI</div>
-    <div class="formatile-val" *ngIf="bmi !== null; else noBmi">
-      <span class="n">{{ bmiLabel }}</span>
-    </div>
-    <ng-template #noBmi>
-      <div class="formatile-val"><span class="n empty">—</span></div>
-    </ng-template>
-    <div class="formatile-note" *ngIf="bmi !== null">{{ bmiNote }}</div>
-    <a class="formatile-link" *ngIf="bmi === null && !heightCm" routerLink="/account/impostazioni" routerDirection="forward">Metti l'altezza</a>
-    <div class="formatile-note" *ngIf="bmi === null && heightCm">serve una pesata</div>
-  </div>
+  <ion-item *ngIf="heightCm !== null; else altezzaMancante">
+    <ion-label><h2>Altezza</h2></ion-label>
+    <ion-note slot="end" class="valore">{{ heightLabel }}<small>cm</small></ion-note>
+  </ion-item>
+  <ng-template #altezzaMancante>
+    <ion-item [button]="true" [detail]="true" routerLink="/account/impostazioni" routerDirection="forward">
+      <ion-label><h2>Altezza</h2></ion-label>
+      <ion-note slot="end" class="azione">Dichiarala</ion-note>
+    </ion-item>
+  </ng-template>
 
-  <div class="formatile">
-    <div class="formatile-cap">Altezza</div>
-    <div class="formatile-val" *ngIf="heightCm !== null; else noHeight">
-      <span class="n">{{ heightLabel }}</span><span class="u">cm</span>
-    </div>
-    <ng-template #noHeight>
-      <div class="formatile-val"><span class="n empty">—</span></div>
-    </ng-template>
-    <a class="formatile-link" *ngIf="heightCm === null" routerLink="/account/impostazioni" routerDirection="forward">Dichiarala</a>
-  </div>
+  <ion-item *ngIf="sex !== null; else sessoMancante">
+    <ion-label><h2>Sesso</h2></ion-label>
+    <ion-note slot="end" class="valore">{{ sexLabel }}</ion-note>
+  </ion-item>
+  <ng-template #sessoMancante>
+    <ion-item [button]="true" [detail]="true" routerLink="/account/impostazioni" routerDirection="forward">
+      <ion-label><h2>Sesso</h2></ion-label>
+      <ion-note slot="end" class="azione">Dichiaralo</ion-note>
+    </ion-item>
+  </ng-template>
 
-  <div class="formatile">
-    <div class="formatile-cap">Sesso</div>
-    <div class="formatile-val" *ngIf="sex !== null; else noSex">
-      <span class="n word">{{ sexLabel }}</span>
-    </div>
-    <ng-template #noSex>
-      <div class="formatile-val"><span class="n empty">—</span></div>
-    </ng-template>
-    <a class="formatile-link" *ngIf="sex === null" routerLink="/account/impostazioni" routerDirection="forward">Dichiaralo</a>
-  </div>
+  <ion-item *ngIf="bodyFat.pct !== null">
+    <ion-label>
+      <h2>Massa grassa</h2>
+      <p *ngIf="plicheDate">pliche del {{ plicheDate }}</p>
+    </ion-label>
+    <ion-note slot="end" class="valore">{{ bodyFatLabel }}<small>%</small></ion-note>
+  </ion-item>
+  <ion-item *ngIf="bodyFat.pct === null" [button]="true" [detail]="true" routerDirection="forward"
+    [routerLink]="bodyFatNeedsProfile ? '/account/impostazioni' : '/account/misure/pliche'">
+    <ion-label>
+      <h2>Massa grassa</h2>
+      <p>{{ bodyFatMissing }}</p>
+    </ion-label>
+    <ion-note slot="end" class="azione">{{ bodyFatNeedsProfile ? 'Completa il profilo' : 'Vai alle pliche' }}</ion-note>
+  </ion-item>
 
-  <!-- Massa grassa e FFMI stanno in riga con le altre: sono due numeri del
-       corpo come il peso e il BMI, e avevano una card larga per uno solo
-       perche' sotto ci stava la spiegazione di cosa fossero. -->
-  <div class="formatile">
-    <div class="formatile-cap">Massa grassa</div>
-    <div class="formatile-val" *ngIf="bodyFat.pct !== null; else noFat">
-      <span class="n">{{ bodyFatLabel }}</span><span class="u">%</span>
-    </div>
-    <ng-template #noFat>
-      <div class="formatile-val"><span class="n empty">—</span></div>
-    </ng-template>
-    <div class="formatile-note" *ngIf="bodyFat.pct !== null && plicheDate">pliche del {{ plicheDate }}</div>
-    <div class="formatile-note" *ngIf="bodyFat.pct === null">{{ bodyFatMissing }}</div>
-    <a class="formatile-link" *ngIf="bodyFat.pct === null && bodyFatNeedsProfile"
-       routerLink="/account/impostazioni" routerDirection="forward">Completa il profilo</a>
-    <a class="formatile-link" *ngIf="bodyFat.pct === null && !bodyFatNeedsProfile"
-       routerLink="/account/misure/pliche" routerDirection="forward">Vai alle pliche</a>
-  </div>
+  <ion-item>
+    <ion-label>
+      <h2>FFMI</h2>
+      <p>{{ ffmiValue !== null ? ffmiNote : ffmiMissing }}</p>
+    </ion-label>
+    <ion-note slot="end" class="valore" [class.vuoto]="ffmiValue === null">{{ ffmiValue !== null ? ffmiLabel : '—' }}</ion-note>
+  </ion-item>
+</ion-list>
 
-  <div class="formatile">
-    <div class="formatile-cap">FFMI</div>
-    <div class="formatile-val" *ngIf="ffmiValue !== null; else noFfmi">
-      <span class="n">{{ ffmiLabel }}</span>
-    </div>
-    <ng-template #noFfmi>
-      <div class="formatile-val"><span class="n empty">—</span></div>
-    </ng-template>
-    <div class="formatile-note" *ngIf="ffmiValue !== null">{{ ffmiNote }}</div>
-    <div class="formatile-note" *ngIf="ffmiValue === null">{{ ffmiMissing }}</div>
-  </div>
-</div>
+<ion-list-header class="sezione">
+  <ion-label>Il lavoro</ion-label>
+</ion-list-header>
+<ion-list [inset]="true" class="forma-lavoro">
+  <ion-item>
+    <ion-label>
+      <h2>Questa settimana</h2>
+      <p>{{ daysPlanned > 0 ? daysLeftLabel : 'nessun programma attivo' }}</p>
+    </ion-label>
+    <ion-note slot="end" class="valore" [class.vuoto]="daysPlanned === 0">
+      <ng-container *ngIf="daysPlanned > 0; else senzaProgramma">{{ daysDone }}<small>/{{ daysPlanned }}</small></ng-container>
+      <ng-template #senzaProgramma>—</ng-template>
+    </ion-note>
+  </ion-item>
 
-<p class="sectiontitle">Il lavoro</p>
+  <ion-item>
+    <ion-label>
+      <h2>Sedute</h2>
+      <p *ngIf="sessionCount() === 0">la prima è quella che costa</p>
+    </ion-label>
+    <ion-note slot="end" class="valore" [class.vuoto]="sessionCount() === null">
+      <ng-container *ngIf="sessionCount() !== null; else senzaConto">{{ sessionCount() }}<small>tot.</small></ng-container>
+      <ng-template #senzaConto>—</ng-template>
+    </ion-note>
+  </ion-item>
 
-<div class="formagrid">
-  <div class="formatile">
-    <div class="formatile-cap">Questa settimana</div>
-    <div class="formatile-val" *ngIf="daysPlanned > 0; else noProgram">
-      <span class="n">{{ daysDone }}</span><span class="u">/{{ daysPlanned }}</span>
-    </div>
-    <ng-template #noProgram>
-      <div class="formatile-val"><span class="n empty">—</span></div>
-    </ng-template>
-    <div class="formatile-note" *ngIf="daysPlanned > 0">{{ daysLeftLabel }}</div>
-    <div class="formatile-note" *ngIf="daysPlanned === 0">nessun programma attivo</div>
-  </div>
+  <ion-item>
+    <ion-label>
+      <h2>Corsa, questa settimana</h2>
+      <p>{{ runNote }}</p>
+    </ion-label>
+    <ion-note slot="end" class="valore">{{ runMinutes }}<small>min</small></ion-note>
+  </ion-item>
+</ion-list>
 
-  <div class="formatile">
-    <div class="formatile-cap">Sedute</div>
-    <div class="formatile-val" *ngIf="sessionCount() !== null; else noCount">
-      <span class="n">{{ sessionCount() }}</span><span class="u">tot.</span>
-    </div>
-    <ng-template #noCount>
-      <div class="formatile-val"><span class="n empty">—</span></div>
-    </ng-template>
-    <div class="formatile-note" *ngIf="sessionCount() === 0">la prima è quella che costa</div>
-  </div>
-
-  <div class="formatile" style="grid-column: 1 / -1">
-    <div class="formatile-cap">Corsa</div>
-    <div class="formatile-val">
-      <span class="n">{{ runMinutes }}</span><span class="u">min questa settimana</span>
-    </div>
-    <div class="formatile-note">{{ runNote }}</div>
-  </div>
-</div>
-
-<div class="grassocard" *ngIf="rotation() as giro">
-  <div class="grassocard-head">
-    <div class="formatile-cap">Tonnellaggio</div>
-    <div class="formatile-val" *ngIf="giro.days.length; else noRotation">
-      <span class="n">{{ tonnageTotal }}</span><span class="u">kg</span>
-    </div>
-    <ng-template #noRotation>
-      <div class="formatile-val"><span class="n empty">—</span></div>
-    </ng-template>
-  </div>
-
-  <div class="tonnrows" *ngIf="giro.days.length">
-    <div class="tonnrow" *ngFor="let d of giro.days">
-      <span class="tonnrow-lbl">{{ d.label }}</span>
-      <span class="tonnrow-bar"><span [style.width.%]="tonnagePct(d.kg)"></span></span>
-      <span class="tonnrow-kg" [class.empty]="d.kg === null">{{ tonnageKg(d.kg) }}</span>
-      <span class="tonnrow-date">{{ tonnageDate(d.date) }}</span>
-    </div>
-  </div>
-
-  <p class="grassocard-foot" *ngIf="giro.days.length">
+<ng-container *ngIf="rotation() as giro">
+  <ion-list-header class="sezione">
+    <ion-label>Tonnellaggio</ion-label>
+  </ion-list-header>
+  <ion-list [inset]="true" class="forma-tonnellaggio">
+    <ion-item>
+      <ion-label>
+        <h2>Un giro del programma</h2>
+        <p *ngIf="!giro.days.length">nessun programma attivo</p>
+      </ion-label>
+      <ion-note slot="end" class="valore" [class.vuoto]="!giro.days.length">
+        <ng-container *ngIf="giro.days.length; else senzaGiro">{{ tonnageTotal }}<small>kg</small></ng-container>
+        <ng-template #senzaGiro>—</ng-template>
+      </ion-note>
+    </ion-item>
+    <ion-item *ngFor="let d of giro.days" class="tonn-giorno">
+      <ion-label>
+        <h2>{{ d.label }}</h2>
+        <p *ngIf="d.date">ultima seduta {{ tonnageDate(d.date) }}</p>
+        <ion-progress-bar [value]="tonnagePct(d.kg) / 100" aria-hidden="true"></ion-progress-bar>
+      </ion-label>
+      <ion-note slot="end" class="valore" [class.vuoto]="d.kg === null"><ng-container *ngIf="d.kg !== null; else senzaKg">{{ tonnageNumero(d.kg) }}<small>kg</small></ng-container><ng-template #senzaKg>—</ng-template></ion-note>
+    </ion-item>
+  </ion-list>
+  <p class="nota-gruppo" *ngIf="giro.days.length">
     Un giro completo del programma: ogni giorno porta la sua ultima seduta, quindi il totale si
     muove a ogni salvataggio senza mai contare due volte lo stesso giorno.<ng-container *ngIf="giro.missing"> Restano
     {{ giro.missing }} giorni da allenare almeno una volta.</ng-container>
   </p>
-  <div class="formatile-note" *ngIf="!giro.days.length">nessun programma attivo</div>
-</div>
+</ng-container>

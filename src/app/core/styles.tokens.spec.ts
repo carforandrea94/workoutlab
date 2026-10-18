@@ -283,3 +283,35 @@ describe('styles.css — la testata come la barra di iOS', () => {
     expect(css).toContain('ion-buttons[slot=start] > ion-back-button:first-child,ion-buttons[slot=start] > .navicon:first-child{margin-left:-11px;}');
   });
 });
+
+/**
+ * Le liste iOS delle tab prendono i colori del tema: Ionic, senza la sua
+ * palette scura, userebbe grigi pensati per il fondo bianco (sottotitoli,
+ * note, intestazioni quasi neri sul tema scuro). E il reset in cima al file
+ * toglie ai componenti i loro margini: quelli che servono stanno qui.
+ */
+describe('styles.css — le liste iOS delle tab', () => {
+  let css = '';
+  beforeAll(async () => {
+    const nome = 'node:fs';
+    const fs = await import(/* @vite-ignore */ nome);
+    css = fs.readFileSync('src/styles.css', 'utf8');
+  });
+  const regola = (sel: string) => css.match(new RegExp('(?:^|\\n)' + sel.replace(/[.()[\]]/g, '\\$&') + '\\{[^}]*\\}'))?.[0] ?? '';
+
+  it('testi secondari, note e intestazioni coi colori del tema', () => {
+    expect(regola('.liste-ios ion-label p')).toContain('color:var(--label-2)');
+    expect(regola('.liste-ios ion-note')).toContain('color:var(--label-2)');
+    expect(regola('.liste-ios ion-note.valore')).toContain('color:var(--label)');
+    expect(regola('.liste-ios ion-list-header.sezione')).toContain('--color:var(--label)');
+    expect(regola('.liste-ios ion-item')).toContain('--background:var(--surface-card)');
+  });
+
+  it('i badge di stato hanno il loro spazio, che il reset toglierebbe', () => {
+    expect(regola('.liste-ios ion-badge.stato')).toContain('padding:4px 8px');
+  });
+
+  it('le liste raggruppate stanno nei 16px di .wrap, senza il margine in piu\' di Ionic', () => {
+    expect(css).toContain('.liste-ios ion-list.list-inset,.liste-ios ion-accordion-group.accordion-group-expand-inset{margin:0 0 20px;');
+  });
+});
