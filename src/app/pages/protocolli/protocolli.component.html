@@ -25,17 +25,15 @@
     </div>
 
     <ng-container *ngIf="!loading && !errorMsg">
-      <div class="savebar mt-0 mb-4">
-        <ion-button class="savebtn" (click)="newProtocol()">+ Nuovo protocollo</ion-button>
-      </div>
-
       <p class="sectiontitle">I tuoi protocolli</p>
 
       <div *ngIf="protocols.length === 0" class="history-empty">
         Nessun protocollo ancora.<br>Creane uno per avere la tua scheda, la dieta e l'obiettivo di corsa.
       </div>
 
-      <div *ngIf="protocols.length > 0" class="grouplist">
+      <!-- Il nuovo protocollo e' l'ultima riga del gruppo, come "Registra
+           un'uscita" nella Corsa: senza protocolli il gruppo ha solo lei. -->
+      <div class="grouplist">
         <ion-item-sliding class="cardrow press-fx" *ngFor="let p of protocols" #riga>
           <!-- Qui la riga ha dentro dei pulsanti (Attiva, cestino): un ion-item
                "button" li anniderebbe in un altro button, quindi la riga e' un item
@@ -64,6 +62,10 @@
             <ion-item-option (click)="riga.close(); remove(p, $event)">Elimina</ion-item-option>
           </ion-item-options>
         </ion-item-sliding>
+        <ion-item class="cardrow riga-azione" lines="none" [button]="true" [detail]="false" (click)="newProtocol()">
+          <app-icona slot="start" name="add" [size]="22"></app-icona>
+          <ion-label>Nuovo protocollo</ion-label>
+        </ion-item>
       </div>
     </ng-container>
   </div>

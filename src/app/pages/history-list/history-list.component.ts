@@ -6,6 +6,7 @@ import { WorkoutStateService } from '../../services/workout-state.service';
 import { ConfirmDialogService } from '../../services/confirm-dialog.service';
 import { WorkoutSession } from '../../models/workout.model';
 import { WorkoutSessionStateService } from '../../services/workout-session-state.service';
+import { WorkoutDataService } from '../../services/workout-data.service';
 import { IONIC_PAGE } from '../../core/ionic-page';
 import { IONIC_REFRESH, completaRefresh } from '../../core/ionic-refresh';
 import { IONIC_SLIDING } from '../../core/ionic-sliding';
@@ -42,8 +43,19 @@ export class HistoryListComponent implements OnInit {
     private confirm: ConfirmDialogService,
     private nav: NavController,
     private cdr: ChangeDetectorRef,
-    public sessionState: WorkoutSessionStateService
+    public sessionState: WorkoutSessionStateService,
+    private workoutData: WorkoutDataService
   ) {}
+
+  /**
+   * Il numero del giorno nel programma, come nell'elenco della Scheda. Prima
+   * qui c'era l'id interno del giorno ("d1"). Una seduta di un giorno che il
+   * programma non ha piu' (protocollo cambiato) mostra l'iniziale del nome.
+   */
+  numeroGiorno(s: WorkoutSession): string {
+    const i = this.workoutData.days.findIndex(d => d.id === s.dayId && (!s.dayLabel || d.label === s.dayLabel));
+    return i >= 0 ? String(i + 1) : (s.dayLabel?.trim().charAt(0).toUpperCase() || '·');
+  }
 
   /** Tira per aggiornare. */
   aggiorna(ev: Event): Promise<void> {

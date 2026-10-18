@@ -115,7 +115,7 @@ describe('ProtocolloBuilderComponent — riordinare gli esercizi di un giorno', 
       const { maniglie, righe, root } = await monta(0);
       expect(maniglie()).toHaveLength(0);
       expect(righe()).toHaveLength(4);
-      expect(root.textContent).toContain('+ Aggiungi esercizio');
+      expect(root.textContent).toContain('Aggiungi esercizio');
       expect(righe().every(r => r.classList.contains('press-fx'))).toBe(true);
       expect(righe().every(r => (r as any).button === true)).toBe(true);
     });
@@ -150,7 +150,7 @@ describe('ProtocolloBuilderComponent — riordinare gli esercizi di un giorno', 
     it('"Aggiungi esercizio" sparisce: aprirebbe l\'editor in mezzo al riordino', async () => {
       const { root, riordina } = await monta(0);
       riordina();
-      expect(root.textContent).not.toContain('+ Aggiungi esercizio');
+      expect(root.textContent).not.toContain('Aggiungi esercizio');
     });
 
     it('toccare una riga non apre l\'esercizio', async () => {
@@ -175,7 +175,7 @@ describe('ProtocolloBuilderComponent — riordinare gli esercizi di un giorno', 
       riordina();
       expect(tastoRiordina()?.textContent?.trim()).toBe('Riordina');
       expect(maniglie()).toHaveLength(0);
-      expect(root.textContent).toContain('+ Aggiungi esercizio');
+      expect(root.textContent).toContain('Aggiungi esercizio');
       righe()[2].click();
       aggiorna();
       expect(c.editingExercise?.ex.name).toBe('Dip');

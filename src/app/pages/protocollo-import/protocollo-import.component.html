@@ -11,20 +11,18 @@
 
 <ion-content>
   <div class="wrap">
-    <p class="sectiontitle">{{ isUpdateMode ? 'Aggiorna da PDF' : 'Carica i PDF' }}</p>
-
     <div class="infocard mb-4">
-      <p class="bacheca-text mb-4" *ngIf="!isUpdateMode">
+      <p class="mb-4" *ngIf="!isUpdateMode">
         L'app prova a leggere i PDF ed estrarre esercizi e alimenti automaticamente.
         È un'estrazione best-effort: funziona meglio se il PDF ha un formato semplice
         (una riga per esercizio/alimento). Rivedi sempre la bozza nel builder prima di attivarla.
       </p>
-      <p class="bacheca-text mb-4" *ngIf="!isUpdateMode">
+      <p class="mb-4" *ngIf="!isUpdateMode">
         Serve solo la scheda. Senza il PDF della dieta il protocollo nasce senza piani
         alimentari e la dieta si scrive a mano nel builder — dove si può anche caricarla
         più tardi, con "Aggiorna da PDF".
       </p>
-      <p class="bacheca-text mb-4" *ngIf="isUpdateMode">
+      <p class="mb-4" *ngIf="isUpdateMode">
         Carica almeno uno dei PDF per aggiornare le parti corrispondenti del
         protocollo. Ricaricare la dieta o l'integrazione da sola non cancella le
         note dell'altra.

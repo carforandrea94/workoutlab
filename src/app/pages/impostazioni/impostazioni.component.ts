@@ -29,9 +29,11 @@ import { IconaComponent } from '../../components/icona/icona.component';
   imports: [NomeCampoDirective, IonButton, IonSegment, IonSegmentButton, IonToggle, IonPicker, IonPickerColumn, IonPickerColumnOption, IonInput, ...IONIC_PAGE, IonModal, CommonModule, FormsModule, IconaComponent],
   templateUrl: './impostazioni.component.html',
   styles: [`
+    /* Le righe sono quelle delle liste delle tab: il nome a sinistra nel
+       corpo del testo, il valore a destra piu' tenue, alte almeno 44. */
     .account-row {
       display: flex; align-items: center; justify-content: space-between;
-      padding: 10px 0; border-bottom: 1px solid var(--separator);
+      min-height: 52px; padding: 6px 0; border-bottom: 1px solid var(--separator);
     }
     .account-row:last-child { border-bottom: none; }
     /* Il suggerimento in fondo alla card non e' una riga: senza questo
@@ -39,7 +41,7 @@ import { IconaComponent } from '../../components/icona/icona.component';
        un separatore appeso al nulla. */
     .rows { display: flex; flex-direction: column; }
     .account-row-label {
-      font-family: 'Inter', sans-serif; font-size: 13.5px; color: var(--label-2);
+      font-size: var(--text-lg); font-weight: 500; color: var(--label);
     }
     /* L'interruttore di Ionic, con l'etichetta come quelle delle altre righe.
        Il fondo da spento e' esplicito: Ionic lo ricava dal nero del testo, che
@@ -50,10 +52,10 @@ import { IconaComponent } from '../../components/icona/icona.component';
       --handle-background: #fff;
     }
     .settingtoggle::part(label) {
-      font-family: 'Inter', sans-serif; font-size: 13.5px; color: var(--label-2);
+      font-size: var(--text-lg); font-weight: 500; color: var(--label);
     }
     .account-row-value {
-      font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--label);
+      font-variant-numeric: tabular-nums; font-size: var(--text-lg); color: var(--label-2);
       text-align: right; word-break: break-all; margin-left: 12px;
     }
     /* Un'altezza mai messa non e' un valore: si spegne, come il resto dei
@@ -71,7 +73,7 @@ import { IconaComponent } from '../../components/icona/icona.component';
        modulo. Il selettore lo apre il sistema. */
     .daterow {
       background: none; border: none; outline: none; padding: 0; margin-left: 12px;
-      font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--label);
+      font-variant-numeric: tabular-nums; font-size: var(--text-lg); color: var(--label-2);
       text-align: right; cursor: pointer; min-height: 44px;
     }
     .daterow.unset { color: var(--label-3); }
@@ -80,9 +82,9 @@ import { IconaComponent } from '../../components/icona/icona.component';
        stanno tutti gli altri valori della colonna. */
     ion-input.textrow {
       flex: 1; min-width: 0; margin-left: 12px; min-height: 44px;
-      --background: transparent; --color: var(--label); --placeholder-color: var(--label-3);
+      --background: transparent; --color: var(--label-2); --placeholder-color: var(--label-3);
       --placeholder-opacity: 1; --padding-start: 0; --padding-end: 0; --padding-top: 0; --padding-bottom: 0;
-      font-family: 'IBM Plex Mono', monospace; font-size: 13px; text-align: right;
+      font-variant-numeric: tabular-nums; font-size: var(--text-lg); text-align: right;
     }
     .daterow:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: var(--r-xs); }
     .daterow::-webkit-calendar-picker-indicator { opacity: .5; cursor: pointer; }
@@ -90,7 +92,7 @@ import { IconaComponent } from '../../components/icona/icona.component';
        mezzo. Niente ruota - qui si cambia di rado e di poco. */
     .percentstep { display: flex; align-items: center; gap: 8px; }
     .percentval {
-      font-family: 'IBM Plex Mono', monospace; font-size: var(--text-md);
+      font-size: var(--text-md);
       font-weight: 700; color: var(--label); font-variant-numeric: tabular-nums;
       min-width: 56px; text-align: center;
     }

@@ -33,7 +33,7 @@
           <ion-item-sliding class="cardrow" *ngFor="let s of g.entries" #riga>
             <ion-item lines="none" [button]="true" (click)="goToDetail(s.key)">
               <div class="cardrow-body">
-                <div class="badge" style="font-size:var(--text-xs)">{{ s.session.dayId.replace('day','G') }}</div>
+                <div class="badge">{{ numeroGiorno(s.session) }}</div>
                 <div class="info">
                   <div class="lbl">{{ s.session.dayLabel }}</div>
                   <div class="meta">

@@ -108,7 +108,7 @@
           Nessun giorno ancora.<br>Aggiungine uno per iniziare a scrivere la scheda.
         </div>
 
-        <ion-list class="grouplist" *ngIf="protocol.workout.days.length > 0">
+        <ion-list class="grouplist">
           <ion-item class="cardrow press-fx" lines="none" [button]="true"
             *ngFor="let day of protocol.workout.days; let di = index" (click)="openDay(day, di)">
             <div class="cardrow-body">
@@ -119,11 +119,11 @@
               </div>
             </div>
           </ion-item>
+          <ion-item class="cardrow riga-azione" lines="none" [button]="true" [detail]="false" (click)="addDay()">
+            <app-icona slot="start" name="add" [size]="22"></app-icona>
+            <ion-label>Aggiungi giorno</ion-label>
+          </ion-item>
         </ion-list>
-
-        <div class="savebar">
-          <ion-button class="savebtn" (click)="addDay()">+ Aggiungi giorno</ion-button>
-        </div>
       </ng-container>
 
       <!-- ===================== IL SINGOLO GIORNO ===================== -->
@@ -155,9 +155,12 @@
         <!-- Il tasto sta sopra l'elenco, non sotto: in un giorno da sette esercizi
              bisognava attraversarli tutti per arrivare ad aggiungere l'ottavo.
              Mentre si riordina sparisce: aprirebbe l'editor in mezzo al lavoro. -->
-        <ion-button type="button" class="confirmbtn cancel w-full mb-3" *ngIf="!riordinando" (click)="addExercise(ed.day)">
-          + Aggiungi esercizio
-        </ion-button>
+        <div class="grouplist" *ngIf="!riordinando">
+          <ion-item class="cardrow riga-azione" lines="none" [button]="true" [detail]="false" (click)="addExercise(ed.day)">
+            <app-icona slot="start" name="add" [size]="22"></app-icona>
+            <ion-label>Aggiungi esercizio</ion-label>
+          </ion-item>
+        </div>
 
         <div *ngIf="ed.day.ex.length === 0" class="history-empty mb-3">
           Nessun esercizio ancora.
@@ -274,14 +277,14 @@
                   <span class="unit">rip</span>
                 </div>
                 <ion-button type="button" class="delete-btn tap44" *ngIf="c.end === 'fixed' && c.blocks.length > 2"
-                  (click)="removeBlock(ee.ex, i)" [attr.aria-label]="'Togli il blocco ' + (i + 1)">✕</ion-button>
+                  (click)="removeBlock(ee.ex, i)" [attr.aria-label]="'Togli il blocco ' + (i + 1)"><app-icona name="close" [size]="14"></app-icona></ion-button>
                 <span class="cluster-plus" *ngIf="i < c.blocks.length - 1" aria-hidden="true">+</span>
               </div>
             </div>
 
-            <ion-button type="button" class="confirmbtn cancel w-full mt-2"
+            <ion-button type="button" class="azione-riquadro"
               *ngIf="c.end === 'fixed' && c.blocks.length < maxBlocks" (click)="addBlock(ee.ex)">
-              + Aggiungi un blocco
+              <app-icona name="add" [size]="20"></app-icona>Aggiungi un blocco
             </ion-button>
 
             <div class="builder-row2 mt-3">
@@ -329,7 +332,7 @@
         </ng-container>
 
         <ng-container *ngIf="ee.ex.scheme === 'wave'">
-          <p class="sectiontitle">Progressione settimanale di questo esercizio</p>
+          <p class="sectiontitle">Progressione settimanale</p>
           <div class="infocard mb-4">
             <div class="weekplan-row" *ngFor="let wp of ee.ex.weekPlan; let i = index">
               <span class="weekplan-num">S{{ i + 1 }}</span>
@@ -341,9 +344,9 @@
                 <ion-input type="number" [(ngModel)]="wp.reps" placeholder="rip"></ion-input>
                 <span class="unit">rip</span>
               </div>
-              <ion-button class="delete-btn tap44" (click)="removeExWeek(ee.ex, i)" title="Rimuovi settimana" [attr.aria-label]="'Rimuovi la settimana ' + (i + 1)">✕</ion-button>
+              <ion-button class="delete-btn tap44" (click)="removeExWeek(ee.ex, i)" title="Rimuovi settimana" [attr.aria-label]="'Rimuovi la settimana ' + (i + 1)"><app-icona name="close" [size]="14"></app-icona></ion-button>
             </div>
-            <ion-button class="confirmbtn cancel mt-2 w-full" (click)="addExWeek(ee.ex)">+ Aggiungi settimana</ion-button>
+            <ion-button class="azione-riquadro" (click)="addExWeek(ee.ex)"><app-icona name="add" [size]="20"></app-icona>Aggiungi settimana</ion-button>
           </div>
         </ng-container>
 
@@ -371,7 +374,7 @@
             Nessun piano ancora.<br>Aggiungine uno (es. "Giorno ON", "Giorno OFF", "Rifeed"...).
           </div>
 
-          <div class="grouplist" *ngIf="protocol.diet.length > 0">
+          <div class="grouplist">
             <div class="daycard press-fx protocol-row" *ngFor="let plan of protocol.diet" (click)="openPlan(plan)">
               <div class="info" appTasto [attr.aria-label]="'Apri il piano ' + (plan.name || 'senza nome')">
                 <div class="lbl">{{ plan.name }}</div>
@@ -384,10 +387,10 @@
                 <app-icona name="chevron-forward" [size]="13"></app-icona>
               </span>
             </div>
-          </div>
-
-          <div class="savebar">
-            <ion-button class="savebtn" (click)="addDietPlan()">+ Aggiungi piano alimentare</ion-button>
+            <ion-item class="cardrow riga-azione" lines="none" [button]="true" [detail]="false" (click)="addDietPlan()">
+              <app-icona slot="start" name="add" [size]="22"></app-icona>
+              <ion-label>Aggiungi piano alimentare</ion-label>
+            </ion-item>
           </div>
         </ng-container>
 
@@ -484,8 +487,11 @@
             </ng-container>
           </div>
 
-          <div class="savebar">
-            <ion-button class="savebtn" (click)="addMeal()">+ Aggiungi pasto</ion-button>
+          <div class="grouplist">
+            <ion-item class="cardrow riga-azione" lines="none" [button]="true" [detail]="false" (click)="addMeal()">
+              <app-icona slot="start" name="add" [size]="22"></app-icona>
+              <ion-label>Aggiungi pasto</ion-label>
+            </ion-item>
           </div>
         </ng-container>
 
@@ -506,7 +512,7 @@
               (click)="setActiveCombo(em, combo)">
               {{ combo.label }}
             </button>
-            <button (click)="addCombination(em)" title="Aggiungi combinazione alternativa">+ Alternativa</button>
+            <button class="aggiungi" (click)="addCombination(em)" title="Aggiungi combinazione alternativa"><app-icona name="add" [size]="16"></app-icona>Alternativa</button>
           </div>
 
           <ng-container *ngIf="em.combinations.length > 1">
@@ -547,7 +553,7 @@
                   <div class="measure-input-wrap builder-qty">
                     <ion-input type="text" [(ngModel)]="item.qty" placeholder="Quantità"></ion-input>
                   </div>
-                  <ion-button class="delete-btn tap44" (click)="clearComboItem(getActiveCombo(em), cat, $event)" aria-label="Svuota questo alimento">✕</ion-button>
+                  <ion-button class="delete-btn tap44" (click)="clearComboItem(getActiveCombo(em), cat, $event)" aria-label="Svuota questo alimento"><app-icona name="close" [size]="14"></app-icona></ion-button>
                   <div class="dragghost" *cdkDragPlaceholder></div>
                 </div>
               </div>
@@ -575,11 +581,11 @@
                       <div class="measure-input-wrap builder-qty">
                         <ion-input type="text" [(ngModel)]="a.qty" placeholder="Quantità"></ion-input>
                       </div>
-                      <ion-button class="delete-btn tap44" (click)="removeItemAltEntry(item2, a)" aria-label="Togli l'alimento alternativo">✕</ion-button>
+                      <ion-button class="delete-btn tap44" (click)="removeItemAltEntry(item2, a)" aria-label="Togli l'alimento alternativo"><app-icona name="close" [size]="14"></app-icona></ion-button>
                       <div class="dragghost" *cdkDragPlaceholder></div>
                     </div>
                   </div>
-                  <ion-button class="confirmbtn cancel w-full mt-2" (click)="addItemAltEntry(item2)">+ Alternativa</ion-button>
+                  <ion-button class="azione-riquadro" (click)="addItemAltEntry(item2)"><app-icona name="add" [size]="20"></app-icona>Alternativa</ion-button>
                 </ng-container>
               </ng-container>
             </div>
@@ -615,13 +621,13 @@
                     <div class="measure-input-wrap builder-qty">
                       <ion-input type="text" [(ngModel)]="item.qty" placeholder="Quantità"></ion-input>
                     </div>
-                    <ion-button class="delete-btn tap44" (click)="removeAltItem(em, cat, item)" aria-label="Togli questo alimento">✕</ion-button>
+                    <ion-button class="delete-btn tap44" (click)="removeAltItem(em, cat, item)" aria-label="Togli questo alimento"><app-icona name="close" [size]="14"></app-icona></ion-button>
                     <!-- Il posto dove la riga andrebbe a finire: la riga vera lo
                          segue sotto il dito, e qui resta il suo ingombro. -->
                     <div class="dragghost" *cdkDragPlaceholder></div>
                   </div>
                 </div>
-                <ion-button class="confirmbtn cancel w-full mt-2" (click)="addAltItem(em, cat)">+ Aggiungi {{ foodCategoryLabels[cat].toLowerCase() }}</ion-button>
+                <ion-button class="azione-riquadro" (click)="addAltItem(em, cat)"><app-icona name="add" [size]="20"></app-icona>Aggiungi {{ foodCategoryLabels[cat].toLowerCase() }}</ion-button>
               </ng-container>
             </ng-container>
           </div>
@@ -643,11 +649,11 @@
                 <div class="measure-input-wrap builder-qty">
                   <ion-input type="text" [(ngModel)]="s.qty" placeholder="Dose (es. 5 g)"></ion-input>
                 </div>
-                <ion-button class="delete-btn tap44" (click)="removeSupplement(em, s)" aria-label="Togli l'integratore">✕</ion-button>
+                <ion-button class="delete-btn tap44" (click)="removeSupplement(em, s)" aria-label="Togli l'integratore"><app-icona name="close" [size]="14"></app-icona></ion-button>
                 <div class="dragghost" *cdkDragPlaceholder></div>
               </div>
             </div>
-            <ion-button class="confirmbtn cancel w-full mt-2" (click)="addSupplement(em)">+ Aggiungi integratore</ion-button>
+            <ion-button class="azione-riquadro" (click)="addSupplement(em)"><app-icona name="add" [size]="20"></app-icona>Aggiungi integratore</ion-button>
           </div>
 
           <div class="savebar builder-savebar">
