@@ -1,4 +1,4 @@
-import { Component, ElementRef, OnDestroy, OnInit, computed, effect, signal } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnDestroy, OnInit, ViewChild, computed, effect, signal } from '@angular/core';
 import { NavigationEnd, Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { filter } from 'rxjs/operators';
@@ -10,6 +10,7 @@ import { WorkoutStateService } from '../services/workout-state.service';
 import { RestBarComponent } from '../components/rest-bar/rest-bar.component';
 import { SchermoAccesoService } from '../services/schermo-acceso.service';
 import { SegnaleService } from '../services/segnale.service';
+import { TrascinaTab } from './trascina-tab';
 
 interface Tab { id: string; label: string; icon: string; }
 
@@ -58,18 +59,24 @@ export function eRadiceDiTab(url: string, tabs: readonly { id: string }[] = TABS
  * pillola "In corso · 23:10 · Riprendi": prima, uscendo dal giorno, la
  * sessione spariva dallo schermo e l'unico modo di ritrovarla era ricordarsi
  * quale giorno si stava facendo.
+ *
+ * Sulla barra si puo' anche scorrere col dito, come su iOS 26: la pastiglia si
+ * alza come una lente, segue il dito e alzandolo apre la tab sotto (il gesto e'
+ * in trascina-tab.ts). Il contenuto non scorre di lato: cambia di colpo, come
+ * nelle app di sistema.
  */
 @Component({
   selector: 'app-tabs',
   standalone: true,
   imports: [IonTabs, IonTabBar, IonTabButton, LucideAngularModule, RestBarComponent],
   template: `
-    <ion-tabs (ionTabsDidChange)="selected.set($event.tab)">
+    <ion-tabs (ionTabsDidChange)="tabCambiata($event.tab)">
       <ion-tab-bar slot="bottom" class="tabbar tabbar-5" [class.tabbar-nascosta]="nascondiBarra"
-        [style.display]="showRestBar ? 'none' : null">
-        <div class="pill" [class]="'pill p' + selectedIndex()"></div>
-        @for (t of tabs; track t.id) {
-          <ion-tab-button [tab]="t.id" [href]="'/' + t.id" class="tabbtn" [class.active]="selected() === t.id" (click)="alToccoTab(t.id)">
+        [class.trascina]="lente() !== null" [style.display]="showRestBar ? 'none' : null">
+        <div class="pill" [class]="'pill p' + indiceInVista()"></div>
+        @for (t of tabs; track t.id; let i = $index) {
+          <ion-tab-button [tab]="t.id" [href]="'/' + t.id" class="tabbtn" [class.active]="indiceInVista() === i"
+            [class.sotto-lente]="lente() === i" (click)="alToccoTab(t.id)">
             <span class="ic"><lucide-icon [name]="t.icon" [size]="23"></lucide-icon></span>
             <span class="tablabel">{{ t.label }}</span>
           </ion-tab-button>
@@ -92,8 +99,18 @@ export function eRadiceDiTab(url: string, tabs: readonly { id: string }[] = TABS
     </ion-tabs>
   `
 })
-export class TabsPage implements OnInit, OnDestroy {
+export class TabsPage implements OnInit, AfterViewInit, OnDestroy {
   readonly selected = signal<string>('');
+  /** La tab sotto il dito mentre si scorre sulla barra, se si sta scorrendo. */
+  readonly lente = signal<number | null>(null);
+  /**
+   * La tab scelta col dito, finche' Ionic non dice di esserci arrivato: senza,
+   * alzato il dito la pastiglia tornerebbe un attimo sulla tab di prima (la
+   * navigazione e' asincrona, e la prima volta la pagina va anche caricata).
+   */
+  private readonly inArrivo = signal<number | null>(null);
+  @ViewChild(IonTabs) private ionTabs?: IonTabs;
+  private trascina: TrascinaTab | null = null;
   /** In una pagina dentro la tab, non sulla sua radice. */
   readonly paginaInterna = signal(false);
   /** Sulla pagina di un giorno (/scheda/day/N): li' la sessione si vede gia', con la fascia o con "Inizia". */
@@ -156,6 +173,34 @@ export class TabsPage implements OnInit, OnDestroy {
     return Math.max(0, this.tabs.findIndex(t => t.id === this.selected()));
   }
 
+  /** Dove sta la pastiglia, e quale tab ha il colore: sotto il dito, poi quella in arrivo, poi quella aperta. */
+  indiceInVista(): number {
+    return this.lente() ?? this.inArrivo() ?? this.selectedIndex();
+  }
+
+  /**
+   * Il dito si e' alzato su una tab. Su un'altra la si apre come col tocco;
+   * su quella aperta, dopo aver scorso, non succede niente (si e' cambiata
+   * idea); premuta a lungo senza muoversi vale come un tocco, e sulla radice
+   * riporta in cima.
+   */
+  scegliColDito(indice: number, scorso: boolean): void {
+    const id = this.tabs[indice]?.id;
+    if (!id) return;
+    if (id === this.selected()) {
+      if (!scorso) this.alToccoTab(id);
+      return;
+    }
+    this.inArrivo.set(indice);
+    void Promise.resolve(this.ionTabs?.select(id)).finally(() => this.inArrivo.set(null));
+  }
+
+  /** Ionic dice che la tab e' cambiata: la pastiglia segue lei. */
+  tabCambiata(tab: string): void {
+    this.selected.set(tab);
+    this.inArrivo.set(null);
+  }
+
   /**
    * Solo sul giorno che si sta ALLENANDO: con una sessione aperta su un altro
    * giorno quella schermata e' in sola lettura, e togliere la navigazione a
@@ -202,8 +247,20 @@ export class TabsPage implements OnInit, OnDestroy {
       .subscribe(e => this.leggiUrl(e.urlAfterRedirects || e.url));
   }
 
+  ngAfterViewInit(): void {
+    const barra = this.host.nativeElement.querySelector<HTMLElement>('ion-tab-bar');
+    if (!barra) return;
+    this.trascina = new TrascinaTab(
+      barra,
+      () => Array.from(barra.querySelectorAll<HTMLElement>('ion-tab-button.tabbtn')),
+      () => barra.querySelector<HTMLElement>('.pill'),
+      { lente: i => this.lente.set(i), scegli: (i, scorso) => this.scegliColDito(i, scorso) }
+    );
+  }
+
   ngOnDestroy(): void {
     this.routeSub?.unsubscribe();
+    this.trascina?.distruggi();
   }
 
   private leggiUrl(url: string): void {

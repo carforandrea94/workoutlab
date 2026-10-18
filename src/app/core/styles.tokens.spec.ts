@@ -209,3 +209,44 @@ describe('styles.css — il vetro delle barre', () => {
     expect(css).not.toMatch(/\.tabfade/);
   });
 });
+
+/**
+ * Scorrere col dito sulla barra delle tab (trascina-tab.ts): la barra deve
+ * tenersi il gesto, la pastiglia alzata deve stare dietro al dito, e con
+ * "riduci movimento" si sposta senza molla ne' ingrandimento.
+ */
+describe('styles.css — la barra si scorre col dito', () => {
+  let css = '';
+  beforeAll(async () => {
+    const nome = 'node:fs';
+    const fs = await import(/* @vite-ignore */ nome);
+    css = fs.readFileSync('src/styles.css', 'utf8');
+  });
+  // Tutte le regole con esattamente quel selettore, una dopo l'altra.
+  const regola = (sel: string) =>
+    (css.match(new RegExp('(?:^|[}\\n])' + sel.replace(/[.()]/g, '\\$&') + '\\{[^}]*\\}', 'g')) ?? []).join('');
+
+  it('la barra si tiene il gesto e non apre il menu del link alla pressione lunga', () => {
+    const r = regola('ion-tab-bar.tabbar');
+    expect(r).toContain('touch-action:none');
+    expect(r).toContain('-webkit-touch-callout:none');
+  });
+
+  it('alzata, la pastiglia e\' piu\' grande e segue il dito piu\' svelta di quanto torni giu\'', () => {
+    const alzata = regola('.tabbar.trascina .pill');
+    const posata = regola('.tabbar .pill');
+    expect(Number(alzata.match(/scale:([0-9.]+)/)?.[1])).toBeGreaterThan(1);
+    const durata = (r: string) => Number(r.match(/transition:transform ([0-9.]+)s/)?.[1]);
+    expect(durata(alzata)).toBeLessThan(durata(posata));
+    expect(durata(alzata)).toBeLessThanOrEqual(0.15);
+  });
+
+  it('durante il gesto il colore sta solo sotto la lente, non anche sulla tab da cui si e\' partiti', () => {
+    expect(regola('.tabbar.trascina ion-tab-button.tabbtn.tab-selected:not(.sotto-lente)')).toContain('color:var(--label-3)');
+    expect(regola('.tabbar.trascina ion-tab-button.tabbtn.tab-selected:not(.sotto-lente)')).toContain('--color-selected:var(--label-3)');
+  });
+
+  it('con "riduci movimento" niente molla e niente lente', () => {
+    expect(css).toMatch(/@media \(prefers-reduced-motion:reduce\)\{\.tabbar \.pill,\.tabbar\.trascina \.pill,\.tabbar \.tabbtn \.ic\{transition:none;\}\.tabbar\.trascina \.pill,\.tabbar \.tabbtn\.sotto-lente \.ic\{scale:none;\}\}/);
+  });
+});

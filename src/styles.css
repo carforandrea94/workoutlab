@@ -395,7 +395,7 @@ ion-content::part(scroll){scroll-padding-bottom:calc(var(--coperto-base) + var(-
    quattro casi e' 4,63:1, sopra la soglia 4,5 del testo piccolo. */
 .tabbar .tablabel{font-size:var(--text-2xs);font-weight:600;letter-spacing:.01em;line-height:1.1;white-space:nowrap;}
 .tabbar .tabbtn.active{color:var(--accent);}
-.tabbar .pill{position:absolute;top:var(--tabbar-pad);left:var(--tabbar-pad);height:calc(100% - var(--tabbar-pad) * 2);width:calc(50% - var(--tabbar-pad));background:var(--bg-card-2);border:1px solid var(--border-line);border-radius:var(--r-pill);z-index:0;transition:transform .4s var(--spring);}
+.tabbar .pill{position:absolute;top:var(--tabbar-pad);left:var(--tabbar-pad);height:calc(100% - var(--tabbar-pad) * 2);width:calc(50% - var(--tabbar-pad));background:var(--bg-card-2);border:1px solid var(--border-line);border-radius:var(--r-pill);z-index:0;transition:transform .4s var(--spring),scale .4s var(--spring),box-shadow .25s ease;}
 .tabbar .pill.p1{transform:translateX(100%);}
 .tabbar-3 .pill{width:calc((100% - var(--tabbar-pad) * 2) / 3);}
 .tabbar-3 .pill.p1{transform:translateX(100%);}
@@ -410,6 +410,20 @@ ion-content::part(scroll){scroll-padding-bottom:calc(var(--coperto-base) + var(-
 .tabbar-5 .pill.p3{transform:translateX(300%);}
 .tabbar-5 .pill.p4{transform:translateX(400%);}
 .tabbar .tabbtn span{position:relative;z-index:1;}
+/* Scorrere col dito sulla barra (trascina-tab.ts), come su iOS 26: col dito
+   giu' la pastiglia si alza come una lente (piu' grande, con l'ombra di cio'
+   che galleggia) e lo segue da vicino; la tab sotto il dito prende il colore
+   e la sua icona si ingrandisce. Alzato il dito torna sul suo posto con la
+   molla di sempre. touch-action tiene il gesto alla barra (sotto non c'e'
+   niente da scorrere) e niente menu del link alla pressione lunga su iOS. */
+ion-tab-bar.tabbar{touch-action:none;-webkit-touch-callout:none;}
+.tabbar.trascina .pill{scale:1.12;box-shadow:inset 0 1px 0 var(--glass-hi),var(--shadow-float);transition:transform .12s cubic-bezier(0.25,0.8,0.25,1),scale .3s var(--spring),box-shadow .25s ease;}
+.tabbar .tabbtn .ic{transition:scale .25s var(--spring);}
+.tabbar .tabbtn.sotto-lente .ic{scale:1.12;}
+/* Il colore sta solo sotto la lente: la tab da cui si e' partiti resta aperta
+   (per Ionic e' ancora tab-selected) ma non deve sembrare scelta due volte. */
+.tabbar.trascina ion-tab-button.tabbtn.tab-selected:not(.sotto-lente){--color-selected:var(--label-3);color:var(--label-3);}
+@media (prefers-reduced-motion:reduce){.tabbar .pill,.tabbar.trascina .pill,.tabbar .tabbtn .ic{transition:none;}.tabbar.trascina .pill,.tabbar .tabbtn.sotto-lente .ic{scale:none;}}
 
 /* ===== SCHEDA ===== */
 .sectiontitle{font-family:'IBM Plex Mono',monospace;font-size:var(--text-xs);letter-spacing:.1em;text-transform:uppercase;color:var(--label-3);margin:6px 4px 10px;}
