@@ -8,7 +8,9 @@ import { todayLocalISO } from '../../core/utils/date.util';
 import { buildWeekHistory, WeekGroup } from '../../core/utils/week-history.util';
 import { IONIC_PAGE } from '../../core/ionic-page';
 import { IONIC_REFRESH, completaRefresh } from '../../core/ionic-refresh';
-import { NavController, IonButton } from '@ionic/angular';
+import {
+  NavController, IonAccordion, IonAccordionGroup, IonButton, IonItem, IonLabel, IonList, IonListHeader, IonNote, IonProgressBar
+} from '@ionic/angular';
 import { IconaComponent } from '../../components/icona/icona.component';
 
 const WEEKDAYS = ['dom', 'lun', 'mar', 'mer', 'gio', 'ven', 'sab'];
@@ -38,7 +40,10 @@ const EFFORT_STYLE: Record<RunEffort, { color: string; size: number }> = {
 @Component({
   selector: 'app-corsa',
   standalone: true,
-  imports: [IonButton, ...IONIC_PAGE, ...IONIC_REFRESH, CommonModule, IconaComponent],
+  imports: [
+    IonAccordion, IonAccordionGroup, IonButton, IonItem, IonLabel, IonList, IonListHeader, IonNote, IonProgressBar,
+    ...IONIC_PAGE, ...IONIC_REFRESH, CommonModule, IconaComponent
+  ],
   templateUrl: './corsa.component.html'
 })
 export class CorsaComponent implements OnInit {
@@ -102,10 +107,20 @@ export class CorsaComponent implements OnInit {
     return w.isCurrent || this.opened().has(w.mondayISO);
   }
 
-  toggle(w: WeekGroup): void {
-    const next = new Set(this.opened());
-    if (next.has(w.mondayISO)) next.delete(w.mondayISO); else next.add(w.mondayISO);
-    this.opened.set(next);
+  /** Le settimane aperte, per la fisarmonica: quella in corso sempre, piu' quelle aperte a mano. */
+  aperte(): string[] {
+    return this.history().weeks.filter(w => this.isOpen(w)).map(w => w.mondayISO);
+  }
+
+  /**
+   * La fisarmonica dice quali settimane sono aperte dopo un tocco. Quella in
+   * corso non passa di qui (e' readonly, sempre aperta): si tengono le altre.
+   */
+  settimaneCambiate(ev: Event): void {
+    const v = (ev as CustomEvent<{ value?: string | string[] | null }>).detail?.value;
+    const lunedi = Array.isArray(v) ? v : v ? [v] : [];
+    const corrente = this.history().weeks.find(w => w.isCurrent)?.mondayISO;
+    this.opened.set(new Set(lunedi.filter(l => l !== corrente)));
   }
 
   /** Quanto della settimana e' stato coperto. Senza obiettivo la barra non

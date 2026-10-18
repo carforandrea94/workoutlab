@@ -38,9 +38,9 @@ describe('SchedaListComponent — da dove si parte', () => {
     const fixture = TestBed.createComponent(SchedaListComponent);
     fixture.detectChanges();
     const root: HTMLElement = fixture.nativeElement;
-    const righe = () => Array.from(root.querySelectorAll<HTMLElement>('ion-item.cardrow'));
-    const badgePieni = () => righe().map(r => r.querySelector('.badge')!.classList.contains('next'));
-    const tag = (i: number) => Array.from(righe()[i].querySelectorAll('.meta-tag')).map(t => t.textContent!.trim());
+    const righe = () => Array.from(root.querySelectorAll<HTMLElement>('ion-list.scheda-giorni ion-item'));
+    const badgePieni = () => righe().map(r => r.querySelector('ion-avatar.giorno-num')!.classList.contains('prossimo'));
+    const tag = (i: number) => Array.from(righe()[i].querySelectorAll('ion-badge.stato')).map(t => t.textContent!.trim());
     return { fixture, root, righe, badgePieni, tag };
   }
 
@@ -53,10 +53,10 @@ describe('SchedaListComponent — da dove si parte', () => {
 
   it('la spunta del giorno fatto si legge: e\' un\'immagine col suo nome, non uno span muto', () => {
     const { righe } = monta({ fatti: ['d1'] });
-    const spunta = righe()[0].querySelector('.daycheck')!;
+    const spunta = righe()[0].querySelector('.giorno-fatto')!;
     expect(spunta.getAttribute('role')).toBe('img');
     expect(spunta.getAttribute('aria-label')).toBe('Allenamento già fatto questa settimana');
-    expect(righe()[1].querySelector('.daycheck')).toBeNull();
+    expect(righe()[1].querySelector('.giorno-fatto')).toBeNull();
   });
 
   it('i giorni gia\' fatti non sono il prossimo: tocca il primo che manca', () => {
@@ -80,7 +80,7 @@ describe('SchedaListComponent — da dove si parte', () => {
   it('con una sessione in corso il segno e\' suo, e il prossimo sparisce: un solo giorno pieno', () => {
     const { badgePieni, tag } = monta({ sessioneSu: 'd2' });
     expect(badgePieni()).toEqual([false, true, false]);
-    expect(tag(1)).toEqual(['● In corso']);
+    expect(tag(1)).toEqual(['In corso']);
     expect(tag(0)).toEqual([]);
   });
 
@@ -89,7 +89,7 @@ describe('SchedaListComponent — da dove si parte', () => {
     // le bozze arrivano dall'account, dopo il primo disegno
     await vi.waitFor(() => expect(fixture.componentInstance.hasDraft('d1')).toBe(true));
     fixture.detectChanges();
-    expect(tag(0)).toEqual(['Prossimo', '● bozza']);
+    expect(tag(0)).toEqual(['Prossimo', 'Bozza']);
   });
 });
 
@@ -101,18 +101,21 @@ describe('SchedaListComponent — la testata della settimana', () => {
   const conScheme = (...schemi: string[]) => [
     { id: 'd1', label: 'Petto', rec: '90"', ex: schemi.map(scheme => ({ scheme })) }
   ];
+  const pulisci = (el: Element | null) => el?.textContent!.replace(/\s+/g, ' ').trim() ?? null;
   const testata = (root: HTMLElement) => ({
-    label: root.querySelector('.wk-label')!.textContent!.replace(/\s+/g, ' ').trim(),
-    sub: root.querySelector('.wk-sub')!.textContent!.replace(/\s+/g, ' ').trim()
+    label: pulisci(root.querySelector('ion-list.scheda-settimana ion-label h2')),
+    sub: pulisci(root.querySelector('ion-list.scheda-settimana ion-label p')) ?? '',
+    giorno: pulisci(root.querySelector('ion-list.scheda-settimana ion-note')),
+    barra: root.querySelector<HTMLElement & { value?: number }>('ion-list.scheda-settimana ion-progress-bar')
   });
 
-  function monta(giorni: any[], settimane: any[] = [{ sets: 3, reps: 10 }]) {
+  function monta(giorni: any[], settimane: any[] = [{ sets: 3, reps: 10 }], settimana = 1) {
     TestBed.configureTestingModule({
       imports: [SchedaListComponent],
       providers: [
         ...providerPagina(),
         { provide: WorkoutDataService, useValue: { days: giorni, WEEK_PLAN: settimane, hasCustomProtocol: false, protocolName: '' } },
-        { provide: WorkoutStateService, useValue: { currentWeek: 1 } },
+        { provide: WorkoutStateService, useValue: { currentWeek: settimana } },
         { provide: AppStateService, useValue: { load: async () => ({ workoutDrafts: {} }) } },
         { provide: WeeklyProgressService, useValue: { refresh: vi.fn(), isDone: () => false } },
         { provide: WorkoutSessionStateService, useValue: { activeSession: signal<any>(null), isActiveForDay: () => false } }
@@ -127,10 +130,10 @@ describe('SchedaListComponent — la testata della settimana', () => {
     expect(testata(monta(conScheme('wave', 'plain'))).sub).toMatch(/ · Wave loading$/);
   });
 
-  it('con serie fisse la riga dice solo il giorno, senza inventare un metodo', () => {
+  it('con serie fisse la riga dice solo lo schema, senza inventare un metodo', () => {
     const { sub } = testata(monta(conScheme('plain', 'plain')));
+    expect(sub).toBe('3×10 rip.');
     expect(sub).not.toMatch(/wave/i);
-    expect(sub).not.toContain('·');
   });
 
   it('non ripete la settimana, che sta gia\' sopra', () => {
@@ -139,8 +142,29 @@ describe('SchedaListComponent — la testata della settimana', () => {
   });
 
   it('le ripetizioni si chiamano "rip.", come nel resto dell\'app', () => {
-    const { label } = testata(monta(conScheme('wave'), [{ sets: 3, reps: 10 }]));
-    expect(label).toBe('Settimana 1 di 1 · 3×10 rip.');
-    expect(label).not.toMatch(/reps/);
+    const { label, sub } = testata(monta(conScheme('wave'), [{ sets: 3, reps: 10 }]));
+    expect(label).toBe('Settimana 1 di 1');
+    expect(sub).toBe('3×10 rip. · Wave loading');
+    expect(sub).not.toMatch(/reps/);
+  });
+
+  it('il giorno della settimana sta a destra, come una nota di riga iOS', () => {
+    const giorno = new Date().toLocaleDateString('it-IT', { weekday: 'long' });
+    expect(testata(monta(conScheme('plain'))).giorno).toBe(giorno.charAt(0).toUpperCase() + giorno.slice(1));
+  });
+
+  it('la barra dice quanto del programma e\' passato, e lo dice anche a parole', () => {
+    const settimane = Array.from({ length: 8 }, () => ({ sets: 4, reps: 10 }));
+    const { barra, label } = testata(monta(conScheme('plain'), settimane, 7));
+    expect(label).toBe('Settimana 7 di 8');
+    expect(barra?.value).toBe(7 / 8);
+    expect(barra?.getAttribute('aria-label')).toBe('Settimane del programma');
+    expect(barra?.getAttribute('aria-valuetext')).toBe('Settimana 7 di 8');
+  });
+
+  it('una settimana oltre il piano non sfora la barra, e senza schema la riga sotto non c\'e\'', () => {
+    const { barra, sub } = testata(monta(conScheme('plain'), [{ sets: 3, reps: 10 }], 3));
+    expect(barra?.value).toBe(1);
+    expect(sub).toBe('');
   });
 });

@@ -6,7 +6,7 @@
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true">
+<ion-content [fullscreen]="true" class="liste-ios">
   <ion-header collapse="condense" class="ion-no-border">
     <ion-toolbar>
       <ion-title size="large">
@@ -15,40 +15,29 @@
     </ion-toolbar>
   </ion-header>
   <div class="wrap">
-    <div class="infocard account-header">
-      <div class="badge account-avatar">{{ initial }}</div>
-      <div class="info">
-        <div class="lbl">{{ auth.currentUser()?.displayName }}</div>
-        <div class="meta">{{ auth.currentUser()?.email }}</div>
-      </div>
-    </div>
+    <ion-list [inset]="true" class="profilo">
+      <ion-item lines="none">
+        <ion-avatar slot="start" class="account-avatar">{{ initial }}</ion-avatar>
+        <ion-label>
+          <h2>{{ auth.currentUser()?.displayName }}</h2>
+          <p>{{ auth.currentUser()?.email }}</p>
+        </ion-label>
+      </ion-item>
+    </ion-list>
 
     <app-forma-card></app-forma-card>
 
-    <!-- Le misure stavano in una tab loro: ora si aprono da qui, sotto il
-         riassunto del corpo che ne mostra gli ultimi valori. -->
-    <ion-item class="cardrow method-row press-fx" lines="none" [button]="true" (click)="goToMisure()">
-      <div class="cardrow-body">
-        <div class="method-icon">
-          <app-icona name="body" [size]="24"></app-icona>
-        </div>
-        <div class="method-info">
-          <div class="method-title">Misure</div>
-          <div class="method-sub">Peso, centimetri e pliche, con andamento e storico</div>
-        </div>
-      </div>
-    </ion-item>
-
-    <ion-item class="cardrow method-row press-fx" lines="none" [button]="true" (click)="goToImpostazioni()">
-      <div class="cardrow-body">
-        <div class="method-icon">
-          <app-icona name="settings" [size]="24"></app-icona>
-        </div>
-        <div class="method-info">
-          <div class="method-title">Impostazioni</div>
-          <div class="method-sub">Tema, dati dell'account e uscita</div>
-        </div>
-      </div>
-    </ion-item>
+    <!-- Le misure si aprono dal gruppo "Il corpo", nel riassunto qui sopra. -->
+    <ion-list [inset]="true" class="voci">
+      <ion-item class="voce" [button]="true" [detail]="true" (click)="goToImpostazioni()">
+        <ion-avatar slot="start" class="riga-segno icona">
+          <app-icona name="settings" [size]="20" [piena]="true"></app-icona>
+        </ion-avatar>
+        <ion-label class="ion-text-wrap">
+          <h2>Impostazioni</h2>
+          <p>Tema, dati dell'account e uscita</p>
+        </ion-label>
+      </ion-item>
+    </ion-list>
   </div>
 </ion-content>

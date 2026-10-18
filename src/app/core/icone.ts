@@ -1,8 +1,9 @@
 import { InjectionToken } from '@angular/core';
 import {
   addOutline, addSharp, albumsOutline, albumsSharp, analyticsOutline, analyticsSharp, arrowBackSharp,
-  barbell, barbellOutline, barbellSharp, body, bodyOutline, bodySharp, caretDownSharp, cartOutline, cartSharp,
-  chatboxEllipsesOutline, chatboxEllipsesSharp, checkmarkOutline, checkmarkSharp, chevronBack, chevronBackOutline,
+  barbell, barbellOutline, barbellSharp, caretDownSharp, cartOutline, cartSharp,
+  chatboxEllipsesOutline, chatboxEllipsesSharp, checkmarkCircle, checkmarkCircleOutline,
+  checkmarkCircleSharp, checkmarkOutline, checkmarkSharp, chevronBack, chevronBackOutline,
   chevronDownOutline, chevronDownSharp, chevronExpand, chevronExpandOutline, chevronExpandSharp, chevronForward,
   chevronForwardOutline, chevronForwardSharp, closeCircle, closeOutline, closeSharp, cloudUploadOutline,
   cloudUploadSharp, createOutline, createSharp, documentTextOutline, documentTextSharp, eyeOffOutline, eyeOffSharp,
@@ -61,7 +62,8 @@ interface Varianti {
   md: string;
   /**
    * La versione piena per iOS, dove serve: nella barra delle tab (iOS ci mette
-   * i simboli pieni) e su play/pausa, che sono pieni anche nelle app di Apple.
+   * i simboli pieni), su play/pausa, che sono pieni anche nelle app di Apple, e
+   * sulla spunta di un allenamento gia' fatto.
    * Su Android la variante "sharp" e' gia' piena.
    */
   piena?: string;
@@ -106,10 +108,10 @@ export const ICONE = {
   'albums': { ios: albumsOutline, md: albumsSharp },
   'analytics': { ios: analyticsOutline, md: analyticsSharp },
   'barbell': { ios: barbellOutline, md: barbellSharp, piena: barbell },
-  'body': { ios: bodyOutline, md: bodySharp, piena: body },
   'cart': { ios: cartOutline, md: cartSharp },
   'chatbox-ellipses': { ios: chatboxEllipsesOutline, md: chatboxEllipsesSharp },
   'checkmark': { ios: checkmarkOutline, md: checkmarkSharp },
+  'checkmark-circle': { ios: checkmarkCircleOutline, md: checkmarkCircleSharp, piena: checkmarkCircle },
   'chevron-down': { ios: chevronDownOutline, md: chevronDownSharp },
   'chevron-expand': { ios: chevronExpandOutline, md: chevronExpandSharp },
   'chevron-forward': { ios: chevronForwardOutline, md: chevronForwardSharp },
