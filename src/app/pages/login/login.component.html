@@ -50,7 +50,7 @@
             <button type="button" class="pwtoggle" (click)="togglePassword()"
               [attr.aria-pressed]="showPassword"
               [attr.aria-label]="showPassword ? 'Nascondi la password' : 'Mostra la password'">
-              <lucide-icon [name]="showPassword ? 'eye-off' : 'eye'" [size]="18"></lucide-icon>
+              <app-icona [name]="showPassword ? 'eye-off' : 'eye'" [size]="18"></app-icona>
             </button>
           </div>
           <p class="fielderr" id="pass-err" *ngIf="passCtrl.invalid && (passCtrl.touched || f.submitted)">
@@ -82,7 +82,7 @@
             <span class="rt">Crea il tuo account</span>
             <span class="rs">Bastano nome, email e password</span>
           </span>
-          <span class="rc"><lucide-icon name="chevron-right" [size]="18"></lucide-icon></span>
+          <span class="rc"><app-icona name="chevron-forward" [size]="18"></app-icona></span>
         </a>
       </ng-container>
 

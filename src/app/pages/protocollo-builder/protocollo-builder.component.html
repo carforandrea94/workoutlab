@@ -8,7 +8,7 @@
         <ion-back-button defaultHref="/scheda/protocolli" aria-label="Indietro"></ion-back-button>
       } @else {
         <ion-button class="navicon navback" (click)="saliDiUnLivello()" [attr.aria-label]="etichettaSu" [title]="etichettaSu">
-          <lucide-icon name="chevron-left" [size]="24" [strokeWidth]="2.4"></lucide-icon>
+          <app-icona name="indietro" [size]="24"></app-icona>
         </ion-button>
       }
     </ion-buttons>
@@ -22,13 +22,13 @@
     <ion-buttons slot="end">
       @if (livello === 0) {
       <ion-button class="navicon" (click)="save(false)" [disabled]="protocolBuilderState.saving()" aria-label="Salva bozza" title="Salva bozza">
-        <lucide-icon name="save" [size]="18"></lucide-icon>
+        <app-icona name="save" [size]="18"></app-icona>
       </ion-button>
       <ion-button class="navicon" (click)="save(true)" [disabled]="protocolBuilderState.saving()" aria-label="Salva e attiva" title="Salva e attiva">
-        <lucide-icon name="check" [size]="18"></lucide-icon>
+        <app-icona name="checkmark" [size]="18"></app-icona>
       </ion-button>
       <ion-button class="navicon" [routerLink]="['/scheda/protocolli/aggiorna-pdf', protocolId]" routerDirection="forward" aria-label="Aggiorna da PDF" title="Aggiorna da PDF">
-        <lucide-icon name="file-up" [size]="18"></lucide-icon>
+        <app-icona name="cloud-upload" [size]="18"></app-icona>
       </ion-button>
       } @else {
       <!-- Dentro un livello il gesto e' uno solo, "fatto": salvare o attivare tutto
@@ -36,7 +36,7 @@
            alla pagina, in un giorno da sette esercizi, e' lontano. -->
       <ion-button class="navicon" (click)="confermaLivello()" [disabled]="protocolBuilderState.saving()"
         [attr.aria-label]="etichettaFatto" [title]="etichettaFatto">
-        <lucide-icon name="check" [size]="18"></lucide-icon>
+        <app-icona name="checkmark" [size]="18"></app-icona>
       </ion-button>
       }
     </ion-buttons>
@@ -190,7 +190,7 @@
                 [attr.aria-label]="'Sposta ' + (ex.name || 'esercizio senza nome')" aria-describedby="riordina-aiuto"
                 (keydown.arrowup)="spostaEsercizio(ed.day, ei, -1, $event)"
                 (keydown.arrowdown)="spostaEsercizio(ed.day, ei, 1, $event)">
-                <lucide-icon name="grip-vertical" [size]="20"></lucide-icon>
+                <app-icona name="riordina" [size]="20"></app-icona>
               </button>
             </div>
             <div class="dragghost dragghost-riga" *cdkDragPlaceholder></div>
@@ -378,10 +378,10 @@
                 <div class="meta">{{ countPlanItems(plan) }} alimenti</div>
               </div>
               <ion-button class="delete-btn tap44" (click)="removePlan(plan, $event)" title="Elimina" [attr.aria-label]="'Elimina il piano ' + plan.name">
-                <lucide-icon name="trash-2" [size]="14"></lucide-icon>
+                <app-icona name="trash" [size]="14"></app-icona>
               </ion-button>
               <span class="chev">
-                <lucide-icon name="chevron-right" [size]="13"></lucide-icon>
+                <app-icona name="chevron-forward" [size]="13"></app-icona>
               </span>
             </div>
           </div>
@@ -411,7 +411,7 @@
             <div class="meal-preview-header">
               <div class="lbl" appTasto [attr.aria-label]="'Apri il pasto ' + (meal.name || 'senza nome')">{{ meal.name || 'Pasto senza nome' }}</div>
               <ion-button class="delete-btn tap44" (click)="removeMeal(meal, $event)" title="Elimina pasto" [attr.aria-label]="'Elimina il pasto ' + meal.name">
-                <lucide-icon name="trash-2" [size]="14"></lucide-icon>
+                <app-icona name="trash" [size]="14"></app-icona>
               </ion-button>
             </div>
 
@@ -439,7 +439,7 @@
                     (click)="toggleItemAltExpanded(getActiveCombo(meal), cat, $event)">
                     <span>Alternative ({{ itemAlt(it).length }})</span>
                     <span class="chevron">
-                      <lucide-icon name="chevron-down" [size]="10"></lucide-icon>
+                      <app-icona name="chevron-down" [size]="10"></app-icona>
                     </span>
                   </div>
                   <div class="altlist" *ngIf="isItemAltExpanded(getActiveCombo(meal), cat)" (click)="$event.stopPropagation()">
@@ -467,7 +467,7 @@
               <div class="altwrap-header" appTasto [attr.aria-expanded]="isAltExpanded(meal)" (click)="toggleAltExpanded(meal, $event)">
                 <span>Alternative ({{ totalAlternatives(meal) }})</span>
                 <span class="chevron">
-                  <lucide-icon name="chevron-down" [size]="10"></lucide-icon>
+                  <app-icona name="chevron-down" [size]="10"></app-icona>
                 </span>
               </div>
               <div class="altlist" *ngIf="isAltExpanded(meal)" (click)="$event.stopPropagation()">
@@ -539,7 +539,7 @@
                   cdkDrag>
                   <button type="button" class="draghandle" cdkDragHandle
                     aria-label="Trascina per spostare in un altro macro">
-                    <lucide-icon name="grip-vertical" [size]="16"></lucide-icon>
+                    <app-icona name="riordina" [size]="16"></app-icona>
                   </button>
                   <div class="measure-input-wrap">
                     <ion-input type="text" [(ngModel)]="item.name" placeholder="Alimento"></ion-input>
@@ -557,7 +557,7 @@
                   (click)="toggleItemAltExpanded(getActiveCombo(em), cat)">
                   <span>Alternative per questo alimento ({{ itemAlt(item2).length }})</span>
                   <span class="chevron">
-                    <lucide-icon name="chevron-down" [size]="10"></lucide-icon>
+                    <app-icona name="chevron-down" [size]="10"></app-icona>
                   </span>
                 </div>
                 <ng-container *ngIf="isItemAltExpanded(getActiveCombo(em), cat)">
@@ -567,7 +567,7 @@
                       cdkDrag>
                     <button type="button" class="draghandle" cdkDragHandle
                       aria-label="Trascina per spostare">
-                      <lucide-icon name="grip-vertical" [size]="16"></lucide-icon>
+                      <app-icona name="riordina" [size]="16"></app-icona>
                     </button>
                       <div class="measure-input-wrap">
                         <ion-input type="text" [(ngModel)]="a.name" placeholder="Alimento alternativo"></ion-input>
@@ -592,7 +592,7 @@
             <div class="altwrap-header" appTasto [attr.aria-expanded]="isAltExpanded(em)" (click)="toggleAltExpanded(em)" style="padding:0 0 8px">
               <span>Alternative ({{ totalAlternatives(em) }})</span>
               <span class="chevron">
-                <lucide-icon name="chevron-down" [size]="12"></lucide-icon>
+                <app-icona name="chevron-down" [size]="12"></app-icona>
               </span>
             </div>
             <!-- I tre macro stanno in un gruppo solo: dentro ognuno si riordina,
@@ -607,7 +607,7 @@
                     cdkDrag>
                     <button type="button" class="draghandle" cdkDragHandle
                       aria-label="Trascina per spostare">
-                      <lucide-icon name="grip-vertical" [size]="16"></lucide-icon>
+                      <app-icona name="riordina" [size]="16"></app-icona>
                     </button>
                     <div class="measure-input-wrap">
                       <ion-input type="text" [(ngModel)]="item.name" placeholder="Alimento"></ion-input>
@@ -635,7 +635,7 @@
                 cdkDrag>
                 <button type="button" class="draghandle" cdkDragHandle
                   aria-label="Trascina per spostare">
-                  <lucide-icon name="grip-vertical" [size]="16"></lucide-icon>
+                  <app-icona name="riordina" [size]="16"></app-icona>
                 </button>
                 <div class="measure-input-wrap">
                   <ion-input type="text" [(ngModel)]="s.name" placeholder="Nome (es. Creatina)"></ion-input>

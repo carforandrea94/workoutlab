@@ -8,12 +8,13 @@ import { uscitaSenzaPerdite } from './core/guards/modifiche-non-salvate.guard';
 /**
  * Due livelli: le pagine senza barra (accesso, iscrizione, dati mancanti, privacy) e, sotto
  * TabsPage, tutto il resto. Dentro le tab il primo segmento dell'URL e' la
- * pila di navigazione: scheda, dieta, corsa, misure, account. L'editor dei
- * protocolli sta nella pila "scheda", sotto /scheda/protocolli.
+ * pila di navigazione: scheda, dieta, corsa, account. L'editor dei
+ * protocolli sta nella pila "scheda", sotto /scheda/protocolli; le misure in
+ * quella "account", sotto /account/misure (non sono piu' una tab).
  *
  * L'ordine conta dove un segmento fisso e uno variabile si somigliano
- * (dieta/lista-spesa prima di dieta/:mode, misure/storico prima di
- * misure/:categoria).
+ * (dieta/lista-spesa prima di dieta/:mode, account/misure/storico prima di
+ * account/misure/:categoria).
  */
 export const routes: Routes = [
   {
@@ -118,29 +119,6 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/corsa-nuova/corsa-nuova.component').then(m => m.CorsaNuovaComponent)
       },
 
-      // ---- Misure ----
-      {
-        path: 'misure',
-        loadComponent: () => import('./pages/misure/misure.component').then(m => m.MisureComponent)
-      },
-      {
-        path: 'misure/storico',
-        loadComponent: () => import('./pages/misure-storico/misure-storico.component').then(m => m.MisureStoricoComponent)
-      },
-      {
-        path: 'misure/analytics',
-        loadComponent: () => import('./pages/misure-analytics/misure-analytics.component').then(m => m.MisureAnalyticsComponent)
-      },
-      {
-        path: 'misure/:categoria',
-        canDeactivate: [uscitaSenzaPerdite],
-        loadComponent: () => import('./pages/misura-categoria/misura-categoria.component').then(m => m.MisuraCategoriaComponent)
-      },
-      {
-        path: 'misure/storico/:key',
-        loadComponent: () => import('./pages/misure-storico-detail/misure-storico-detail.component').then(m => m.MisureStoricoDetailComponent)
-      },
-
       // ---- Account ----
       {
         path: 'account',
@@ -149,7 +127,37 @@ export const routes: Routes = [
       {
         path: 'account/impostazioni',
         loadComponent: () => import('./pages/impostazioni/impostazioni.component').then(m => m.ImpostazioniComponent)
-      }
+      },
+
+      // ---- Misure, dentro Account ----
+      {
+        path: 'account/misure',
+        loadComponent: () => import('./pages/misure/misure.component').then(m => m.MisureComponent)
+      },
+      {
+        path: 'account/misure/storico',
+        loadComponent: () => import('./pages/misure-storico/misure-storico.component').then(m => m.MisureStoricoComponent)
+      },
+      {
+        path: 'account/misure/analytics',
+        loadComponent: () => import('./pages/misure-analytics/misure-analytics.component').then(m => m.MisureAnalyticsComponent)
+      },
+      {
+        path: 'account/misure/:categoria',
+        canDeactivate: [uscitaSenzaPerdite],
+        loadComponent: () => import('./pages/misura-categoria/misura-categoria.component').then(m => m.MisuraCategoriaComponent)
+      },
+      {
+        path: 'account/misure/storico/:key',
+        loadComponent: () => import('./pages/misure-storico-detail/misure-storico-detail.component').then(m => m.MisureStoricoDetailComponent)
+      },
+      // Gli indirizzi di quando Misure era una tab (segnalibri, l'app installata
+      // aperta su una pagina di Misure): portano allo stesso posto dentro Account.
+      { path: 'misure', redirectTo: 'account/misure', pathMatch: 'full' },
+      { path: 'misure/storico', redirectTo: 'account/misure/storico', pathMatch: 'full' },
+      { path: 'misure/analytics', redirectTo: 'account/misure/analytics', pathMatch: 'full' },
+      { path: 'misure/storico/:key', redirectTo: 'account/misure/storico/:key', pathMatch: 'full' },
+      { path: 'misure/:categoria', redirectTo: 'account/misure/:categoria', pathMatch: 'full' }
     ]
   },
   { path: '**', redirectTo: 'scheda' }

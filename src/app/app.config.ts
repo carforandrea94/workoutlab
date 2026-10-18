@@ -1,10 +1,9 @@
-import { ApplicationConfig, provideBrowserGlobalErrorListeners, isDevMode, importProvidersFrom } from '@angular/core';
+import { ApplicationConfig, provideBrowserGlobalErrorListeners, isDevMode } from '@angular/core';
 import { provideRouter, withComponentInputBinding, RouteReuseStrategy } from '@angular/router';
 import { provideIonicAngular, IonicRouteStrategy } from '@ionic/angular';
-import { LucideAngularModule, LucideIconConfig } from 'lucide-angular';
 
 import { routes } from './app.routes';
-import { APP_ICONS } from './core/icons';
+import { iconeIonic, stileDelDispositivo } from './core/icone';
 import { transizionePagina } from './core/page-transition';
 import { provideServiceWorker } from '@angular/service-worker';
 
@@ -23,10 +22,14 @@ export const appConfig: ApplicationConfig = {
     // "Indietro" che ogni pagina mette sul suo ion-back-button.
     // navAnimation: la transizione fra pagine e' quella dell'app (testata
     // coreografata, vedi core/page-transition.ts), non quella di serie di Ionic.
-    provideIonicAngular({ mode: 'ios', backButtonText: '', navAnimation: transizionePagina }),
+    // backButtonIcon: la freccia invece e' quella della piattaforma (chevron su
+    // iOS e Safari, freccia di Material su Android e Chrome), come le altre
+    // icone (core/icone.ts): in modalita' iOS Ionic metterebbe sempre il chevron.
+    provideIonicAngular({
+      mode: 'ios', backButtonText: '', navAnimation: transizionePagina,
+      backButtonIcon: iconeIonic(stileDelDispositivo()).indietro
+    }),
     provideRouter(routes, withComponentInputBinding()),
-    importProvidersFrom(LucideAngularModule.pick(APP_ICONS)),
-    { provide: LucideIconConfig, useValue: Object.assign(new LucideIconConfig(), { strokeWidth: 2 }) },
     provideServiceWorker('ngsw-worker.js', {
       enabled: !isDevMode(),
       registrationStrategy: 'registerWhenStable:30000'

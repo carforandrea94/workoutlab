@@ -1,5 +1,4 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
-import { LucideAngularModule } from 'lucide-angular';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { DietDataService } from '../../services/diet-data.service';
@@ -12,6 +11,7 @@ import {
   IonButton
 } from '@ionic/angular';
 import { NomeCampoDirective } from '../../core/nome-campo.directive';
+import { IconaComponent } from '../../components/icona/icona.component';
 
 /** Il macro sotto cui l'alimento compare nella dieta. */
 export type Macro = 'carb' | 'protein' | 'fat';
@@ -58,7 +58,7 @@ const MACRO: { key: Macro; label: string }[] = [
   standalone: true,
   imports: [NomeCampoDirective, IonButton,
     IonAccordion, IonAccordionGroup, IonCheckbox, IonInput, IonLabel, IonProgressBar, IonSearchbar, IonSpinner,
-    ...IONIC_PAGE, ...IONIC_SLIDING, CommonModule, FormsModule, LucideAngularModule],
+    ...IONIC_PAGE, ...IONIC_SLIDING, CommonModule, FormsModule, IconaComponent],
   templateUrl: './lista-spesa.component.html'
 })
 export class ListaSpesaComponent implements OnInit {

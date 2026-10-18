@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { LucideAngularModule } from 'lucide-angular';
 import { WorkoutStateService } from '../../services/workout-state.service';
+import { IconaComponent } from '../icona/icona.component';
 
 const BAR_COUNT = 72;
 const BAR_MIN_PX = 3;
@@ -47,7 +47,7 @@ const WAVE_BARS: number[] = Array.from({ length: BAR_COUNT }, (_, i) => {
 @Component({
   selector: 'app-rest-bar',
   standalone: true,
-  imports: [CommonModule, LucideAngularModule],
+  imports: [CommonModule, IconaComponent],
   template: `
     <div class="restbar" [class.running]="running" [class.finished]="timer.finished" [class.con-prossima]="!running && !!dettaglioProssima">
       <div class="restbar-row">
@@ -60,7 +60,7 @@ const WAVE_BARS: number[] = Array.from({ length: BAR_COUNT }, (_, i) => {
           <span class="restbar-ex" *ngIf="!running && dettaglioProssima">{{ dettaglioProssima }}</span>
         </span>
         <button class="restbar-x tap44" *ngIf="running" (click)="stop()" aria-label="Ferma il recupero">
-          <lucide-icon name="x" [size]="16"></lucide-icon>
+          <app-icona name="close" [size]="16"></app-icona>
         </button>
       </div>
       <div class="restbar-bars">

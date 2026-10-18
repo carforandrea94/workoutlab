@@ -65,7 +65,7 @@ export class MisuraCategoriaComponent implements OnInit, OnDestroy, ConModifiche
     this.paramSub = this.route.paramMap.subscribe(params => {
       this.category = params.get('categoria') as MeasureCategory;
       if (!CATEGORY_FIELDS[this.category]) {
-        this.nav.navigateBack(['/misure']);
+        this.nav.navigateBack(['/account/misure']);
         return;
       }
       this.fields = CATEGORY_FIELDS[this.category];
@@ -216,7 +216,7 @@ export class MisuraCategoriaComponent implements OnInit, OnDestroy, ConModifiche
       if (ok) {
         await this.data.clearDraft(this.category);
         this.toast.success(this.messaggioSalvato());
-        this.nav.navigateBack(['/misure']);
+        this.nav.navigateBack(['/account/misure']);
       } else {
         this.toast.error('Errore durante il salvataggio. Riprova.');
       }
@@ -228,7 +228,7 @@ export class MisuraCategoriaComponent implements OnInit, OnDestroy, ConModifiche
     if (result === 'ok') {
       this.toast.success('Misurazione aggiornata ✓');
       this.uscitaConsentita = true;
-      this.nav.navigateBack(['/misure/storico', this.dateValue]);
+      this.nav.navigateBack(['/account/misure/storico', this.dateValue]);
     } else if (result === 'collision') {
       this.errorMsg = 'Esiste già una misurazione di questo tipo in questa data.';
       this.cdr.detectChanges();

@@ -208,7 +208,7 @@ describe('SchedaDetailComponent — accessibilita\' delle testate (disegno vero)
       c.exercises[1].rows.forEach((r: any) => r.done = true);
       aggiorna();
       expect(testo('ion-segment.passi ion-segment-button')[1]).toBe('2: Croci, finito');
-      expect(testo('ion-segment.passi lucide-icon.passo-tick').length).toBe(1);
+      expect(testo('ion-segment.passi app-icona.passo-tick').length).toBe(1);
     });
   });
 

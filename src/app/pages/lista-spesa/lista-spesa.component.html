@@ -60,7 +60,7 @@
               <ion-item lines="none">
                 <ion-checkbox labelPlacement="end" justify="start" [checked]="true" (ionChange)="toggleCustom(item)">{{ item.name }}</ion-checkbox>
                 <ion-button slot="end" class="delete-btn tap44" (click)="removeCustom(item, $event)" title="Elimina" [attr.aria-label]="'Elimina ' + item.name">
-                  <lucide-icon name="trash-2" [size]="14"></lucide-icon>
+                  <app-icona name="trash" [size]="14"></app-icona>
                 </ion-button>
               </ion-item>
               <ion-item-options side="end">
@@ -109,7 +109,7 @@
             <ion-item lines="none">
               <ion-checkbox labelPlacement="end" justify="start" [checked]="false" (ionChange)="toggleCustom(item)">{{ item.name }}</ion-checkbox>
               <ion-button slot="end" class="delete-btn tap44" (click)="removeCustom(item, $event)" title="Elimina" [attr.aria-label]="'Elimina ' + item.name">
-                <lucide-icon name="trash-2" [size]="14"></lucide-icon>
+                <app-icona name="trash" [size]="14"></app-icona>
               </ion-button>
             </ion-item>
             <ion-item-options side="end">

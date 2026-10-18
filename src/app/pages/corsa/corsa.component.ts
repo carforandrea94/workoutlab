@@ -1,5 +1,4 @@
 import { Component, OnInit, computed, signal } from '@angular/core';
-import { LucideAngularModule } from 'lucide-angular';
 import { CommonModule } from '@angular/common';
 
 import { RunningStateService } from '../../services/running-state.service';
@@ -10,6 +9,7 @@ import { buildWeekHistory, WeekGroup } from '../../core/utils/week-history.util'
 import { IONIC_PAGE } from '../../core/ionic-page';
 import { IONIC_REFRESH, completaRefresh } from '../../core/ionic-refresh';
 import { NavController, IonButton } from '@ionic/angular';
+import { IconaComponent } from '../../components/icona/icona.component';
 
 const WEEKDAYS = ['dom', 'lun', 'mar', 'mer', 'gio', 'ven', 'sab'];
 
@@ -38,7 +38,7 @@ const EFFORT_STYLE: Record<RunEffort, { color: string; size: number }> = {
 @Component({
   selector: 'app-corsa',
   standalone: true,
-  imports: [IonButton, ...IONIC_PAGE, ...IONIC_REFRESH, CommonModule, LucideAngularModule],
+  imports: [IonButton, ...IONIC_PAGE, ...IONIC_REFRESH, CommonModule, IconaComponent],
   templateUrl: './corsa.component.html'
 })
 export class CorsaComponent implements OnInit {

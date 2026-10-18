@@ -2,18 +2,18 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
-import { LucideAngularModule } from 'lucide-angular';
 import { AuthService } from '../../core/services/auth.service';
 import { IONIC_PAGE, IONIC_LINKS } from '../../core/ionic-page';
 import { NavController, IonInput, IonCheckbox, IonButton } from '@ionic/angular';
 import { RequiredTrueDirective } from '../../core/directives/required-true.directive';
 import { NomeCampoDirective } from '../../core/nome-campo.directive';
+import { IconaComponent } from '../../components/icona/icona.component';
 
 
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [NomeCampoDirective, IonButton, IonInput, IonCheckbox, RequiredTrueDirective, ...IONIC_PAGE, CommonModule, FormsModule, ...IONIC_LINKS, LucideAngularModule],
+  imports: [NomeCampoDirective, IonButton, IonInput, IonCheckbox, RequiredTrueDirective, ...IONIC_PAGE, CommonModule, FormsModule, ...IONIC_LINKS, IconaComponent],
   templateUrl: './register.component.html'
 })
 export class RegisterComponent {

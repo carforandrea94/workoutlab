@@ -69,7 +69,7 @@ export class MisureStoricoDetailComponent implements OnInit {
     try {
       const history = await Promise.race([this.data.loadHistory(), timeout]);
       this.entry = history.find(e => e.date === this.date) ?? null;
-      if (!this.entry) { this.nav.navigateBack(['/misure/storico']); return; }
+      if (!this.entry) { this.nav.navigateBack(['/account/misure/storico']); return; }
 
       const d = new Date(this.entry.date + 'T00:00:00');
       this.displayDate = d.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
@@ -109,14 +109,14 @@ export class MisureStoricoDetailComponent implements OnInit {
   }
 
   editCategory(category: MeasureCategory): void {
-    this.nav.navigateForward(['/misure', category], { queryParams: { date: this.date } });
+    this.nav.navigateForward(['/account/misure', category], { queryParams: { date: this.date } });
   }
 
   async deleteEntry(): Promise<void> {
     const ok = await this.confirm.confirm('Eliminare questa misurazione dallo storico?');
     if (ok) {
       await this.data.deleteEntry(this.date);
-      this.nav.navigateBack(['/misure/storico']);
+      this.nav.navigateBack(['/account/misure/storico']);
     }
   }
 }

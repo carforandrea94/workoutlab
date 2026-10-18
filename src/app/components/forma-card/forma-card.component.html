@@ -11,7 +11,7 @@
     </ng-template>
     <div class="formatile-note" *ngIf="weightKg() !== null && weightDelta !== null">{{ weightDeltaLabel }}</div>
     <div class="formatile-note" *ngIf="weightKg() !== null && weightDelta === null">prima pesata</div>
-    <a class="formatile-link" *ngIf="weightKg() === null" routerLink="/misure/peso" routerDirection="forward">Pesati</a>
+    <a class="formatile-link" *ngIf="weightKg() === null" routerLink="/account/misure/peso" routerDirection="forward">Pesati</a>
   </div>
 
   <div class="formatile">
@@ -65,7 +65,7 @@
     <a class="formatile-link" *ngIf="bodyFat.pct === null && bodyFatNeedsProfile"
        routerLink="/account/impostazioni" routerDirection="forward">Completa il profilo</a>
     <a class="formatile-link" *ngIf="bodyFat.pct === null && !bodyFatNeedsProfile"
-       routerLink="/misure/pliche" routerDirection="forward">Vai alle pliche</a>
+       routerLink="/account/misure/pliche" routerDirection="forward">Vai alle pliche</a>
   </div>
 
   <div class="formatile">

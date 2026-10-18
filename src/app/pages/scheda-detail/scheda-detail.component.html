@@ -8,8 +8,8 @@
     </ion-title>
     <ion-buttons slot="end">
       <ion-segment class="seg" [value]="state.viewMode()">
-        <ion-segment-button value="list" (click)="state.setViewMode('list')" aria-label="Vista elenco" title="Elenco"><lucide-icon name="list" [size]="16"></lucide-icon></ion-segment-button>
-        <ion-segment-button value="slider" (click)="state.setViewMode('slider')" aria-label="Vista slider" title="Slider"><lucide-icon name="gallery-horizontal" [size]="16"></lucide-icon></ion-segment-button>
+        <ion-segment-button value="list" (click)="state.setViewMode('list')" aria-label="Vista elenco" title="Elenco"><app-icona name="list" [size]="16"></app-icona></ion-segment-button>
+        <ion-segment-button value="slider" (click)="state.setViewMode('slider')" aria-label="Vista slider" title="Slider"><app-icona name="albums" [size]="16"></app-icona></ion-segment-button>
       </ion-segment>
     </ion-buttons>
   </ion-toolbar>
@@ -60,7 +60,7 @@
       <!-- La nota del coach dice come fare il movimento ("picco 2 secondi"):
            prima era il testo piu' piccolo e piu' grigio della card. -->
       <div class="coach-nota" *ngIf="vm.ex.note">
-        <lucide-icon name="message-square-quote" [size]="16" aria-hidden="true"></lucide-icon>
+        <app-icona name="chatbox-ellipses" [size]="16"></app-icona>
         <span class="coach-nota-testo">
           <span class="coach-nota-k">Nota del coach<span class="sr-only">: </span></span>
           <span class="coach-nota-v">{{ vm.ex.note }}</span>
@@ -84,7 +84,7 @@
           </div>
         </div>
         <p class="piano-fonte" *ngIf="pesiUltimaVolta(vm)">
-          <lucide-icon name="history" [size]="13" aria-hidden="true"></lucide-icon>
+          <app-icona name="time" [size]="13"></app-icona>
           Pesi dell'ultima volta, {{ vm.ultima?.data }}
         </p>
         <div class="suggestion-chip" *ngIf="vm.isFirst && vm.warmup" [innerHTML]="vm.warmup"></div>
@@ -100,9 +100,9 @@
               <span class="setline-n">{{ j + 1 }}</span>
               <span class="setline-val">{{ rowSummary(row) }}</span>
               <span class="setline-extra" *ngIf="row.extra">in più</span>
-              <lucide-icon *ngIf="row.done" name="check" [size]="14" class="setline-tick"></lucide-icon>
+              <app-icona *ngIf="row.done" name="checkmark" [size]="14" class="setline-tick"></app-icona>
               <!-- La matita dice che una serie fatta si riapre: e' cosi' che si torna a correggerla. -->
-              <lucide-icon *ngIf="row.done" name="pencil" [size]="14" class="setline-edit" aria-hidden="true"></lucide-icon>
+              <app-icona *ngIf="row.done" name="pencil" [size]="14" class="setline-edit"></app-icona>
             </button>
 
             <!-- Aperta: l'unica coi comandi grandi. -->
@@ -111,7 +111,7 @@
                 <span class="setcard-title">Serie {{ j + 1 }} di {{ vm.rows.length }}</span>
                 <span class="setcard-hint" *ngIf="isCluster(vm, row)">{{ clusterHint(vm) }}</span>
                 <span class="setcard-hint fatta" *ngIf="!isCluster(vm, row) && row.done">
-                  <lucide-icon name="check" [size]="12" aria-hidden="true"></lucide-icon>fatta
+                  <app-icona name="checkmark" [size]="12"></app-icona>fatta
                 </span>
                 <span class="setcard-hint" *ngIf="!isCluster(vm, row) && !row.done && row.extra">aggiunta da te</span>
                 <!-- Da dove viene il numero nella ruota ("come il 03/10"). Quando ci
@@ -121,7 +121,7 @@
                   <button type="button" class="setcard-fonte" *ngIf="opzioniCarico(vm, j).length; else fonteTesto"
                     [disabled]="setsLocked" (click)="apriCarico(vm, j)"
                     [attr.aria-label]="'Carico: ' + fonte + '. Scegli da dove partire'">
-                    {{ fonte }}<lucide-icon name="chevrons-up-down" [size]="13" aria-hidden="true"></lucide-icon>
+                    {{ fonte }}<app-icona name="chevron-expand" [size]="13"></app-icona>
                   </button>
                   <ng-template #fonteTesto><span class="setcard-hint">{{ fonte }}</span></ng-template>
                 </ng-container>
@@ -144,7 +144,7 @@
                     [attr.aria-label]="b.done ? 'Togli la spunta al blocco ' + (k + 1) : null">
                     <span class="blockchip-top">
                       <span class="blockchip-v">{{ b.reps || b.ripPlaceholder || '—' }}</span>
-                      <lucide-icon *ngIf="b.done" name="check" [size]="13" class="blockchip-tick"></lucide-icon>
+                      <app-icona *ngIf="b.done" name="checkmark" [size]="13" class="blockchip-tick"></app-icona>
                     </span>
                     <span class="blockchip-kg" *ngIf="b.load || b.loadPlaceholder">{{ b.load || b.loadPlaceholder }} kg</span>
                   </button>
@@ -235,7 +235,7 @@
              dove sono, questa la si toglie quando si vuole. -->
         <ion-button type="button" class="setadd" *ngIf="canAdd(vm)" [disabled]="setsLocked"
           (click)="addSet(vm)">
-          <lucide-icon name="plus" [size]="16"></lucide-icon>
+          <app-icona name="add" [size]="16"></app-icona>
           Aggiungi una serie
         </ion-button>
 
@@ -286,7 +286,7 @@
                cosa. -->
           <button class="ex-chip rest" *ngIf="!isStorico" (click)="openRestModal(vm, $event)"
             [attr.aria-label]="'Recupero ' + formatRest(vm.restSeconds) + ', tocca per cambiarlo'">
-            <lucide-icon name="timer" [size]="12"></lucide-icon>{{ formatRest(vm.restSeconds) }}
+            <app-icona name="timer" [size]="12"></app-icona>{{ formatRest(vm.restSeconds) }}
           </button>
           <!-- Solo quando e' WAVE: "FISSO" e' il caso normale e occupava una riga
                per non distinguere niente. -->
@@ -362,7 +362,7 @@
         <div class="wrapup-card" *ngIf="s.records.length">
           <div class="wrapup-cap">Hai alzato l'asticella</div>
           <div class="wrapup-rec" *ngFor="let r of s.records">
-            <span class="wrapup-rec-ic"><lucide-icon name="check" [size]="16"></lucide-icon></span>
+            <span class="wrapup-rec-ic"><app-icona name="checkmark" [size]="16"></app-icona></span>
             <span class="wrapup-rec-txt">
               <span class="nm">{{ r.exercise }}</span>
               <span class="dt">{{ r.now }} — prima {{ r.before }}</span>
@@ -381,10 +381,10 @@
       <ion-segment class="seg labelseg passi" [value]="'p' + sliderIndex" (ionChange)="vaiAlPasso($event.detail.value)"
         [scrollable]="slideCount > 9" aria-label="Esercizi di oggi">
         <ion-segment-button *ngFor="let vm of exercises; let i = index" [value]="'p' + i">
-          <span class="passo">{{ i + 1 }}<lucide-icon *ngIf="isComplete(vm)" class="passo-tick" name="check" [size]="11" aria-hidden="true"></lucide-icon><span class="sr-only">: {{ vm.ex.name }}{{ isComplete(vm) ? ', finito' : '' }}</span></span>
+          <span class="passo">{{ i + 1 }}<app-icona *ngIf="isComplete(vm)" class="passo-tick" name="checkmark" [size]="11"></app-icona><span class="sr-only">: {{ vm.ex.name }}{{ isComplete(vm) ? ', finito' : '' }}</span></span>
         </ion-segment-button>
         <ion-segment-button *ngIf="isSessionOnThisDay" [value]="'p' + exercises.length">
-          <span class="passo"><lucide-icon name="flag" [size]="14" aria-hidden="true"></lucide-icon><span class="sr-only">Chiusura dell'allenamento</span></span>
+          <span class="passo"><app-icona name="flag" [size]="14"></app-icona><span class="sr-only">Chiusura dell'allenamento</span></span>
         </ion-segment-button>
       </ion-segment>
     </ng-template>
@@ -401,13 +401,13 @@
           <span class="sessione-pausa" *ngIf="sessionState.isPaused()">In pausa</span>
         </span>
         <span class="sessione-conto" *ngIf="exercises.length && !errorMsg">
-          <b>{{ eserciziFiniti }}</b> di {{ exercises.length }} esercizi<lucide-icon *ngIf="eserciziFiniti === exercises.length"
-            name="check" [size]="14" class="sessione-ok" aria-hidden="true"></lucide-icon>
+          <b>{{ eserciziFiniti }}</b> di {{ exercises.length }} esercizi<app-icona *ngIf="eserciziFiniti === exercises.length"
+            name="checkmark" [size]="14" class="sessione-ok"></app-icona>
         </span>
         <button class="session-bar-btn tap44 tap44-v" [class.ghost]="!sessionState.isPaused()"
           (click)="onPlayPause()" [attr.aria-label]="playPauseLabel">
-          <lucide-icon *ngIf="!isSessionRunning" name="play" [size]="18" class="filled"></lucide-icon>
-          <lucide-icon *ngIf="isSessionRunning" name="pause" [size]="18" class="filled"></lucide-icon>
+          <app-icona *ngIf="!isSessionRunning" name="play" [size]="18" [piena]="true"></app-icona>
+          <app-icona *ngIf="isSessionRunning" name="pause" [size]="18" [piena]="true"></app-icona>
         </button>
       </div>
       <ng-container *ngIf="state.viewMode() === 'slider' && slideCount > 1">
@@ -441,7 +441,7 @@
           <div class="ex-meta">
             <ng-container *ngTemplateOutlet="exCounter; context: { vm: vm }"></ng-container>
             <span class="ex-chevron">
-              <lucide-icon name="chevron-down" [size]="13"></lucide-icon>
+              <app-icona name="chevron-down" [size]="13"></app-icona>
             </span>
           </div>
         </div>
@@ -536,7 +536,7 @@
                   <span class="carico-titolo">{{ o.titolo }}</span>
                   <span class="carico-dettaglio">{{ o.dettaglio }}</span>
                   <span class="carico-avviso" *ngIf="o.avviso">
-                    <lucide-icon name="info" [size]="13" aria-hidden="true"></lucide-icon>{{ o.avviso }}
+                    <app-icona name="information-circle" [size]="13"></app-icona>{{ o.avviso }}
                   </span>
                 </span>
                 <span class="carico-kg">{{ kg(o.kg) }} kg</span>
@@ -558,7 +558,7 @@
   *ngIf="day && !loading && !errorMsg && !summary && !isStorico && !sessionState.activeSession()">
   <div class="avvio">
     <ion-button type="button" class="setdone avvio-btn" (click)="startSession()">
-      <lucide-icon name="play" [size]="18" class="filled"></lucide-icon>
+      <app-icona name="play" [size]="18" [piena]="true"></app-icona>
       Inizia allenamento
     </ion-button>
   </div>
@@ -572,7 +572,7 @@
 <ion-footer class="salva-footer ion-no-border" *ngIf="!recuperoInCorsa && azione as a">
   <div class="salva">
     <p class="fine-recupero" *ngIf="recuperoFinito">
-      <lucide-icon name="check" [size]="15" aria-hidden="true"></lucide-icon>Recupero finito
+      <app-icona name="checkmark" [size]="15"></app-icona>Recupero finito
     </p>
     <div class="salva-due" [class.doppio]="a.tipo === 'blocco' && a.chiudibile">
       <ion-button type="button" class="setdone salva-btn" (click)="eseguiAzione(a)">

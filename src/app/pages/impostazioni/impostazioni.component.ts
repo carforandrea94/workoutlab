@@ -4,7 +4,6 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { LucideAngularModule } from 'lucide-angular';
 import { AuthService } from '../../core/services/auth.service';
 import { Sex } from '../../core/models/user.model';
 import { ThemeService } from '../../services/theme.service';
@@ -22,11 +21,12 @@ import {
 import { IONIC_PAGE } from '../../core/ionic-page';
 import { IonModal, IonInput, IonSegment, IonSegmentButton, IonToggle, IonPicker, IonPickerColumn, IonPickerColumnOption, IonButton } from '@ionic/angular';
 import { NomeCampoDirective } from '../../core/nome-campo.directive';
+import { IconaComponent } from '../../components/icona/icona.component';
 
 @Component({
   selector: 'app-impostazioni',
   standalone: true,
-  imports: [NomeCampoDirective, IonButton, IonSegment, IonSegmentButton, IonToggle, IonPicker, IonPickerColumn, IonPickerColumnOption, IonInput, ...IONIC_PAGE, IonModal, CommonModule, FormsModule, LucideAngularModule],
+  imports: [NomeCampoDirective, IonButton, IonSegment, IonSegmentButton, IonToggle, IonPicker, IonPickerColumn, IonPickerColumnOption, IonInput, ...IONIC_PAGE, IonModal, CommonModule, FormsModule, IconaComponent],
   templateUrl: './impostazioni.component.html',
   styles: [`
     .account-row {

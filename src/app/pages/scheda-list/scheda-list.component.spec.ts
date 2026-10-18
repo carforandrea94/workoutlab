@@ -51,6 +51,14 @@ describe('SchedaListComponent — da dove si parte', () => {
     expect(tag(1)).toEqual([]);
   });
 
+  it('la spunta del giorno fatto si legge: e\' un\'immagine col suo nome, non uno span muto', () => {
+    const { righe } = monta({ fatti: ['d1'] });
+    const spunta = righe()[0].querySelector('.daycheck')!;
+    expect(spunta.getAttribute('role')).toBe('img');
+    expect(spunta.getAttribute('aria-label')).toBe('Allenamento già fatto questa settimana');
+    expect(righe()[1].querySelector('.daycheck')).toBeNull();
+  });
+
   it('i giorni gia\' fatti non sono il prossimo: tocca il primo che manca', () => {
     const { badgePieni, tag } = monta({ fatti: ['d1'] });
     expect(badgePieni()).toEqual([false, true, false]);

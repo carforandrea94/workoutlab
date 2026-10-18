@@ -25,10 +25,24 @@
 
     <app-forma-card></app-forma-card>
 
+    <!-- Le misure stavano in una tab loro: ora si aprono da qui, sotto il
+         riassunto del corpo che ne mostra gli ultimi valori. -->
+    <ion-item class="cardrow method-row press-fx" lines="none" [button]="true" (click)="goToMisure()">
+      <div class="cardrow-body">
+        <div class="method-icon">
+          <app-icona name="body" [size]="24"></app-icona>
+        </div>
+        <div class="method-info">
+          <div class="method-title">Misure</div>
+          <div class="method-sub">Peso, centimetri e pliche, con andamento e storico</div>
+        </div>
+      </div>
+    </ion-item>
+
     <ion-item class="cardrow method-row press-fx" lines="none" [button]="true" (click)="goToImpostazioni()">
       <div class="cardrow-body">
         <div class="method-icon">
-          <lucide-icon name="settings" [size]="24"></lucide-icon>
+          <app-icona name="settings" [size]="24"></app-icona>
         </div>
         <div class="method-info">
           <div class="method-title">Impostazioni</div>

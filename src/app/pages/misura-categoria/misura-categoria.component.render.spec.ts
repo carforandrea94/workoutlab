@@ -45,7 +45,7 @@ describe('MisuraCategoriaComponent — la pagina vera', () => {
     TestBed.configureTestingModule({
       imports: [MisuraCategoriaComponent],
       providers: [
-        ...providerPagina([{ path: 'misure', component: Vuota }, { path: 'misure/storico/:data', component: Vuota }]),
+        ...providerPagina([{ path: 'account/misure', component: Vuota }, { path: 'account/misure/storico/:data', component: Vuota }]),
         { provide: ActivatedRoute, useValue: route },
         { provide: MeasurementDataService, useValue: data },
         { provide: ToastService, useValue: toast }
