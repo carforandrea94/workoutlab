@@ -4,7 +4,6 @@ import { CommonModule } from '@angular/common';
 import { AuthService } from '../../core/services/auth.service';
 import { MeasurementDataService } from '../../services/measurement-data.service';
 import { computeBmi, bmiClass, formatBmi, BMI_CLASS_LABELS } from '../../core/utils/bmi.util';
-import { formatHeightCm } from '../../core/utils/height.util';
 import { Sex } from '../../core/models/user.model';
 import { MeasurementEntry } from '../../models/measurement.model';
 import {
@@ -23,8 +22,10 @@ import { IonItem, IonLabel, IonList, IonListHeader, IonNote, IonProgressBar } fr
 import { IONIC_LINKS } from '../../core/ionic-page';
 
 /**
- * Il riepilogo dell'Account: il corpo (peso, BMI, altezza, sesso, massa grassa,
- * FFMI), il lavoro della settimana e il tonnellaggio, come righe di lista iOS.
+ * Il riepilogo dell'Account: il corpo (peso, BMI, massa grassa, FFMI, e la riga
+ * che apre le misure), il lavoro della settimana e il tonnellaggio, come righe
+ * di lista iOS. Altezza e sesso non hanno una riga: si leggono e si cambiano
+ * in Impostazioni, e qui servono solo ai conti.
  *
  * Ogni riga sa mancare. Il peso arriva dallo storico misure, che per un
  * cliente appena iscritto e' vuoto; il BMI ha bisogno anche dell'altezza, che
@@ -278,16 +279,8 @@ export class FormaCardComponent implements OnInit {
     return new Date(iso + 'T00:00:00').toLocaleDateString('it-IT', { day: 'numeric', month: 'long' });
   }
 
-  get heightLabel(): string {
-    return formatHeightCm(this.heightCm);
-  }
-
   get sex(): Sex | null {
     return this.auth.currentUser()?.sex ?? null;
-  }
-
-  get sexLabel(): string {
-    return this.sex === 'm' ? 'Uomo' : this.sex === 'f' ? 'Donna' : '';
   }
 
   get weightLabel(): string {

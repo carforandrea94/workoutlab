@@ -22,7 +22,7 @@ class Vuota {}
  */
 describe('FormaCardComponent — le righe', () => {
   async function monta(opz: { profilo?: any; storico?: any[] } = {}) {
-    const rotte = ['account/misure/peso', 'account/misure/pliche', 'account/impostazioni'].map(path => ({ path, component: Vuota }));
+    const rotte = ['account/misure', 'account/misure/peso', 'account/misure/pliche', 'account/impostazioni'].map(path => ({ path, component: Vuota }));
     TestBed.configureTestingModule({
       imports: [FormaCardComponent],
       providers: [
@@ -58,6 +58,22 @@ describe('FormaCardComponent — le righe', () => {
     expect(root.querySelectorAll('ion-list[inset]').length + root.querySelectorAll('ion-list.list-inset').length).toBeGreaterThan(0);
   });
 
+  it('il corpo: i valori, senza altezza e sesso (stanno in Impostazioni), e in fondo le misure', async () => {
+    const { root } = await monta({ profilo: { displayName: 'Andrea', heightCm: 180, sex: 'm' } });
+    const titoli = Array.from(root.querySelectorAll('ion-list.forma-corpo > ion-item ion-label h2')).map(h => h.textContent!.trim());
+    expect(titoli).toEqual(['Peso', 'BMI', 'Massa grassa', 'FFMI', 'Misure']);
+  });
+
+  it('la riga Misure apre le misure, col chevron', async () => {
+    const { riga, router, fixture } = await monta();
+    const misure = riga('Misure');
+    expect(misure.querySelector('ion-label p')!.textContent!.trim()).toBe('Peso, centimetri e pliche, con andamento e storico');
+    expect([(misure as any).button, (misure as any).detail]).toEqual([true, true]);
+    misure.click();
+    await fixture.whenStable();
+    expect(router.url).toBe('/account/misure');
+  });
+
   it('con i dati: il valore a destra, l\'unita\' accanto, cosa vuol dire sotto il nome', async () => {
     const { valore, sotto, riga } = await monta({
       profilo: { displayName: 'Andrea', heightCm: 180, sex: 'm' },
@@ -65,12 +81,10 @@ describe('FormaCardComponent — le righe', () => {
     });
     expect(valore('Peso')).toBe('82kg');
     expect(sotto('Peso')).toBe('+0,4 kg dall\'ultima pesata');
-    expect(valore('Altezza')).toBe('180cm');
-    expect(valore('Sesso')).toBe('Uomo');
     expect(valore('BMI')).toBe('25,3');
     // Una riga col suo valore non porta da nessuna parte.
     expect((riga('Peso') as any).button).toBeFalsy();
-    expect((riga('Altezza') as any).button).toBeFalsy();
+    expect((riga('BMI') as any).button).toBeFalsy();
   });
 
   it('il lavoro della settimana: giorni fatti su previsti, sedute, minuti di corsa', async () => {
@@ -87,11 +101,9 @@ describe('FormaCardComponent — le righe', () => {
     const { valore, riga, router, fixture } = await monta();
     expect(valore('Peso')).toBe('Pesati');
     expect(valore('BMI')).toBe('Mettil\'altezza');
-    expect(valore('Altezza')).toBe('Dichiarala');
-    expect(valore('Sesso')).toBe('Dichiaralo');
     expect(valore('Massa grassa')).toBe('Completailprofilo');
     expect(valore('FFMI')).toBe('—');
-    for (const t of ['Peso', 'BMI', 'Altezza', 'Sesso', 'Massa grassa']) {
+    for (const t of ['Peso', 'BMI', 'Massa grassa']) {
       expect(riga(t).querySelector('ion-note')!.classList.contains('azione')).toBe(true);
       expect((riga(t) as any).detail).toBe(true);
     }
@@ -99,7 +111,7 @@ describe('FormaCardComponent — le righe', () => {
     riga('Peso').click();
     await fixture.whenStable();
     expect(router.url).toBe('/account/misure/peso');
-    riga('Altezza').click();
+    riga('BMI').click();
     await fixture.whenStable();
     expect(router.url).toBe('/account/impostazioni');
   });

@@ -34,28 +34,6 @@
     </ion-item>
   </ng-template>
 
-  <ion-item *ngIf="heightCm !== null; else altezzaMancante">
-    <ion-label><h2>Altezza</h2></ion-label>
-    <ion-note slot="end" class="valore">{{ heightLabel }}<small>cm</small></ion-note>
-  </ion-item>
-  <ng-template #altezzaMancante>
-    <ion-item [button]="true" [detail]="true" routerLink="/account/impostazioni" routerDirection="forward">
-      <ion-label><h2>Altezza</h2></ion-label>
-      <ion-note slot="end" class="azione">Dichiarala</ion-note>
-    </ion-item>
-  </ng-template>
-
-  <ion-item *ngIf="sex !== null; else sessoMancante">
-    <ion-label><h2>Sesso</h2></ion-label>
-    <ion-note slot="end" class="valore">{{ sexLabel }}</ion-note>
-  </ion-item>
-  <ng-template #sessoMancante>
-    <ion-item [button]="true" [detail]="true" routerLink="/account/impostazioni" routerDirection="forward">
-      <ion-label><h2>Sesso</h2></ion-label>
-      <ion-note slot="end" class="azione">Dichiaralo</ion-note>
-    </ion-item>
-  </ng-template>
-
   <ion-item *ngIf="bodyFat.pct !== null">
     <ion-label>
       <h2>Massa grassa</h2>
@@ -78,6 +56,15 @@
       <p>{{ ffmiValue !== null ? ffmiNote : ffmiMissing }}</p>
     </ion-label>
     <ion-note slot="end" class="valore" [class.vuoto]="ffmiValue === null">{{ ffmiValue !== null ? ffmiLabel : '—' }}</ion-note>
+  </ion-item>
+
+  <!-- In fondo ai valori, che ne sono l'ultima lettura: tutte le misure con
+       andamento e storico (stavano in una tab loro). -->
+  <ion-item class="voce-misure" [button]="true" [detail]="true" routerLink="/account/misure" routerDirection="forward">
+    <ion-label class="ion-text-wrap">
+      <h2>Misure</h2>
+      <p>Peso, centimetri e pliche, con andamento e storico</p>
+    </ion-label>
   </ion-item>
 </ion-list>
 

@@ -27,18 +27,8 @@
 
     <app-forma-card></app-forma-card>
 
-    <!-- Le misure stavano in una tab loro: ora si aprono da qui, sotto il
-         riassunto del corpo che ne mostra gli ultimi valori. -->
+    <!-- Le misure si aprono dal gruppo "Il corpo", nel riassunto qui sopra. -->
     <ion-list [inset]="true" class="voci">
-      <ion-item class="voce" [button]="true" [detail]="true" (click)="goToMisure()">
-        <ion-avatar slot="start" class="riga-segno icona">
-          <app-icona name="body" [size]="20" [piena]="true"></app-icona>
-        </ion-avatar>
-        <ion-label class="ion-text-wrap">
-          <h2>Misure</h2>
-          <p>Peso, centimetri e pliche, con andamento e storico</p>
-        </ion-label>
-      </ion-item>
       <ion-item class="voce" [button]="true" [detail]="true" (click)="goToImpostazioni()">
         <ion-avatar slot="start" class="riga-segno icona">
           <app-icona name="settings" [size]="20" [piena]="true"></app-icona>

@@ -45,10 +45,6 @@ export class AccountComponent {
     this.primoIngresso = false;
   }
 
-  goToMisure(): void {
-    this.nav.navigateForward(['/account/misure']);
-  }
-
   goToImpostazioni(): void {
     this.nav.navigateForward(['/account/impostazioni']);
   }
