@@ -9,7 +9,7 @@
   </ion-toolbar>
 </ion-header>
 
-<ion-content>
+<ion-content class="liste-ios">
   <div class="wrap">
     <div *ngIf="!workoutData.hasCustomProtocol" class="history-empty">
       Non hai ancora un protocollo attivo.<br>
@@ -19,51 +19,63 @@
       </div>
     </div>
 
+    <!-- Le stesse liste delle tab: un titolo per gruppo, righe col nome a
+         sinistra e il valore a destra, le spiegazioni in nota sotto il gruppo. -->
     <ng-container *ngIf="workoutData.hasCustomProtocol">
 
-      <div class="infocard" *ngIf="workoutData.infoNote">
-        <h3>Note del programma</h3>
-        <p style="white-space:pre-wrap">{{ workoutData.infoNote }}</p>
-      </div>
+      <ng-container *ngIf="workoutData.infoNote">
+        <ion-list-header class="sezione"><ion-label>Note del programma</ion-label></ion-list-header>
+        <ion-list [inset]="true" class="info-note">
+          <ion-item lines="none">
+            <ion-label class="ion-text-wrap"><p class="testo-libero">{{ workoutData.infoNote }}</p></ion-label>
+          </ion-item>
+        </ion-list>
+      </ng-container>
 
-      <div class="infocard" *ngIf="weekPlan.length > 0">
-        <h3>Onda di carico (Wave Loading)</h3>
-        <p>Gli esercizi <b>wave</b> seguono questa progressione:</p>
-        <div class="infowave" *ngFor="let wp of weekPlan; let i = index">
-          S{{ i + 1 }} → {{ wp.sets }}×{{ wp.reps }} reps
-          <span *ngIf="i + 1 === currentWeek" style="margin-left:8px;color:var(--state-success)">← sei qui</span>
-        </div>
-      </div>
+      <ng-container *ngIf="weekPlan.length > 0">
+        <ion-list-header class="sezione"><ion-label>Onda di carico</ion-label></ion-list-header>
+        <ion-list [inset]="true" class="info-onda">
+          <ion-item *ngFor="let wp of weekPlan; let i = index" [attr.aria-current]="i + 1 === currentWeek ? 'step' : null">
+            <ion-label><h2>Settimana {{ i + 1 }} <ion-badge class="stato" *ngIf="i + 1 === currentWeek">Adesso</ion-badge></h2></ion-label>
+            <ion-note slot="end" class="valore">{{ wp.sets }}×{{ wp.reps }}<small>rip.</small></ion-note>
+          </ion-item>
+        </ion-list>
+        <p class="nota-sotto">Gli esercizi <b>wave</b> seguono questa progressione. La settimana corrente viene calcolata automaticamente dalla data di inizio del tuo programma.</p>
+      </ng-container>
 
-      <div class="infocard">
-        <h3>Settimana automatica</h3>
-        <p>La settimana corrente viene calcolata automaticamente dalla data di inizio del tuo programma.</p>
-        <p>Settimana attuale: <b>S{{ currentWeek }}</b></p>
-      </div>
-
-      <div class="infocard">
-        <h3>Storico e carichi</h3>
-        <p *ngIf="loadingHistory">Caricamento storico...</p>
-        <p *ngIf="!loadingHistory && totalWorkouts === 0">
-          Non hai ancora registrato allenamenti. Il tuo storico apparirà qui dopo il primo allenamento completato.
-        </p>
+      <ion-list-header class="sezione"><ion-label>Il programma</ion-label></ion-list-header>
+      <ion-list [inset]="true" class="info-storico">
+        <ion-item *ngIf="weekPlan.length === 0">
+          <ion-label><h2>Settimana attuale</h2></ion-label>
+          <ion-note slot="end" class="valore">{{ currentWeek }}</ion-note>
+        </ion-item>
+        <ion-item *ngIf="loadingHistory" lines="none">
+          <ion-label><p>Caricamento storico…</p></ion-label>
+        </ion-item>
+        <ion-item *ngIf="!loadingHistory && totalWorkouts === 0" lines="none">
+          <ion-label class="ion-text-wrap"><p>Non hai ancora registrato allenamenti. Il tuo storico apparirà qui dopo il primo allenamento completato.</p></ion-label>
+        </ion-item>
         <ng-container *ngIf="!loadingHistory && totalWorkouts > 0">
-          <p>Allenamenti completati: <b>{{ totalWorkouts }}</b></p>
-          <p>Ultimo allenamento: <b>{{ lastWorkoutDate }}</b></p>
-          <p>Nella scheda dettaglio puoi vedere, per ogni esercizio: l'ultimo carico usato, il grafico della progressione e un suggerimento di carico per gli esercizi wave.</p>
+          <ion-item>
+            <ion-label><h2>Allenamenti completati</h2></ion-label>
+            <ion-note slot="end" class="valore">{{ totalWorkouts }}</ion-note>
+          </ion-item>
+          <ion-item>
+            <ion-label><h2>Ultimo allenamento</h2></ion-label>
+            <ion-note slot="end" class="valore">{{ lastWorkoutDate }}</ion-note>
+          </ion-item>
         </ng-container>
-      </div>
+      </ion-list>
+      <p class="nota-sotto" *ngIf="!loadingHistory && totalWorkouts > 0">Nella scheda dettaglio puoi vedere, per ogni esercizio: l'ultimo carico usato, il grafico della progressione e un suggerimento di carico per gli esercizi wave.</p>
 
-      <div class="consigli">
-        <h3>Consigli generali</h3>
-        <ul>
-          <li>Recupero tra le serie: segui i tempi indicati (timer automatico)</li>
-          <li>Progressione: aumenta il carico quando completi tutte le serie con buona tecnica</li>
-          <li *ngIf="hasWaveExercises">Per gli esercizi wave: aumenta di 2.5–5 kg quando completi tutte le serie</li>
-          <li>Bevi almeno 2L di acqua al giorno, di più nei giorni di allenamento</li>
-          <li>Assicurati di dormire almeno 7–8 ore per ottimizzare il recupero</li>
-        </ul>
-      </div>
+      <ion-list-header class="sezione"><ion-label>Consigli generali</ion-label></ion-list-header>
+      <ion-list [inset]="true" class="info-consigli">
+        <ion-item><ion-label class="ion-text-wrap"><p>Recupero tra le serie: segui i tempi indicati (timer automatico)</p></ion-label></ion-item>
+        <ion-item><ion-label class="ion-text-wrap"><p>Progressione: aumenta il carico quando completi tutte le serie con buona tecnica</p></ion-label></ion-item>
+        <ion-item *ngIf="hasWaveExercises"><ion-label class="ion-text-wrap"><p>Per gli esercizi wave: aumenta di 2,5–5 kg quando completi tutte le serie</p></ion-label></ion-item>
+        <ion-item><ion-label class="ion-text-wrap"><p>Bevi almeno 2L di acqua al giorno, di più nei giorni di allenamento</p></ion-label></ion-item>
+        <ion-item lines="none"><ion-label class="ion-text-wrap"><p>Assicurati di dormire almeno 7–8 ore per ottimizzare il recupero</p></ion-label></ion-item>
+      </ion-list>
 
     </ng-container>
   </div>

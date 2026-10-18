@@ -37,7 +37,7 @@
       <div class="daymeta">
         <span>{{ day.label }}</span>
         <span class="rec">
-          {{ displayDate }}<ng-container *ngIf="sedutaDurata"> &nbsp;·&nbsp; ⏱ {{ formatDuration(sedutaDurata) }}</ng-container>
+          {{ displayDate }}<ng-container *ngIf="sedutaDurata"> &nbsp;·&nbsp; <span class="daymeta-durata"><app-icona name="timer" [size]="14"></app-icona>{{ formatDuration(sedutaDurata) }}</span></ng-container>
         </span>
       </div>
 
@@ -338,9 +338,8 @@
     <ng-container *ngIf="summary as s">
       <div class="wrapup">
         <div class="wrapup-head">
-          <div class="wrapup-eyebrow">Allenamento salvato</div>
-          <div class="wrapup-title">{{ day.label }}</div>
-          <div class="wrapup-sub">{{ formatDuration(s.durationSec) }} · {{ s.setsDone }} serie su {{ s.setsTotal }}</div>
+          <div class="wrapup-title">Allenamento salvato</div>
+          <div class="wrapup-sub">{{ day.label }} · {{ formatDuration(s.durationSec) }} · {{ s.setsDone }} serie su {{ s.setsTotal }}</div>
         </div>
 
         <div class="wrapup-grid">

@@ -22,9 +22,10 @@
       </div>
     </div>
 
-    <div class="infocard mb-3" *ngIf="showIosNotificationHint">
+    <div class="infocard avviso" *ngIf="showIosNotificationHint">
+      <app-icona name="information-circle" [size]="20"></app-icona>
       <p class="bacheca-text">
-        📲 Su iPhone le notifiche (es. fine recupero) funzionano solo se l'app è installata sulla schermata Home:
+        Su iPhone le notifiche (es. fine recupero) funzionano solo se l'app è installata sulla schermata Home:
         da Safari tocca <b>Condividi</b> e poi <b>Aggiungi a Home</b>.
       </p>
     </div>

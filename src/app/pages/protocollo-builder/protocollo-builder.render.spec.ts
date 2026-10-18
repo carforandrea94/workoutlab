@@ -100,6 +100,22 @@ describe('ProtocolloBuilderComponent — disegno vero', () => {
     return { fixture, c, root, titolo, freccia, tasto, aggiorna, protocolSvc };
   }
 
+  describe('i giorni, come lista iOS', () => {
+    it('un gruppo solo, e "Aggiungi giorno" e\' l\'ultima riga, senza chevron', async () => {
+      const { c, root, aggiorna } = await monta();
+      const lista = root.querySelector<HTMLElement>('ion-list.grouplist')!;
+      const azione = lista.querySelector<HTMLElement & { detail?: boolean }>(':scope > ion-item.riga-azione')!;
+      expect(lista.lastElementChild).toBe(azione);
+      expect(azione.textContent!.trim()).toBe('Aggiungi giorno');
+      expect(azione.detail).toBe(false);
+      expect(root.querySelector('.savebar ion-button.savebtn')).toBeNull();
+      const prima = c.protocol!.workout.days.length;
+      azione.click();
+      aggiorna();
+      expect(c.protocol!.workout.days.length).toBe(prima + 1);
+    });
+  });
+
   describe('testata', () => {
     it('sull\'elenco: freccia di sistema e titolo "Protocollo"', async () => {
       const { root, titolo, freccia } = await monta();

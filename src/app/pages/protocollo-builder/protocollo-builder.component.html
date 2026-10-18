@@ -108,7 +108,7 @@
           Nessun giorno ancora.<br>Aggiungine uno per iniziare a scrivere la scheda.
         </div>
 
-        <ion-list class="grouplist" *ngIf="protocol.workout.days.length > 0">
+        <ion-list class="grouplist">
           <ion-item class="cardrow press-fx" lines="none" [button]="true"
             *ngFor="let day of protocol.workout.days; let di = index" (click)="openDay(day, di)">
             <div class="cardrow-body">
@@ -119,11 +119,11 @@
               </div>
             </div>
           </ion-item>
+          <ion-item class="cardrow riga-azione" lines="none" [button]="true" [detail]="false" (click)="addDay()">
+            <app-icona slot="start" name="add" [size]="22"></app-icona>
+            <ion-label>Aggiungi giorno</ion-label>
+          </ion-item>
         </ion-list>
-
-        <div class="savebar">
-          <ion-button class="savebtn" (click)="addDay()">+ Aggiungi giorno</ion-button>
-        </div>
       </ng-container>
 
       <!-- ===================== IL SINGOLO GIORNO ===================== -->

@@ -26,7 +26,7 @@ import { ConfirmDialogService } from '../../services/confirm-dialog.service';
 import { IONIC_PAGE, IONIC_LINKS } from '../../core/ionic-page';
 import { TastoDirective } from '../../core/tasto.directive';
 import { IONIC_LIST } from '../../core/ionic-list';
-import { NavController, IonContent, IonInput, IonTextarea, IonSelect, IonSelectOption, IonSpinner, IonSegment, IonSegmentButton, IonButton, IonRouterOutlet } from '@ionic/angular';
+import { NavController, IonContent, IonInput, IonTextarea, IonSelect, IonSelectOption, IonSpinner, IonSegment, IonSegmentButton, IonButton, IonRouterOutlet, IonLabel } from '@ionic/angular';
 import {
   LivelloBuilder, PosizioneBuilder, SchedaBuilder, chiaveBuilder, direzioneBuilder, etichettaFattoBuilder, etichettaSuBuilder,
   livelloBuilder, titoloBuilder
@@ -53,7 +53,7 @@ export type ZonaDrop =
 @Component({
   selector: 'app-protocollo-builder',
   standalone: true,
-  imports: [NomeCampoDirective, IonButton, TastoDirective, ...IONIC_LIST, IonInput, IonTextarea, IonSelect, IonSelectOption, IonSpinner, IonSegment, IonSegmentButton, ...IONIC_PAGE, ...IONIC_LINKS,
+  imports: [NomeCampoDirective, IonButton, IonLabel, TastoDirective, ...IONIC_LIST, IonInput, IonTextarea, IonSelect, IonSelectOption, IonSpinner, IonSegment, IonSegmentButton, ...IONIC_PAGE, ...IONIC_LINKS,
     CommonModule, FormsModule, IconaComponent,
     CdkDropListGroup, CdkDropList, CdkDrag, CdkDragHandle, CdkDragPlaceholder
   ],

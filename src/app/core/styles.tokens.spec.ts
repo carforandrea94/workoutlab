@@ -362,3 +362,53 @@ describe('styles.css — la barra come quella di Instagram', () => {
     expect(css).toContain(':root.barra-ridotta .sessionpill:not(.senza-barra){transform:translateY(calc(-1 * (var(--tabbar-outer) * var(--tabbar-ridotta) + 10px)));}');
   });
 });
+
+/**
+ * Le pagine interne parlano come le tab: le intestazioni di sezione sono
+ * titoli (non etichette in maiuscoletto), i gruppi sono liste inset unite, le
+ * azioni dentro un gruppo sono righe in accento, non tasti pieni.
+ */
+describe('styles.css — le pagine interne come le tab', () => {
+  let css = '';
+  beforeAll(async () => {
+    const nome = 'node:fs';
+    const fs = await import(/* @vite-ignore */ nome);
+    css = fs.readFileSync('src/styles.css', 'utf8');
+  });
+  const regola = (sel: string) => css.match(new RegExp('(?:^|\\n)' + sel.replace(/[.()[\]>+:]/g, '\\$&') + '\\{[^}]*\\}'))?.[0] ?? '';
+
+  it('l\'intestazione di sezione e\' quella delle tab: grande, in grassetto, senza maiuscoletto', () => {
+    const r = regola('.sectiontitle');
+    expect(r).toContain('font-size:var(--text-2xl)');
+    expect(r).toContain('font-weight:700');
+    expect(r).toContain('color:var(--label)');
+    expect(r).not.toContain('text-transform');
+    expect(regola('.shop-group-tit')).toContain('font-size:var(--text-2xl)');
+  });
+
+  it('un gruppo e\' un riquadro solo, con le righe separate da una linea, non card staccate', () => {
+    const r = regola('.grouplist');
+    expect(r).toContain('gap:0');
+    expect(r).toContain('border-radius:var(--r-lg)');
+    expect(r).toContain('border:1px solid var(--border-line)');
+    expect(css).toContain('.grouplist ion-item.cardrow,.grouplist ion-item-sliding.cardrow ion-item{--border-radius:0;--inner-border-width:0 0 1px 0;');
+    expect(regola('.shop-list')).toContain('gap:0');
+  });
+
+  it('le azioni dentro un gruppo o un riquadro sono righe in accento', () => {
+    expect(regola('ion-item.riga-azione')).toContain('--color:var(--accent)');
+    const r = regola('ion-button.azione-riquadro');
+    expect(r).toContain('--background:transparent');
+    expect(r).toContain('--color:var(--accent)');
+    expect(regola('ion-button.setadd')).toContain('--color:var(--accent)');
+    expect(regola('ion-button.setadd')).not.toContain('dashed');
+  });
+
+  it('riquadri e card hanno il raggio e il bordo delle liste, senza ombra', () => {
+    for (const sel of ['.infocard', '.history-empty', '.ex', '.meal']) {
+      const r = regola(sel);
+      expect(r, sel).toContain('border-radius:var(--r-lg)');
+      expect(r, sel).not.toContain('box-shadow');
+    }
+  });
+});
