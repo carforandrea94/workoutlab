@@ -250,3 +250,24 @@ describe('styles.css — la barra si scorre col dito', () => {
     expect(css).toMatch(/@media \(prefers-reduced-motion:reduce\)\{\.tabbar \.pill,\.tabbar\.trascina \.pill,\.tabbar \.tabbtn \.ic\{transition:none;\}\.tabbar\.trascina \.pill,\.tabbar \.tabbtn\.sotto-lente \.ic\{scale:none;\}\}/);
   });
 });
+
+/**
+ * I pulsanti della testata sono piatti come la freccia indietro: l'ombra
+ * delle card, sotto il loro riempimento semitrasparente, su iPhone faceva
+ * una sfumatura intorno al riquadro.
+ */
+describe('styles.css — i pulsanti della testata', () => {
+  let css = '';
+  beforeAll(async () => {
+    const nome = 'node:fs';
+    const fs = await import(/* @vite-ignore */ nome);
+    css = fs.readFileSync('src/styles.css', 'utf8');
+  });
+
+  it('niente ombra sui pulsanti della testata, ne\' sulla freccia indietro', () => {
+    const navicon = css.match(/(?:^|\n)ion-button\.navicon\{[^}]*\}/)?.[0] ?? '';
+    expect(navicon).toContain('--box-shadow:none');
+    const indietro = css.match(/(?:^|\n)ion-back-button\{[^}]*\}/)?.[0] ?? '';
+    expect(indietro).not.toMatch(/shadow/);
+  });
+});
