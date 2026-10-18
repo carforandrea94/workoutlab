@@ -250,3 +250,36 @@ describe('styles.css — la barra si scorre col dito', () => {
     expect(css).toMatch(/@media \(prefers-reduced-motion:reduce\)\{\.tabbar \.pill,\.tabbar\.trascina \.pill,\.tabbar \.tabbtn \.ic\{transition:none;\}\.tabbar\.trascina \.pill,\.tabbar \.tabbtn\.sotto-lente \.ic\{scale:none;\}\}/);
   });
 });
+
+/**
+ * La testata come la barra di navigazione di iOS: freccia e icone sono solo
+ * il segno, d'accento, senza riquadro ne' ombra (l'ombra sotto il
+ * riempimento semitrasparente, su iPhone, faceva una sfumatura). Dentro una
+ * toolbar Ionic le colorerebbe come il titolo: --ion-toolbar-color, messo
+ * solo su di loro, le riporta all'accento.
+ */
+describe('styles.css — la testata come la barra di iOS', () => {
+  let css = '';
+  beforeAll(async () => {
+    const nome = 'node:fs';
+    const fs = await import(/* @vite-ignore */ nome);
+    css = fs.readFileSync('src/styles.css', 'utf8');
+  });
+  const regola = (sel: string) => css.match(new RegExp('(?:^|\\n)' + sel.replace(/[.()[\]]/g, '\\$&') + '\\{[^}]*\\}'))?.[0] ?? '';
+
+  for (const sel of ['ion-button.navicon', 'ion-back-button']) {
+    it(`${sel}: solo il segno, d'accento, 44px da toccare`, () => {
+      const r = regola(sel);
+      expect(r).toContain('--ion-toolbar-color:var(--accent)');
+      expect(r).toContain('--color:var(--accent)');
+      expect(r).toContain('--background:transparent');
+      expect(r).toMatch(/width:44px;height:44px;/);
+      expect(r).not.toMatch(/box-shadow:var|border:1px|--border-width:1px/);
+    });
+  }
+
+  it('il primo e l\'ultimo segno stanno a filo del contenuto', () => {
+    expect(css).toContain('ion-buttons[slot=end] > .navicon:last-child{margin-right:-11px;}');
+    expect(css).toContain('ion-buttons[slot=start] > ion-back-button:first-child,ion-buttons[slot=start] > .navicon:first-child{margin-left:-11px;}');
+  });
+});

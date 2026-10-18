@@ -319,20 +319,30 @@ ion-toolbar ion-buttons[slot=end]{margin-left:10px;}
 ion-header[collapse=condense] ion-toolbar{--min-height:0;--padding-top:0;--padding-bottom:8px;}
 ion-toolbar ion-title.title-large{padding:0;}
 ion-title.title-large .navtitle{font-size:var(--text-large-title);letter-spacing:-.02em;line-height:1.1;}
-/* Solo la freccia: il testo lo toglie la configurazione (backButtonText in
-   app.config.ts), qui il riquadro e il segno. Stessa forma dei .navicon. */
-ion-back-button{--color:var(--label);--background:var(--surface-raise);--border-radius:var(--r-md);--min-width:38px;--min-height:38px;--padding-start:0;--padding-end:0;--icon-margin-start:0;--icon-margin-end:0;--icon-font-size:24px;width:38px;height:38px;border:1px solid var(--border-line);border-radius:var(--r-md);}
-/* Le icone della testata: ion-button quadrati da 38px, come i riquadri
-   delle altre parti della testata. Il bordo e l'ombra sono quelli delle altre
-   superfici; disabilitato lo gestisce Ionic. */
-ion-button.navicon{--background:var(--surface-raise);--color:var(--label);--border-radius:var(--r-md);--border-width:1px;--border-style:solid;--border-color:var(--border-line);--box-shadow:var(--shadow-card);--padding-start:0;--padding-end:0;--padding-top:0;--padding-bottom:0;--background-activated-opacity:0;--background-hover-opacity:0;--background-focused-opacity:.12;min-height:0;text-transform:none;width:38px;height:38px;}
+/* La testata come la barra di navigazione di iOS: freccia indietro e icone
+   sono solo il segno, colorato d'accento, senza riquadro ne' ombra (l'ombra
+   sotto il riempimento semitrasparente, su iPhone, faceva una sfumatura
+   intorno al riquadro). Ognuno si tocca su 44x44 (le HIG); il segno sta
+   centrato, quindi il primo e l'ultimo rientrano di 11px nel margine della
+   barra per stare a filo del contenuto, come in iOS.
+   La freccia e' quella di Ionic in modalita' iOS (il testo lo toglie
+   backButtonText in app.config.ts, il segno lo sceglie la piattaforma). */
+ion-back-button{--ion-toolbar-color:var(--accent);--color:var(--accent);--background:transparent;--background-hover:transparent;--background-focused:var(--surface-press);--background-focused-opacity:1;--border-radius:var(--r-md);--min-width:44px;--min-height:44px;--padding-start:0;--padding-end:0;--icon-margin-start:0;--icon-margin-end:0;--icon-font-size:28px;width:44px;height:44px;}
+/* Le icone della testata: ion-button vuoti da 44px col solo segno. Premuto lo
+   attenua Ionic, disabilitato pure. Dentro una toolbar Ionic li colora col
+   colore della toolbar (che e' quello del titolo): --ion-toolbar-color, messo
+   solo su di loro, li riporta all'accento come i pulsanti delle barre iOS. */
+ion-button.navicon{--ion-toolbar-color:var(--accent);--background:transparent;--background-hover:transparent;--background-focused:var(--surface-press);--background-focused-opacity:1;--background-activated-opacity:0;--background-hover-opacity:0;--color:var(--accent);--border-radius:var(--r-md);--border-width:0;--box-shadow:none;--padding-start:0;--padding-end:0;--padding-top:0;--padding-bottom:0;min-height:0;text-transform:none;width:44px;height:44px;}
 :where(ion-button.navicon){margin:0;}
 /* Dentro ion-buttons, Ionic rifa' ogni pulsante a modo suo: 2px ai lati, angoli
    a 4px, riempimento di 5px, altezza minima 32px. Lo fa con regole piu'
    specifiche di quella sopra (una e' un :not()), quindi qui le si riprende
-   una per una; fra due icone restano gli 8px di sotto. */
+   una per una. Fra due icone nessuno spazio in piu': i 44px di ciascuna
+   lasciano gia' 22px fra un segno e l'altro. */
 ion-buttons ion-button.navicon:not(.button-round){--border-radius:var(--r-md);--padding-start:0;--padding-end:0;--padding-top:0;--padding-bottom:0;min-height:0;margin-inline:0;}
-ion-buttons[slot=end] .navicon + .navicon,ion-buttons[slot=end] ion-segment + .navicon{margin-left:8px;}
+ion-buttons[slot=end] ion-segment + .navicon{margin-left:8px;}
+ion-buttons[slot=end] > .navicon:last-child{margin-right:-11px;}
+ion-buttons[slot=start] > ion-back-button:first-child,ion-buttons[slot=start] > .navicon:first-child{margin-left:-11px;}
 /* Striscia sotto la barra di stato, solo nell'app installata sulla Home.
    Con apple-mobile-web-app-status-bar-style=black-translucent la pagina arriva
    sotto la barra di stato, e da iOS 26 il sistema ci disegna sopra una
@@ -426,25 +436,38 @@ ion-tab-bar.tabbar{touch-action:none;-webkit-touch-callout:none;}
 @media (prefers-reduced-motion:reduce){.tabbar .pill,.tabbar.trascina .pill,.tabbar .tabbtn .ic{transition:none;}.tabbar.trascina .pill,.tabbar .tabbtn.sotto-lente .ic{scale:none;}}
 
 /* ===== SCHEDA ===== */
+/* La Scheda con i componenti di Ionic in modalita' iOS: liste raggruppate
+   (ion-list inset), intestazione di sezione, etichette su due righe, nota,
+   badge, avatar e barra di avanzamento. Qui solo i colori e le misure del
+   tema: Ionic li prende dai suoi colori chiari di serie (grigi pensati per il
+   fondo bianco), che sul tema scuro sparirebbero. Le liste stanno dentro
+   .wrap, che da' gia' i 16px di lato: il margine di ion-list inset si toglie.
+   Margini e padding interni di Ionic li azzera il reset in cima al file (vince
+   sugli stili dei componenti), quindi quelli che servono sono scritti qui. */
+.scheda-ios ion-list.list-inset{margin:0 0 20px;border-radius:var(--r-lg);border:1px solid var(--border-line);}
+.scheda-ios ion-item{--background:var(--surface-card);--background-activated:var(--surface-press);--background-activated-opacity:1;--background-focused:var(--surface-press);--background-focused-opacity:1;--border-color:var(--border-line);--detail-icon-color:var(--label-3);--detail-icon-opacity:1;--inner-padding-end:12px;--min-height:64px;}
+.scheda-ios ion-label h2{font-weight:600;font-size:var(--text-lg);letter-spacing:-.005em;line-height:1.3;color:var(--label);margin:0 0 2px;}
+.scheda-ios ion-label p{font-size:var(--text-sm);line-height:1.35;color:var(--label-2);margin:0;}
+.scheda-ios ion-note{color:var(--label-2);font-size:var(--text-sm);}
+.scheda-ios ion-progress-bar{height:4px;margin-top:10px;border-radius:var(--r-pill);--background:var(--border-line);--progress-background:var(--accent);}
+.scheda-ios ion-list-header.scheda-sezione{--color:var(--label);--background:transparent;padding-inline:4px;min-height:0;margin:0 0 8px;font-size:var(--text-2xl);font-weight:700;letter-spacing:-.01em;}
+.scheda-ios ion-list-header.scheda-sezione ion-label{margin:0;}
+/* Il numero del giorno: un riquadro come le icone delle Impostazioni di iOS.
+   Il giorno che tocca (o quello in corso) e' pieno: e' il segno di "da dove
+   si parte". */
+.scheda-ios ion-avatar.giorno-num{--border-radius:var(--r-md);width:36px;height:36px;margin-inline-end:14px;display:flex;align-items:center;justify-content:center;background:var(--accent-dim);color:var(--label);font-weight:800;font-size:var(--text-lg);font-variant-numeric:tabular-nums;}
+.scheda-ios ion-avatar.giorno-num.prossimo{background:var(--accent);color:var(--accent-contrast);}
+.scheda-ios ion-badge.stato{--background:var(--accent);--color:var(--accent-contrast);padding:4px 8px;border-radius:var(--r-pill);font-size:var(--text-2xs);font-weight:700;letter-spacing:.01em;margin-inline-start:8px;}
+.scheda-ios ion-badge.stato.bozza{--background:var(--surface-raise);--color:var(--label-2);}
+/* Gia' fatto questa settimana: la spunta piena accanto al chevron, non al
+   posto del numero del giorno, che serve sempre. */
+.scheda-ios .giorno-fatto{display:flex;color:var(--accent);margin-inline-start:8px;}
 .sectiontitle{font-family:'IBM Plex Mono',monospace;font-size:var(--text-xs);letter-spacing:.1em;text-transform:uppercase;color:var(--label-3);margin:6px 4px 10px;}
-.weekpicker{display:flex;align-items:center;justify-content:center;padding:14px;margin-bottom:8px;border-radius:var(--r-xl);background:var(--surface-card);border:1px solid var(--border-line);box-shadow:var(--shadow-card);}
-.weekpicker .wk-info{text-align:center;}
-.weekpicker .wk-label{font-weight:700;font-size:var(--text-md);letter-spacing:-.005em;color:var(--label);}
-.weekpicker .wk-sub{font-family:'IBM Plex Mono',monospace;font-size:var(--text-2xs);color:var(--label-3);margin-top:2px;}
-.weekdots{display:flex;justify-content:center;gap:5px;margin-top:8px;}
-.weekdots span{width:12px;height:3px;border-radius:var(--r-pill);background:var(--border-line);transition:background .2s ease,width .2s ease;}
-.weekdots span.completed{background:var(--accent);}
-.weekdots span.active{background:var(--accent);width:22px;}
 .grouplist{display:flex;flex-direction:column;gap:12px;}
 .daycard{display:flex;align-items:center;gap:12px;padding:16px;min-height:64px;border:1px solid var(--border-line);border-radius:var(--r-xl);background:var(--surface-card);box-shadow:var(--shadow-card);cursor:pointer;-webkit-user-select:none;user-select:none;}
-/* Spunta dell'allenamento gia' fatto in questa settimana. Sta accanto al
-   chevron e non al posto del numero del giorno, che serve sempre. */
 /* Il giorno che tocca (o quello in corso) ha il numero pieno: e' l'unico
    segno di "da dove si parte" nell'elenco. Il resto resta com'era. */
 .daycard .badge.next,.cardrow .badge.next{background:var(--accent);color:var(--accent-contrast);border-color:var(--accent);}
-.meta-tag{font-weight:600;color:var(--accent);white-space:nowrap;}
-.daycheck{width:26px;height:26px;flex-shrink:0;border-radius:var(--r-pill);background:var(--accent);color:var(--accent-contrast);display:flex;align-items:center;justify-content:center;}
-.daycheck app-icona{display:flex;}
 .daycard .badge,.cardrow .badge{width:42px;height:42px;border-radius:var(--r-md);background:var(--accent-dim);color:var(--label);border:1px solid var(--border-line);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:var(--text-lg);flex-shrink:0;}
 .daycard .info,.cardrow .info{flex:1;min-width:0;}
 .daycard .info .lbl,.cardrow .info .lbl{font-weight:700;font-size:var(--text-lg);letter-spacing:-.005em;line-height:1.25;}
@@ -1090,9 +1113,10 @@ ion-item.cardrow.cdk-drag-preview .riordina-presa{color:var(--accent);}
 .builder-tabsbar{position:sticky;top:0;z-index:5;margin:0 -16px;padding:6px 16px 14px;background:var(--bg);}
 /* Sotto il selettore il contenuto che scorre si spegne invece di tagliarsi di netto. */
 .builder-tabsbar::after{content:"";position:absolute;left:0;right:0;top:100%;height:14px;background:linear-gradient(to bottom, var(--bg), transparent);pointer-events:none;}
-/* La freccia dentro un livello e' un ion-button con il segno di Lucide: stessa
-   scatola da 38px di ion-back-button (vedi sopra), stesso segno. */
-ion-button.navback{--color:var(--label);}
+/* La freccia dentro un livello e' un ion-button con il segno della freccia di
+   Ionic (core/icone.ts, "indietro"): stessa misura e stesso colore di
+   ion-back-button (vedi sopra). */
+ion-button.navback{--color:var(--accent);}
 @media (prefers-reduced-motion:reduce){.livello,.navtitle-livello{animation:none;}}
 
 .authfield input[type="file"]{font-family:'Inter',sans-serif;font-size:var(--text-sm);color:var(--label-2);background:var(--surface-raise);border:1px dashed var(--border-line);border-radius:var(--r-sm);padding:10px;width:100%;}
@@ -1616,7 +1640,7 @@ input.daterow:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
 .tabbar .tabbtn { z-index: 1; }
 
 /* Contesto di posizionamento per cio' che le card piazzano in assoluto. */
-.daycard, .meal, .infocard, .weekpicker { position: relative; }
+.daycard, .meal, .infocard { position: relative; }
 
 /* ===================================================================
    PULSANTI

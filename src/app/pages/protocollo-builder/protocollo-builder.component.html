@@ -8,7 +8,7 @@
         <ion-back-button defaultHref="/scheda/protocolli" aria-label="Indietro"></ion-back-button>
       } @else {
         <ion-button class="navicon navback" (click)="saliDiUnLivello()" [attr.aria-label]="etichettaSu" [title]="etichettaSu">
-          <app-icona name="indietro" [size]="24"></app-icona>
+          <app-icona name="indietro" [size]="28"></app-icona>
         </ion-button>
       }
     </ion-buttons>
@@ -22,13 +22,13 @@
     <ion-buttons slot="end">
       @if (livello === 0) {
       <ion-button class="navicon" (click)="save(false)" [disabled]="protocolBuilderState.saving()" aria-label="Salva bozza" title="Salva bozza">
-        <app-icona name="save" [size]="18"></app-icona>
+        <app-icona name="save" [size]="22"></app-icona>
       </ion-button>
       <ion-button class="navicon" (click)="save(true)" [disabled]="protocolBuilderState.saving()" aria-label="Salva e attiva" title="Salva e attiva">
-        <app-icona name="checkmark" [size]="18"></app-icona>
+        <app-icona name="checkmark" [size]="22"></app-icona>
       </ion-button>
       <ion-button class="navicon" [routerLink]="['/scheda/protocolli/aggiorna-pdf', protocolId]" routerDirection="forward" aria-label="Aggiorna da PDF" title="Aggiorna da PDF">
-        <app-icona name="cloud-upload" [size]="18"></app-icona>
+        <app-icona name="cloud-upload" [size]="22"></app-icona>
       </ion-button>
       } @else {
       <!-- Dentro un livello il gesto e' uno solo, "fatto": salvare o attivare tutto
@@ -36,7 +36,7 @@
            alla pagina, in un giorno da sette esercizi, e' lontano. -->
       <ion-button class="navicon" (click)="confermaLivello()" [disabled]="protocolBuilderState.saving()"
         [attr.aria-label]="etichettaFatto" [title]="etichettaFatto">
-        <app-icona name="checkmark" [size]="18"></app-icona>
+        <app-icona name="checkmark" [size]="22"></app-icona>
       </ion-button>
       }
     </ion-buttons>

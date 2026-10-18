@@ -8,13 +8,16 @@ import { WeeklyProgressService } from '../../services/weekly-progress.service';
 import { WorkoutSessionStateService } from '../../services/workout-session-state.service';
 import { IONIC_PAGE, IONIC_LINKS } from '../../core/ionic-page';
 import { IONIC_LIST } from '../../core/ionic-list';
-import { NavController, IonButton } from '@ionic/angular';
+import { NavController, IonAvatar, IonBadge, IonButton, IonLabel, IonListHeader, IonNote, IonProgressBar } from '@ionic/angular';
 import { IconaComponent } from '../../components/icona/icona.component';
 
 @Component({
   selector: 'app-scheda-list',
   standalone: true,
-  imports: [IonButton, ...IONIC_LIST, ...IONIC_PAGE, ...IONIC_LINKS, CommonModule, IconaComponent],
+  imports: [
+    IonButton, IonAvatar, IonBadge, IonLabel, IonListHeader, IonNote, IonProgressBar,
+    ...IONIC_LIST, ...IONIC_PAGE, ...IONIC_LINKS, CommonModule, IconaComponent
+  ],
   templateUrl: './scheda-list.component.html'
 })
 export class SchedaListComponent implements OnInit {
@@ -109,6 +112,17 @@ export class SchedaListComponent implements OnInit {
 
   hasDraft(dayId: string): boolean {
     return this.draftDayIds().has(dayId);
+  }
+
+  /** Quanto del programma e' passato, per la barra: la settimana in corso conta. */
+  get avanzamento(): number {
+    const n = this.weekPlan.length;
+    return n > 0 ? Math.min(1, Math.max(0, this.currentWeek / n)) : 0;
+  }
+
+  /** Sotto la settimana: lo schema di oggi e, se c'e', il metodo ("4×10 rip. · Wave loading"). */
+  get sottotitoloSettimana(): string {
+    return [this.getWaveInfo(), this.metodo].filter(Boolean).join(' · ');
   }
 
   getWaveInfo(): string {

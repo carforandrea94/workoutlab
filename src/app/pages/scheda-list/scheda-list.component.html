@@ -5,19 +5,19 @@
     </ion-title>
     <ion-buttons slot="end">
       <ion-button class="navicon" routerLink="/scheda/protocolli" routerDirection="forward" aria-label="Protocolli" title="Protocolli">
-        <app-icona name="document-text" [size]="18"></app-icona>
+        <app-icona name="document-text" [size]="22"></app-icona>
       </ion-button>
       <ion-button class="navicon" routerLink="/scheda/storico" routerDirection="forward" aria-label="Storico" title="Storico">
-        <app-icona name="time" [size]="18"></app-icona>
+        <app-icona name="time" [size]="22"></app-icona>
       </ion-button>
       <ion-button class="navicon" routerLink="/scheda/info" routerDirection="forward" aria-label="Info" title="Info">
-        <app-icona name="information-circle" [size]="18"></app-icona>
+        <app-icona name="information-circle" [size]="22"></app-icona>
       </ion-button>
     </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true">
+<ion-content [fullscreen]="true" class="scheda-ios">
   <ion-header collapse="condense" class="ion-no-border">
     <ion-toolbar>
       <ion-title size="large">
@@ -27,37 +27,38 @@
   </ion-header>
   <div class="wrap">
     <ng-container *ngIf="days.length > 0">
-      <div class="weekpicker">
-        <div class="wk-info">
-          <div class="wk-label">Settimana {{ currentWeek }} di {{ weekPlan.length }} &nbsp;·&nbsp; {{ getWaveInfo() }}</div>
-          <div class="wk-sub">{{ todayWeekday }}<ng-container *ngIf="metodo"> &nbsp;·&nbsp; {{ metodo }}</ng-container></div>
-          <div class="weekdots">
-            <span *ngFor="let w of weeks" [class.completed]="w < currentWeek" [class.active]="w === currentWeek"></span>
-          </div>
-        </div>
-      </div>
+      <!-- La settimana del programma: una riga di lista iOS, con la barra di
+           avanzamento al posto dei trattini. -->
+      <ion-list [inset]="true" class="scheda-settimana">
+        <ion-item lines="none">
+          <ion-label>
+            <h2>Settimana {{ currentWeek }} di {{ weekPlan.length }}</h2>
+            <p *ngIf="sottotitoloSettimana as s">{{ s }}</p>
+            <ion-progress-bar [value]="avanzamento" aria-label="Settimane del programma"
+              [attr.aria-valuetext]="'Settimana ' + currentWeek + ' di ' + weekPlan.length"></ion-progress-bar>
+          </ion-label>
+          <ion-note slot="end">{{ todayWeekday }}</ion-note>
+        </ion-item>
+      </ion-list>
 
-      <p class="sectiontitle">Allenamenti</p>
-
-      <ion-list class="grouplist">
-        <ion-item class="cardrow press-fx" lines="none" [button]="true"
-          *ngFor="let day of days; let i = index" (click)="goToDay(i)">
-          <div class="cardrow-body">
-            <div class="badge" [class.next]="i === giornoProssimo || inCorso(day.id)">{{ i + 1 }}</div>
-            <div class="info">
-              <div class="lbl">{{ day.label }}</div>
-              <div class="meta">{{ getExCount(i) }} esercizi &nbsp;·&nbsp; rec {{ day.rec }}
-                <span class="meta-tag" *ngIf="inCorso(day.id)">● In corso</span>
-                <span class="meta-tag" *ngIf="!inCorso(day.id) && i === giornoProssimo">Prossimo</span>
-                <span class="meta-tag" *ngIf="!inCorso(day.id) && hasDraft(day.id)">● bozza</span>
-              </div>
-            </div>
-            <span class="daycheck" *ngIf="isDoneThisWeek(day.id)" role="img"
-              title="Allenamento già fatto questa settimana"
-              aria-label="Allenamento già fatto questa settimana">
-              <app-icona name="checkmark" [size]="14"></app-icona>
-            </span>
-          </div>
+      <ion-list-header class="scheda-sezione">
+        <ion-label>Allenamenti</ion-label>
+      </ion-list-header>
+      <ion-list [inset]="true" class="scheda-giorni">
+        <ion-item *ngFor="let day of days; let i = index" [button]="true" [detail]="true" (click)="goToDay(i)">
+          <ion-avatar slot="start" class="giorno-num" [class.prossimo]="i === giornoProssimo || inCorso(day.id)">{{ i + 1 }}</ion-avatar>
+          <ion-label>
+            <h2>{{ day.label }}</h2>
+            <p>{{ getExCount(i) }} esercizi · rec {{ day.rec }}</p>
+          </ion-label>
+          <ion-badge slot="end" class="stato" *ngIf="inCorso(day.id)">In corso</ion-badge>
+          <ion-badge slot="end" class="stato" *ngIf="!inCorso(day.id) && i === giornoProssimo">Prossimo</ion-badge>
+          <ion-badge slot="end" class="stato bozza" *ngIf="!inCorso(day.id) && hasDraft(day.id)">Bozza</ion-badge>
+          <span slot="end" class="giorno-fatto" *ngIf="isDoneThisWeek(day.id)" role="img"
+            title="Allenamento già fatto questa settimana"
+            aria-label="Allenamento già fatto questa settimana">
+            <app-icona name="checkmark-circle" [size]="24" [piena]="true"></app-icona>
+          </span>
         </ion-item>
       </ion-list>
     </ng-container>
