@@ -35,6 +35,10 @@ import { NomeCampoDirective, nomeDelCampo } from './nome-campo.directive';
       <div><ion-input aria-labelledby="altro"></ion-input></div>
     </div>
     <div id="h"><ion-input></ion-input></div>
+    <div id="j"><ion-input label="Nome" placeholder="Es. Panca piana"></ion-input></div>
+    <div id="k"><ion-input [label]="etichetta" placeholder="—"></ion-input></div>
+    <div id="l"><ion-select label="Schema"></ion-select></div>
+    <div id="m"><ion-input placeholder="Es. 80 g"><div slot="label">Quantità</div></ion-input></div>
     <div id="i"><span class="fuori">non un campo</span></div>
   `
 })
@@ -72,6 +76,11 @@ describe('NomeCampoDirective', () => {
     const { campo } = monta();
     expect(campo('f').getAttribute('aria-label')).toBe('Nome del protocollo');
     expect(campo('g').hasAttribute('aria-label')).toBe(false);
+  });
+
+  it('l\'etichetta di Ionic (la prop label, scritta o legata, o lo slot) e\' gia\' il nome: il segnaposto non le passa sopra', () => {
+    const { campo } = monta();
+    for (const id of ['j', 'k', 'l', 'm']) expect(campo(id).hasAttribute('aria-label'), id).toBe(false);
   });
 
   it('senza etichetta ne\' segnaposto non inventa niente', () => {

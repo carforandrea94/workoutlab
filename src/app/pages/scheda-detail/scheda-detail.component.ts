@@ -36,7 +36,7 @@ import { IONIC_PAGE } from '../../core/ionic-page';
 import { TastoDirective } from '../../core/tasto.directive';
 import { segnala } from '../../core/utils/segnale.util';
 import {
-  IonFooter, IonModal, NavController, IonSegment, IonSegmentButton, IonSpinner, IonButton, IonRadioGroup, IonRadio, IonItem
+  IonFooter, IonModal, NavController, IonSegment, IonSegmentButton, IonSpinner, IonButton, IonRadioGroup, IonRadio, IonItem, IonList, IonLabel
 } from '@ionic/angular';
 import { IconaComponent } from '../../components/icona/icona.component';
 
@@ -73,7 +73,7 @@ interface FoglioCarico {
   standalone: true,
   imports: [
     IonButton, IonFooter, TastoDirective, IonSegment, IonSegmentButton, IonSpinner, ...IONIC_PAGE, IonModal,
-    IonRadioGroup, IonRadio, IonItem, CommonModule, FormsModule, IconaComponent, NumberWheelComponent
+    IonRadioGroup, IonRadio, IonItem, IonList, IonLabel, CommonModule, FormsModule, IconaComponent, NumberWheelComponent
   ],
   templateUrl: './scheda-detail.component.html'
 })

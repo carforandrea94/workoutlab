@@ -24,7 +24,6 @@ import { ToastService } from '../../services/toast.service';
 import { PdfImportService } from '../../services/pdf-import.service';
 import { ConfirmDialogService } from '../../services/confirm-dialog.service';
 import { IONIC_PAGE, IONIC_LINKS } from '../../core/ionic-page';
-import { TastoDirective } from '../../core/tasto.directive';
 import { IONIC_LIST } from '../../core/ionic-list';
 import { NavController, IonContent, IonInput, IonTextarea, IonSelect, IonSelectOption, IonSpinner, IonSegment, IonSegmentButton, IonButton, IonRouterOutlet, IonLabel, IonListHeader, IonNote, IonItemDivider } from '@ionic/angular';
 import {
@@ -54,7 +53,7 @@ export type ZonaDrop =
 @Component({
   selector: 'app-protocollo-builder',
   standalone: true,
-  imports: [NomeCampoDirective, IonButton, IonLabel, IonListHeader, IonNote, IonItemDivider, ...IONIC_SLIDING, TastoDirective, ...IONIC_LIST, IonInput, IonTextarea, IonSelect, IonSelectOption, IonSpinner, IonSegment, IonSegmentButton, ...IONIC_PAGE, ...IONIC_LINKS,
+  imports: [NomeCampoDirective, IonButton, IonLabel, IonListHeader, IonNote, IonItemDivider, ...IONIC_SLIDING, ...IONIC_LIST, IonInput, IonTextarea, IonSelect, IonSelectOption, IonSpinner, IonSegment, IonSegmentButton, ...IONIC_PAGE, ...IONIC_LINKS,
     CommonModule, FormsModule, IconaComponent,
     CdkDropListGroup, CdkDropList, CdkDrag, CdkDragHandle, CdkDragPlaceholder
   ],
@@ -687,6 +686,23 @@ export class ProtocolloBuilderComponent implements OnInit, OnDestroy, DoCheck {
     if (this.editingPlan?.id === plan.id) this.editingPlan = null;
   }
 
+  /** "Rimuovi piano" da dentro il piano: chi non scorre le righe lo toglie da qui. */
+  removePlanFromEditor(): void {
+    if (!this.protocol || !this.editingPlan) return;
+    const id = this.editingPlan.id;
+    this.protocol.diet = this.protocol.diet.filter(p => p.id !== id);
+    this.editingPlan = null;
+    this.editingMeal = null;
+    this.cdr.detectChanges();
+  }
+
+  /** La seconda riga di un piano nell'elenco: quanti pasti e quanti alimenti. */
+  riassuntoPiano(plan: DietPlan): string {
+    const pasti = plan.meals.length;
+    const alimenti = this.countPlanItems(plan);
+    return `${pasti} ${pasti === 1 ? 'pasto' : 'pasti'} · ${alimenti} ${alimenti === 1 ? 'alimento' : 'alimenti'}`;
+  }
+
   countPlanItems(plan: DietPlan): number {
     return plan.meals.reduce((acc, meal) => acc + this.countMealItems(meal), 0);
   }
@@ -1022,6 +1038,26 @@ export class ProtocolloBuilderComponent implements OnInit, OnDestroy, DoCheck {
     if (!await this.persist()) return;
     this.toast.success('Giorno salvato ✓');
     this.closeDay();
+  }
+
+  /**
+   * Elimina il protocollo, dalla scheda Info. Chiede prima, come l'elenco dei
+   * protocolli; poi si esce senza la domanda sulle modifiche non salvate: del
+   * protocollo non resta niente da salvare.
+   */
+  async eliminaProtocollo(): Promise<void> {
+    if (!this.protocol || !this.protocolId) return;
+    const ok = await this.confirm.confirm(`Eliminare il protocollo "${this.protocol.name}"?`);
+    if (!ok) return;
+    try {
+      await this.protocolSvc.delete(this.protocolId);
+    } catch (e) {
+      console.error('Errore eliminazione protocollo:', e);
+      this.toast.error('Non sono riuscito a eliminarlo. Riprova.');
+      return;
+    }
+    this.uscitaConsentita = true;
+    this.nav.navigateBack(['/scheda/protocolli']);
   }
 
   async save(activateAfter: boolean): Promise<void> {

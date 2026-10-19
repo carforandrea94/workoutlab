@@ -96,4 +96,41 @@ describe('Impostazioni — il segnale di fine recupero (disegno vero)', () => {
     const { root } = await monta();
     expect(root.textContent).toContain('Vale per questo dispositivo');
   });
+
+  /**
+   * Uscire e chiudere l'account sono righe in fondo, come in Impostazioni di
+   * iOS: "Esci" d'accento (si rientra e c'e' tutto), "Elimina account" rossa,
+   * ognuna con la spiegazione sotto.
+   */
+  describe('in fondo: Esci ed Elimina account', () => {
+    const testo = (e: Element | null) => (e?.textContent ?? '').replace(/\s+/g, ' ').trim();
+
+    it('"Esci" e\' una riga che esce, con sotto cosa succede', async () => {
+      const { root, fixture } = await monta();
+      const esci = root.querySelector<HTMLElement>('ion-list.azioni-account ion-item.riga-esci')!;
+      expect(testo(esci)).toBe('Esci');
+      const c = fixture.componentInstance as any;
+      const spia = vi.spyOn(c, 'logout').mockResolvedValue(undefined);
+      esci.click();
+      expect(spia).toHaveBeenCalled();
+      expect(testo(esci.closest('ion-list')!.nextElementSibling)).toContain('Uscire non cancella niente');
+    });
+
+    it('"Elimina account" e\' una riga rossa che apre il foglio di conferma', async () => {
+      const { root, fixture } = await monta();
+      const elimina = root.querySelector<HTMLElement>('ion-list.azioni-account ion-item.riga-distruttiva')!;
+      expect(testo(elimina)).toBe('Elimina account');
+      elimina.click();
+      fixture.detectChanges();
+      expect((fixture.componentInstance as any).deleteSheetOpen).toBe(true);
+      expect(testo(elimina.closest('ion-list')!.nextElementSibling)).toContain('Non si annulla');
+    });
+
+    it('i vecchi tasti pieni non ci sono piu\'', async () => {
+      const { root } = await monta();
+      const tasti = Array.from(root.querySelectorAll('ion-content > .wrap ion-button, ion-content ion-button.confirmbtn.w-full')).map(b => testo(b));
+      expect(tasti).not.toContain('Esci');
+      expect(tasti).not.toContain('Elimina account');
+    });
+  });
 });

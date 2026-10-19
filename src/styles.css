@@ -554,7 +554,6 @@ ion-item.cardrow{--background:var(--surface-card);--background-activated:var(--s
 ion-list.method-list{gap:0;}
 .method-row .cardrow-body{gap:14px;}
 .method-row .method-pending{color:var(--label-3);font-size:var(--text-xl);}
-ion-item-sliding.cardrow ion-item-option{--background:var(--state-danger);--color:#fff;font-weight:700;font-size:var(--text-md);}
 /* La nota sotto un gruppo (pagine interne e tab): spiega il gruppo sopra,
    attaccata a lui, prima del prossimo titolo. */
 .nota-sotto{margin:-12px 4px 20px;font-size:var(--text-xs);color:var(--label-2);line-height:1.5;}
@@ -838,15 +837,42 @@ ion-button.closing-discard.button-disabled{opacity:.4;}
 /* La riga che toglie qualcosa ("Rimuovi pasto"): in rosso, come le righe
    distruttive di iOS, in un gruppo suo o in fondo al gruppo che riguarda. */
 .liste-ios ion-item.riga-distruttiva{--color:var(--state-danger-text);font-weight:600;font-size:var(--text-lg);}
-/* L'azione rossa che compare scorrendo una riga (ion-item-sliding). */
-.liste-ios ion-item-option.elimina{--background:var(--state-danger);--color:#fff;font-weight:700;font-size:var(--text-md);}
+/* L'azione rossa che compare scorrendo una riga (ion-item-sliding), la stessa
+   in ogni elenco: prima erano tre regole uguali, una per tipo di riga. */
+ion-item-option.elimina{--background:var(--state-danger);--color:#fff;font-weight:700;font-size:var(--text-md);}
+
+/* ===== MODULI DI iOS: i campi dentro le righe =====
+   Un campo e' una riga di una lista inset, con l'etichetta nella riga (la
+   prop label di ion-input e ion-select). Il testo si scrive accanto
+   all'etichetta, come in Contatti; numeri e date stanno a destra, come in
+   Salute e in Impostazioni, con l'unita' subito dopo. */
+.liste-ios ion-input,.liste-ios ion-select{--color:var(--label);--placeholder-color:var(--label-3);--placeholder-opacity:1;font-size:var(--text-lg);}
+.liste-ios ion-input .label-text,.liste-ios ion-select .label-text{color:var(--label);}
+.liste-ios ion-list.campi ion-input,.liste-ios ion-list.campi ion-select{min-height:52px;}
+.liste-ios ion-select::part(text){color:var(--label-2);}
+.liste-ios ion-select::part(icon){color:var(--label-3);opacity:1;}
+.liste-ios ion-input.a-destra .native-input{text-align:right;font-variant-numeric:tabular-nums;}
+.liste-ios ion-input .unita{margin-inline-start:6px;color:var(--label-2);font-size:var(--text-md);font-variant-numeric:tabular-nums;}
+/* La data si veste da valore, a destra: il selettore lo apre il sistema. */
+.liste-ios input.data-riga{background:none;border:none;outline:none;padding:0;margin:0;font:inherit;font-size:var(--text-lg);font-variant-numeric:tabular-nums;color:var(--label-2);text-align:right;min-height:44px;cursor:pointer;}
+.liste-ios input.data-riga:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:var(--r-xs);}
+.liste-ios input.data-riga::-webkit-calendar-picker-indicator{opacity:.5;cursor:pointer;}
+.liste-ios ion-label label{cursor:inherit;}
+/* Il valore di una misura: a destra della riga, stretto quanto un numero. */
+.liste-ios ion-input.misura-valore{flex:0 0 auto;width:118px;min-height:44px;margin-inline-start:8px;}
+/* Un segmento in un modulo sta sotto la sua intestazione, come un gruppo. */
+.liste-ios ion-segment.modulo-seg{margin:0 0 20px;}
+/* Due note di seguito sotto lo stesso gruppo: un paragrafo dopo l'altro. */
+.nota-sotto + .nota-sotto{margin-top:-8px;}
+/* Il PDF di una riga: un documento finche' non c'e', poi la spunta verde. */
+.liste-ios app-icona.file-segno{color:var(--label-3);margin-inline-end:14px;}
+.liste-ios app-icona.file-segno.scelto{color:var(--state-success);}
+/* "Esci": un'azione, non una distruzione (si rientra e c'e' tutto), quindi
+   l'accento e non il rosso di "Elimina account" subito sotto. */
+.liste-ios ion-item.riga-esci{--color:var(--accent);font-weight:600;font-size:var(--text-lg);}
 
 /* ===== DIETA NEL BUILDER: il piano e il pasto come moduli di iOS =====
-   Le righe stanno in liste inset (.liste-ios); i campi sono ion-input con la
-   loro etichetta, dentro le righe. */
-.dieta-builder ion-input{--color:var(--label);--placeholder-color:var(--label-3);--placeholder-opacity:1;font-size:var(--text-lg);}
-.dieta-builder ion-input .label-text{color:var(--label);}
-.dieta-builder ion-list.campi ion-input{min-height:52px;}
+   Le righe stanno in liste inset (.liste-ios), con i campi descritti sopra. */
 ion-segment.combo-seg{margin:0 0 12px;}
 ion-segment.combo-seg ion-segment-button{min-width:max-content;--padding-start:12px;--padding-end:12px;}
 /* La riga di un alimento, come in una tabella iOS in modifica: il meno rosso
@@ -1022,11 +1048,13 @@ ion-button.authlink.quiet{margin-top:6px;--color:var(--label-3);text-decoration:
 .credvalue.mono{font-variant-numeric:tabular-nums;letter-spacing:.03em;}
 
 .protocol-row{gap:10px;}
-.protocol-status{font-size:var(--text-2xs);font-weight:700;letter-spacing:.01em;padding:3px 8px;border-radius:var(--r-pill);}
-.protocol-status.ps-active{color:var(--accent-contrast);background:var(--accent);}
-.protocol-status.ps-draft{color:var(--label-2);background:var(--surface-raise-2);}
-.protocol-status.ps-archived{color:var(--label-3);background:var(--surface-raise);}
-.protocol-activatebtn{flex-shrink:0;}
+/* Lo stato e' il badge delle liste (ion-badge.stato, sopra): qui sta prima del
+   testo, non dopo il titolo. */
+.protocol-row ion-badge.stato{--background:var(--accent);--color:var(--accent-contrast);padding:3px 8px;border-radius:var(--r-pill);font-size:var(--text-2xs);font-weight:700;letter-spacing:.01em;margin-inline-end:6px;vertical-align:1px;}
+.protocol-row ion-badge.stato.bozza{--background:var(--surface-raise-2);--color:var(--label-2);}
+/* "Attiva" e' un tasto di testo, come i tasti delle righe di iOS: il riquadro
+   grigio pieno pesava piu' del nome del protocollo. */
+ion-button.attiva-btn{--color:var(--accent);--padding-start:10px;--padding-end:10px;flex-shrink:0;margin:0;min-height:44px;font-size:var(--text-md);font-weight:600;text-transform:none;letter-spacing:0;}
 
 .method-icon{width:36px;height:36px;border-radius:var(--r-md);background:var(--accent);color:var(--accent-contrast);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 .method-info{flex:1;min-width:0;}
@@ -1065,7 +1093,6 @@ ion-item.shop-item,.shop-item ion-item{--background:transparent;--min-height:56p
 .shop-item ion-checkbox::part(label){white-space:normal;}
 .shop-item.ok{opacity:.5;}
 .shop-item.ok ion-checkbox::part(label){text-decoration:line-through;}
-ion-item-sliding.shop-item ion-item-option{--background:var(--state-danger);--color:#fff;font-weight:700;font-size:var(--text-md);}
 
 /* Il carrello sta in cima e nasce chiuso: a meta' spesa si scorre quello che
    manca, non venti righe barrate. E' un ion-accordion; la testata e' una riga
@@ -1219,7 +1246,6 @@ ion-button.savebtn.saved{--background:var(--state-success);--color:var(--accent-
 ion-button.savebtn.err{--background:var(--state-danger);--color:#fff;}
 /* Elimina: fondo rosso tenue, gia' calcolato per tema in --state-danger-soft,
    invece di un gradiente traslucido steso sulla card. */
-ion-button.savebtn.delete-session-btn{--background:var(--state-danger-soft);--color:var(--state-danger-text);--border-color:var(--state-danger-soft-border);}
 /* La scelta dentro una sheet o una riga: stessa famiglia, in piccolo. I due tasti
    di una coppia dividono la riga a meta': nessuno dei due e' "quello giusto". */
 ion-button.confirmbtn{--border-radius:var(--r-lg);--padding-start:12px;--padding-end:12px;--padding-top:12px;--padding-bottom:12px;flex:1;min-height:0;font-size:var(--text-md);}

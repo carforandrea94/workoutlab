@@ -443,7 +443,9 @@ describe('styles.css — la dieta del builder come moduli di iOS', () => {
   it('togliere e rimuovere sono rossi, come in iOS', () => {
     expect(css).toMatch(/ion-button\.togli\{[^}]*--color:var\(--state-danger-text\)/);
     expect(css).toMatch(/\.liste-ios ion-item\.riga-distruttiva\{[^}]*--color:var\(--state-danger-text\)/);
-    expect(css).toMatch(/\.liste-ios ion-item-option\.elimina\{[^}]*--background:var\(--state-danger\)/);
+    expect(css).toMatch(/(?:^|\n)ion-item-option\.elimina\{[^}]*--background:var\(--state-danger\)/);
+    // Una regola sola per l'"Elimina" che compare scorrendo: prima erano tre, una per tipo di riga.
+    expect(css).not.toMatch(/ion-item-sliding\.[\w-]+ ion-item-option\{/);
   });
 
   it('le righe nei contenitori del trascinamento hanno la linea, l\'ultima della lista no', () => {
@@ -455,3 +457,48 @@ describe('styles.css — la dieta del builder come moduli di iOS', () => {
     expect(css).toContain('.dieta-builder .chevron.aperta{rotate:180deg;}');
   });
 });
+
+/**
+ * I moduli di iOS fuori dalla dieta: campi con l'etichetta nella riga, numeri e
+ * date a destra, "Esci" d'accento e i protocolli con il badge delle liste.
+ */
+describe('styles.css — i moduli di iOS', () => {
+  let css = '';
+  beforeAll(async () => {
+    const nome = 'node:fs';
+    const fs = await import(/* @vite-ignore */ nome);
+    css = fs.readFileSync('src/styles.css', 'utf8');
+  });
+  const regola = (sel: string) => css.match(new RegExp('(?:^|\\n)' + sel.replace(/[.()[\]>+:]/g, '\\$&') + '\\{[^}]*\\}'))?.[0] ?? '';
+
+  it('i campi delle liste sono di tutte le liste iOS, non solo della dieta', () => {
+    expect(regola('.liste-ios ion-input,.liste-ios ion-select')).toContain('--placeholder-color:var(--label-3)');
+    expect(css).not.toMatch(/\.dieta-builder ion-input\{/);
+  });
+
+  it('numeri e date stanno a destra, con le cifre tabellari', () => {
+    expect(regola('.liste-ios ion-input.a-destra .native-input')).toContain('text-align:right');
+    const data = regola('.liste-ios input.data-riga');
+    expect(data).toContain('text-align:right');
+    expect(data).toContain('min-height:44px');
+  });
+
+  it('"Esci" e\' d\'accento, non rosso: e\' un\'azione, non una distruzione', () => {
+    expect(regola('.liste-ios ion-item.riga-esci')).toContain('--color:var(--accent)');
+  });
+
+  it('nei protocolli lo stato e\' il badge delle liste e "Attiva" un tasto di testo da 44', () => {
+    expect(regola('.protocol-row ion-badge.stato')).toContain('--background:var(--accent)');
+    expect(regola('.protocol-row ion-badge.stato.bozza')).toContain('--color:var(--label-2)');
+    const attiva = regola('ion-button.attiva-btn');
+    expect(attiva).toContain('--color:var(--accent)');
+    expect(attiva).toContain('min-height:44px');
+    expect(css).not.toContain('.protocol-status');
+    expect(css).not.toContain('delete-session-btn');
+  });
+
+  it('il PDF scelto ha la spunta verde', () => {
+    expect(regola('.liste-ios app-icona.file-segno.scelto')).toContain('color:var(--state-success)');
+  });
+});
+

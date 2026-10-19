@@ -35,31 +35,29 @@
            un'uscita" nella Corsa: senza protocolli il gruppo ha solo lei. -->
       <div class="grouplist">
         <ion-item-sliding class="cardrow press-fx" *ngFor="let p of protocols" #riga>
-          <!-- Qui la riga ha dentro dei pulsanti (Attiva, cestino): un ion-item
-               "button" li anniderebbe in un altro button, quindi la riga e' un item
-               semplice. Il cestino resta perche' i protocolli non si eliminano da
-               nessun'altra parte, e un gesto da solo non lo raggiunge chi usa lo
-               screen reader. -->
+          <!-- Qui la riga ha dentro un pulsante (Attiva): un ion-item "button" lo
+               anniderebbe in un altro button, quindi la riga e' un item semplice.
+               Un protocollo si elimina scorrendo la riga o da dentro, in fondo
+               alla scheda Info del builder: li' lo trova anche chi usa lo screen
+               reader, e il cestino in ogni riga ripeteva lo scorrimento. -->
           <ion-item lines="none" detail="false" (click)="editProtocol(p)">
             <div class="cardrow-body protocol-row">
               <div class="info">
                 <div class="lbl">{{ p.name }}</div>
                 <div class="meta">
-                  <span class="protocol-status" [class]="'ps-' + p.status">{{ statusLabel(p) }}</span>
-                  &nbsp;·&nbsp;{{ p.source === 'pdf' ? 'da PDF' : 'manuale' }}
+                  <!-- Lo stato e' un badge come "Prossimo" e "Adesso": pieno se attivo, spento se no. -->
+                  <ion-badge class="stato" [class.bozza]="p.status !== 'active'">{{ statusLabel(p) }}</ion-badge>
+                  {{ p.source === 'pdf' ? 'da PDF' : 'manuale' }}
                 </div>
               </div>
-              <ion-button class="confirmbtn cancel protocol-activatebtn" *ngIf="p.status !== 'active'"
-                [disabled]="busyId === p.id" (click)="activate(p, $event)">
+              <ion-button class="attiva-btn tap44" fill="clear" *ngIf="p.status !== 'active'"
+                [disabled]="busyId === p.id" (click)="activate(p, $event)" [attr.aria-label]="'Attiva il protocollo ' + p.name">
                 {{ busyId === p.id ? '…' : 'Attiva' }}
-              </ion-button>
-              <ion-button class="delete-btn tap44" (click)="remove(p, $event)" title="Elimina" [attr.aria-label]="'Elimina il protocollo ' + p.name">
-                <app-icona name="trash" [size]="14"></app-icona>
               </ion-button>
             </div>
           </ion-item>
           <ion-item-options side="end">
-            <ion-item-option (click)="riga.close(); remove(p, $event)">Elimina</ion-item-option>
+            <ion-item-option class="elimina" (click)="riga.close(); remove(p, $event)">Elimina</ion-item-option>
           </ion-item-options>
         </ion-item-sliding>
         <ion-item class="cardrow riga-azione" lines="none" [button]="true" [detail]="false" (click)="newProtocol()">

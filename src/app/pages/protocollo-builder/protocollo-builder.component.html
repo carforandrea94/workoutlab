@@ -60,11 +60,14 @@
     <ng-container *ngIf="!loading && !errorMsg && protocol">
 
       <ng-container *ngIf="livello === 0">
-        <div class="authfield mb-4">
-          <label>Nome protocollo</label>
-          <div class="measure-input-wrap">
-            <ion-input type="text" [(ngModel)]="protocol.name" placeholder="Es. Protocollo Settembre"></ion-input>
-          </div>
+        <!-- I campi del builder sono righe di modulo, come in Impostazioni di
+             iOS: l'etichetta nella riga, il valore accanto. -->
+        <div class="liste-ios">
+          <ion-list [inset]="true" class="campi">
+            <ion-item lines="none">
+              <ion-input label="Nome" [(ngModel)]="protocol.name" placeholder="Es. Protocollo Settembre"></ion-input>
+            </ion-item>
+          </ion-list>
         </div>
 
         <!-- Il selettore resta sotto la testata mentre si scorre: da un elenco lungo
@@ -92,14 +95,14 @@
            all'ultimo. -->
       <ng-container *ngIf="tab === 'scheda' && !editingExercise && !editingDay">
 
-        <p class="sectiontitle">Programma</p>
-        <div class="infocard mb-4">
-          <div class="authfield mb-0">
-            <label for="prog-start">Data inizio programma</label>
-            <div class="measure-input-wrap">
-              <input id="prog-start" type="date" [(ngModel)]="protocol.workout.programStart" />
-            </div>
-          </div>
+        <div class="liste-ios">
+          <ion-list-header class="sezione"><ion-label>Programma</ion-label></ion-list-header>
+          <ion-list [inset]="true" class="campi">
+            <ion-item lines="none">
+              <ion-label><label for="prog-start">Inizio del programma</label></ion-label>
+              <input id="prog-start" slot="end" class="data-riga" type="date" [(ngModel)]="protocol.workout.programStart" />
+            </ion-item>
+          </ion-list>
         </div>
 
         <p class="sectiontitle">Giorni di allenamento</p>
@@ -129,18 +132,17 @@
       <!-- ===================== IL SINGOLO GIORNO ===================== -->
       <ng-container *ngIf="tab === 'scheda' && !editingExercise && editingDay as ed">
 
-        <div class="authfield">
-          <label for="day-label">Nome giorno</label>
-          <div class="measure-input-wrap">
-            <ion-input id="day-label" type="text" [(ngModel)]="ed.day.label"
-                   placeholder="Es. Petto · Spalle · Tricipiti"></ion-input>
-          </div>
-        </div>
-        <div class="authfield">
-          <label for="day-rec">Recupero (testo mostrato, es. 60-90")</label>
-          <div class="measure-input-wrap">
-            <ion-input id="day-rec" type="text" [(ngModel)]="ed.day.rec" placeholder='60-90"'></ion-input>
-          </div>
+        <div class="liste-ios">
+          <ion-list [inset]="true" class="campi">
+            <ion-item>
+              <ion-input id="day-label" label="Nome" [(ngModel)]="ed.day.label"
+                placeholder="Es. Petto · Spalle · Tricipiti"></ion-input>
+            </ion-item>
+            <ion-item lines="none">
+              <ion-input id="day-rec" label="Recupero" [(ngModel)]="ed.day.rec" placeholder='Es. 60-90"'></ion-input>
+            </ion-item>
+          </ion-list>
+          <p class="nota-sotto">Il recupero è un testo: si mostra così com'è scritto.</p>
         </div>
 
         <div class="sec-head mt-4">
@@ -200,64 +202,56 @@
           </ion-item>
         </ion-list>
 
-        <div class="savebar mt-4">
-          <ion-button class="savebtn" [disabled]="saving" (click)="saveDay()">
-            {{ saving ? 'Salvo…' : 'Salva giorno' }}
-          </ion-button>
-        </div>
-
         <p class="autherror" role="alert" *ngIf="saveMsg">{{ saveMsg }}</p>
 
-        <ion-button class="savebtn delete-session-btn mt-4" (click)="removeDay(ed.index)">Rimuovi giorno</ion-button>
+        <!-- Salvare il giorno e' la spunta in alto, come "Fine" su iOS: il tasto
+             in fondo la ripeteva. Toglierlo resta qui, in rosso. -->
+        <div class="liste-ios">
+          <ion-list [inset]="true" class="azioni-giorno">
+            <ion-item class="riga-distruttiva" lines="none" [button]="true" [detail]="false" (click)="removeDay(ed.index)">
+              <ion-label>Rimuovi giorno</ion-label>
+            </ion-item>
+          </ion-list>
+        </div>
       </ng-container>
 
       <!-- ===================== EDITOR ESERCIZIO ===================== -->
       <ng-container *ngIf="tab === 'scheda' && editingExercise as ee">
 
-        <div class="authfield">
-          <label>Nome esercizio</label>
-          <div class="measure-input-wrap">
-            <ion-input type="text" [(ngModel)]="ee.ex.name" placeholder="Es. Panca piana"></ion-input>
-          </div>
-        </div>
-
-        <div class="builder-row2">
-          <div class="authfield">
-            <label>Gruppo muscolare</label>
-            <div class="measure-input-wrap">
-              <ion-select interface="popover" [(ngModel)]="ee.ex.muscle">
+        <!-- L'esercizio e' un modulo di iOS: una riga per campo, le scelte con il
+             valore a destra (si aprono in un menu), la spunta in alto per salvare. -->
+        <div class="liste-ios">
+          <ion-list [inset]="true" class="campi">
+            <ion-item>
+              <ion-input label="Nome" [(ngModel)]="ee.ex.name" placeholder="Es. Panca piana"></ion-input>
+            </ion-item>
+            <ion-item>
+              <ion-select label="Gruppo muscolare" interface="popover" [(ngModel)]="ee.ex.muscle">
                 <ion-select-option *ngFor="let m of muscles" [value]="m">{{ m }}</ion-select-option>
               </ion-select>
-            </div>
-          </div>
-          <div class="authfield">
-            <label>Schema</label>
-            <div class="measure-input-wrap">
-              <ion-select interface="popover" [(ngModel)]="ee.ex.scheme" (ngModelChange)="onSchemeChange(ee.ex)">
+            </ion-item>
+            <ion-item>
+              <ion-select label="Schema" interface="popover" [(ngModel)]="ee.ex.scheme" (ngModelChange)="onSchemeChange(ee.ex)">
                 <ion-select-option value="wave">Wave (progressione settimanale)</ion-select-option>
                 <ion-select-option value="plain">Fisso (serie/rip. manuali)</ion-select-option>
               </ion-select>
-            </div>
-          </div>
+            </ion-item>
+          </ion-list>
         </div>
 
         <ng-container *ngIf="ee.ex.scheme === 'plain'">
-          <div class="builder-row2">
-            <div class="authfield">
-              <label>N. serie</label>
-              <div class="measure-input-wrap">
-                <ion-input type="number" [ngModel]="ee.ex.sets" (ngModelChange)="ee.ex.sets = $event; onSetsChange(ee.ex)"></ion-input>
-              </div>
-            </div>
-            <div class="authfield">
-              <label>Tipo di serie</label>
-              <div class="measure-input-wrap">
-                <ion-select interface="popover" [ngModel]="serieType(ee.ex)" (ngModelChange)="setSerieType(ee.ex, $event)">
+          <div class="liste-ios">
+            <ion-list [inset]="true" class="campi">
+              <ion-item>
+                <ion-input label="Serie" class="a-destra" type="number" inputmode="numeric" [ngModel]="ee.ex.sets" (ngModelChange)="ee.ex.sets = $event; onSetsChange(ee.ex)"></ion-input>
+              </ion-item>
+              <ion-item>
+                <ion-select label="Tipo di serie" interface="popover" [ngModel]="serieType(ee.ex)" (ngModelChange)="setSerieType(ee.ex, $event)">
                   <ion-select-option value="normale">Normale</ion-select-option>
                   <ion-select-option value="cluster">Cluster (blocchi dentro la serie)</ion-select-option>
                 </ion-select>
-              </div>
-            </div>
+              </ion-item>
+            </ion-list>
           </div>
 
           <!-- Il cluster descrive com'e' fatta UNA serie: "4x8+8" sono quattro
@@ -316,18 +310,18 @@
             </p>
           </div>
 
-          <div class="authfield">
-            <label>Testo mostrato (es. 3x12-10-8)</label>
-            <div class="measure-input-wrap">
-              <ion-input type="text" [(ngModel)]="ee.ex.text" [placeholder]="ee.ex.cluster ? clusterScheme(ee.ex) : '3x12-10-8'"></ion-input>
-            </div>
-          </div>
-
-          <div class="authfield" *ngIf="!ee.ex.cluster">
-            <label>Ripetizioni per serie (separate da virgola)</label>
-            <div class="measure-input-wrap">
-              <ion-input type="text" [ngModel]="repsAsString(ee.ex)" (ngModelChange)="setRepsFromString(ee.ex, $event)" placeholder="12, 10, 8"></ion-input>
-            </div>
+          <div class="liste-ios">
+            <ion-list [inset]="true" class="campi">
+              <ion-item>
+                <ion-input label="Testo" [(ngModel)]="ee.ex.text" [placeholder]="'Es. ' + (ee.ex.cluster ? clusterScheme(ee.ex) : '3x12-10-8')"></ion-input>
+              </ion-item>
+              <ion-item *ngIf="!ee.ex.cluster">
+                <ion-input label="Ripetizioni" [ngModel]="repsAsString(ee.ex)" (ngModelChange)="setRepsFromString(ee.ex, $event)" placeholder="Es. 12, 10, 8"></ion-input>
+              </ion-item>
+            </ion-list>
+            <p class="nota-sotto">
+              Il testo si mostra così com'è scritto.<ng-container *ngIf="!ee.ex.cluster"> Le ripetizioni sono quelle di ogni serie, separate da virgola.</ng-container>
+            </p>
           </div>
         </ng-container>
 
@@ -350,16 +344,18 @@
           </div>
         </ng-container>
 
-        <div class="authfield">
-          <label>Nota (opzionale)</label>
-          <div class="measure-input-wrap">
-            <ion-input type="text" [(ngModel)]="ee.ex.note" placeholder="Es. ultima serie in strip"></ion-input>
-          </div>
-        </div>
-
-        <div class="savebar builder-savebar">
-          <ion-button class="savebtn cancel" (click)="removeExerciseFromEditor()">Rimuovi</ion-button>
-          <ion-button class="savebtn" (click)="saveExercise()">Salva esercizio</ion-button>
+        <!-- Salvare e' la spunta in alto: "Salva esercizio" in fondo la ripeteva. -->
+        <div class="liste-ios">
+          <ion-list [inset]="true" class="campi">
+            <ion-item>
+              <ion-input label="Nota" [(ngModel)]="ee.ex.note" placeholder="Facoltativa. Es. ultima serie in strip"></ion-input>
+            </ion-item>
+          </ion-list>
+          <ion-list [inset]="true" class="azioni-esercizio">
+            <ion-item class="riga-distruttiva" [button]="true" [detail]="false" (click)="removeExerciseFromEditor()">
+              <ion-label>Rimuovi esercizio</ion-label>
+            </ion-item>
+          </ion-list>
         </div>
       </ng-container>
 
@@ -367,30 +363,34 @@
       <ng-container *ngIf="tab === 'dieta'">
 
         <!-- Lista piani -->
+        <!-- I piani come i pasti dentro un piano: righe che si aprono, e che si
+             eliminano scorrendo o da dentro ("Rimuovi piano"). Il cestino in
+             ogni riga ripeteva lo scorrimento. -->
         <ng-container *ngIf="!editingPlan">
-          <p class="sectiontitle mt-0">Piani alimentari</p>
+          <div class="liste-ios">
+            <ion-list-header class="sezione"><ion-label>Piani alimentari</ion-label></ion-list-header>
 
-          <div *ngIf="protocol.diet.length === 0" class="history-empty">
-            Nessun piano ancora.<br>Aggiungine uno (es. "Giorno ON", "Giorno OFF", "Rifeed"...).
-          </div>
-
-          <div class="grouplist">
-            <div class="daycard press-fx protocol-row" *ngFor="let plan of protocol.diet" (click)="openPlan(plan)">
-              <div class="info" appTasto [attr.aria-label]="'Apri il piano ' + (plan.name || 'senza nome')">
-                <div class="lbl">{{ plan.name }}</div>
-                <div class="meta">{{ countPlanItems(plan) }} alimenti</div>
-              </div>
-              <ion-button class="delete-btn tap44" (click)="removePlan(plan, $event)" title="Elimina" [attr.aria-label]="'Elimina il piano ' + plan.name">
-                <app-icona name="trash" [size]="14"></app-icona>
-              </ion-button>
-              <span class="chev">
-                <app-icona name="chevron-forward" [size]="13"></app-icona>
-              </span>
+            <div *ngIf="protocol.diet.length === 0" class="history-empty">
+              Nessun piano ancora.<br>Aggiungine uno (es. "Giorno ON", "Giorno OFF", "Rifeed"...).
             </div>
-            <ion-item class="cardrow riga-azione" lines="none" [button]="true" [detail]="false" (click)="addDietPlan()">
-              <app-icona slot="start" name="add" [size]="22"></app-icona>
-              <ion-label>Aggiungi piano alimentare</ion-label>
-            </ion-item>
+
+            <ion-list [inset]="true" class="piani">
+              <ion-item-sliding *ngFor="let plan of protocol.diet" #riga>
+                <ion-item class="piano-dieta" [button]="true" [detail]="true" (click)="openPlan(plan)">
+                  <ion-label>
+                    <h2>{{ plan.name || 'Piano senza nome' }}</h2>
+                    <p>{{ riassuntoPiano(plan) }}</p>
+                  </ion-label>
+                </ion-item>
+                <ion-item-options side="end">
+                  <ion-item-option class="elimina" (click)="riga.close(); removePlan(plan, $event)">Elimina</ion-item-option>
+                </ion-item-options>
+              </ion-item-sliding>
+              <ion-item class="riga-azione" [button]="true" [detail]="false" (click)="addDietPlan()">
+                <app-icona slot="start" name="add" [size]="22"></app-icona>
+                <ion-label>Aggiungi piano alimentare</ion-label>
+              </ion-item>
+            </ion-list>
           </div>
         </ng-container>
 
@@ -426,6 +426,12 @@
               <ion-item class="riga-azione" [button]="true" [detail]="false" (click)="addMeal()">
                 <app-icona slot="start" name="add" [size]="22"></app-icona>
                 <ion-label>Aggiungi pasto</ion-label>
+              </ion-item>
+            </ion-list>
+
+            <ion-list [inset]="true" class="azioni-piano">
+              <ion-item class="riga-distruttiva" [button]="true" [detail]="false" (click)="removePlanFromEditor()">
+                <ion-label>Rimuovi piano</ion-label>
               </ion-item>
             </ion-list>
           </div>
@@ -628,24 +634,19 @@
 
       <!-- ===================== CORSA ===================== -->
       <ng-container *ngIf="tab === 'corsa'">
-        <p class="sectiontitle">Obiettivo settimanale</p>
-        <div class="infocard mb-4">
-          <div class="measure-grid cols-2">
-            <div class="measure-field">
-              <label>Minuti a settimana</label>
-              <div class="measure-input-wrap">
-                <ion-input type="number" inputmode="numeric" min="0" step="5" [(ngModel)]="runGoal.weeklyMinutes" placeholder="0"></ion-input>
-                <span class="unit">min</span>
-              </div>
-            </div>
-            <div class="measure-field">
-              <label>Uscite a settimana</label>
-              <div class="measure-input-wrap">
-                <ion-input type="number" inputmode="numeric" min="0" step="1" [(ngModel)]="runGoal.weeklyRuns" placeholder="0"></ion-input>
-              </div>
-            </div>
-          </div>
-          <p class="mt-3">Lascia a 0 quello che non vuoi assegnare: nella sezione Corsa compaiono solo gli obiettivi impostati. Con entrambi a 0 la sezione Corsa resta un semplice registro delle uscite.</p>
+        <div class="liste-ios">
+          <ion-list-header class="sezione"><ion-label>Obiettivo settimanale</ion-label></ion-list-header>
+          <ion-list [inset]="true" class="campi">
+            <ion-item>
+              <ion-input label="Minuti" class="a-destra" type="number" inputmode="numeric" min="0" step="5" [(ngModel)]="runGoal.weeklyMinutes" placeholder="0">
+                <span slot="end" class="unita">min</span>
+              </ion-input>
+            </ion-item>
+            <ion-item>
+              <ion-input label="Uscite" class="a-destra" type="number" inputmode="numeric" min="0" step="1" [(ngModel)]="runGoal.weeklyRuns" placeholder="0"></ion-input>
+            </ion-item>
+          </ion-list>
+          <p class="nota-sotto">Lascia a 0 quello che non vuoi assegnare: nella sezione Corsa compaiono solo gli obiettivi impostati. Con entrambi a 0 la sezione Corsa resta un semplice registro delle uscite.</p>
         </div>
 
         <p class="sectiontitle">Indicazioni</p>
@@ -661,6 +662,17 @@
         <div class="infocard">
           <ion-textarea class="bacheca-textarea" [rows]="8" [autoGrow]="true" [(ngModel)]="protocol.infoNote"
             placeholder="Indicazioni generali, note sul programma, avvertenze…"></ion-textarea>
+        </div>
+
+        <!-- Eliminare il protocollo sta qui, nella scheda del protocollo stesso,
+             come "Elimina elenco" in Promemoria: nell'elenco dei protocolli resta
+             lo scorrimento della riga, e il cestino in ogni riga non serve piu'. -->
+        <div class="liste-ios mt-5">
+          <ion-list [inset]="true" class="azioni-protocollo">
+            <ion-item class="riga-distruttiva" [button]="true" [detail]="false" (click)="eliminaProtocollo()">
+              <ion-label>Elimina protocollo</ion-label>
+            </ion-item>
+          </ion-list>
         </div>
       </ng-container>
 

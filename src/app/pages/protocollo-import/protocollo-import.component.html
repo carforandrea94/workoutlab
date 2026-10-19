@@ -10,39 +10,40 @@
 </ion-header>
 
 <ion-content>
-  <div class="wrap">
-    <div class="infocard mb-4">
-      <p class="mb-4" *ngIf="!isUpdateMode">
-        L'app prova a leggere i PDF ed estrarre esercizi e alimenti automaticamente.
-        È un'estrazione best-effort: funziona meglio se il PDF ha un formato semplice
-        (una riga per esercizio/alimento). Rivedi sempre la bozza nel builder prima di attivarla.
-      </p>
-      <p class="mb-4" *ngIf="!isUpdateMode">
-        Serve solo la scheda. Senza il PDF della dieta il protocollo nasce senza piani
-        alimentari e la dieta si scrive a mano nel builder — dove si può anche caricarla
-        più tardi, con "Aggiorna da PDF".
-      </p>
-      <p class="mb-4" *ngIf="isUpdateMode">
-        Carica almeno uno dei PDF per aggiornare le parti corrispondenti del
-        protocollo. Ricaricare la dieta o l'integrazione da sola non cancella le
-        note dell'altra.
-      </p>
+  <div class="wrap liste-ios">
+    <!-- Un PDF per riga, come un allegato in iOS: si tocca la riga e si sceglie
+         il file; la riga dice poi quale. Il campo file del browser scriveva
+         "Choose File / No file chosen", in inglese e fuori stile. -->
+    <ion-list [inset]="true" class="file-pdf">
+      <ion-item *ngFor="let f of fileDaScegliere" [button]="true" [detail]="false" (click)="scegli(f.id)">
+        <app-icona slot="start" class="file-segno" [class.scelto]="!!fileDi(f.id)" [name]="fileDi(f.id) ? 'checkmark-circle' : 'document-text'" [size]="24"></app-icona>
+        <ion-label class="ion-text-wrap">
+          <h2>{{ f.nome }}</h2>
+          <p>{{ fileDi(f.id)?.name || f.nota }}</p>
+        </ion-label>
+        <ion-note slot="end" class="azione">{{ fileDi(f.id) ? 'Cambia' : 'Scegli' }}</ion-note>
+      </ion-item>
+    </ion-list>
+    <!-- I campi veri restano nascosti fuori dalla lista: la riga li apre. -->
+    <input #pdfScheda type="file" accept="application/pdf" hidden aria-label="PDF della scheda allenamento" (change)="onFile($event, 'scheda')" />
+    <input #pdfDieta type="file" accept="application/pdf" hidden aria-label="PDF della dieta" (change)="onFile($event, 'dieta')" />
+    <input #pdfIntegrazione type="file" accept="application/pdf" hidden aria-label="PDF dell'integrazione" (change)="onFile($event, 'integrazione')" />
 
-      <div class="authfield">
-        <label>{{ isUpdateMode ? 'Scheda allenamento' : 'Scheda allenamento (obbligatorio)' }}</label>
-        <input type="file" accept="application/pdf" (change)="onFile($event, 'scheda')" />
-      </div>
-
-      <div class="authfield">
-        <label>{{ isUpdateMode ? 'Dieta' : 'Dieta (opzionale)' }}</label>
-        <input type="file" accept="application/pdf" (change)="onFile($event, 'dieta')" />
-      </div>
-
-      <div class="authfield mb-0">
-        <label>Integrazione (opzionale — finisce nella scheda Info)</label>
-        <input type="file" accept="application/pdf" (change)="onFile($event, 'integrazione')" />
-      </div>
-    </div>
+    <p class="nota-sotto" *ngIf="!isUpdateMode">
+      L'app prova a leggere i PDF ed estrarre esercizi e alimenti automaticamente.
+      È un'estrazione best-effort: funziona meglio se il PDF ha un formato semplice
+      (una riga per esercizio/alimento). Rivedi sempre la bozza nel builder prima di attivarla.
+    </p>
+    <p class="nota-sotto" *ngIf="!isUpdateMode">
+      Serve solo la scheda. Senza il PDF della dieta il protocollo nasce senza piani
+      alimentari e la dieta si scrive a mano nel builder — dove si può anche caricarla
+      più tardi, con "Aggiorna da PDF".
+    </p>
+    <p class="nota-sotto" *ngIf="isUpdateMode">
+      Carica almeno uno dei PDF per aggiornare le parti corrispondenti del
+      protocollo. Ricaricare la dieta o l'integrazione da sola non cancella le
+      note dell'altra.
+    </p>
 
     <p class="autherror" *ngIf="errorMsg">{{ errorMsg }}</p>
 
