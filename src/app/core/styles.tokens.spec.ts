@@ -425,3 +425,33 @@ describe('styles.css — le pagine interne come le tab', () => {
     }
   });
 });
+
+/**
+ * Il piano e il pasto del builder come moduli di iOS: il meno rosso toglie, la
+ * riga distruttiva e' rossa, le righe dentro i contenitori del trascinamento
+ * hanno la loro linea (Ionic gliela toglierebbe) e la freccia delle
+ * alternative gira quando si aprono.
+ */
+describe('styles.css — la dieta del builder come moduli di iOS', () => {
+  let css = '';
+  beforeAll(async () => {
+    const nome = 'node:fs';
+    const fs = await import(/* @vite-ignore */ nome);
+    css = fs.readFileSync('src/styles.css', 'utf8');
+  });
+
+  it('togliere e rimuovere sono rossi, come in iOS', () => {
+    expect(css).toMatch(/ion-button\.togli\{[^}]*--color:var\(--state-danger-text\)/);
+    expect(css).toMatch(/\.liste-ios ion-item\.riga-distruttiva\{[^}]*--color:var\(--state-danger-text\)/);
+    expect(css).toMatch(/\.liste-ios ion-item-option\.elimina\{[^}]*--background:var\(--state-danger\)/);
+  });
+
+  it('le righe nei contenitori del trascinamento hanno la linea, l\'ultima della lista no', () => {
+    expect(css).toContain('.dieta-builder ion-list.list-inset .slotdrop > ion-item,.dieta-builder ion-list.list-inset .draglist > ion-item{--inner-border-width:0 0 .55px 0;}');
+    expect(css).toContain('.dieta-builder ion-list.list-inset > .slotdrop:last-child > ion-item,.dieta-builder ion-list.list-inset > .draglist:last-child > ion-item:last-child{--inner-border-width:0;}');
+  });
+
+  it('la freccia delle alternative gira quando si aprono', () => {
+    expect(css).toContain('.dieta-builder .chevron.aperta{rotate:180deg;}');
+  });
+});
