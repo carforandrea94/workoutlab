@@ -17,30 +17,33 @@
       <!-- Una misura nuova e' sempre di oggi, e il titolo della pagina dice gia' cosa si misura. -->
       <p class="measure-when" *ngIf="!isEdit">Oggi, {{ oggiEsteso }}</p>
 
-      <div class="infocard measure-card" *ngIf="isEdit">
-        <div class="measure-field">
-          <label>Data</label>
-          <div class="measure-input-wrap">
-            <input type="date" [(ngModel)]="dateValue" [max]="maxDate" />
-          </div>
-        </div>
-      </div>
+      <div class="liste-ios">
+        <ion-list [inset]="true" class="campi" *ngIf="isEdit">
+          <ion-item>
+            <ion-label><label for="misura-data">Data</label></ion-label>
+            <input id="misura-data" slot="end" class="data-riga" type="date" [(ngModel)]="dateValue" [max]="maxDate" />
+          </ion-item>
+        </ion-list>
 
-      <div class="infocard measure-card">
-        <!-- Un campo solo (il peso) prende tutta la larghezza: a meta' sembrava un campo dimenticato. -->
-        <div class="measure-grid" [class.cols-2]="fields.length > 1">
-          <div class="measure-field" *ngFor="let f of fields">
-            <label>{{ f.label }}</label>
-            <div class="measure-input-wrap">
-              <ion-input type="text" inputmode="decimal"
-                [(ngModel)]="values[f.key]"
-                placeholder="—"
-                (ionInput)="onInput()"></ion-input>
-              <span class="unit">{{ f.unit }}</span>
-            </div>
-            <span class="measure-last" *ngIf="ultimo(f) as u">{{ u }}</span>
-          </div>
-        </div>
+        <!-- Una riga per misura, come "Aggiungi dati" in Salute: il nome e l'ultima
+             volta a sinistra, il valore da scrivere a destra con l'unita'. Toccare
+             la riga in un punto qualsiasi mette a fuoco il campo. Prima erano
+             riquadri a due colonne, con l'etichetta sopra e l'ultimo valore sotto. -->
+        <ion-list [inset]="true" class="campi misure-campi">
+          <ion-item *ngFor="let f of fields" (click)="fuocoSulCampo($event)">
+            <ion-label>
+              <h2>{{ f.label }}</h2>
+              <p class="measure-last" *ngIf="ultimo(f) as u">{{ u }}</p>
+            </ion-label>
+            <ion-input slot="end" class="a-destra misura-valore" type="text" inputmode="decimal"
+              [attr.aria-label]="f.label"
+              [(ngModel)]="values[f.key]"
+              placeholder="—"
+              (ionInput)="onInput()">
+              <span slot="end" class="unita">{{ f.unit }}</span>
+            </ion-input>
+          </ion-item>
+        </ion-list>
       </div>
 
       <p class="autherror" *ngIf="errorMsg">{{ errorMsg }}</p>

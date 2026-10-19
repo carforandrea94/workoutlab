@@ -159,15 +159,51 @@ describe('MisuraCategoriaComponent — la pagina vera', () => {
     });
   });
 
+  /**
+   * Come "Aggiungi dati" in Salute: una riga per misura, il nome e l'ultima
+   * volta a sinistra, il valore a destra con l'unita'. Prima erano riquadri a
+   * due colonne con l'etichetta sopra.
+   */
   describe('la forma dei campi', () => {
-    it('un campo solo (il peso) prende tutta la larghezza', async () => {
-      const { q } = await monta();
-      expect(q('.measure-grid')!.classList.contains('cols-2')).toBe(false);
+    const righe = (root: HTMLElement) => Array.from(root.querySelectorAll<HTMLElement>('ion-list.misure-campi ion-item'));
+
+    it('il peso e\' una riga sola: nome, campo a destra con il suo nome, unita\'', async () => {
+      const { root } = await monta();
+      const [riga, ...altre] = righe(root);
+      expect(altre).toEqual([]);
+      expect(riga.querySelector('h2')!.textContent!.trim()).toBe('Peso');
+      const campo = riga.querySelector('ion-input.a-destra')!;
+      // Ionic sposta il nome dall'host all'<input> vero: e' li' che lo legge lo screen reader.
+      expect(campo.querySelector('input')!.getAttribute('aria-label')).toBe('Peso');
+      expect(campo.querySelector('.unita')!.textContent!.trim()).toBe('kg');
+      expect(root.querySelector('.measure-grid')).toBeNull();
     });
 
-    it('piu\' campi stanno su due colonne', async () => {
-      const { q } = await monta({ categoria: 'centimetri' });
-      expect(q('.measure-grid')!.classList.contains('cols-2')).toBe(true);
+    it('piu\' campi sono piu\' righe, una per misura, ognuna con il suo nome', async () => {
+      const { root, c } = await monta({ categoria: 'centimetri' });
+      const tutte = righe(root);
+      expect(tutte.length).toBe(c.fields.length);
+      expect(tutte.length).toBeGreaterThan(1);
+      expect(tutte.map(r => r.querySelector('h2')!.textContent!.trim())).toEqual(c.fields.map(f => f.label));
+      expect(tutte.map(r => r.querySelector('ion-input input')!.getAttribute('aria-label'))).toEqual(c.fields.map(f => f.label));
+    });
+
+    it('toccare la riga fuori dal campo lo mette a fuoco; dentro il campo no (ci pensa lui)', async () => {
+      const { root } = await monta();
+      const riga = righe(root)[0];
+      const campo = riga.querySelector('ion-input') as HTMLElement & { setFocus?: () => Promise<void> };
+      campo.setFocus = vi.fn(async () => {});
+      riga.querySelector<HTMLElement>('h2')!.click();
+      expect(campo.setFocus).toHaveBeenCalledTimes(1);
+      campo.click();
+      expect(campo.setFocus).toHaveBeenCalledTimes(1);
+    });
+
+    it('in modifica la data e\' una riga con l\'etichetta collegata al campo', async () => {
+      const { root } = await monta({ modifica: true });
+      const data = root.querySelector<HTMLInputElement>('ion-list.campi input.data-riga')!;
+      expect(data.type).toBe('date');
+      expect(root.querySelector(`label[for="${data.id}"]`)!.textContent!.trim()).toBe('Data');
     });
   });
 

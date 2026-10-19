@@ -17,6 +17,7 @@ import { ProtocolloBuilderComponent } from './protocollo-builder.component';
 import { ProtocolService } from '../../services/protocol.service';
 import { ConfirmDialogService } from '../../services/confirm-dialog.service';
 import { Protocol } from '../../models/protocol.model';
+import { NavController } from '@ionic/angular';
 
 /** Dove il builder torna dopo aver salvato. */
 @Component({ standalone: true, template: '' })
@@ -71,7 +72,8 @@ describe('ProtocolloBuilderComponent — disegno vero', () => {
       changed$: new Subject<void>(),
       get: vi.fn(async () => structuredClone(protocollo())),
       update: vi.fn(async () => {}),
-      activate: vi.fn(async () => {})
+      activate: vi.fn(async () => {}),
+      delete: vi.fn(async () => {})
     };
     TestBed.configureTestingModule({
       imports: [ProtocolloBuilderComponent],
@@ -121,7 +123,7 @@ describe('ProtocolloBuilderComponent — disegno vero', () => {
       const { c, root, aggiorna } = await monta();
       c.vaAScheda('dieta');
       aggiorna();
-      const gruppo = root.querySelector<HTMLElement>('.grouplist')!;
+      const gruppo = root.querySelector<HTMLElement>('ion-list.piani')!;
       const azione = gruppo.lastElementChild as HTMLElement & { detail?: boolean };
       expect(azione.matches('ion-item.riga-azione')).toBe(true);
       expect(azione.textContent!.trim()).toBe('Aggiungi piano alimentare');
@@ -139,7 +141,7 @@ describe('ProtocolloBuilderComponent — disegno vero', () => {
       c.vaAScheda('dieta');
       aggiorna();
       expect(root.querySelector('.history-empty')!.textContent).toContain('Nessun piano ancora');
-      const gruppo = root.querySelector<HTMLElement>('.grouplist')!;
+      const gruppo = root.querySelector<HTMLElement>('ion-list.piani')!;
       expect(Array.from(gruppo.children).map(e => e.textContent!.trim())).toEqual(['Aggiungi piano alimentare']);
     });
 
@@ -147,7 +149,7 @@ describe('ProtocolloBuilderComponent — disegno vero', () => {
       const { c, root, aggiorna } = await monta();
       c.vaAScheda('dieta');
       aggiorna();
-      root.querySelector<HTMLElement>('.daycard.protocol-row')!.click();
+      root.querySelector<HTMLElement>('ion-item.piano-dieta')!.click();
       aggiorna();
       const azione = Array.from(root.querySelectorAll<HTMLElement>('ion-item.riga-azione')).find(i => i.textContent!.trim() === 'Aggiungi pasto');
       expect(azione).toBeTruthy();
@@ -327,28 +329,74 @@ describe('ProtocolloBuilderComponent — disegno vero', () => {
     });
   });
 
-  describe('righe della dieta da tastiera', () => {
-    it('la riga del piano e\' un pulsante che dice quale piano apre', async () => {
+  /**
+   * Il piano nell'elenco e' una riga di Ionic che si apre (ion-item button: la
+   * tastiera e il lettore di schermo li da' il componente), con quanti pasti e
+   * quanti alimenti; si elimina scorrendo, o da dentro con "Rimuovi piano".
+   */
+  describe('le righe dei piani', () => {
+    it('la riga del piano e\' un pulsante con il chevron, il nome e quanto contiene', async () => {
       const { c, fixture, root } = await monta();
       c.vaAScheda('dieta');
       fixture.detectChanges();
 
-      const info = root.querySelector<HTMLElement>('.protocol-row .info')!;
-      expect(info.getAttribute('role')).toBe('button');
-      expect(info.getAttribute('tabindex')).toBe('0');
-      expect(info.getAttribute('aria-label')).toBe('Apri il piano Giorno ON');
+      const riga = root.querySelector<HTMLElement & { button?: boolean; detail?: boolean }>('ion-list.piani ion-item.piano-dieta')!;
+      expect(riga.button).toBe(true);
+      expect(riga.detail).toBe(true);
+      expect(riga.querySelector('h2')!.textContent!.trim()).toBe('Giorno ON');
+      // Gli alimenti sono quelli che conta il builder: le combinazioni e le alternative del pasto.
+      expect(riga.querySelector('p')!.textContent!.trim()).toBe('1 pasto · 2 alimenti');
+      expect(root.querySelector('ion-list.piani ion-button.delete-btn')).toBeNull();
     });
 
-    it('Invio sul piano lo apre: il click sintetico risale alla riga', async () => {
-      const { c, fixture, root, tasto, titolo } = await monta();
+    it('toccarla apre il piano', async () => {
+      const { c, fixture, root, titolo } = await monta();
       c.vaAScheda('dieta');
       fixture.detectChanges();
 
-      tasto(root.querySelector<HTMLElement>('.protocol-row .info')!, 'Enter');
+      root.querySelector<HTMLElement>('ion-item.piano-dieta')!.click();
       fixture.detectChanges();
 
       expect(c.editingPlan?.id).toBe('pianoA');
       expect(titolo()).toBe('Giorno ON');
+    });
+
+    it('scorrendola compare "Elimina", in rosso, e toglie il piano', async () => {
+      const { c, fixture, root } = await monta();
+      c.vaAScheda('dieta');
+      fixture.detectChanges();
+
+      const opzione = root.querySelector<HTMLElement>('ion-list.piani ion-item-sliding ion-item-option.elimina')!;
+      expect(opzione.textContent!.trim()).toBe('Elimina');
+      opzione.click();
+      fixture.detectChanges();
+      expect(c.protocol!.diet).toEqual([]);
+    });
+
+    it('il riassunto conta al singolare e al plurale', async () => {
+      const { c } = await monta();
+      const piano = c.protocol!.diet[0];
+      expect(c.riassuntoPiano(piano)).toBe('1 pasto · 2 alimenti');
+      const soloPane = { ...piano.meals[0], combinations: [{ ...piano.meals[0].combinations[0], carb: { name: 'Pane', qty: '80 g' } }], alternatives: { carb: [], protein: [], fat: [] } };
+      expect(c.riassuntoPiano({ ...piano, meals: [soloPane] })).toBe('1 pasto · 1 alimento');
+      piano.meals.push(structuredClone(piano.meals[0]));
+      expect(c.riassuntoPiano(piano)).toBe('2 pasti · 4 alimenti');
+      expect(c.riassuntoPiano({ ...piano, meals: [] })).toBe('0 pasti · 0 alimenti');
+    });
+
+    it('"Rimuovi piano", da dentro il piano, lo toglie e torna all\'elenco', async () => {
+      const { c, fixture, root, titolo } = await monta();
+      c.vaAScheda('dieta');
+      c.openPlan(c.protocol!.diet[0]);
+      fixture.detectChanges();
+
+      const rimuovi = root.querySelector<HTMLElement>('ion-list.azioni-piano ion-item.riga-distruttiva')!;
+      expect(rimuovi.textContent!.trim()).toBe('Rimuovi piano');
+      rimuovi.click();
+      fixture.detectChanges();
+      expect(c.protocol!.diet).toEqual([]);
+      expect(c.editingPlan).toBeNull();
+      expect(titolo()).toBe('Protocollo');
     });
   });
 
@@ -492,6 +540,120 @@ describe('ProtocolloBuilderComponent — disegno vero', () => {
       expect(c.editingMeal).toBeNull();
       expect(c.editingPlan!.meals).toEqual([]);
       expect(titolo()).toBe('Giorno ON');
+    });
+  });
+
+  /**
+   * Il resto del builder come moduli di iOS: i campi sono righe con
+   * l'etichetta dentro (la prop label di Ionic), salvare un giorno o un
+   * esercizio e' la spunta della testata, togliere e' una riga rossa.
+   */
+  describe('i campi come moduli di iOS', () => {
+    const testo = (e: Element | null) => (e?.textContent ?? '').replace(/\s+/g, ' ').trim();
+    const etichette = (root: HTMLElement, sel: string) => Array.from(root.querySelectorAll(sel)).map(e => e.getAttribute('label') ?? (e as any).label);
+
+    it('il nome del protocollo e la data d\'inizio sono righe: l\'etichetta e\' nella riga', async () => {
+      const { root } = await monta();
+      expect(etichette(root, 'ion-list.campi ion-input')).toContain('Nome');
+      expect(root.querySelector('.authfield')).toBeNull();
+      const data = root.querySelector<HTMLInputElement>('ion-list.campi input.data-riga#prog-start')!;
+      expect(data.type).toBe('date');
+      expect(testo(root.querySelector('label[for="prog-start"]'))).toBe('Inizio del programma');
+    });
+
+    it('il giorno: Nome e Recupero come righe, niente "Salva giorno" (e\' la spunta), "Rimuovi giorno" in rosso', async () => {
+      const { c, fixture, root } = await monta();
+      c.openDay(c.protocol!.workout.days[0], 0);
+      fixture.detectChanges();
+
+      expect(etichette(root, 'ion-list.campi ion-input')).toEqual(['Nome', 'Recupero']);
+      expect(Array.from(root.querySelectorAll('ion-button')).map(b => testo(b))).not.toContain('Salva giorno');
+      const rimuovi = root.querySelector<HTMLElement>('ion-list.azioni-giorno ion-item.riga-distruttiva')!;
+      expect(testo(rimuovi)).toBe('Rimuovi giorno');
+      const spia = vi.spyOn(c, 'removeDay').mockImplementation(async () => {});
+      rimuovi.click();
+      expect(spia).toHaveBeenCalledWith(0);
+    });
+
+    it('l\'esercizio: le scelte sono righe con il valore a destra, niente "Salva esercizio", "Rimuovi esercizio" in rosso', async () => {
+      const { c, fixture, root } = await monta();
+      const giorno = c.protocol!.workout.days[0];
+      c.openDay(giorno, 0);
+      c.editExercise(giorno, giorno.ex[0]);
+      fixture.detectChanges();
+
+      expect(etichette(root, 'ion-list.campi ion-select')).toEqual(['Gruppo muscolare', 'Schema']);
+      expect(etichette(root, 'ion-list.campi ion-input')).toContain('Nome');
+      expect(etichette(root, 'ion-list.campi ion-input')).toContain('Nota');
+      expect(Array.from(root.querySelectorAll('ion-button')).map(b => testo(b))).not.toContain('Salva esercizio');
+      const rimuovi = root.querySelector<HTMLElement>('ion-list.azioni-esercizio ion-item.riga-distruttiva')!;
+      expect(testo(rimuovi)).toBe('Rimuovi esercizio');
+      const spia = vi.spyOn(c, 'removeExerciseFromEditor').mockImplementation(async () => {});
+      rimuovi.click();
+      expect(spia).toHaveBeenCalled();
+    });
+
+    it('l\'esercizio fisso: Serie, Tipo di serie, Testo e Ripetizioni come righe', async () => {
+      const { c, fixture, root } = await monta();
+      const giorno = c.protocol!.workout.days[0];
+      giorno.ex[0].scheme = 'plain';
+      c.openDay(giorno, 0);
+      c.editExercise(giorno, giorno.ex[0]);
+      fixture.detectChanges();
+
+      expect(etichette(root, 'ion-list.campi ion-select')).toEqual(['Gruppo muscolare', 'Schema', 'Tipo di serie']);
+      expect(etichette(root, 'ion-list.campi ion-input')).toEqual(['Nome', 'Serie', 'Testo', 'Ripetizioni', 'Nota']);
+      expect(root.querySelector('ion-input.a-destra[label="Serie"]')).toBeTruthy();
+    });
+
+    it('la corsa: Minuti (con l\'unita\') e Uscite come righe con il numero a destra', async () => {
+      const { c, fixture, root } = await monta();
+      c.vaAScheda('corsa');
+      fixture.detectChanges();
+
+      expect(etichette(root, 'ion-list.campi ion-input.a-destra')).toEqual(['Minuti', 'Uscite']);
+      expect(testo(root.querySelector('ion-input[label="Minuti"] .unita'))).toBe('min');
+    });
+
+    it('"Elimina protocollo" sta in fondo alla scheda Info, chiede, elimina ed esce senza la domanda sulle modifiche', async () => {
+      const { c, fixture, root, protocolSvc } = await monta();
+      const nav = TestBed.inject(NavController);
+      const indietro = vi.spyOn(nav, 'navigateBack').mockResolvedValue(true);
+      c.vaAScheda('info');
+      fixture.detectChanges();
+
+      c.protocol!.name = 'Cambiato e non salvato';
+      expect(c.haModificheNonSalvate()).toBe(true);
+
+      const riga = root.querySelector<HTMLElement>('ion-list.azioni-protocollo ion-item.riga-distruttiva')!;
+      expect(testo(riga)).toBe('Elimina protocollo');
+      riga.click();
+      await vi.waitFor(() => expect(indietro).toHaveBeenCalledWith(['/scheda/protocolli']));
+      expect(TestBed.inject(ConfirmDialogService).confirm).toHaveBeenCalledWith('Eliminare il protocollo "Cambiato e non salvato"?');
+      expect(protocolSvc.delete).toHaveBeenCalledWith('proto1');
+      expect(c.haModificheNonSalvate()).toBe(false);
+    });
+
+    it('senza conferma non elimina e resta', async () => {
+      const { c, protocolSvc } = await monta();
+      const nav = TestBed.inject(NavController);
+      const indietro = vi.spyOn(nav, 'navigateBack').mockResolvedValue(true);
+      vi.mocked(TestBed.inject(ConfirmDialogService).confirm).mockResolvedValueOnce(false);
+      await c.eliminaProtocollo();
+      expect(protocolSvc.delete).not.toHaveBeenCalled();
+      expect(indietro).not.toHaveBeenCalled();
+    });
+
+    it('se l\'eliminazione fallisce lo dice e resta, con la guardia ancora accesa', async () => {
+      const { c, protocolSvc } = await monta();
+      const nav = TestBed.inject(NavController);
+      const indietro = vi.spyOn(nav, 'navigateBack').mockResolvedValue(true);
+      protocolSvc.delete.mockRejectedValueOnce(new Error('rete'));
+      vi.spyOn(console, 'error').mockImplementation(() => {});
+      c.protocol!.name = 'Cambiato';
+      await c.eliminaProtocollo();
+      expect(indietro).not.toHaveBeenCalled();
+      expect(c.haModificheNonSalvate()).toBe(true);
     });
   });
 });

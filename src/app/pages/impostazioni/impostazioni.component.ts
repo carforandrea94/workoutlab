@@ -19,14 +19,15 @@ import {
   heightOptions, toWheelValue, formatHeightCm
 } from '../../core/utils/height.util';
 import { IONIC_PAGE } from '../../core/ionic-page';
-import { IonModal, IonInput, IonSegment, IonSegmentButton, IonToggle, IonPicker, IonPickerColumn, IonPickerColumnOption, IonButton } from '@ionic/angular';
+import { IonModal, IonInput, IonSegment, IonSegmentButton, IonToggle, IonPicker, IonPickerColumn, IonPickerColumnOption, IonButton, IonLabel } from '@ionic/angular';
+import { IONIC_LIST } from '../../core/ionic-list';
 import { NomeCampoDirective } from '../../core/nome-campo.directive';
 import { IconaComponent } from '../../components/icona/icona.component';
 
 @Component({
   selector: 'app-impostazioni',
   standalone: true,
-  imports: [NomeCampoDirective, IonButton, IonSegment, IonSegmentButton, IonToggle, IonPicker, IonPickerColumn, IonPickerColumnOption, IonInput, ...IONIC_PAGE, IonModal, CommonModule, FormsModule, IconaComponent],
+  imports: [NomeCampoDirective, IonButton, IonLabel, ...IONIC_LIST, IonSegment, IonSegmentButton, IonToggle, IonPicker, IonPickerColumn, IonPickerColumnOption, IonInput, ...IONIC_PAGE, IonModal, CommonModule, FormsModule, IconaComponent],
   templateUrl: './impostazioni.component.html',
   styles: [`
     /* Le righe sono quelle delle liste delle tab: il nome a sinistra nel

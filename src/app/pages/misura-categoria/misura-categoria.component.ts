@@ -9,7 +9,8 @@ import { MeasureCategory, MeasureField, CATEGORY_FIELDS, CATEGORY_LABELS } from 
 import { MeasureCategoryStateService } from '../../services/measure-category-state.service';
 import { ToastService } from '../../services/toast.service';
 import { IONIC_PAGE } from '../../core/ionic-page';
-import { NavController, IonFooter, IonInput, IonSpinner, IonButton, IonRouterOutlet } from '@ionic/angular';
+import { NavController, IonFooter, IonInput, IonSpinner, IonButton, IonRouterOutlet, IonLabel } from '@ionic/angular';
+import { IONIC_LIST } from '../../core/ionic-list';
 import { ConModificheNonSalvate } from '../../core/guards/modifiche-non-salvate.guard';
 import { senzaSwipeIndietro } from '../../core/swipe-indietro';
 import { NomeCampoDirective } from '../../core/nome-campo.directive';
@@ -17,7 +18,7 @@ import { NomeCampoDirective } from '../../core/nome-campo.directive';
 @Component({
   selector: 'app-misura-categoria',
   standalone: true,
-  imports: [NomeCampoDirective, IonButton, IonFooter, IonInput, IonSpinner, ...IONIC_PAGE, CommonModule, FormsModule],
+  imports: [NomeCampoDirective, IonButton, IonFooter, IonInput, IonLabel, ...IONIC_LIST, IonSpinner, ...IONIC_PAGE, CommonModule, FormsModule],
   templateUrl: './misura-categoria.component.html'
 })
 export class MisuraCategoriaComponent implements OnInit, OnDestroy, ConModificheNonSalvate {
@@ -102,6 +103,17 @@ export class MisuraCategoriaComponent implements OnInit, OnDestroy, ConModifiche
   }
 
   /** "Ultimo 82 kg · 3 ott". Solo in una misura nuova: in modifica il valore e' di una data passata e "ultimo" direbbe altro. */
+  /**
+   * Toccare la riga in un punto qualsiasi (il nome, l'ultima volta) mette a
+   * fuoco il suo campo, come in Salute. Un tocco sul campo stesso ci va da se'.
+   */
+  fuocoSulCampo(ev: Event): void {
+    const riga = ev.currentTarget as HTMLElement | null;
+    const campo = riga?.querySelector('ion-input') as (HTMLElement & { setFocus?: () => Promise<void> }) | null;
+    if (!campo || (ev.target instanceof Node && campo.contains(ev.target))) return;
+    void campo.setFocus?.();
+  }
+
   ultimo(field: MeasureField): string | null {
     const u = this.ultimi[field.key];
     return u ? `Ultimo ${u.value} ${field.unit} · ${quandoBreve(u.date)}` : null;

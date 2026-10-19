@@ -21,10 +21,22 @@ export function nomeDelCampo(campo: HTMLElement): string {
 }
 
 /**
+ * Il campo ha un'etichetta sua, quella di Ionic: la prop `label` (scritta come
+ * attributo o legata) o un elemento in slot="label". Ionic la mette in un
+ * <label> intorno all'<input> vero, e quello e' gia' il suo nome.
+ */
+export function haEtichettaIonic(campo: HTMLElement): boolean {
+  const prop = (campo as HTMLElement & { label?: unknown }).label;
+  return !!(campo.getAttribute('label')?.trim() || (typeof prop === 'string' && prop.trim()) || campo.querySelector(':scope > [slot="label"]'));
+}
+
+/**
  * Da' un nome accessibile ai campi Ionic (ion-input, ion-searchbar, ion-select)
  * che non ne hanno uno esplicito: un `aria-label` o `aria-labelledby` messo a
- * mano vince sempre. Va importata nei componenti che hanno dei campi; non
- * serve scrivere niente nei template.
+ * mano vince sempre, e cosi' l'etichetta di Ionic (vedi haEtichettaIonic): un
+ * aria-label preso dal segnaposto ci passerebbe sopra, e "Es. Panca piana"
+ * diventerebbe il nome del campo "Nome". Va importata nei componenti che hanno
+ * dei campi; non serve scrivere niente nei template.
  *
  * Ionic gira l'`aria-label` dell'host sull'<input> vero quando carica il
  * componente. Se il nome arriva dopo quel momento si scrive anche sull'<input>,
@@ -40,6 +52,7 @@ export class NomeCampoDirective implements AfterViewInit {
   ngAfterViewInit(): void {
     const campo = this.el.nativeElement;
     if (campo.hasAttribute('aria-label') || campo.hasAttribute('aria-labelledby')) return;
+    if (haEtichettaIonic(campo)) return;
 
     const nome = nomeDelCampo(campo);
     if (!nome) return;

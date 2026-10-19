@@ -155,25 +155,26 @@
       </div>
     </div>
 
-    <p class="sectiontitle">Uscita</p>
-    <div class="infocard">
-      <ion-button type="button" class="confirmbtn cancel w-full" (click)="logout()">Esci</ion-button>
-      <p class="settings-hint">
-        Uscire non cancella niente: rientri con la stessa email e ritrovi tutto.
-      </p>
-    </div>
+    <!-- Uscire e chiudere l'account sono righe, come in fondo a Impostazioni di
+         iOS, ognuna con la sua spiegazione sotto. Prima erano un tasto grigio
+         e uno rosso pieno dentro due riquadri, con un titolo che ripeteva il tasto. -->
+    <div class="liste-ios mt-5">
+      <ion-list [inset]="true" class="azioni-account">
+        <ion-item class="riga-esci" [button]="true" [detail]="false" (click)="logout()">
+          <ion-label>Esci</ion-label>
+        </ion-item>
+      </ion-list>
+      <p class="nota-sotto">Uscire non cancella niente: rientri con la stessa email e ritrovi tutto.</p>
 
-    <p class="sectiontitle">Chiudere l'account</p>
-    <div class="infocard">
-      <p class="settings-hint" style="margin:0 0 12px">
+      <ion-list [inset]="true" class="azioni-account">
+        <ion-item class="riga-distruttiva" [button]="true" [detail]="false" (click)="openDeleteSheet()">
+          <ion-label>Elimina account</ion-label>
+        </ion-item>
+      </ion-list>
+      <p class="nota-sotto">
         Se ne vanno il tuo profilo, le sedute salvate, le uscite di corsa, le misurazioni e i tuoi
-        protocolli.
-        Non si annulla.
+        protocolli. Non si annulla.
       </p>
-      <ion-button type="button" class="dangerbtn" (click)="openDeleteSheet()">
-        <app-icona name="trash" [size]="17"></app-icona>
-        Elimina account
-      </ion-button>
     </div>
 
     <!-- La password si riscrive per due motivi: Firebase rifiuta di chiudere un

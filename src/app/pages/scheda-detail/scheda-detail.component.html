@@ -490,9 +490,14 @@
     </div>
 
 
-    <!-- Buttare via la seduta: in fondo, dopo averla vista tutta. -->
-    <div class="savebar" *ngIf="isStorico && day && !loading && !errorMsg">
-      <ion-button class="savebtn delete-session-btn" (click)="deleteSession()">Elimina questa seduta</ion-button>
+    <!-- Buttare via la seduta: in fondo, dopo averla vista tutta. Una riga
+         rossa, come ogni "elimina" dell'app. -->
+    <div class="liste-ios" *ngIf="isStorico && day && !loading && !errorMsg">
+      <ion-list [inset]="true" class="azioni-seduta">
+        <ion-item class="riga-distruttiva" [button]="true" [detail]="false" (click)="deleteSession()">
+          <ion-label>Elimina questa seduta</ion-label>
+        </ion-item>
+      </ion-list>
     </div>
 
     <ion-modal class="sheet-modal" *ngIf="day && !isStorico" [isOpen]="restModalOpen"

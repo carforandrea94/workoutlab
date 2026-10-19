@@ -77,10 +77,12 @@
         </div>
       </ng-container>
 
-      <div class="savebar">
-        <ion-button class="savebtn delete-session-btn" (click)="deleteEntry()">
-          Elimina questa misurazione
-        </ion-button>
+      <div class="liste-ios">
+        <ion-list [inset]="true" class="azioni-misurazione">
+          <ion-item class="riga-distruttiva" [button]="true" [detail]="false" (click)="deleteEntry()">
+            <ion-label>Elimina questa misurazione</ion-label>
+          </ion-item>
+        </ion-list>
       </div>
     </ng-container>
   </div>

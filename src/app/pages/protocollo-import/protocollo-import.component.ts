@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, ElementRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { Subscription } from 'rxjs';
@@ -9,7 +9,22 @@ import { todayLocalISO } from '../../core/utils/date.util';
 import { Protocol } from '../../models/protocol.model';
 import { Diet, NamedMeal, newNamedMeal, SupplementItem } from '../../models/diet.model';
 import { IONIC_PAGE } from '../../core/ionic-page';
-import { IonLoading, NavController, IonButton } from '@ionic/angular';
+import { IonLoading, NavController, IonButton, IonLabel, IonNote } from '@ionic/angular';
+import { IONIC_LIST } from '../../core/ionic-list';
+import { IconaComponent } from '../../components/icona/icona.component';
+
+type QualePdf = 'scheda' | 'dieta' | 'integrazione';
+interface RigaPdf { id: QualePdf; nome: string; nota: string; }
+
+/** Le righe dei file: nell'aggiornamento anche la scheda e' facoltativa. */
+const RIGHE_NUOVO: readonly RigaPdf[] = [
+  { id: 'scheda', nome: 'Scheda allenamento', nota: 'Obbligatoria' },
+  { id: 'dieta', nome: 'Dieta', nota: 'Facoltativa' },
+  { id: 'integrazione', nome: 'Integrazione', nota: 'Facoltativa · finisce nella scheda Info' }
+];
+const RIGHE_AGGIORNA: readonly RigaPdf[] = [
+  { ...RIGHE_NUOVO[0], nota: 'Facoltativa' }, RIGHE_NUOVO[1], RIGHE_NUOVO[2]
+];
 
 /** Tempo massimo per ciascuna fase prima di rinunciare e segnalare un errore
  *  invece di restare bloccati a tempo indeterminato senza alcun feedback
@@ -19,7 +34,7 @@ const STEP_TIMEOUT_MS = 25000;
 @Component({
   selector: 'app-protocollo-import',
   standalone: true,
-  imports: [IonButton, ...IONIC_PAGE, IonLoading, CommonModule],
+  imports: [IonButton, IonLabel, IonNote, ...IONIC_LIST, ...IONIC_PAGE, IonLoading, CommonModule, IconaComponent],
   templateUrl: './protocollo-import.component.html'
 })
 export class ProtocolloImportComponent implements OnInit, OnDestroy {
@@ -88,7 +103,25 @@ export class ProtocolloImportComponent implements OnInit, OnDestroy {
     }
   }
 
-  onFile(event: Event, which: 'scheda' | 'dieta' | 'integrazione'): void {
+  @ViewChild('pdfScheda') private pdfScheda?: ElementRef<HTMLInputElement>;
+  @ViewChild('pdfDieta') private pdfDieta?: ElementRef<HTMLInputElement>;
+  @ViewChild('pdfIntegrazione') private pdfIntegrazione?: ElementRef<HTMLInputElement>;
+
+  get fileDaScegliere(): readonly RigaPdf[] {
+    return this.isUpdateMode ? RIGHE_AGGIORNA : RIGHE_NUOVO;
+  }
+
+  fileDi(id: QualePdf): File | null {
+    return id === 'scheda' ? this.schedaFile : id === 'dieta' ? this.dietaFile : this.integrazioneFile;
+  }
+
+  /** Tocca la riga: si apre il selettore del sistema, dal campo file nascosto. */
+  scegli(id: QualePdf): void {
+    const campo = id === 'scheda' ? this.pdfScheda : id === 'dieta' ? this.pdfDieta : this.pdfIntegrazione;
+    campo?.nativeElement.click();
+  }
+
+  onFile(event: Event, which: QualePdf): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0] ?? null;
     if (which === 'scheda') this.schedaFile = file;

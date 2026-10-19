@@ -61,4 +61,56 @@ describe('coerenza delle pagine', () => {
   it('niente occhielli sopra i titoli: il titolo dice da solo cos\'e\'', () => {
     expect(template().filter(f => /class="[^"]*eyebrow/.test(f.testo)).map(f => f.nome)).toEqual([]);
   });
+
+  it('ogni riga che si elimina scorrendo mostra lo stesso "Elimina" rosso (ion-item-option.elimina)', () => {
+    const senza = template().flatMap(f => (f.testo.match(/<ion-item-option(?=[\s>])(?![^>]*class="elimina")[^>]*>/g) ?? []).map(t => `${f.nome}: ${t}`));
+    expect(senza).toEqual([]);
+    expect(template().some(f => /<ion-item-option class="elimina"/.test(f.testo))).toBe(true);
+  });
+
+  it('eliminare e rimuovere sono righe rosse, non tasti pieni: il rosso pieno resta solo per confermare nel foglio', () => {
+    expect(template().filter(f => /delete-session-btn|runremove/.test(f.testo)).map(f => f.nome)).toEqual([]);
+    const dangerbtn = template().filter(f => /class="dangerbtn"/.test(f.testo)).map(f => f.nome);
+    // L'unico rimasto e' "Elimina" dentro il foglio che chiede la password per chiudere l'account.
+    expect(dangerbtn).toEqual(['src/app/pages/impostazioni/impostazioni.component.html']);
+    expect(file.find(f => f.nome.endsWith('impostazioni.component.html'))!.testo.match(/class="dangerbtn"/g)!.length).toBe(1);
+  });
+
+  it('"Elimina questa seduta", "...misurazione" e "...uscita" sono righe rosse in una lista', () => {
+    for (const [nome, etichetta] of [
+      ['scheda-detail.component.html', 'Elimina questa seduta'],
+      ['misure-storico-detail.component.html', 'Elimina questa misurazione'],
+      ['corsa-nuova.component.html', 'Elimina questa uscita']
+    ]) {
+      const t = file.find(f => f.nome.endsWith(nome))!.testo;
+      expect(t, nome).toMatch(new RegExp(`<ion-item class="riga-distruttiva"[^>]*>\\s*<ion-label>${etichetta}</ion-label>`));
+    }
+  });
+
+  it('nelle righe dei protocolli e dei piani non c\'e\' il cestino: si elimina scorrendo, o da dentro', () => {
+    const protocolli = file.find(f => f.nome.endsWith('protocolli.component.html'))!.testo;
+    expect(protocolli).not.toContain('delete-btn');
+    expect(protocolli).toContain('class="elimina"');
+    const builder = file.find(f => f.nome.endsWith('protocollo-builder.component.html'))!.testo;
+    expect(builder).toContain('Elimina protocollo');
+    expect(builder).toContain('Rimuovi piano');
+    expect(builder).not.toMatch(/removePlan\(plan, \$event\)" title="Elimina"/);
+  });
+
+  it('nessun campo file del browser in vista ("Choose File"): i PDF si scelgono da una riga', () => {
+    const visibili = template().flatMap(f => (f.testo.match(/<input[^>]*type="file"[^>]*>/g) ?? []).filter(t => !/\bhidden\b/.test(t)).map(t => `${f.nome}: ${t}`));
+    expect(visibili).toEqual([]);
+  });
+
+  it('i campi dei moduli hanno l\'etichetta nella riga: in Nuova uscita, nelle misure e in Importa non ci sono piu\' le scatole con l\'etichetta sopra', () => {
+    for (const nome of ['corsa-nuova.component.html', 'misura-categoria.component.html', 'protocollo-import.component.html']) {
+      const t = file.find(f => f.nome.endsWith(nome))!.testo;
+      expect(t, nome).not.toMatch(/class="authfield|class="measure-field|class="measure-grid/);
+    }
+    // Nel builder restano solo i due campi dentro il riquadro del cluster (Pausa minima, Fine della serie).
+    const builder = file.find(f => f.nome.endsWith('protocollo-builder.component.html'))!.testo;
+    expect((builder.match(/class="authfield/g) ?? []).length).toBe(2);
+    for (const vecchia of ['Nome protocollo', 'Data inizio programma', 'Nome giorno', 'Nome esercizio', 'Minuti a settimana', 'Nota (opzionale)'])
+      expect(builder, vecchia).not.toContain(`<label>${vecchia}</label>`);
+  });
 });

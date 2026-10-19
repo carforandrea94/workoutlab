@@ -10,51 +10,41 @@
 </ion-header>
 
 <ion-content>
-  <div class="wrap">
-    <div class="infocard measure-card">
-      <div class="measure-field">
-        <label>Data</label>
-        <div class="measure-input-wrap">
-          <input type="date" [(ngModel)]="date" [max]="maxDate" />
-        </div>
-      </div>
+  <!-- Un modulo di iOS, come "Aggiungi dati" in Salute: le righe con
+       l'etichetta e il valore a destra, le scelte nei segmenti, il salvataggio
+       in fondo e la riga rossa per eliminare. -->
+  <div class="wrap liste-ios">
+    <ion-list [inset]="true" class="campi">
+      <ion-item>
+        <ion-label><label for="run-date">Data</label></ion-label>
+        <input id="run-date" slot="end" class="data-riga" type="date" [(ngModel)]="date" [max]="maxDate" />
+      </ion-item>
+      <ion-item>
+        <ion-input label="Minuti" class="a-destra" type="text" inputmode="numeric" [(ngModel)]="minutes" placeholder="40">
+          <span slot="end" class="unita">min</span>
+        </ion-input>
+      </ion-item>
+      <ion-item>
+        <ion-label>Durata</ion-label>
+        <ion-note slot="end" class="valore" [class.vuoto]="liveMinutes === '—'">{{ liveMinutes }}</ion-note>
+      </ion-item>
+    </ion-list>
 
-      <div class="measure-field mt-3">
-        <label>Minuti corsi</label>
-        <div class="measure-input-wrap">
-          <ion-input type="text" inputmode="numeric" [(ngModel)]="minutes" placeholder="40"></ion-input>
-          <span class="unit">min</span>
-        </div>
-      </div>
+    <ion-list-header class="sezione"><ion-label>Tipo di uscita</ion-label></ion-list-header>
+    <ion-segment class="seg labelseg fullseg modulo-seg" [value]="type" aria-label="Tipo di uscita">
+      <ion-segment-button *ngFor="let t of types" [value]="t.id" (click)="type = t.id">{{ t.label }}</ion-segment-button>
+    </ion-segment>
 
-      <div class="runlive">
-        <span class="k">Durata</span>
-        <span class="v">{{ liveMinutes }}</span>
-      </div>
-    </div>
+    <ion-list-header class="sezione"><ion-label>Come è andata</ion-label></ion-list-header>
+    <ion-segment class="seg labelseg fullseg modulo-seg" [value]="effort" aria-label="Come è andata">
+      <ion-segment-button *ngFor="let e of efforts" [value]="e.id" (click)="effort = e.id">{{ e.label }}</ion-segment-button>
+    </ion-segment>
 
-    <div class="infocard measure-card">
-      <div class="measure-field">
-        <label>Tipo di uscita</label>
-        <ion-segment class="seg labelseg fullseg" [value]="type" aria-label="Tipo di uscita">
-          <ion-segment-button *ngFor="let t of types" [value]="t.id" (click)="type = t.id">{{ t.label }}</ion-segment-button>
-        </ion-segment>
-      </div>
-
-      <div class="measure-field mt-3">
-        <label>Come è andata</label>
-        <ion-segment class="seg labelseg fullseg" [value]="effort" aria-label="Come è andata">
-          <ion-segment-button *ngFor="let e of efforts" [value]="e.id" (click)="effort = e.id">{{ e.label }}</ion-segment-button>
-        </ion-segment>
-      </div>
-
-      <div class="measure-field mt-3">
-        <label>Note</label>
-        <div class="measure-input-wrap">
-          <ion-input type="text" [(ngModel)]="note" placeholder="Percorso, sensazioni, meteo…"></ion-input>
-        </div>
-      </div>
-    </div>
+    <ion-list [inset]="true" class="campi">
+      <ion-item>
+        <ion-input label="Note" [(ngModel)]="note" placeholder="Percorso, sensazioni, meteo…"></ion-input>
+      </ion-item>
+    </ion-list>
 
     <p class="autherror" *ngIf="errorMsg">{{ errorMsg }}</p>
 
@@ -62,8 +52,10 @@
       {{ saving ? 'Salvataggio…' : (editId ? 'Salva modifiche' : 'Salva uscita') }}
     </ion-button>
 
-    <ion-button class="runremove tap44" *ngIf="editId" [disabled]="saving" (click)="remove()">
-      Elimina questa uscita
-    </ion-button>
+    <ion-list [inset]="true" class="azioni-uscita mt-5" *ngIf="editId">
+      <ion-item class="riga-distruttiva" [button]="true" [detail]="false" [disabled]="saving" (click)="remove()">
+        <ion-label>Elimina questa uscita</ion-label>
+      </ion-item>
+    </ion-list>
   </div>
 </ion-content>

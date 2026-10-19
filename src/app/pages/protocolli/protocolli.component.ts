@@ -6,7 +6,7 @@ import { Protocol } from '../../models/protocol.model';
 import { IONIC_PAGE } from '../../core/ionic-page';
 import { IONIC_REFRESH, completaRefresh } from '../../core/ionic-refresh';
 import { IONIC_SLIDING } from '../../core/ionic-sliding';
-import { NavController, IonSpinner, IonButton, IonLabel } from '@ionic/angular';
+import { NavController, IonSpinner, IonButton, IonLabel, IonBadge } from '@ionic/angular';
 import { IconaComponent } from '../../components/icona/icona.component';
 
 /**
@@ -16,7 +16,7 @@ import { IconaComponent } from '../../components/icona/icona.component';
 @Component({
   selector: 'app-protocolli',
   standalone: true,
-  imports: [IonButton, IonLabel, IonSpinner, ...IONIC_PAGE, ...IONIC_REFRESH, ...IONIC_SLIDING, CommonModule, IconaComponent],
+  imports: [IonButton, IonLabel, IonBadge, IonSpinner, ...IONIC_PAGE, ...IONIC_REFRESH, ...IONIC_SLIDING, CommonModule, IconaComponent],
   templateUrl: './protocolli.component.html'
 })
 export class ProtocolliComponent implements OnInit {
