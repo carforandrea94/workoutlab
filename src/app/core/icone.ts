@@ -1,19 +1,18 @@
 import { InjectionToken } from '@angular/core';
 import {
   addOutline, addSharp, albumsOutline, albumsSharp, analyticsOutline, analyticsSharp, arrowBackSharp,
-  barbell, barbellOutline, barbellSharp, caretDownSharp, cartOutline, cartSharp,
-  chatboxEllipsesOutline, chatboxEllipsesSharp, checkmarkCircle, checkmarkCircleOutline,
-  checkmarkCircleSharp, checkmarkOutline, checkmarkSharp, chevronBack, chevronBackOutline,
-  chevronDownOutline, chevronDownSharp, chevronExpand, chevronExpandOutline, chevronExpandSharp, chevronForward,
-  chevronForwardOutline, chevronForwardSharp, closeCircle, closeOutline, closeSharp, cloudUploadOutline,
-  cloudUploadSharp, createOutline, createSharp, documentTextOutline, documentTextSharp, eyeOffOutline, eyeOffSharp,
-  eyeOutline, eyeSharp, flagOutline, flagSharp,
-  informationCircleOutline, informationCircleSharp, listOutline, listSharp, pause, pauseOutline, pauseSharp,
-  pencilOutline, pencilSharp, person, personOutline, personSharp, play, playOutline, playSharp,
-  reorderThreeOutline, reorderTwoSharp, restaurant, restaurantOutline, restaurantSharp, saveOutline, saveSharp,
-  searchOutline, searchSharp, settingsOutline, settingsSharp,
-  swapHorizontalOutline, swapHorizontalSharp,
-  timeOutline, timeSharp, timerOutline, timerSharp, trashOutline, trashSharp
+  barbell, barbellOutline, barbellSharp, caretDownSharp, cartOutline, cartSharp, chatboxEllipsesOutline,
+  chatboxEllipsesSharp, checkmarkCircle, checkmarkCircleOutline, checkmarkCircleSharp, checkmarkOutline,
+  checkmarkSharp, chevronBack, chevronBackOutline, chevronDownOutline, chevronDownSharp, chevronExpand,
+  chevronExpandOutline, chevronExpandSharp, chevronForward, chevronForwardOutline, chevronForwardSharp,
+  closeCircle, closeOutline, closeSharp, cloudUploadOutline, cloudUploadSharp, createOutline, createSharp,
+  documentTextOutline, documentTextSharp, eyeOffOutline, eyeOffSharp, eyeOutline, eyeSharp, flagOutline,
+  flagSharp, informationCircleOutline, informationCircleSharp, listOutline, listSharp, pause, pauseOutline,
+  pauseSharp, pencilOutline, pencilSharp, person, personOutline, personSharp, play, playOutline, playSharp,
+  removeCircle, removeCircleSharp, reorderThreeOutline, reorderTwoSharp, restaurant, restaurantOutline,
+  restaurantSharp, saveOutline, saveSharp, searchOutline, searchSharp, settingsOutline, settingsSharp,
+  swapHorizontalOutline, swapHorizontalSharp, timeOutline, timerOutline, timerSharp, timeSharp, trashOutline,
+  trashSharp
 } from 'ionicons/icons';
 
 /**
@@ -130,6 +129,7 @@ export const ICONE = {
   'person': { ios: personOutline, md: personSharp, piena: person },
   'play': { ios: playOutline, md: playSharp, piena: play },
   'restaurant': { ios: restaurantOutline, md: restaurantSharp, piena: restaurant },
+  'remove-circle': { ios: removeCircle, md: removeCircleSharp },
   'riordina': { ios: reorderThreeOutline, md: reorderTwoSharp },
   'save': { ios: saveOutline, md: saveSharp },
   'scarpa': SCARPA,

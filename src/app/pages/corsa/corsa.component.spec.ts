@@ -22,7 +22,8 @@ describe('CorsaComponent — obiettivo e settimane', () => {
   function monta(opz: { goal?: any } = {}) {
     const runs = [
       { id: 'r1', run: { date: todayLocalISO(), durationMin: 35, type: 'lento', effort: 'facile' } },
-      { id: 'r2', run: { date: giorniFa(8), durationMin: 45, type: 'lento', effort: 'dura' } }
+      // Sette giorni fa e' sempre nella settimana prima; otto, il lunedi', e' due settimane fa.
+      { id: 'r2', run: { date: giorniFa(7), durationMin: 45, type: 'lento', effort: 'dura' } }
     ];
     const nav = { navigateForward: vi.fn() };
     TestBed.configureTestingModule({

@@ -835,6 +835,52 @@ ion-button.closing-discard.button-disabled{opacity:.4;}
 /* Aggiungere un'uscita: la riga d'azione delle liste iOS, segno e testo d'accento. */
 .liste-ios ion-item.runadd{--min-height:48px;color:var(--accent);font-weight:600;}
 .liste-ios ion-item.runadd app-icona{margin-inline-end:12px;}
+/* La riga che toglie qualcosa ("Rimuovi pasto"): in rosso, come le righe
+   distruttive di iOS, in un gruppo suo o in fondo al gruppo che riguarda. */
+.liste-ios ion-item.riga-distruttiva{--color:var(--state-danger-text);font-weight:600;font-size:var(--text-lg);}
+/* L'azione rossa che compare scorrendo una riga (ion-item-sliding). */
+.liste-ios ion-item-option.elimina{--background:var(--state-danger);--color:#fff;font-weight:700;font-size:var(--text-md);}
+
+/* ===== DIETA NEL BUILDER: il piano e il pasto come moduli di iOS =====
+   Le righe stanno in liste inset (.liste-ios); i campi sono ion-input con la
+   loro etichetta, dentro le righe. */
+.dieta-builder ion-input{--color:var(--label);--placeholder-color:var(--label-3);--placeholder-opacity:1;font-size:var(--text-lg);}
+.dieta-builder ion-input .label-text{color:var(--label);}
+.dieta-builder ion-list.campi ion-input{min-height:52px;}
+ion-segment.combo-seg{margin:0 0 12px;}
+ion-segment.combo-seg ion-segment-button{min-width:max-content;--padding-start:12px;--padding-end:12px;}
+/* La riga di un alimento, come in una tabella iOS in modifica: il meno rosso
+   a sinistra lo toglie, la maniglia a destra lo sposta, il nome sopra e la
+   quantita' sotto, con la sua etichetta. Le regole stanno sulla riga e non sul
+   contenitore, perche' mentre si trascina la riga e' una copia appesa al body. */
+ion-item.alimento{--background:var(--surface-card);--padding-start:12px;--inner-padding-end:4px;--min-height:64px;--border-color:var(--border-line);}
+ion-item.alimento .alimento-campi{flex:1;min-width:0;display:flex;flex-direction:column;padding:6px 0;}
+ion-item.alimento ion-input{--color:var(--label);--placeholder-color:var(--label-3);--placeholder-opacity:1;}
+ion-item.alimento ion-input.alimento-nome{min-height:34px;font-size:var(--text-lg);font-weight:500;}
+ion-item.alimento ion-input.alimento-qty{min-height:30px;font-size:var(--text-sm);--color:var(--label-2);}
+ion-item.alimento ion-input.alimento-qty .label-text{color:var(--label-3);}
+/* Una casella vuota non ha niente da togliere: il testo parte comunque da
+   dove parte nelle righe col meno, cosi' la colonna dei nomi resta dritta. */
+ion-item.alimento:not(:has(ion-button.togli)) .alimento-campi{margin-inline-start:42px;}
+ion-button.togli{--padding-start:0;--padding-end:0;--background:transparent;--background-activated:transparent;--background-hover:transparent;--color:var(--state-danger-text);--box-shadow:none;width:32px;height:44px;min-height:44px;margin:0 10px 0 0;}
+ion-item.alimento .draghandle{margin:0;}
+ion-item.alimento.cdk-drag-preview{--background:var(--surface-raise);border-radius:var(--r-md);box-shadow:var(--shadow-float);opacity:.96;}
+ion-item.alimento.cdk-drag-preview .draghandle{color:var(--accent);}
+.dragghost.dragghost-alimento{height:64px;margin:0;border:0;border-radius:0;background:var(--surface-raise);}
+/* Le righe dentro i contenitori del trascinamento (div) hanno la loro linea:
+   Ionic le vede sole nel div e gliela toglierebbe, come all'ultima riga di una
+   lista inset. In fondo alla lista, l'ultima davvero, niente linea. */
+.dieta-builder ion-list.list-inset .slotdrop > ion-item,.dieta-builder ion-list.list-inset .draglist > ion-item{--inner-border-width:0 0 .55px 0;}
+.dieta-builder ion-list.list-inset > .slotdrop:last-child > ion-item,.dieta-builder ion-list.list-inset > .draglist:last-child > ion-item:last-child{--inner-border-width:0;}
+/* Le alternative sono una riga che si apre: il conto a destra, la freccia che gira. */
+.dieta-builder ion-item.apri-alternative{--min-height:48px;}
+.dieta-builder ion-item.apri-alternative ion-label{font-size:var(--text-md);color:var(--label);}
+.dieta-builder ion-item.apri-alternative ion-note{margin-inline-end:8px;font-variant-numeric:tabular-nums;}
+.dieta-builder .chevron{color:var(--label-3);transition:rotate .2s ease;}
+.dieta-builder .chevron.aperta{rotate:180deg;}
+/* Dentro le alternative del pasto, i macro sono divisori della lista. */
+.dieta-builder ion-item-divider{--background:var(--surface-raise);--color:var(--label-2);--padding-start:16px;padding-inline-start:16px;min-height:32px;font-size:var(--text-sm);font-weight:600;border:0;}
+@media (prefers-reduced-motion:reduce){.dieta-builder .chevron{transition:none;}}
 .liste-ios ion-button.week-more{--color:var(--accent);margin:-8px 0 20px;font-weight:600;}
 
 ion-button.runremove{--background:transparent;--color:var(--state-danger-text);--border-radius:var(--r-lg);--border-width:1px;--border-style:solid;--border-color:var(--border-line);--padding-start:16px;--padding-end:16px;--padding-top:13px;--padding-bottom:13px;width:100%;margin-top:10px;font-size:var(--text-sm);font-weight:600;}
@@ -1057,22 +1103,7 @@ ion-button.shop-addbtn:active{filter:brightness(0.92);}
 .cluster-plus{font-variant-numeric:tabular-nums;font-size:var(--text-lg);font-weight:700;color:var(--label-3);}
 .cluster-note{margin:11px 0 0;font-size:var(--text-xs);line-height:1.45;color:var(--label-2);}
 
-.builder-meal{margin-bottom:14px;}
 
-.meal-preview-card{margin-bottom:12px;cursor:pointer;}
-.meal-preview-header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;}
-.meal-preview-header .lbl{font-weight:700;font-size:var(--text-md);}
-.meal-preview-empty{font-size:var(--text-sm);color:var(--label-3);}
-.meal-preview-cat{padding-top:10px;border-top:1px solid var(--border-line);margin-top:10px;}
-.meal-preview-cat:first-of-type{padding-top:0;border-top:none;margin-top:0;}
-.meal-preview-catlabel{font-variant-numeric:tabular-nums;font-size:var(--text-2xs);font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--label-3);}
-.meal-preview-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:4px 0;font-size:var(--text-sm);color:var(--label);}
-.meal-preview-item .fqty{color:var(--label-3);font-variant-numeric:tabular-nums;font-size:var(--text-xs);flex-shrink:0;}
-.builder-meal-header{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
-.builder-meal-name input{font-weight:700;font-size:var(--text-md);}
-.builder-item{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
-.builder-item .measure-input-wrap{flex:1.6;}
-.builder-item .builder-qty{flex:1;}
 
 /* --- Trascinare una riga del builder ---
    La presa e' un elemento suo e non tutta la riga: la riga e' fatta di campi
@@ -1082,7 +1113,8 @@ ion-button.shop-addbtn:active{filter:brightness(0.92);}
    scada - annulla la presa invece di rinviarla, e col dito ci si muove quasi
    sempre subito.
    La lista tiene un'altezza minima anche da vuota, se no un macro senza
-   alimenti non avrebbe dove ricevere quello che arriva dagli altri. */
+   alimenti non avrebbe dove ricevere quello che arriva dagli altri. Il bordo
+   tratteggiato di chi riceve sta dentro la lista, che taglia quello che esce. */
 .draglist{min-height:14px;}
 /* La casella di un macro della combinazione: un posto solo, che pero' deve
    poter ricevere anche quando e' vuoto - e' li' che si lascia l'alimento che
@@ -1090,7 +1122,6 @@ ion-button.shop-addbtn:active{filter:brightness(0.92);}
 .slotdrop{min-height:44px;}
 .draghandle{flex-shrink:0;display:flex;align-items:center;justify-content:center;width:34px;height:44px;margin-left:-6px;border:none;background:none;color:var(--label-3);cursor:grab;touch-action:none;}
 .draghandle:active{cursor:grabbing;}
-.builder-item.cdk-drag-dragging .draghandle{color:var(--accent);}
 .draghandle:focus-visible{outline:2px solid var(--accent);outline-offset:-2px;border-radius:var(--r-sm);}
 /* --- Riordinare gli esercizi di un giorno ---
    Stessa presa degli alimenti, ma sulla riga di un'ion-list: quello che resta al
@@ -1103,19 +1134,19 @@ ion-item.cardrow.cdk-drag-preview{border-radius:var(--r-lg);opacity:1;}
 ion-item.cardrow.cdk-drag-preview .riordina-presa{color:var(--accent);}
 /* La riga che segue il dito: staccata dal foglio, con l'ombra che lo dice. */
 .cdk-drag-preview{box-shadow:var(--shadow-float);border-radius:var(--r-sm);background:var(--surface-raise);opacity:.96;}
-.cdk-drag-preview .delete-btn{visibility:hidden;}
+.cdk-drag-preview :is(.delete-btn,.togli){visibility:hidden;}
 /* Il posto che la riga lascia: un ingombro vuoto, non un buco che si chiude
    di colpo - senza, le righe sotto saltano e si perde di vista dove si sta
    lasciando quella in mano. */
 .dragghost{height:44px;margin-bottom:8px;border:1px dashed var(--border-line);border-radius:var(--r-sm);background:var(--surface-raise);}
 .cdk-drag-animating{transition:transform .22s var(--spring-soft);}
-.draglist.cdk-drop-list-dragging .builder-item:not(.cdk-drag-placeholder){transition:transform .22s var(--spring-soft);}
+.draglist.cdk-drop-list-dragging > ion-item:not(.cdk-drag-placeholder){transition:transform .22s var(--spring-soft);}
 /* Il macro che sta per ricevere: si accende, cosi' si vede dove si lascia, e
    da vuoto cresce - quattordici pixel bastano al browser per registrare la
    lista, non al pollice per centrarla. Cresce solo durante il trascinamento:
    il resto del tempo un macro senza alimenti non deve lasciare un buco. */
-.draglist.cdk-drop-list-receiving{min-height:40px;outline:1px dashed var(--accent);outline-offset:4px;border-radius:var(--r-sm);}
-.slotdrop.cdk-drop-list-receiving{outline:1px dashed var(--accent);outline-offset:4px;border-radius:var(--r-sm);}
+.draglist.cdk-drop-list-receiving{min-height:40px;outline:1px dashed var(--accent);outline-offset:-3px;}
+.slotdrop.cdk-drop-list-receiving{outline:1px dashed var(--accent);outline-offset:-3px;}
 
 /* La riga con "rimuovi" accanto a "salva". I due tasti erano di due famiglie
    diverse - .confirmbtn ha raggio, altezza, corpo e ombra tutti piu' piccoli
@@ -1255,11 +1286,6 @@ ion-button.confirmbtn.restsave,ion-button.confirmbtn.confirm{--background:var(--
 .meal-head{position:relative;}
 .meal-head > .meal-check{position:absolute;top:50%;right:48px;transform:translateY(-50%);}
 .meal-summary.con-spunta > span:first-child{padding-right:70px;}
-.variant-tabs{display:flex;gap:6px;margin:13px 0 10px;flex-wrap:wrap;}
-.variant-tabs button{font-size:var(--text-sm);font-weight:600;padding:8px 12px;min-height:38px;border-radius:var(--r-sm);border:1px solid var(--border-line);background:var(--surface-raise);color:var(--label-2);cursor:pointer;}
-/* L'aggiunta di una combinazione sta coi chip ma e' un'azione: in accento, col +. */
-.variant-tabs button.aggiungi{display:inline-flex;align-items:center;gap:4px;border-color:transparent;background:transparent;color:var(--accent);}
-.variant-tabs button.active{border-color:var(--accent);color:var(--accent);background:var(--accent-dim);}
 /* La scelta della combinazione, lato cliente: un menu invece di una fila di
    pastiglie. Le etichette le scrive il coach e sono libere, quindi una fila
    andava a capo appena si allungavano; il menu e' alto 44 comunque, e quello
@@ -1285,7 +1311,6 @@ ion-button.confirmbtn.restsave,ion-button.confirmbtn.confirm{--background:var(--
 .fooditem-category.fat::before{background:var(--macro-fat);border-radius:1px;transform:rotate(45deg) scale(.9);}
 .fooditem-category.integration{color:var(--macro-supp);}
 /* Stessa tinta dell'etichetta Integrazione lato cliente, per l'anteprima pasto nel builder coach. */
-.meal-preview-catlabel.integration{color:var(--macro-supp);}
 .fooditem:last-child{border-bottom:none;}
 .fooditem .row{display:flex;justify-content:space-between;align-items:baseline;gap:10px;}
 .fooditem .fname{font-size:var(--text-md);line-height:1.3;}
@@ -1346,14 +1371,6 @@ ion-button.setdone.salva-btn.fatto{--background:var(--surface-raise);--color:var
 .scelta-combo{display:flex;flex-direction:column;gap:3px;padding:6px 0;white-space:normal;}
 .scelta-combo b{font-size:var(--text-md);}
 .scelta-combo span{font-variant-numeric:tabular-nums;font-size:var(--text-xs);line-height:1.5;color:var(--label-2);}
-.altwrap-header{cursor:pointer;font-variant-numeric:tabular-nums;font-size:var(--text-xs);color:var(--label-3);min-height:32px;display:flex;align-items:center;justify-content:space-between;gap:6px;}
-.altwrap-header .chevron{display:flex;align-items:center;justify-content:center;transition:transform .35s var(--spring);color:var(--label-3);}
-.altwrap-header .chevron app-icona{display:flex;}
-.altwrap.open .altwrap-header{color:var(--accent);}
-.altwrap.open .altwrap-header .chevron{transform:rotate(180deg);color:var(--accent);}
-.altlist{margin-top:6px;display:flex;flex-direction:column;gap:5px;padding-left:11px;border-left:1px solid var(--separator);}
-.altlist .row{display:flex;justify-content:space-between;font-size:var(--text-sm);color:var(--label-2);}
-.altlist .row span:last-child{font-variant-numeric:tabular-nums;color:var(--label-2);}
 
 /* ===== INFO ===== */
 .infocard{background:var(--surface-card);border:1px solid var(--border-line);border-radius:var(--r-lg);padding:16px;margin-bottom:20px;}
@@ -1625,8 +1642,8 @@ input.daterow:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
 /* "Alternative (n)" e il chip del recupero sono alti 32 e 24: il disegno resta,
    il bersaglio arriva a 44 (vedi .tap44). Il chip e' dentro una riga che apre
    l'esercizio: un tocco vicino al chip e' per lui, non per la riga. */
-.altwrap-header,.ex-chip.rest{position:relative;}
-.altwrap-header::after,.ex-chip.rest::after{content:"";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:100%;min-width:44px;height:44px;}
+.ex-chip.rest{position:relative;}
+.ex-chip.rest::after{content:"";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:100%;min-width:44px;height:44px;}
 
 /* Una riga che si preme e' feedback, non un'entrata: scende in 140 ms e risale in
    200 con una curva che frena (ease-out), senza il rimbalzo della molla, che su
@@ -1682,7 +1699,6 @@ input.daterow:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
    Ora sono fondi pieni: il colore dice cosa fa il bottone, il bordo lo
    delimita, nient'altro.
    =================================================================== */
-.variant-tabs button,
 .backbtn {
   border: 1px solid var(--border-line);
   box-shadow: var(--shadow-card);

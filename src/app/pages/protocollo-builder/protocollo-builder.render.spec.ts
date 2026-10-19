@@ -221,7 +221,7 @@ describe('ProtocolloBuilderComponent — disegno vero', () => {
       m.fixture.detectChanges();
       return m;
     }
-    const caselle = (root: HTMLElement) => Array.from(root.querySelectorAll<HTMLElement>('.slotdrop .builder-item'));
+    const caselle = (root: HTMLElement) => Array.from(root.querySelectorAll<HTMLElement>('.slotdrop ion-item.alimento'));
 
     it('aprire il pasto disegna una casella per macro, e non e\' una modifica', async () => {
       const { c, root } = await conPastoAperto();
@@ -250,10 +250,12 @@ describe('ProtocolloBuilderComponent — disegno vero', () => {
       expect(c.haModificheNonSalvate()).toBe(false);
     });
 
-    it('la \u2715 svuota l\'alimento ma lascia la casella da riempire', async () => {
+    it('il meno rosso svuota l\'alimento ma lascia la casella da riempire', async () => {
       const { c, fixture, root } = await conPastoAperto();
 
-      root.querySelector<HTMLElement>('.slotdrop .delete-btn')!.click();
+      // Solo la casella piena (il pane) ha il meno: le vuote non hanno niente da togliere.
+      expect(root.querySelectorAll('.slotdrop ion-button.togli').length).toBe(1);
+      root.querySelector<HTMLElement>('.slotdrop ion-button.togli')!.click();
       fixture.detectChanges();
 
       expect(c.editingMeal!.combinations[0].carb).toEqual({ name: '', qty: '', category: 'carb' });
@@ -348,60 +350,148 @@ describe('ProtocolloBuilderComponent — disegno vero', () => {
       expect(c.editingPlan?.id).toBe('pianoA');
       expect(titolo()).toBe('Giorno ON');
     });
+  });
 
-    it('il nome del pasto e\' un pulsante e Invio apre il pasto', async () => {
-      const { c, fixture, root, tasto, titolo } = await monta();
-      c.vaAScheda('dieta');
-      c.openPlan(c.protocol!.diet[0]);
+  /**
+   * Il piano e il pasto come moduli di iOS: i pasti sono righe che si aprono
+   * (non anteprime che ripetono il pasto), il pasto e' fatto di liste con i
+   * campi dentro, le alternative sono righe che si aprono.
+   */
+  describe('la dieta come moduli di iOS', () => {
+    async function conPiano() {
+      const m = await monta();
+      m.c.vaAScheda('dieta');
+      m.c.openPlan(m.c.protocol!.diet[0]);
+      m.fixture.detectChanges();
+      return m;
+    }
+    async function conPasto() {
+      const m = await conPiano();
+      m.c.openMeal(m.c.protocol!.diet[0].meals[0]);
+      m.fixture.detectChanges();
+      return m;
+    }
+    const testo = (el: Element | null | undefined) => el?.textContent?.replace(/\s+/g, ' ').trim() ?? null;
+
+    it('il nome del piano e\' una riga di modulo con la sua etichetta', async () => {
+      const { root } = await conPiano();
+      const nome = root.querySelector<HTMLElement & { label?: string; value?: string }>('ion-list.campi ion-input')!;
+      expect(nome.label).toBe('Nome');
+    });
+
+    it('un pasto e\' una riga che si apre: il nome, cosa c\'e\' dentro, il chevron', async () => {
+      const { c, fixture, root, titolo } = await conPiano();
+      const righe = Array.from(root.querySelectorAll<HTMLElement & { button?: boolean; detail?: boolean }>('ion-item.pasto-riga'));
+      expect(righe.length).toBe(1);
+      expect(testo(righe[0].querySelector('h2'))).toBe('Colazione');
+      expect(testo(righe[0].querySelector('p'))).toBe('Pane');
+      expect([righe[0].button, righe[0].detail]).toEqual([true, true]);
+      // Niente anteprima che ripete il pasto: ne' combinazioni, ne' alternative, ne' cestini.
+      expect(root.querySelector('.meal-preview-card, .variant-tabs, .altwrap-header, ion-button.delete-btn')).toBeNull();
+
+      righe[0].click();
       fixture.detectChanges();
-
-      const lbl = root.querySelector<HTMLElement>('.meal-preview-header .lbl')!;
-      expect(lbl.getAttribute('role')).toBe('button');
-      expect(lbl.getAttribute('aria-label')).toBe('Apri il pasto Colazione');
-
-      tasto(lbl, 'Enter');
-      fixture.detectChanges();
-
       expect(c.editingMeal?.id).toBe('pastoA');
       expect(titolo()).toBe('Colazione');
     });
 
-    it('"Alternative" dichiara se e\' aperto e, aprendolo, non apre il pasto', async () => {
-      const { c, fixture, root, tasto } = await monta();
-      c.vaAScheda('dieta');
-      c.openPlan(c.protocol!.diet[0]);
+    it('un pasto si elimina scorrendo la riga', async () => {
+      const { c, fixture, root } = await conPiano();
+      root.querySelector<HTMLElement>('ion-item-option.elimina')!.click();
       fixture.detectChanges();
-
-      const testate = () => Array.from(root.querySelectorAll<HTMLElement>('.meal-preview-card .altwrap-header'));
-      // una per l'alimento (con le sue alternative), una per le alternative del pasto
-      expect(testate().length).toBe(2);
-      for (const t of testate()) {
-        expect(t.getAttribute('role')).toBe('button');
-        expect(t.getAttribute('aria-expanded')).toBe('false');
-      }
-
-      tasto(testate()[1], ' ');
-      fixture.detectChanges();
-
-      expect(testate()[1].getAttribute('aria-expanded')).toBe('true');
-      expect(testate()[0].getAttribute('aria-expanded')).toBe('false');
-      // Il click sintetico risale alla card che apre il pasto: il toggle lo ferma.
-      expect(c.editingMeal).toBeNull();
+      expect(c.editingPlan!.meals).toEqual([]);
+      expect(root.querySelector('ion-item.pasto-riga')).toBeNull();
     });
 
-    it('anche "Alternative" dell\'alimento si apre senza aprire il pasto', async () => {
-      const { c, fixture, root, tasto } = await monta();
-      c.vaAScheda('dieta');
-      c.openPlan(c.protocol!.diet[0]);
+    it('il riassunto del pasto: gli alimenti della prima combinazione e gli integratori, o che non ce ne sono', async () => {
+      const { c } = await conPiano();
+      const pasto: any = {
+        combinations: [{ carb: { name: 'Avena' }, protein: { name: ' ' }, fat: { name: 'Burro d\'arachidi' } }, { carb: { name: 'Riso' } }],
+        supplements: [{ name: 'Creatina' }]
+      };
+      expect(c.riassuntoPasto(pasto)).toBe('Avena, Burro d\'arachidi, Creatina');
+      expect(c.riassuntoPasto({ combinations: [{ carb: null, protein: null, fat: null }] } as any)).toBe('Nessun alimento ancora');
+    });
+
+    it('le combinazioni: il segmento c\'e\' da due in su e sceglie quella da scrivere', async () => {
+      const { c, fixture, root } = await conPasto();
+      expect(root.querySelector('ion-segment.combo-seg')).toBeNull();
+      expect(root.querySelector('ion-item.riga-distruttiva')!.textContent).not.toContain('combinazione');
+
+      c.addCombination(c.editingMeal!);
+      fixture.detectChanges();
+      const seg = root.querySelector<HTMLElement & { value?: string }>('ion-segment.combo-seg')!;
+      expect(Array.from(seg.querySelectorAll('ion-segment-button')).map(b => testo(b))).toEqual(['Base', 'Alternativa 1']);
+      expect(seg.value).toBe(c.editingMeal!.combinations[1].id);
+
+      c.scegliCombinazione(c.editingMeal!, new CustomEvent('ionChange', { detail: { value: 'comboA' } }));
+      fixture.detectChanges();
+      expect(c.getActiveCombo(c.editingMeal!).id).toBe('comboA');
+      expect(Array.from(root.querySelectorAll('ion-item.riga-distruttiva')).map(r => testo(r)))
+        .toEqual(['Rimuovi questa combinazione', 'Rimuovi pasto']);
+    });
+
+    it('la quantita\' ha la sua etichetta visibile, non solo il segnaposto', async () => {
+      const { root } = await conPasto();
+      const qty = Array.from(root.querySelectorAll<HTMLElement & { label?: string }>('.slotdrop ion-input.alimento-qty'));
+      expect(qty.map(q => q.label)).toEqual(['Quantità', 'Quantità', 'Quantità']);
+    });
+
+    it('le alternative di un alimento sono una riga che si apre, col loro conto', async () => {
+      const { fixture, root } = await conPasto();
+      const riga = root.querySelector<HTMLElement>('ion-list.macro ion-item.apri-alternative')!;
+      expect(testo(riga.querySelector('ion-note'))).toBe('1');
+      expect(riga.getAttribute('aria-expanded')).toBe('false');
+      expect(root.querySelector('ion-item.alternativa')).toBeNull();
+
+      riga.click();
+      fixture.detectChanges();
+      // ngModel scrive il valore nel campo un giro dopo.
+      await fixture.whenStable();
+      expect(riga.getAttribute('aria-expanded')).toBe('true');
+      const alt = root.querySelector<HTMLElement & { value?: string }>('ion-item.alternativa ion-input.alimento-nome')!;
+      expect(alt.value).toBe('Fette biscottate');
+    });
+
+    it('un alimento senza alternative ha solo "Aggiungi alternativa"; aggiungendola la riga si apre', async () => {
+      const { c, fixture, root } = await conPasto();
+      const macro = () => Array.from(root.querySelectorAll<HTMLElement>('ion-list.macro'));
+      // Proteine e grassi sono caselle vuote: niente da cui partire, niente riga.
+      expect(macro()[1].querySelector('ion-item.riga-azione')).toBeNull();
+      expect(macro()[1].querySelector('ion-item.apri-alternative')).toBeNull();
+
+      c.editingMeal!.combinations[0].protein!.name = 'Pollo';
+      fixture.detectChanges();
+      const aggiungi = macro()[1].querySelector<HTMLElement>('ion-item.riga-azione')!;
+      expect(testo(aggiungi)).toBe('Aggiungi alternativa');
+      aggiungi.click();
       fixture.detectChanges();
 
-      const prima = root.querySelector<HTMLElement>('.meal-preview-cat .altwrap-header')!;
-      tasto(prima, 'Enter');
-      fixture.detectChanges();
+      expect(c.editingMeal!.combinations[0].protein!.alt).toEqual([{ name: '', qty: '' }]);
+      expect(macro()[1].querySelector('ion-item.apri-alternative')!.getAttribute('aria-expanded')).toBe('true');
+      expect(macro()[1].querySelectorAll('ion-item.alternativa').length).toBe(1);
+    });
 
-      expect(root.querySelector<HTMLElement>('.meal-preview-cat .altwrap-header')!.getAttribute('aria-expanded')).toBe('true');
-      expect(root.textContent).toContain('Fette biscottate');
+    it('le alternative del pasto: una riga che si apre, con i macro come divisori', async () => {
+      const { fixture, root } = await conPasto();
+      const riga = root.querySelector<HTMLElement>('ion-list.alt-pasto ion-item.apri-alternative')!;
+      expect(testo(riga.querySelector('ion-note'))).toBe('1');
+      riga.click();
+      fixture.detectChanges();
+      expect(Array.from(root.querySelectorAll('ion-list.alt-pasto ion-item-divider')).map(d => testo(d)))
+        .toEqual(['Carboidrati', 'Proteine', 'Grassi']);
+      expect(root.querySelectorAll('ion-list.alt-pasto ion-item.alimento').length).toBe(1);
+    });
+
+    it('"Fatto" e\' il segno di spunta della testata: in fondo resta solo "Rimuovi pasto", in rosso', async () => {
+      const { c, fixture, root, titolo } = await conPasto();
+      expect(Array.from(root.querySelectorAll('ion-button')).map(b => testo(b))).not.toContain('Fatto');
+      const rimuovi = Array.from(root.querySelectorAll<HTMLElement>('ion-item.riga-distruttiva')).find(r => testo(r) === 'Rimuovi pasto')!;
+      rimuovi.click();
+      fixture.detectChanges();
       expect(c.editingMeal).toBeNull();
+      expect(c.editingPlan!.meals).toEqual([]);
+      expect(titolo()).toBe('Giorno ON');
     });
   });
 });

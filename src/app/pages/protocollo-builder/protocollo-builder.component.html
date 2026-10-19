@@ -394,271 +394,233 @@
           </div>
         </ng-container>
 
-        <!-- Editor del piano selezionato -->
+        <!-- ===================== IL PIANO =====================
+             Come le liste di iOS: il nome e' una riga di modulo, i pasti sono
+             righe che si aprono (col chevron) e dicono cosa c'e' dentro. Il
+             pasto si legge e si modifica aprendolo: l'anteprima completa di
+             ogni pasto qui ripeteva tutto quello che c'e' dentro. Un pasto si
+             elimina scorrendo la riga, come in iOS, o da dentro ("Rimuovi
+             pasto"), che resta per chi non usa i gesti. -->
         <ng-container *ngIf="editingPlan && !editingMeal">
+          <div class="liste-ios dieta-builder">
+            <ion-list [inset]="true" class="campi">
+              <ion-item lines="none">
+                <ion-input label="Nome" [(ngModel)]="editingPlan.name" placeholder='Es. "Giorno ON"'></ion-input>
+              </ion-item>
+            </ion-list>
 
-          <div class="authfield mb-4">
-            <label>Nome del piano</label>
-            <div class="measure-input-wrap">
-              <ion-input type="text" [(ngModel)]="editingPlan.name" placeholder='Es. "Giorno ON"'></ion-input>
-            </div>
-          </div>
-
-          <p class="sectiontitle mt-0">Pasti</p>
-
-          <div *ngIf="editingPlan.meals.length === 0" class="history-empty">
-            Nessun pasto ancora.
-          </div>
-
-          <div class="infocard meal-preview-card" *ngFor="let meal of editingPlan.meals" (click)="openMeal(meal)">
-            <div class="meal-preview-header">
-              <div class="lbl" appTasto [attr.aria-label]="'Apri il pasto ' + (meal.name || 'senza nome')">{{ meal.name || 'Pasto senza nome' }}</div>
-              <ion-button class="delete-btn tap44" (click)="removeMeal(meal, $event)" title="Elimina pasto" [attr.aria-label]="'Elimina il pasto ' + meal.name">
-                <app-icona name="trash" [size]="14"></app-icona>
-              </ion-button>
-            </div>
-
-            <span class="meal-preview-catlabel mb-2" *ngIf="meal.combinations.length > 1" style="display:block">Combinazioni</span>
-            <div class="variant-tabs" *ngIf="meal.combinations.length > 1" (click)="$event.stopPropagation()">
-              <button *ngFor="let combo of meal.combinations"
-                [class.active]="getActiveCombo(meal).id === combo.id"
-                (click)="setActiveCombo(meal, combo, $event)">
-                {{ combo.label }}
-              </button>
-            </div>
-
-            <div *ngIf="countMealItems(meal) === 0" class="meal-preview-empty">Nessun alimento ancora</div>
-
-            <ng-container *ngFor="let cat of foodCategories">
-              <div class="meal-preview-cat" *ngIf="getActiveCombo(meal)[cat] as it">
-                <span class="meal-preview-catlabel">{{ foodCategoryLabels[cat] }}</span>
-                <div class="meal-preview-item">
-                  <span class="fname">{{ it.name }}</span>
-                  <span class="fqty">{{ it.qty }}</span>
-                </div>
-
-                <ng-container *ngIf="itemAlt(it).length > 0">
-                  <div class="altwrap-header" appTasto [attr.aria-expanded]="isItemAltExpanded(getActiveCombo(meal), cat)"
-                    (click)="toggleItemAltExpanded(getActiveCombo(meal), cat, $event)">
-                    <span>Alternative ({{ itemAlt(it).length }})</span>
-                    <span class="chevron">
-                      <app-icona name="chevron-down" [size]="10"></app-icona>
-                    </span>
-                  </div>
-                  <div class="altlist" *ngIf="isItemAltExpanded(getActiveCombo(meal), cat)" (click)="$event.stopPropagation()">
-                    <div class="row" *ngFor="let a of itemAlt(it)">
-                      <span>{{ a.name }}</span>
-                      <span>{{ a.qty }}</span>
-                    </div>
-                  </div>
-                </ng-container>
-              </div>
-            </ng-container>
-
-            <!-- Integrazione: come nella vista cliente, e' una lista piatta del pasto e non
-                 dipende dalla combinazione selezionata. Qui in anteprima e' di sola lettura;
-                 si modifica aprendo il pasto nell'editor. -->
-            <div class="meal-preview-cat" *ngIf="meal.supplements?.length">
-              <span class="meal-preview-catlabel integration">Integrazione</span>
-              <div class="meal-preview-item" *ngFor="let s of meal.supplements">
-                <span class="fname">{{ s.name }}</span>
-                <span class="fqty">{{ s.qty }}</span>
-              </div>
-            </div>
-
-            <ng-container *ngIf="totalAlternatives(meal) > 0">
-              <div class="altwrap-header" appTasto [attr.aria-expanded]="isAltExpanded(meal)" (click)="toggleAltExpanded(meal, $event)">
-                <span>Alternative ({{ totalAlternatives(meal) }})</span>
-                <span class="chevron">
-                  <app-icona name="chevron-down" [size]="10"></app-icona>
-                </span>
-              </div>
-              <div class="altlist" *ngIf="isAltExpanded(meal)" (click)="$event.stopPropagation()">
-                <ng-container *ngFor="let cat of foodCategories">
-                  <ng-container *ngIf="altItems(meal, cat).length > 0">
-                    <span class="meal-preview-catlabel" style="display:block;margin:6px 0 2px">{{ foodCategoryLabels[cat] }}</span>
-                    <div class="row" *ngFor="let it of altItems(meal, cat)">
-                      <span>{{ it.name }}</span>
-                      <span>{{ it.qty }}</span>
-                    </div>
-                  </ng-container>
-                </ng-container>
-              </div>
-            </ng-container>
-          </div>
-
-          <div class="grouplist">
-            <ion-item class="cardrow riga-azione" lines="none" [button]="true" [detail]="false" (click)="addMeal()">
-              <app-icona slot="start" name="add" [size]="22"></app-icona>
-              <ion-label>Aggiungi pasto</ion-label>
-            </ion-item>
+            <ion-list-header class="sezione"><ion-label>Pasti</ion-label></ion-list-header>
+            <ion-list [inset]="true" class="pasti">
+              <ion-item-sliding *ngFor="let meal of editingPlan.meals" #riga>
+                <ion-item class="pasto-riga" [button]="true" [detail]="true" (click)="openMeal(meal)">
+                  <ion-label class="ion-text-wrap">
+                    <h2>{{ meal.name || 'Pasto senza nome' }}</h2>
+                    <p>{{ riassuntoPasto(meal) }}</p>
+                  </ion-label>
+                  <ion-note slot="end" *ngIf="meal.combinations.length > 1">{{ meal.combinations.length }} combinazioni</ion-note>
+                </ion-item>
+                <ion-item-options side="end">
+                  <ion-item-option class="elimina" (click)="riga.close(); removeMeal(meal, $event)">Elimina</ion-item-option>
+                </ion-item-options>
+              </ion-item-sliding>
+              <ion-item class="riga-azione" [button]="true" [detail]="false" (click)="addMeal()">
+                <app-icona slot="start" name="add" [size]="22"></app-icona>
+                <ion-label>Aggiungi pasto</ion-label>
+              </ion-item>
+            </ion-list>
           </div>
         </ng-container>
 
-        <!-- Editor del pasto selezionato -->
+        <!-- ===================== IL PASTO =====================
+             Un modulo di iOS: righe con i campi, una lista per macro.
+
+             La riga di un alimento e' quella di una tabella iOS in modifica: il
+             meno rosso a sinistra lo toglie, la maniglia a destra lo sposta, il
+             nome sopra e la quantita' sotto (affiancati, "5 Cucchiai · 50 g"
+             finiva tagliata). Le alternative di un alimento sono una riga che
+             si apre; finche' non ce ne sono c'e' solo "Aggiungi alternativa",
+             non un "Alternative (0)" per ogni macro. "Fatto" e' il ✓ della
+             testata: il tasto in fondo che faceva lo stesso non c'e' piu'. -->
         <ng-container *ngIf="editingPlan && editingMeal as em">
+          <div class="liste-ios dieta-builder">
+            <ion-list [inset]="true" class="campi">
+              <ion-item lines="none">
+                <ion-input label="Nome" [(ngModel)]="em.name" placeholder="Es. Colazione"></ion-input>
+              </ion-item>
+            </ion-list>
 
-          <div class="authfield mb-4">
-            <label>Nome pasto</label>
-            <div class="measure-input-wrap">
-              <ion-input type="text" [(ngModel)]="em.name" placeholder="Es. Colazione"></ion-input>
-            </div>
-          </div>
+            <!-- Le combinazioni sono modi diversi di comporre lo stesso pasto:
+                 quale si sta scrivendo lo dice il segmento, che c'e' da due in
+                 su. Il nome e il "rimuovi" sono della combinazione scelta. -->
+            <ion-list-header class="sezione"><ion-label>Combinazioni</ion-label></ion-list-header>
+            <ion-segment *ngIf="em.combinations.length > 1" class="seg labelseg combo-seg" [scrollable]="true"
+              [value]="getActiveCombo(em).id" (ionChange)="scegliCombinazione(em, $event)" aria-label="Combinazione da modificare">
+              <ion-segment-button *ngFor="let combo of em.combinations" [value]="combo.id">
+                <ion-label>{{ combo.label || 'Senza nome' }}</ion-label>
+              </ion-segment-button>
+            </ion-segment>
+            <ion-list [inset]="true" class="combinazione">
+              <ion-item *ngIf="em.combinations.length > 1">
+                <ion-input label="Nome" [ngModel]="getActiveCombo(em).label" (ngModelChange)="getActiveCombo(em).label = $event"
+                  placeholder="Es. Alternativa 1"></ion-input>
+              </ion-item>
+              <ion-item class="riga-azione" [button]="true" [detail]="false" (click)="addCombination(em)">
+                <app-icona slot="start" name="add" [size]="22"></app-icona>
+                <ion-label>Aggiungi combinazione</ion-label>
+              </ion-item>
+              <ion-item *ngIf="em.combinations.length > 1" class="riga-distruttiva" [button]="true" [detail]="false"
+                (click)="removeCombination(em, getActiveCombo(em), $event)">
+                <ion-label>Rimuovi questa combinazione</ion-label>
+              </ion-item>
+            </ion-list>
 
-          <p class="sectiontitle mt-0">Combinazioni</p>
-          <div class="variant-tabs">
-            <button *ngFor="let combo of em.combinations"
-              [class.active]="getActiveCombo(em).id === combo.id"
-              (click)="setActiveCombo(em, combo)">
-              {{ combo.label }}
-            </button>
-            <button class="aggiungi" (click)="addCombination(em)" title="Aggiungi combinazione alternativa"><app-icona name="add" [size]="16"></app-icona>Alternativa</button>
-          </div>
-
-          <ng-container *ngIf="em.combinations.length > 1">
-            <div class="authfield">
-              <label>Nome combinazione</label>
-              <div class="measure-input-wrap" style="display:flex;gap:8px">
-                <ion-input type="text" [ngModel]="getActiveCombo(em).label" (ngModelChange)="getActiveCombo(em).label = $event" placeholder="Es. Alternativa 1" style="flex:1"></ion-input>
-              </div>
-            </div>
-            <ion-button class="confirmbtn cancel w-full mb-4" (click)="removeCombination(em, getActiveCombo(em), $event)">
-              Rimuovi questa combinazione
-            </ion-button>
-          </ng-container>
-
-          <!-- Un gruppo solo per tutti i posti dove un alimento puo' stare: le tre
-               caselle della combinazione, le alternative del pasto, quelle del
-               singolo alimento. Sono lo stesso alimento in tre posti diversi, e
-               spostarlo fra loro e' il mestiere di questa schermata. Gli
-               integratori restano fuori: non sono alimenti. -->
-          <ng-container cdkDropListGroup>
-          <ng-container *ngFor="let cat of foodCategories">
-            <p class="sectiontitle mt-4">{{ foodCategoryLabels[cat] }}</p>
-            <div class="infocard">
-              <!-- La casella accetta anche da vuota: e' li' che si lascia
-                   l'alimento che arriva da un altro macro o da una lista di
-                   alternative. -->
-              <div class="slotdrop" cdkDropList [cdkDropListData]="zonaCasella(cat)"
-                (cdkDropListDropped)="rilascia(getActiveCombo(em), $event)">
-                <div class="builder-item" *ngIf="getActiveCombo(em)[cat] as item"
-                  cdkDrag>
-                  <button type="button" class="draghandle" cdkDragHandle
-                    aria-label="Trascina per spostare in un altro macro">
-                    <app-icona name="riordina" [size]="16"></app-icona>
-                  </button>
-                  <div class="measure-input-wrap">
-                    <ion-input type="text" [(ngModel)]="item.name" placeholder="Alimento"></ion-input>
-                  </div>
-                  <div class="measure-input-wrap builder-qty">
-                    <ion-input type="text" [(ngModel)]="item.qty" placeholder="Quantità"></ion-input>
-                  </div>
-                  <ion-button class="delete-btn tap44" (click)="clearComboItem(getActiveCombo(em), cat, $event)" aria-label="Svuota questo alimento"><app-icona name="close" [size]="14"></app-icona></ion-button>
-                  <div class="dragghost" *cdkDragPlaceholder></div>
-                </div>
-              </div>
-
-              <ng-container *ngIf="getActiveCombo(em)[cat] as item2">
-                <div class="altwrap-header mt-3" appTasto [attr.aria-expanded]="isItemAltExpanded(getActiveCombo(em), cat)"
-                  (click)="toggleItemAltExpanded(getActiveCombo(em), cat)">
-                  <span>Alternative per questo alimento ({{ itemAlt(item2).length }})</span>
-                  <span class="chevron">
-                    <app-icona name="chevron-down" [size]="10"></app-icona>
-                  </span>
-                </div>
-                <ng-container *ngIf="isItemAltExpanded(getActiveCombo(em), cat)">
-                  <div class="draglist" cdkDropList [cdkDropListData]="zonaLista(itemAlt(item2))"
-                    (cdkDropListDropped)="rilascia(getActiveCombo(em), $event)">
-                    <div class="builder-item mt-2" *ngFor="let a of itemAlt(item2)"
-                      cdkDrag>
-                    <button type="button" class="draghandle" cdkDragHandle
-                      aria-label="Trascina per spostare">
-                      <app-icona name="riordina" [size]="16"></app-icona>
-                    </button>
-                      <div class="measure-input-wrap">
-                        <ion-input type="text" [(ngModel)]="a.name" placeholder="Alimento alternativo"></ion-input>
-                      </div>
-                      <div class="measure-input-wrap builder-qty">
-                        <ion-input type="text" [(ngModel)]="a.qty" placeholder="Quantità"></ion-input>
-                      </div>
-                      <ion-button class="delete-btn tap44" (click)="removeItemAltEntry(item2, a)" aria-label="Togli l'alimento alternativo"><app-icona name="close" [size]="14"></app-icona></ion-button>
-                      <div class="dragghost" *cdkDragPlaceholder></div>
-                    </div>
-                  </div>
-                  <ion-button class="azione-riquadro" (click)="addItemAltEntry(item2)"><app-icona name="add" [size]="20"></app-icona>Alternativa</ion-button>
-                </ng-container>
-              </ng-container>
-            </div>
-          </ng-container>
-
-          <p class="sectiontitle mt-5">Alternative</p>
-          <p class="bacheca-text mb-3">Alimenti sostitutivi validi per tutto il pasto, a prescindere dalla combinazione scelta.</p>
-
-          <div class="infocard mb-3">
-            <div class="altwrap-header" appTasto [attr.aria-expanded]="isAltExpanded(em)" (click)="toggleAltExpanded(em)" style="padding:0 0 8px">
-              <span>Alternative ({{ totalAlternatives(em) }})</span>
-              <span class="chevron">
-                <app-icona name="chevron-down" [size]="12"></app-icona>
-              </span>
-            </div>
-            <!-- I tre macro stanno in un gruppo solo: dentro ognuno si riordina,
-                 e fra l'uno e l'altro si sposta. Un alimento finito sotto il
-                 macro sbagliato prima si poteva solo cancellare e riscrivere. -->
-            <ng-container *ngIf="isAltExpanded(em)">
+            <!-- Un gruppo solo per tutti i posti dove un alimento puo' stare: le tre
+                 caselle della combinazione, le alternative del pasto, quelle del
+                 singolo alimento. Sono lo stesso alimento in tre posti diversi, e
+                 spostarlo fra loro e' il mestiere di questa schermata. Gli
+                 integratori restano fuori: non sono alimenti. -->
+            <ng-container cdkDropListGroup>
               <ng-container *ngFor="let cat of foodCategories">
-                <p class="meal-preview-catlabel" style="margin:14px 0 6px">{{ foodCategoryLabels[cat] }}</p>
-                <div class="draglist" cdkDropList [cdkDropListData]="zonaLista(altItems(em, cat))"
-                  (cdkDropListDropped)="rilascia(getActiveCombo(em), $event)">
-                  <div class="builder-item" *ngFor="let item of altItems(em, cat)"
-                    cdkDrag>
-                    <button type="button" class="draghandle" cdkDragHandle
-                      aria-label="Trascina per spostare">
-                      <app-icona name="riordina" [size]="16"></app-icona>
-                    </button>
-                    <div class="measure-input-wrap">
-                      <ion-input type="text" [(ngModel)]="item.name" placeholder="Alimento"></ion-input>
-                    </div>
-                    <div class="measure-input-wrap builder-qty">
-                      <ion-input type="text" [(ngModel)]="item.qty" placeholder="Quantità"></ion-input>
-                    </div>
-                    <ion-button class="delete-btn tap44" (click)="removeAltItem(em, cat, item)" aria-label="Togli questo alimento"><app-icona name="close" [size]="14"></app-icona></ion-button>
-                    <!-- Il posto dove la riga andrebbe a finire: la riga vera lo
-                         segue sotto il dito, e qui resta il suo ingombro. -->
-                    <div class="dragghost" *cdkDragPlaceholder></div>
+                <ion-list-header class="sezione"><ion-label>{{ foodCategoryLabels[cat] }}</ion-label></ion-list-header>
+                <ion-list [inset]="true" class="macro">
+                  <!-- La casella accetta anche da vuota: e' li' che si lascia
+                       l'alimento che arriva da un altro macro o da una lista di
+                       alternative. -->
+                  <div class="slotdrop" cdkDropList [cdkDropListData]="zonaCasella(cat)"
+                    (cdkDropListDropped)="rilascia(getActiveCombo(em), $event)">
+                    <ion-item class="alimento" *ngIf="getActiveCombo(em)[cat] as item" cdkDrag>
+                      <ion-button slot="start" class="togli" *ngIf="item.name || item.qty"
+                        (click)="clearComboItem(getActiveCombo(em), cat, $event)"
+                        [attr.aria-label]="'Togli ' + (item.name || 'l\'alimento') + ' da ' + foodCategoryLabels[cat].toLowerCase()">
+                        <app-icona name="remove-circle" [size]="22"></app-icona>
+                      </ion-button>
+                      <div class="alimento-campi">
+                        <ion-input class="alimento-nome" [(ngModel)]="item.name" placeholder="Alimento" [attr.aria-label]="foodCategoryLabels[cat]"></ion-input>
+                        <ion-input class="alimento-qty" label="Quantità" [(ngModel)]="item.qty" placeholder="es. 80 g"></ion-input>
+                      </div>
+                      <button slot="end" type="button" class="draghandle" cdkDragHandle
+                        aria-label="Trascina per spostare in un altro macro">
+                        <app-icona name="riordina" [size]="20"></app-icona>
+                      </button>
+                      <div class="dragghost dragghost-alimento" *cdkDragPlaceholder></div>
+                    </ion-item>
                   </div>
-                </div>
-                <ion-button class="azione-riquadro" (click)="addAltItem(em, cat)"><app-icona name="add" [size]="20"></app-icona>Aggiungi {{ foodCategoryLabels[cat].toLowerCase() }}</ion-button>
+
+                  <ng-container *ngIf="getActiveCombo(em)[cat] as item2">
+                    <ng-container *ngIf="itemAlt(item2).length > 0; else primaAlternativa">
+                      <ion-item class="apri-alternative" [button]="true" [detail]="false"
+                        [attr.aria-expanded]="isItemAltExpanded(getActiveCombo(em), cat)"
+                        (click)="toggleItemAltExpanded(getActiveCombo(em), cat)">
+                        <ion-label>Alternative</ion-label>
+                        <ion-note slot="end">{{ itemAlt(item2).length }}</ion-note>
+                        <app-icona slot="end" class="chevron" [class.aperta]="isItemAltExpanded(getActiveCombo(em), cat)" name="chevron-down" [size]="16"></app-icona>
+                      </ion-item>
+                      <ng-container *ngIf="isItemAltExpanded(getActiveCombo(em), cat)">
+                        <div class="draglist" cdkDropList [cdkDropListData]="zonaLista(itemAlt(item2))"
+                          (cdkDropListDropped)="rilascia(getActiveCombo(em), $event)">
+                          <ion-item class="alimento alternativa" *ngFor="let a of itemAlt(item2)" cdkDrag>
+                            <ion-button slot="start" class="togli" (click)="removeItemAltEntry(item2, a)"
+                              [attr.aria-label]="'Togli l\'alternativa ' + (a.name || 'senza nome')">
+                              <app-icona name="remove-circle" [size]="22"></app-icona>
+                            </ion-button>
+                            <div class="alimento-campi">
+                              <ion-input class="alimento-nome" [(ngModel)]="a.name" placeholder="Alimento alternativo" aria-label="Alimento alternativo"></ion-input>
+                              <ion-input class="alimento-qty" label="Quantità" [(ngModel)]="a.qty" placeholder="es. 80 g"></ion-input>
+                            </div>
+                            <button slot="end" type="button" class="draghandle" cdkDragHandle aria-label="Trascina per spostare">
+                              <app-icona name="riordina" [size]="20"></app-icona>
+                            </button>
+                            <div class="dragghost dragghost-alimento" *cdkDragPlaceholder></div>
+                          </ion-item>
+                        </div>
+                        <ion-item class="riga-azione" [button]="true" [detail]="false" (click)="addItemAltEntry(item2)">
+                          <app-icona slot="start" name="add" [size]="22"></app-icona>
+                          <ion-label>Aggiungi alternativa</ion-label>
+                        </ion-item>
+                      </ng-container>
+                    </ng-container>
+                    <ng-template #primaAlternativa>
+                      <ion-item *ngIf="item2.name.trim()" class="riga-azione" [button]="true" [detail]="false"
+                        (click)="aggiungiAlternativa(getActiveCombo(em), cat, item2)">
+                        <app-icona slot="start" name="add" [size]="22"></app-icona>
+                        <ion-label>Aggiungi alternativa</ion-label>
+                      </ion-item>
+                    </ng-template>
+                  </ng-container>
+                </ion-list>
               </ng-container>
+
+              <!-- Le alternative del pasto valgono per qualunque combinazione:
+                   una riga che si apre, coi tre macro divisi dentro. -->
+              <ion-list [inset]="true" class="alt-pasto">
+                <ion-item class="apri-alternative" [button]="true" [detail]="false"
+                  [attr.aria-expanded]="isAltExpanded(em)" (click)="toggleAltExpanded(em)">
+                  <ion-label>Alternative del pasto</ion-label>
+                  <ion-note slot="end">{{ totalAlternatives(em) || 'Nessuna' }}</ion-note>
+                  <app-icona slot="end" class="chevron" [class.aperta]="isAltExpanded(em)" name="chevron-down" [size]="16"></app-icona>
+                </ion-item>
+                <ng-container *ngIf="isAltExpanded(em)">
+                  <ng-container *ngFor="let cat of foodCategories">
+                    <ion-item-divider>{{ foodCategoryLabels[cat] }}</ion-item-divider>
+                    <div class="draglist" cdkDropList [cdkDropListData]="zonaLista(altItems(em, cat))"
+                      (cdkDropListDropped)="rilascia(getActiveCombo(em), $event)">
+                      <ion-item class="alimento" *ngFor="let item of altItems(em, cat)" cdkDrag>
+                        <ion-button slot="start" class="togli" (click)="removeAltItem(em, cat, item)"
+                          [attr.aria-label]="'Togli ' + (item.name || 'questo alimento')">
+                          <app-icona name="remove-circle" [size]="22"></app-icona>
+                        </ion-button>
+                        <div class="alimento-campi">
+                          <ion-input class="alimento-nome" [(ngModel)]="item.name" placeholder="Alimento" [attr.aria-label]="'Alternativa: ' + foodCategoryLabels[cat]"></ion-input>
+                          <ion-input class="alimento-qty" label="Quantità" [(ngModel)]="item.qty" placeholder="es. 80 g"></ion-input>
+                        </div>
+                        <button slot="end" type="button" class="draghandle" cdkDragHandle aria-label="Trascina per spostare">
+                          <app-icona name="riordina" [size]="20"></app-icona>
+                        </button>
+                        <!-- Il posto dove la riga andrebbe a finire: la riga vera lo
+                             segue sotto il dito, e qui resta il suo ingombro. -->
+                        <div class="dragghost dragghost-alimento" *cdkDragPlaceholder></div>
+                      </ion-item>
+                    </div>
+                    <ion-item class="riga-azione" [button]="true" [detail]="false" (click)="addAltItem(em, cat)">
+                      <app-icona slot="start" name="add" [size]="22"></app-icona>
+                      <ion-label>Aggiungi {{ foodCategoryLabels[cat].toLowerCase() }}</ion-label>
+                    </ion-item>
+                  </ng-container>
+                </ng-container>
+              </ion-list>
+              <p class="nota-sotto">Alimenti sostitutivi validi per tutto il pasto, a prescindere dalla combinazione scelta.</p>
             </ng-container>
-          </div>
-          </ng-container>
 
-          <p class="sectiontitle mt-5">Integrazione</p>
-          <div class="infocard mb-3">
-            <div class="draglist" cdkDropList [cdkDropListData]="em.supplements ?? []"
-              (cdkDropListDropped)="riordina(em.supplements ?? [], $event)">
-              <div class="builder-item" *ngFor="let s of em.supplements ?? []"
-                cdkDrag>
-                <button type="button" class="draghandle" cdkDragHandle
-                  aria-label="Trascina per spostare">
-                  <app-icona name="riordina" [size]="16"></app-icona>
-                </button>
-                <div class="measure-input-wrap">
-                  <ion-input type="text" [(ngModel)]="s.name" placeholder="Nome (es. Creatina)"></ion-input>
-                </div>
-                <div class="measure-input-wrap builder-qty">
-                  <ion-input type="text" [(ngModel)]="s.qty" placeholder="Dose (es. 5 g)"></ion-input>
-                </div>
-                <ion-button class="delete-btn tap44" (click)="removeSupplement(em, s)" aria-label="Togli l'integratore"><app-icona name="close" [size]="14"></app-icona></ion-button>
-                <div class="dragghost" *cdkDragPlaceholder></div>
+            <ion-list-header class="sezione"><ion-label>Integrazione</ion-label></ion-list-header>
+            <ion-list [inset]="true" class="integrazione">
+              <div class="draglist" cdkDropList [cdkDropListData]="em.supplements ?? []"
+                (cdkDropListDropped)="riordina(em.supplements ?? [], $event)">
+                <ion-item class="alimento" *ngFor="let s of em.supplements ?? []" cdkDrag>
+                  <ion-button slot="start" class="togli" (click)="removeSupplement(em, s)"
+                    [attr.aria-label]="'Togli ' + (s.name || 'l\'integratore')">
+                    <app-icona name="remove-circle" [size]="22"></app-icona>
+                  </ion-button>
+                  <div class="alimento-campi">
+                    <ion-input class="alimento-nome" [(ngModel)]="s.name" placeholder="Integratore (es. Creatina)" aria-label="Integratore"></ion-input>
+                    <ion-input class="alimento-qty" label="Dose" [(ngModel)]="s.qty" placeholder="es. 5 g"></ion-input>
+                  </div>
+                  <button slot="end" type="button" class="draghandle" cdkDragHandle aria-label="Trascina per spostare">
+                    <app-icona name="riordina" [size]="20"></app-icona>
+                  </button>
+                  <div class="dragghost dragghost-alimento" *cdkDragPlaceholder></div>
+                </ion-item>
               </div>
-            </div>
-            <ion-button class="azione-riquadro" (click)="addSupplement(em)"><app-icona name="add" [size]="20"></app-icona>Aggiungi integratore</ion-button>
-          </div>
+              <ion-item class="riga-azione" [button]="true" [detail]="false" (click)="addSupplement(em)">
+                <app-icona slot="start" name="add" [size]="22"></app-icona>
+                <ion-label>Aggiungi integratore</ion-label>
+              </ion-item>
+            </ion-list>
 
-          <div class="savebar builder-savebar">
-            <ion-button class="savebtn cancel" (click)="removeMealFromEditor()">Rimuovi pasto</ion-button>
-            <ion-button class="savebtn" (click)="closeMeal()">Fatto</ion-button>
+            <ion-list [inset]="true" class="azioni-pasto">
+              <ion-item class="riga-distruttiva" [button]="true" [detail]="false" (click)="removeMealFromEditor()">
+                <ion-label>Rimuovi pasto</ion-label>
+              </ion-item>
+            </ion-list>
           </div>
         </ng-container>
 

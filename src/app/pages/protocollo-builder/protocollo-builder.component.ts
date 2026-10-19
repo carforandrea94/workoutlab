@@ -26,7 +26,7 @@ import { ConfirmDialogService } from '../../services/confirm-dialog.service';
 import { IONIC_PAGE, IONIC_LINKS } from '../../core/ionic-page';
 import { TastoDirective } from '../../core/tasto.directive';
 import { IONIC_LIST } from '../../core/ionic-list';
-import { NavController, IonContent, IonInput, IonTextarea, IonSelect, IonSelectOption, IonSpinner, IonSegment, IonSegmentButton, IonButton, IonRouterOutlet, IonLabel } from '@ionic/angular';
+import { NavController, IonContent, IonInput, IonTextarea, IonSelect, IonSelectOption, IonSpinner, IonSegment, IonSegmentButton, IonButton, IonRouterOutlet, IonLabel, IonListHeader, IonNote, IonItemDivider } from '@ionic/angular';
 import {
   LivelloBuilder, PosizioneBuilder, SchedaBuilder, chiaveBuilder, direzioneBuilder, etichettaFattoBuilder, etichettaSuBuilder,
   livelloBuilder, titoloBuilder
@@ -35,6 +35,7 @@ import { ConModificheNonSalvate } from '../../core/guards/modifiche-non-salvate.
 import { senzaSwipeIndietro } from '../../core/swipe-indietro';
 import { NomeCampoDirective } from '../../core/nome-campo.directive';
 import { IconaComponent } from '../../components/icona/icona.component';
+import { IONIC_SLIDING } from '../../core/ionic-sliding';
 
 type Tab = SchedaBuilder;
 
@@ -53,7 +54,7 @@ export type ZonaDrop =
 @Component({
   selector: 'app-protocollo-builder',
   standalone: true,
-  imports: [NomeCampoDirective, IonButton, IonLabel, TastoDirective, ...IONIC_LIST, IonInput, IonTextarea, IonSelect, IonSelectOption, IonSpinner, IonSegment, IonSegmentButton, ...IONIC_PAGE, ...IONIC_LINKS,
+  imports: [NomeCampoDirective, IonButton, IonLabel, IonListHeader, IonNote, IonItemDivider, ...IONIC_SLIDING, TastoDirective, ...IONIC_LIST, IonInput, IonTextarea, IonSelect, IonSelectOption, IonSpinner, IonSegment, IonSegmentButton, ...IONIC_PAGE, ...IONIC_LINKS,
     CommonModule, FormsModule, IconaComponent,
     CdkDropListGroup, CdkDropList, CdkDrag, CdkDragHandle, CdkDragPlaceholder
   ],
@@ -736,6 +737,26 @@ export class ProtocolloBuilderComponent implements OnInit, OnDestroy, DoCheck {
     return meal.combinations.find(c => c.id === id) ?? meal.combinations[0];
   }
 
+  /** Il segmento delle combinazioni: dice quale si sta scrivendo. */
+  scegliCombinazione(meal: NamedMeal, ev: Event): void {
+    const id = (ev as CustomEvent<{ value?: string | number | null }>).detail?.value;
+    const combo = meal.combinations.find(c => c.id === id);
+    if (combo) this.setActiveCombo(meal, combo);
+  }
+
+  /**
+   * La riga di un pasto nel piano: cosa c'e' dentro, in breve. Gli alimenti
+   * della prima combinazione e gli integratori; il resto si vede aprendolo.
+   */
+  riassuntoPasto(meal: NamedMeal): string {
+    const base = meal.combinations[0];
+    const nomi = [
+      ...this.foodCategories.map(cat => base?.[cat]?.name?.trim() ?? ''),
+      ...(meal.supplements ?? []).map(s => s.name?.trim() ?? '')
+    ].filter(Boolean);
+    return nomi.length ? nomi.join(', ') : 'Nessun alimento ancora';
+  }
+
   setActiveCombo(meal: NamedMeal, combo: MealCombination, event?: Event): void {
     event?.stopPropagation();
     this.activeCombo[meal.id] = combo.id;
@@ -969,6 +990,12 @@ export class ProtocolloBuilderComponent implements OnInit, OnDestroy, DoCheck {
     if (this.expandedItemAlt.has(key)) this.expandedItemAlt.delete(key);
     else this.expandedItemAlt.add(key);
     this.cdr.detectChanges();
+  }
+
+  /** La prima alternativa di un alimento: la si aggiunge e la riga si apre, per scriverla. */
+  aggiungiAlternativa(combo: MealCombination, cat: FoodCategory, item: FoodItem): void {
+    this.expandedItemAlt.add(this.itemAltKey(combo, cat));
+    this.addItemAltEntry(item);
   }
 
   addItemAltEntry(item: FoodItem): void {
