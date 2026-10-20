@@ -6,7 +6,7 @@
     <ion-title>
       <div class="navtitle">{{ titolo }}</div>
     </ion-title>
-    <ion-buttons slot="end">
+    <ion-buttons slot="end" *ngIf="!resocontoInVista">
       <ion-segment class="seg" [value]="state.viewMode()">
         <ion-segment-button value="list" (click)="state.setViewMode('list')" aria-label="Vista elenco" title="Elenco"><app-icona name="list" [size]="16"></app-icona></ion-segment-button>
         <ion-segment-button value="slider" (click)="state.setViewMode('slider')" aria-label="Vista slider" title="Slider"><app-icona name="albums" [size]="16"></app-icona></ion-segment-button>
@@ -43,19 +43,31 @@
         </span>
       </div>
 
-      <!-- La data e' l'unica cosa che non si corregge in place: l'id della seduta
-           la porta dentro, quindi cambiarla la sposta. Sta in una riga e non in
-           una card sua, che su una schermata di serie costava novanta pixel per
-           un campo solo. -->
-      <div class="seduta-when">
-        <label for="seduta-data">Data</label>
-        <div class="measure-input-wrap">
-          <input id="seduta-data" type="date" [(ngModel)]="storicoDate" [max]="maxDate"
-            (ngModelChange)="onDateChange()" />
-        </div>
-      </div>
+      <!-- Una seduta passata prima si rilegge (com'e' andata, la stessa schermata
+           della fine dell'allenamento), poi, se serve, si corregge. -->
+      <ion-segment class="seg labelseg fullseg vista-seduta" [value]="vistaStorico()"
+        (ionChange)="mostraVistaStorico($event.detail.value)" aria-label="Cosa vedere della seduta">
+        <ion-segment-button value="resoconto"><ion-label>Resoconto</ion-label></ion-segment-button>
+        <ion-segment-button value="serie"><ion-label>Serie</ion-label></ion-segment-button>
+      </ion-segment>
 
-      <p class="autosave" [class.err]="statoSalvataggio === 'errore'">{{ testoSalvataggio }}</p>
+      <app-resoconto *ngIf="vistaStorico() === 'resoconto' && resocontoStorico as r" [resoconto]="r"></app-resoconto>
+
+      <ng-container *ngIf="vistaStorico() === 'serie'">
+        <!-- La data e' l'unica cosa che non si corregge in place: l'id della seduta
+             la porta dentro, quindi cambiarla la sposta. Sta in una riga e non in
+             una card sua, che su una schermata di serie costava novanta pixel per
+             un campo solo. -->
+        <div class="seduta-when">
+          <label for="seduta-data">Data</label>
+          <div class="measure-input-wrap">
+            <input id="seduta-data" type="date" [(ngModel)]="storicoDate" [max]="maxDate"
+              (ngModelChange)="onDateChange()" />
+          </div>
+        </div>
+
+        <p class="autosave" [class.err]="statoSalvataggio === 'errore'">{{ testoSalvataggio }}</p>
+      </ng-container>
     </ng-container>
 
     <ng-template #exDetail let-vm="vm">
@@ -343,44 +355,8 @@
 
     <!-- Il resoconto: quando c'e', ha preso il posto dell'allenamento, che e'
          finito. Non e' una schermata a parte perche' nasce dai dati che questa
-         pagina ha gia' in mano. -->
-    <ng-container *ngIf="summary as s">
-      <div class="wrapup">
-        <div class="wrapup-head">
-          <div class="wrapup-title">Allenamento salvato</div>
-          <div class="wrapup-sub">{{ day.label }} · {{ formatDuration(s.durationSec) }} · {{ s.setsDone }} serie su {{ s.setsTotal }}</div>
-        </div>
-
-        <div class="wrapup-grid">
-          <div class="wrapup-tile">
-            <div class="wrapup-cap">Volume</div>
-            <div class="wrapup-val"><span class="n">{{ summaryVolume(s.volumeKg) }}</span><span class="u">kg</span></div>
-            <div class="wrapup-note" *ngIf="s.volumeDeltaKg !== null"
-              [class.up]="s.volumeDeltaKg > 0">{{ summaryDelta(s.volumeDeltaKg) }} sul {{ summaryPrevDate(s.previousDate) }}</div>
-            <div class="wrapup-note" *ngIf="s.volumeDeltaKg === null">prima volta su questo giorno</div>
-          </div>
-          <div class="wrapup-tile">
-            <div class="wrapup-cap">Serie</div>
-            <div class="wrapup-val"><span class="n">{{ s.setsDone }}</span><span class="u">/{{ s.setsTotal }}</span></div>
-            <div class="wrapup-note" *ngIf="s.setsDone === s.setsTotal">nessuna saltata</div>
-            <div class="wrapup-note" *ngIf="s.setsDone !== s.setsTotal">{{ s.setsTotal - s.setsDone }} lasciate indietro</div>
-          </div>
-        </div>
-
-        <div class="wrapup-card" *ngIf="s.records.length">
-          <div class="wrapup-cap">Hai alzato l'asticella</div>
-          <div class="wrapup-rec" *ngFor="let r of s.records">
-            <span class="wrapup-rec-ic"><app-icona name="checkmark" [size]="16"></app-icona></span>
-            <span class="wrapup-rec-txt">
-              <span class="nm">{{ r.exercise }}</span>
-              <span class="dt">{{ r.now }} — prima {{ r.before }}</span>
-            </span>
-          </div>
-        </div>
-
-        <ion-button type="button" class="confirmbtn cancel w-full" (click)="backToScheda()">Torna alla scheda</ion-button>
-      </div>
-    </ng-container>
+         pagina ha gia' in mano. Lo stesso, senza la testa, sta nello storico. -->
+    <app-resoconto *ngIf="summary as s" [resoconto]="s" [testa]="true"></app-resoconto>
 
     <!-- Gli step: un numero per esercizio, la spunta su quelli finiti e la
          bandiera per la chiusura. Portano alla card, e sono anche l'avanzamento
@@ -440,7 +416,7 @@
     <span class="sr-only" aria-live="polite">{{ annuncioRecupero }}</span>
 
     <!-- Vista elenco (accordion) -->
-    <ng-container *ngIf="day && !loading && !errorMsg && !summary && state.viewMode() === 'list'">
+    <ng-container *ngIf="day && !loading && !errorMsg && serieInVista && state.viewMode() === 'list'">
     <div class="exlist">
       <div class="ex" *ngFor="let vm of exercises; let i = index" [class.open]="vm.open">
 
@@ -468,7 +444,7 @@
     </ng-container>
 
     <!-- Vista slider (card scorrevoli, una per volta) -->
-    <div class="exslider-wrap" *ngIf="day && !loading && !errorMsg && !summary && state.viewMode() === 'slider'">
+    <div class="exslider-wrap" *ngIf="day && !loading && !errorMsg && serieInVista && state.viewMode() === 'slider'">
       <!-- Senza sessione su questo giorno gli step stanno da soli: il tempo non c'e' ancora. -->
       <ng-container *ngIf="!isSessionOnThisDay && slideCount > 1">
         <ng-container *ngTemplateOutlet="passi"></ng-container>
@@ -603,6 +579,14 @@
      nelle pagine interne non c'e'): una pillola di vetro staccata dal fondo,
      che scorrendo in giu' si fa piu' piccola e torna intera scorrendo in su.
      Il contenuto le passa sotto. -->
+
+<!-- A fine allenamento il resoconto ha un'azione sola, tornare alla scheda: sta
+     nella pillola in basso come "Inizia" e "Fatta". -->
+<ion-footer class="fine-footer barra-azione ion-no-border" *ngIf="fineInBasso" [class.ridotta]="barraRidotta()">
+  <div class="barra-pillola">
+    <ion-button type="button" class="setdone" (click)="backToScheda()">Torna alla scheda</ion-button>
+  </div>
+</ion-footer>
 
 <!-- Avvio: il comando principale della pagina sta in basso, sotto il pollice, al
      posto in cui poi compare la fascia del recupero. Prima era un tondo da 34 px

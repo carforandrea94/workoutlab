@@ -1,0 +1,29 @@
+@let d = disegno();
+<div class="rag" role="group" [attr.aria-label]="'Esercizi rispetto ' + prima()">
+  <svg [attr.viewBox]="'0 0 ' + larghezza + ' ' + altezza" aria-hidden="true" focusable="false">
+    <path class="rag-meglio" [attr.d]="d.meglio" />
+    @for (g of d.griglia; track $index) {
+      <polygon class="rag-griglia" [attr.points]="g" />
+    }
+    @for (r of d.raggi; track $index) {
+      <line class="rag-raggio" [attr.x1]="centro.x" [attr.y1]="centro.y" [attr.x2]="r[0]" [attr.y2]="r[1]" />
+    }
+    <polygon class="rag-prima" [attr.points]="d.prima" />
+    <polygon class="rag-oggi" [attr.points]="d.oggi" />
+    @for (p of d.punte; track $index) {
+      @if (p.oltre) {
+        <polygon class="rag-punto" [attr.points]="p.punti" />
+      } @else {
+        <circle class="rag-punto" [attr.cx]="p.x" [attr.cy]="p.y" r="4.5" />
+      }
+    }
+    <text class="rag-scala" [attr.x]="d.etichetta.x" [attr.y]="d.etichetta.y" text-anchor="middle">{{ scala }}</text>
+  </svg>
+  @for (a of d.numeri; track a.n; let i = $index) {
+    <button type="button" class="rag-numero" [class.su]="a.andamento === 'su'" [class.giu]="a.andamento === 'giu'"
+      [class.scelto]="i === scelto()" [style.left]="a.sx" [style.top]="a.sy" [attr.aria-pressed]="i === scelto()"
+      [attr.aria-label]="etichetta(a)" (click)="sceglie.emit(i)">
+      <span aria-hidden="true">{{ a.n }}</span>
+    </button>
+  }
+</div>

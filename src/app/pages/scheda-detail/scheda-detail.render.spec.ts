@@ -13,6 +13,7 @@ import { WorkoutSessionStateService } from '../../services/workout-session-state
 import { ConfirmDialogService } from '../../services/confirm-dialog.service';
 import { ToastService } from '../../services/toast.service';
 import { NavController } from '@ionic/angular';
+import { buildSessionSummary } from '../../core/utils/session-summary.util';
 
 /**
  * Le testate degli esercizi sono UN template (#exHeader) usato da due viste.
@@ -776,5 +777,112 @@ describe('SchedaDetailComponent — accessibilita\' delle testate (disegno vero)
       expect(chiamata).toBeTruthy();
       expect((chiamata![1] as any[]).map(d => d.name)).toEqual(['Panca piana', 'Croci', 'Dip']);
     });
+  });
+});
+
+/**
+ * Il resoconto nella pagina: a fine allenamento al posto delle serie, con
+ * "Torna alla scheda" nella pillola in basso; nello storico la seduta si apre
+ * sul suo resoconto e "Serie" porta alle serie da correggere.
+ */
+describe('SchedaDetailComponent — il resoconto nella pagina (disegno vero)', () => {
+  beforeAll(() => {
+    HTMLElement.prototype.scrollTo = function (this: HTMLElement, o?: any) { this.scrollTop = o?.top ?? 0; } as any;
+    HTMLElement.prototype.scrollIntoView = function () {} as any;
+  });
+
+  const giorno = { id: 'day1', label: 'Petto', rec: '90"', ex: [
+    { name: 'Panca piana', muscle: 'Petto', scheme: 'plain', sets: 1 },
+    { name: 'Croci', muscle: 'Petto', scheme: 'plain', sets: 1 },
+    { name: 'Dip', muscle: 'Tricipiti', scheme: 'plain', sets: 1 }
+  ] };
+  const seduta = (date: string, panca: string, croci: string, dip: string) => ({
+    dayId: 'day1', dayLabel: 'Petto', date, durationSec: 3000,
+    exercises: [
+      { name: 'Panca piana', sets: [{ load: panca, reps: '8', done: true }] },
+      { name: 'Croci', sets: [{ load: croci, reps: '12', done: true }] },
+      { name: 'Dip', sets: [{ load: null, reps: dip, done: true }] }
+    ]
+  });
+
+  async function monta(storico: boolean) {
+    const viewMode = signal<'list' | 'slider'>('list');
+    TestBed.configureTestingModule({
+      imports: [SchedaDetailComponent],
+      providers: [
+        ...providerPagina(),
+        { provide: ActivatedRoute, useValue: storico
+          ? { snapshot: { data: { modo: 'storico' } }, paramMap: of(convertToParamMap({ key: 'day1_2026-10-20' })) }
+          : { snapshot: { data: {} }, paramMap: of(convertToParamMap({ n: '0' })) } },
+        { provide: WorkoutDataService, useValue: { days: [giorno], MUSCLES: {}, getExSetsReps: () => ({ sets: 1, reps: ['8'] }) } },
+        { provide: WorkoutStateService, useValue: {
+          viewMode, setViewMode: (m: 'list' | 'slider') => viewMode.set(m), saveStatus: signal('idle'), currentWeek: 1,
+          restTimer: signal<any>({ show: false, finished: false }), stopRestTimer: () => {}, startRestTimer: () => {}, prossimaSerie: signal(null)
+        } },
+        { provide: AppStateService, useValue: { load: async () => ({ restOverrides: {}, loadPercent: null, workoutDrafts: {} }), patchField: async () => {} } },
+        { provide: WorkoutSessionsService, useValue: {
+          get: async () => seduta('2026-10-20', '82,5', '20', '12'),
+          listForDay: async () => [seduta('2026-10-06', '75', '20', '8'), seduta('2026-10-13', '80', '20', '10'), seduta('2026-10-20', '82,5', '20', '12')]
+            .map(s => ({ id: `day1_${s.date}`, session: s }))
+        } },
+        { provide: ConfirmDialogService, useValue: {} },
+        { provide: ToastService, useValue: {} },
+        { provide: WorkoutSessionStateService, useValue: {
+          matchesDay: () => false, isPaused: () => false, togglePause: () => {}, activeSession: () => null,
+          elapsedSec: signal(0), formatDuration: (s: number) => `${s}`, start: () => {}
+        } }
+      ]
+    });
+    const fixture = TestBed.createComponent(SchedaDetailComponent);
+    fixture.detectChanges();
+    await vi.waitFor(() => expect(fixture.componentInstance.loading).toBe(false));
+    fixture.detectChanges();
+    const root: HTMLElement = fixture.nativeElement;
+    const tutti = (sel: string) => Array.from(root.querySelectorAll<HTMLElement>(sel));
+    const testo = (sel: string) => tutti(sel).map(e => (e.textContent ?? '').replace(/\s+/g, ' ').trim());
+    const aggiorna = () => { (fixture.componentInstance as any).cdr.detectChanges(); fixture.detectChanges(); };
+    return { c: fixture.componentInstance, root, tutti, testo, aggiorna };
+  }
+
+  it('lo storico si apre sul resoconto, confrontato con la seduta prima di lei', async () => {
+    const { tutti, testo } = await monta(true);
+    expect(tutti('ion-segment.vista-seduta').length).toBe(1);
+    expect(tutti('app-resoconto').length).toBe(1);
+    // Nello storico la testa non c'e': giorno, data e durata li dice la riga della seduta.
+    expect(tutti('app-resoconto .res-head').length).toBe(0);
+    expect(testo('app-resoconto ion-list-header.sezione')[0]).toBe('Rispetto al 13 ottobre');
+    expect(testo('app-resoconto ion-list ion-item p')[0]).toBe('82,5 kg × 8 · prima 80 kg × 8');
+    // Le serie, la data da correggere e il segmento elenco/slider stanno dietro "Serie".
+    expect(tutti('.exlist').length).toBe(0);
+    expect(tutti('#seduta-data').length).toBe(0);
+    expect(tutti('ion-header ion-segment').length).toBe(0);
+    // Eliminare la seduta resta in fondo in tutte e due le viste.
+    expect(tutti('.azioni-seduta').length).toBe(1);
+  });
+
+  it('"Serie" mostra le serie da correggere e toglie il resoconto', async () => {
+    const { c, tutti, aggiorna } = await monta(true);
+    c.mostraVistaStorico('serie');
+    aggiorna();
+    expect(tutti('app-resoconto').length).toBe(0);
+    expect(tutti('.exlist').length).toBe(1);
+    expect(tutti('#seduta-data').length).toBe(1);
+    expect(tutti('ion-header ion-segment').length).toBe(1);
+    c.mostraVistaStorico('resoconto');
+    aggiorna();
+    expect(tutti('app-resoconto').length).toBe(1);
+    expect(tutti('.exlist').length).toBe(0);
+  });
+
+  it('a fine allenamento: il resoconto con la testa e "Torna alla scheda" nella pillola in basso', async () => {
+    const { c, tutti, testo, aggiorna, root } = await monta(false);
+    expect(tutti('ion-footer.fine-footer').length).toBe(0);
+    c.summary = buildSessionSummary(seduta('2026-10-20', '82,5', '20', '12') as any, seduta('2026-10-13', '80', '20', '10') as any);
+    aggiorna();
+    expect(testo('app-resoconto .res-title')).toEqual(['Allenamento salvato']);
+    expect(tutti('.exlist').length).toBe(0);
+    expect(tutti('ion-header ion-segment').length).toBe(0);
+    expect(testo('ion-footer.fine-footer.barra-azione ion-button')).toEqual(['Torna alla scheda']);
+    expect(root.querySelector('ion-content')!.classList.contains('con-barra')).toBe(true);
   });
 });

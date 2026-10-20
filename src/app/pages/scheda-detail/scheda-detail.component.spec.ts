@@ -1,7 +1,7 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { SchedaDetailComponent } from './scheda-detail.component';
+import { SchedaDetailComponent, precedenteDi } from './scheda-detail.component';
 
 /**
  * Copre una regola sola: la scheda si compila solo a sessione avviata.
@@ -354,6 +354,8 @@ function makeStorico(opts: {
   giorni?: any[];
   esitoMove?: 'ok' | 'collision' | 'error';
   eliminaOk?: boolean;
+  /** Le sedute dello stesso giorno, come le da' listForDay (dalla piu' vecchia). */
+  stessoGiorno?: any[];
 } = {}) {
   const seduta = opts.seduta === undefined ? {
     dayId: 'day1', dayLabel: 'Petto', date: '2026-10-01', durationSec: 3600,
@@ -365,6 +367,7 @@ function makeStorico(opts: {
 
   const get = vi.fn(() => Promise.resolve(seduta));
   const moveSession = vi.fn(() => Promise.resolve(opts.esitoMove ?? 'ok'));
+  const listForDay = vi.fn(() => Promise.resolve((opts.stessoGiorno ?? []).map(x => ({ id: `${x.dayId}_${x.date}`, session: x }))));
   const cancella = vi.fn(() => Promise.resolve(opts.eliminaOk ?? true));
   const sessionId = (dayId: string, data: string) => `${dayId}_${data}`;
   const startRestTimer = vi.fn();
@@ -379,7 +382,7 @@ function makeStorico(opts: {
     { days: opts.giorni ?? [], MUSCLES: {} } as any,
     { viewMode: () => 'list', saveStatus: () => 'idle', startRestTimer, prossimaSerie: signal<any>(null), restTimer: signal<any>({ show: false, finished: false }) } as any,
     { patchField: vi.fn(() => Promise.resolve()) } as any,
-    { get, moveSession, delete: cancella, sessionId } as any,
+    { get, moveSession, delete: cancella, sessionId, listForDay } as any,
     { confirm } as any,
     { detectChanges: () => {} } as any,
     { success: vi.fn(), error: vi.fn() } as any,
@@ -388,7 +391,7 @@ function makeStorico(opts: {
 
   component.ngOnInit();
   component.sessionKey = 'day1_2026-10-01';
-  return { component, get, moveSession, cancella, navigateBack, navigateForward, confirm, startRestTimer };
+  return { component, get, moveSession, cancella, navigateBack, navigateForward, confirm, startRestTimer, listForDay };
 }
 
 async function apri(opts: Parameters<typeof makeStorico>[0] = {}) {
@@ -452,6 +455,81 @@ describe('SchedaDetailComponent — storico: la seduta salvata nella stessa sche
   it('la durata resta quella misurata allora', async () => {
     const { component } = await apri();
     expect(component.sedutaDurata).toBe(3600);
+  });
+});
+
+/*
+ * Una seduta passata si apre sul suo resoconto, lo stesso della fine
+ * dell'allenamento, confrontata con la volta prima di LEI (non con l'ultima).
+ */
+describe('SchedaDetailComponent — storico: il resoconto di ogni seduta', () => {
+  const seduta = (date: string, load: string) => ({
+    dayId: 'day1', dayLabel: 'Petto', date, durationSec: 3600,
+    exercises: [{ name: 'Panca piana', sets: [{ load, reps: '10', done: true }] }]
+  });
+
+  it('si apre sul resoconto, e le serie sono dietro "Serie"', async () => {
+    const { component } = await apri();
+    expect(component.vistaStorico()).toBe('resoconto');
+    expect(component.resocontoInVista).toBe(true);
+    expect(component.serieInVista).toBe(false);
+    component.mostraVistaStorico('serie');
+    expect(component.resocontoInVista).toBe(false);
+    expect(component.serieInVista).toBe(true);
+    component.mostraVistaStorico('altro');
+    expect(component.vistaStorico()).toBe('serie');
+  });
+
+  it('si confronta con l\'ultima seduta dello stesso giorno PRIMA di lei', async () => {
+    const { component, listForDay } = await apri({
+      seduta: seduta('2026-10-01', '80'),
+      stessoGiorno: [seduta('2026-09-17', '70'), seduta('2026-09-24', '75'), seduta('2026-10-01', '80'), seduta('2026-10-08', '90')]
+    });
+    expect(listForDay).toHaveBeenCalledWith('day1');
+    const r = component.resocontoStorico!;
+    expect(r.date).toBe('2026-10-01');
+    expect(r.previousDate).toBe('2026-09-24');
+    expect(r.esercizi[0].prima).toBe('75 kg × 10');
+    expect(r.records.length).toBe(1);
+  });
+
+  it('la prima seduta di un giorno non ha confronto', async () => {
+    const { component } = await apri({ seduta: seduta('2026-10-01', '80'), stessoGiorno: [seduta('2026-10-01', '80')] });
+    expect(component.resocontoStorico!.previousDate).toBe('');
+    expect(component.resocontoStorico!.esercizi[0].prima).toBeNull();
+  });
+
+  it('tornando al resoconto dice anche le correzioni appena fatte', async () => {
+    const { component } = await apri({ seduta: seduta('2026-10-01', '80'), stessoGiorno: [seduta('2026-09-24', '75')] });
+    component.mostraVistaStorico('serie');
+    component.exercises[0].rows[0].load = '85';
+    component.mostraVistaStorico('resoconto');
+    expect(component.resocontoStorico!.esercizi[0].oggi).toBe('85 kg × 10');
+    expect(component.resocontoStorico!.volumeKg).toBe(850);
+  });
+
+  it('nello storico niente pillola in basso: c\'e\' la freccia indietro', async () => {
+    const { component } = await apri();
+    expect(component.fineInBasso).toBe(false);
+    expect(component.barraInBasso).toBe(false);
+  });
+});
+
+describe('precedenteDi — con chi si confronta una seduta', () => {
+  const s = (date: string) => ({ dayId: 'd', dayLabel: '', date, exercises: [] });
+
+  it('l\'ultima prima della data, non l\'ultima in assoluto', () => {
+    expect(precedenteDi([s('2026-09-17'), s('2026-09-24'), s('2026-10-08')], '2026-10-01')?.date).toBe('2026-09-24');
+  });
+
+  it('una seduta della stessa data non e\' la volta prima: e\' lei', () => {
+    expect(precedenteDi([s('2026-09-24'), s('2026-10-01')], '2026-10-01')?.date).toBe('2026-09-24');
+    expect(precedenteDi([s('2026-10-01')], '2026-10-01')).toBeNull();
+  });
+
+  it('non conta l\'ordine in cui arrivano', () => {
+    expect(precedenteDi([s('2026-09-24'), s('2026-09-10'), s('2026-09-17')], '2026-10-01')?.date).toBe('2026-09-24');
+    expect(precedenteDi([], '2026-10-01')).toBeNull();
   });
 });
 

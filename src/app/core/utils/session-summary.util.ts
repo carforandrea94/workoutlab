@@ -1,5 +1,6 @@
 import { WorkoutSession } from '../../models/workout.model';
 import { sessionTonnage } from './tonnage.util';
+import { numeroSevero, oneRepMaxOf } from './load-estimate.util';
 
 /**
  * Il resoconto di un allenamento appena chiuso, e il confronto con l'ultima
@@ -21,7 +22,46 @@ export interface SessionRecord {
   before: string;
 }
 
+/**
+ * Sotto il 2,5% in piu' o in meno e' la stessa giornata: mezzo chilo su un
+ * massimale di venti, una ripetizione su quaranta. Chiamarlo progresso o calo
+ * vorrebbe dire leggere il rumore di un disco appoggiato storto.
+ */
+export const STESSA_GIORNATA = 0.025;
+
+export type Andamento = 'su' | 'pari' | 'giu';
+
+/** Una misura di un esercizio, oggi e la volta scorsa, nella stessa unita'. */
+export interface Misura {
+  oggi: number;
+  /** null quando la volta scorsa non c'era niente da mettere accanto. */
+  prima: number | null;
+  unita: 'kg' | 'rip';
+}
+
+/** Un esercizio di oggi accanto alla volta scorsa: una riga del resoconto, un raggio della ragnatela. */
+export interface ConfrontoEsercizio {
+  nome: string;
+  /** La serie migliore di oggi, gia' scritta: "50 kg × 5", "12 rip.". */
+  oggi: string;
+  /** La stessa, la volta scorsa. null se allora l'esercizio non c'era. */
+  prima: string | null;
+  /**
+   * La forza: il massimale stimato dalla serie che ne esprime di piu'. Oltre
+   * le ripetizioni da cui si stima (o a corpo libero) un massimale non c'e', e
+   * la forza sono le ripetizioni della serie piu' lunga. null quando le serie
+   * non sono numeri ("8 per lato").
+   */
+  forza: Misura | null;
+  /** Il lavoro: carico per ripetizioni delle serie fatte. null a corpo libero. */
+  volume: Misura | null;
+  /** E' fra i record battuti (vedi findRecords). */
+  record: boolean;
+}
+
 export interface SessionSummary {
+  /** Data ISO della seduta. */
+  date: string;
   durationSec: number;
   setsDone: number;
   setsTotal: number;
@@ -31,6 +71,8 @@ export interface SessionSummary {
   /** Data ISO della giornata con cui ci si confronta. '' se non c'e'. */
   previousDate: string;
   records: SessionRecord[];
+  /** Gli esercizi fatti, nell'ordine della seduta, ognuno accanto alla volta scorsa. */
+  esercizi: ConfrontoEsercizio[];
 }
 
 /** I valori sono testo digitato, con la virgola italiana. */
@@ -68,19 +110,25 @@ interface Best {
  * non e' mai stata sollevata tutta insieme e regalerebbe un record ogni volta
  * che il coach scrive un cluster.
  */
-function doneUnits(ex: { sets?: WorkoutSession['exercises'][number]['sets'] }): { load: number; reps: number }[] {
+function doneUnits(
+  ex: { sets?: WorkoutSession['exercises'][number]['sets'] },
+  leggi: (raw: string | null | undefined) => number = num
+): { load: number; reps: number }[] {
   const out: { load: number; reps: number }[] = [];
   for (const s of ex.sets ?? []) {
     if (s?.blocks?.length) {
       for (const b of s.blocks) {
-        if (b?.done) out.push({ load: num(b.load), reps: num(b.reps) });
+        if (b?.done) out.push({ load: leggi(b.load), reps: leggi(b.reps) });
       }
       continue;
     }
-    if (s?.done) out.push({ load: num(s.load), reps: num(s.reps) });
+    if (s?.done) out.push({ load: leggi(s.load), reps: leggi(s.reps) });
   }
   return out;
 }
+
+/** Per le formule passa solo cio' che e' tutto un numero: "62,5-55" non e' un carico. */
+const severo = (raw: string | null | undefined) => numeroSevero(raw) ?? 0;
 
 function bestOf(session: WorkoutSession | null, exercise: string): Best | null {
   const ex = session?.exercises?.find(e => e.name === exercise);
@@ -141,6 +189,74 @@ function findRecords(current: WorkoutSession, previous: WorkoutSession | null): 
   return out;
 }
 
+type Unita = { load: number; reps: number }[];
+
+const massimale = (u: Unita) => oneRepMaxOf(u.filter(x => x.load > 0 && x.reps > 0))?.value ?? 0;
+const ripetizioni = (u: Unita) => u.reduce((m, x) => Math.max(m, x.reps), 0);
+const lavoro = (u: Unita) => u.reduce((t, x) => t + x.load * x.reps, 0);
+
+/**
+ * La forza di oggi e di allora, nella stessa unita'. Le ripetizioni si
+ * confrontano solo se nemmeno allora c'era un massimale: 15 ripetizioni con 20
+ * kg non sono "piu' forte" di 10 con 30, sono un'altra serie.
+ */
+function forzaDi(oggi: Unita, prima: Unita | null): Misura | null {
+  const kgOggi = massimale(oggi);
+  const kgPrima = prima ? massimale(prima) : 0;
+  if (kgOggi > 0) return { oggi: kgOggi, prima: kgPrima > 0 ? kgPrima : null, unita: 'kg' };
+  const ripOggi = ripetizioni(oggi);
+  if (ripOggi <= 0) return null;
+  const ripPrima = prima && kgPrima === 0 ? ripetizioni(prima) : 0;
+  return { oggi: ripOggi, prima: ripPrima > 0 ? ripPrima : null, unita: 'rip' };
+}
+
+function volumeDi(oggi: Unita, prima: Unita | null): Misura | null {
+  const kgOggi = Math.round(lavoro(oggi));
+  if (kgOggi <= 0) return null;
+  const kgPrima = prima ? Math.round(lavoro(prima)) : 0;
+  return { oggi: kgOggi, prima: kgPrima > 0 ? kgPrima : null, unita: 'kg' };
+}
+
+/** Di quanto e' cambiata una misura, come frazione (+0,13 = +13%). null se non c'e' confronto. */
+export function variazione(m: Misura | null | undefined): number | null {
+  if (!m || m.prima === null || m.prima <= 0) return null;
+  return m.oggi / m.prima - 1;
+}
+
+/** Meglio, uguale o peggio della volta scorsa; null se non c'e' confronto. */
+export function andamento(m: Misura | null | undefined): Andamento | null {
+  const esatta = variazione(m);
+  if (esatta === null) return null;
+  // Al centesimo di punto: 97,5 / 100 - 1 in virgola mobile e' -0,0250000000000001.
+  const v = Math.round(esatta * 1e4) / 1e4;
+  return v > STESSA_GIORNATA ? 'su' : v < -STESSA_GIORNATA ? 'giu' : 'pari';
+}
+
+function confronti(current: WorkoutSession, previous: WorkoutSession | null, records: SessionRecord[]): ConfrontoEsercizio[] {
+  const out: ConfrontoEsercizio[] = [];
+  for (const ex of current.exercises ?? []) {
+    const migliore = bestOf(current, ex.name);
+    if (!migliore) continue;
+    const exPrima = previous?.exercises?.find(e => e.name === ex.name);
+    const primaMigliore = bestOf(previous, ex.name);
+    // La forza passa dalle formule e vuole numeri veri; il volume si conta
+    // come il totale della seduta (sessionTonnage), cosi' le righe tornano.
+    const prima = (leggi: typeof num) => {
+      const u = exPrima ? doneUnits(exPrima, leggi) : [];
+      return u.length ? u : null;
+    };
+    out.push({
+      nome: ex.name,
+      oggi: label(migliore),
+      prima: primaMigliore ? label(primaMigliore) : null,
+      forza: forzaDi(doneUnits(ex, severo), prima(severo)),
+      volume: volumeDi(doneUnits(ex), prima(num)),
+      record: records.some(r => r.exercise === ex.name)
+    });
+  }
+  return out;
+}
+
 export function buildSessionSummary(
   current: WorkoutSession,
   previous: WorkoutSession | null
@@ -149,7 +265,10 @@ export function buildSessionSummary(
   const volumeKg = sessionTonnage(current);
   const prevVolume = previous ? sessionTonnage(previous) : null;
 
+  const records = findRecords(current, previous);
+
   return {
+    date: current.date ?? '',
     durationSec: current.durationSec ?? 0,
     setsDone: rows.filter(s => s?.done).length,
     setsTotal: rows.length,
@@ -158,6 +277,7 @@ export function buildSessionSummary(
     // nessun carico era stato scritto, e il delta direbbe "+tutto".
     volumeDeltaKg: prevVolume && prevVolume > 0 ? volumeKg - prevVolume : null,
     previousDate: prevVolume && prevVolume > 0 ? (previous?.date ?? '') : '',
-    records: findRecords(current, previous)
+    records,
+    esercizi: confronti(current, previous, records)
   };
 }

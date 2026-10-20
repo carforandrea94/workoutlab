@@ -1,6 +1,7 @@
 import { InjectionToken } from '@angular/core';
 import {
   addOutline, addSharp, albumsOutline, albumsSharp, analyticsOutline, analyticsSharp, arrowBackSharp,
+  arrowDownOutline, arrowDownSharp, arrowUpOutline, arrowUpSharp,
   barbell, barbellOutline, barbellSharp, caretDownSharp, cartOutline, cartSharp, chatboxEllipsesOutline,
   chatboxEllipsesSharp, checkmarkCircle, checkmarkCircleOutline, checkmarkCircleSharp, checkmarkOutline,
   checkmarkSharp, chevronBack, chevronBackOutline, chevronDownOutline, chevronDownSharp, chevronExpand,
@@ -106,6 +107,8 @@ export const ICONE = {
   'add': { ios: addOutline, md: addSharp },
   'albums': { ios: albumsOutline, md: albumsSharp },
   'analytics': { ios: analyticsOutline, md: analyticsSharp },
+  'arrow-down': { ios: arrowDownOutline, md: arrowDownSharp },
+  'arrow-up': { ios: arrowUpOutline, md: arrowUpSharp },
   'barbell': { ios: barbellOutline, md: barbellSharp, piena: barbell },
   'cart': { ios: cartOutline, md: cartSharp },
   'chatbox-ellipses': { ios: chatboxEllipsesOutline, md: chatboxEllipsesSharp },
