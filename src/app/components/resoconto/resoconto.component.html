@@ -1,0 +1,107 @@
+@let r = resoconto();
+<div class="res liste-ios">
+  @if (testa()) {
+    <header class="res-head">
+      <span class="res-ok"><app-icona name="checkmark" [size]="26"></app-icona></span>
+      <h1 class="res-title">Allenamento salvato</h1>
+      <p class="res-sub">{{ quando() }}</p>
+    </header>
+  }
+
+  <!-- I tre numeri in una card sola, come i riepiloghi di Salute. -->
+  <div class="res-numeri">
+    <div class="res-numero">
+      <div class="res-cap">Serie</div>
+      <div class="res-val"><span class="n">{{ r.setsDone }}</span><span class="u">/{{ r.setsTotal }}</span></div>
+      <div class="res-nota">{{ notaSerie() }}</div>
+    </div>
+    <div class="res-numero">
+      <div class="res-cap">Volume</div>
+      <div class="res-val"><span class="n">{{ volume() }}</span><span class="u">kg</span></div>
+      <div class="res-nota">{{ notaVolume() }}</div>
+    </div>
+    <div class="res-numero">
+      <div class="res-cap">Record</div>
+      <div class="res-val"><span class="n">{{ r.records.length }}</span><span class="u">su {{ r.esercizi.length }}</span></div>
+      <div class="res-nota">{{ notaRecord() }}</div>
+    </div>
+  </div>
+
+  @if (confronto()) {
+    <ion-list-header class="sezione"><ion-label>Rispetto al {{ prima() }}</ion-label></ion-list-header>
+    <div class="rag-card">
+      <ion-segment class="seg labelseg fullseg" [value]="metrica()" (ionChange)="cambiaMetrica($event.detail.value)"
+        aria-label="Cosa confrontare">
+        <ion-segment-button value="forza"><ion-label>Forza</ion-label></ion-segment-button>
+        <ion-segment-button value="volume"><ion-label>Volume</ion-label></ion-segment-button>
+      </ion-segment>
+
+      @let s = sintesi();
+      <p class="rag-sintesi">{{ s.prima }}@if (s.forte) {<b>{{ s.forte }}</b>}{{ s.resto }}</p>
+
+      <!-- Con meno di tre raggi non e' una ragnatela, e' un segmento: bastano le righe sotto. -->
+      @if (assi().length >= 3) {
+        <app-ragnatela [assi]="assi()" [scelto]="scelto()" [prima]="'al ' + prima()" (sceglie)="scegli($event)"></app-ragnatela>
+        <div class="rag-leg" aria-hidden="true">
+          <span><i class="oggi"></i>Oggi</span>
+          <span><i class="prima"></i>{{ prima() }}</span>
+          <span><i class="meglio"></i>Meglio</span>
+        </div>
+      }
+
+      @if (dettaglio(); as d) {
+        <div class="rag-dett" aria-live="polite">
+          <ion-avatar class="riga-segno" [class.su]="d.andamento === 'su'">{{ d.n }}</ion-avatar>
+          <div class="rag-dett-t"><b>{{ d.nome }}</b><span>{{ misuraDettaglio(d.riga.misura) }}</span></div>
+          <span class="delta" [class.su]="d.andamento === 'su'" [class.giu]="d.andamento === 'giu'" [class.pari]="d.andamento === 'pari'">
+            @if (d.andamento === 'su') { <app-icona name="arrow-up" [size]="15"></app-icona> }
+            @if (d.andamento === 'giu') { <app-icona name="arrow-down" [size]="15"></app-icona> }
+            {{ d.testo }}
+          </span>
+        </div>
+      }
+    </div>
+  } @else {
+    <p class="res-prima-volta">È la prima volta che fai questo giorno: dalla prossima, qui vedrai cosa è cambiato esercizio per esercizio.</p>
+  }
+
+  @if (righe().length) {
+    <ion-list-header class="sezione"><ion-label>Esercizio per esercizio</ion-label></ion-list-header>
+    <!-- E' anche la tabella della ragnatela: stessi numeri, stesse cifre. -->
+    <ion-list [inset]="true" lines="inset">
+      @for (riga of righe(); track riga.n) {
+        <ion-item>
+          <ion-avatar slot="start" class="riga-segno" [class.su]="riga.andamento === 'su'">{{ riga.n }}</ion-avatar>
+          <ion-label class="ion-text-wrap">
+            <h2>{{ riga.e.nome }}</h2>
+            <p>{{ riga.e.oggi }}@if (riga.e.prima) { · prima {{ riga.e.prima }}}</p>
+          </ion-label>
+          <div slot="end" class="res-fine">
+            @if (riga.delta) {
+              <span class="delta" [class.su]="riga.andamento === 'su'" [class.giu]="riga.andamento === 'giu'" [class.pari]="riga.andamento === 'pari'">
+                @if (riga.andamento === 'su') { <app-icona name="arrow-up" [size]="15"></app-icona> }
+                @if (riga.andamento === 'giu') { <app-icona name="arrow-down" [size]="15"></app-icona> }
+                {{ riga.delta }}
+              </span>
+            } @else if (confronto() && !riga.e.prima) {
+              <span class="delta pari">nuovo</span>
+            } @else if (confronto() && metrica() === 'volume' && !riga.e.volume) {
+              <!-- Senza carico non c'e' volume: lo dice, invece di lasciare la riga muta. -->
+              <span class="delta pari">corpo libero</span>
+            }
+            @if (riga.e.record) { <ion-badge class="stato">Record</ion-badge> }
+          </div>
+        </ion-item>
+      }
+    </ion-list>
+    @if (confronto()) {
+      <p class="res-piede">
+        @if (metrica() === 'forza') {
+          La forza è il massimale stimato dalla serie migliore; oltre le {{ limiteRip }} ripetizioni contano le ripetizioni.
+        } @else {
+          Il volume è il carico per le ripetizioni delle serie fatte.
+        }
+      </p>
+    }
+  }
+</div>

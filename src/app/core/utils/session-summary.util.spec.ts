@@ -1,4 +1,4 @@
-import { buildSessionSummary } from './session-summary.util';
+import { andamento, buildSessionSummary, STESSA_GIORNATA, variazione } from './session-summary.util';
 import { WorkoutSession } from '../../models/workout.model';
 
 type Row = [string | null, string | null, boolean];
@@ -171,5 +171,116 @@ describe('buildSessionSummary — le serie a cluster', () => {
     expect(s.setsTotal).toBe(1);
     expect(s.setsDone).toBe(1);
     expect(s.volumeKg).toBe(960);
+  });
+});
+
+/*
+ * Esercizio per esercizio: la riga del resoconto e il raggio della ragnatela.
+ * La forza e' il massimale stimato (la stessa formula del foglio del
+ * bilanciere), e dove un massimale non si stima sono le ripetizioni.
+ */
+describe('buildSessionSummary — esercizio per esercizio', () => {
+  const uno = (oggi: Row[], prima: Row[] | null, nome = 'Panca') => {
+    const s = buildSessionSummary(
+      session('2026-10-20', { [nome]: oggi }),
+      prima ? session('2026-10-12', { [nome]: prima }) : null
+    );
+    return s.esercizi[0];
+  };
+
+  it('la forza e\' il massimale stimato dalla serie migliore, oggi e allora', () => {
+    const e = uno([['50', '5', true], ['45', '6', true]], [['30', '8', true]]);
+    // 50 × 36 / 32 = 56,25 e 30 × 36 / 29 = 37,2: al mezzo chilo, come nel foglio.
+    expect(e.forza).toEqual({ oggi: 56.5, prima: 37, unita: 'kg' });
+    expect(andamento(e.forza)).toBe('su');
+    expect(e.oggi).toBe('50 kg × 5');
+    expect(e.prima).toBe('30 kg × 8');
+  });
+
+  it('la serie migliore e\' quella che esprime piu\' forza, non quella col carico piu\' alto', () => {
+    // 36 × 6 (41,8) vale piu\' di 40 × 1? No: 40 × 3 (42,4) vale piu\' di 36 × 6.
+    const e = uno([['36', '6', true], ['40', '3', true]], [['40', '3', true]]);
+    expect(e.forza?.oggi).toBe(42.5);
+    expect(andamento(e.forza)).toBe('pari');
+  });
+
+  it('oltre le 12 ripetizioni contano le ripetizioni', () => {
+    const e = uno([['1', '50', true]], [['1', '20', true]], 'Crunch');
+    expect(e.forza).toEqual({ oggi: 50, prima: 20, unita: 'rip' });
+    expect(variazione(e.forza)).toBeCloseTo(1.5);
+  });
+
+  it('a corpo libero contano le ripetizioni, e il volume non c\'e\'', () => {
+    const e = uno([[null, '12', true]], [[null, '10', true]], 'Dip');
+    expect(e.forza).toEqual({ oggi: 12, prima: 10, unita: 'rip' });
+    expect(e.volume).toBeNull();
+  });
+
+  it('le ripetizioni non si confrontano con un massimale di allora', () => {
+    // 15 con 20 kg non e' "piu' forte" di 10 con 30: e' un'altra serie.
+    const e = uno([['20', '15', true]], [['30', '10', true]]);
+    expect(e.forza).toEqual({ oggi: 15, prima: null, unita: 'rip' });
+    expect(andamento(e.forza)).toBeNull();
+  });
+
+  it('meglio, uguale o peggio: sotto il 2,5% e\' la stessa giornata', () => {
+    expect(STESSA_GIORNATA).toBe(0.025);
+    expect(andamento({ oggi: 102.5, prima: 100, unita: 'kg' })).toBe('pari');
+    expect(andamento({ oggi: 102.6, prima: 100, unita: 'kg' })).toBe('su');
+    expect(andamento({ oggi: 97.5, prima: 100, unita: 'kg' })).toBe('pari');
+    expect(andamento({ oggi: 97.4, prima: 100, unita: 'kg' })).toBe('giu');
+    expect(andamento({ oggi: 10, prima: null, unita: 'kg' })).toBeNull();
+    expect(andamento(null)).toBeNull();
+    expect(variazione({ oggi: 113, prima: 100, unita: 'kg' })).toBeCloseTo(0.13);
+  });
+
+  it('il volume e\' carico per ripetizioni delle serie fatte, oggi e allora', () => {
+    const e = uno([['25', '10', true], ['25', '10', true], ['25', '10', false]], [['27,5', '10', true], ['27,5', '10', true]]);
+    expect(e.volume).toEqual({ oggi: 500, prima: 550, unita: 'kg' });
+    expect(andamento(e.volume)).toBe('giu');
+    expect(andamento(e.forza)).toBe('giu');
+  });
+
+  it('un esercizio nuovo c\'e\', ma senza confronto', () => {
+    const s = buildSessionSummary(session('2026-10-20', { 'Pulley': [['60', '12', true]] }), PRIMA);
+    expect(s.esercizi[0].prima).toBeNull();
+    expect(s.esercizi[0].forza?.prima).toBeNull();
+    expect(s.esercizi[0].volume?.prima).toBeNull();
+    expect(andamento(s.esercizi[0].forza)).toBeNull();
+  });
+
+  it('un esercizio senza serie fatte non c\'e\'', () => {
+    const s = buildSessionSummary(session('2026-10-20', {
+      'Panca': [['80', '10', true]], 'Croci': [['20', '12', false]]
+    }), null);
+    expect(s.esercizi.map(e => e.nome)).toEqual(['Panca']);
+  });
+
+  it('nelle formule passa solo cio\' che e\' tutto un numero', () => {
+    // "62,5-55" e' un carico che scende, non 62,5: il massimale viene dall'altra serie.
+    const e = uno([['62,5-55', '8', true], ['50', '8', true]], null);
+    expect(e.forza?.oggi).toBe(62);
+  });
+
+  it('il record e\' quello della lista dei record, e l\'ordine e\' quello della seduta', () => {
+    const s = buildSessionSummary(OGGI, PRIMA);
+    expect(s.esercizi.map(e => [e.nome, e.record])).toEqual([['Panca piana', true], ['Dip', true]]);
+    expect(buildSessionSummary(PRIMA, PRIMA).esercizi.every(e => !e.record)).toBe(true);
+  });
+
+  it('una serie a cluster si misura blocco per blocco', () => {
+    const s = buildSessionSummary({
+      dayId: 'day1', dayLabel: 'Giorno 1', date: '2026-10-20',
+      exercises: [{ name: 'Panca', sets: [{ load: '60', reps: '8+8', done: true, blocks: [
+        { load: '60', reps: '8', done: true }, { load: '60', reps: '8', done: true }
+      ] }] }]
+    }, null);
+    // 60 × 36 / 29 = 74,5 dal blocco da 8, non da "16 ripetizioni".
+    expect(s.esercizi[0].forza?.oggi).toBe(74.5);
+    expect(s.esercizi[0].volume?.oggi).toBe(960);
+  });
+
+  it('porta la data della seduta', () => {
+    expect(buildSessionSummary(OGGI, PRIMA).date).toBe('2026-09-25');
   });
 });

@@ -8,6 +8,7 @@ import { WorkoutDataService } from '../../services/workout-data.service';
 import { WorkoutStateService } from '../../services/workout-state.service';
 import { AppStateService, WorkoutDraftRow } from '../../services/app-state.service';
 import { buildSessionSummary, SessionSummary } from '../../core/utils/session-summary.util';
+import { ResocontoComponent } from '../../components/resoconto/resoconto.component';
 import { sessionTonnage, formatKg } from '../../core/utils/tonnage.util';
 import { WorkoutSessionsService } from '../../services/workout-sessions.service';
 import { WorkoutSessionStateService } from '../../services/workout-session-state.service';
@@ -75,7 +76,8 @@ interface FoglioCarico {
   standalone: true,
   imports: [
     IonButton, IonFooter, TastoDirective, IonSegment, IonSegmentButton, IonSpinner, ...IONIC_PAGE, IonModal,
-    IonRadioGroup, IonRadio, IonItem, IonList, IonLabel, CommonModule, FormsModule, IconaComponent, NumberWheelComponent
+    IonRadioGroup, IonRadio, IonItem, IonList, IonLabel, CommonModule, FormsModule, IconaComponent, NumberWheelComponent,
+    ResocontoComponent
   ],
   templateUrl: './scheda-detail.component.html'
 })
@@ -147,6 +149,17 @@ export class SchedaDetailComponent implements OnInit, AfterViewInit, OnDestroy {
   /** Il resoconto dell'allenamento appena chiuso. Finche' e' null si sta
    *  ancora allenando; quando c'e', la pagina mostra lui. */
   summary: SessionSummary | null = null;
+
+  /**
+   * Storico: una seduta passata si apre sul suo resoconto, lo stesso della
+   * fine dell'allenamento; "Serie" mostra le serie da correggere. Si
+   * ricalcola ogni volta che si torna sul resoconto, cosi' dice anche le
+   * correzioni appena fatte.
+   */
+  readonly vistaStorico = signal<'resoconto' | 'serie'>('resoconto');
+  resocontoStorico: SessionSummary | null = null;
+  /** Storico: l'ultima seduta dello stesso giorno PRIMA di questa, con cui la si confronta. */
+  private sedutaPrecedente: WorkoutSession | null = null;
 
   restModalOpen = false;
   restModalVm: ExerciseVM | null = null;
@@ -292,11 +305,18 @@ export class SchedaDetailComponent implements OnInit, AfterViewInit, OnDestroy {
       if (generation !== this.loadGeneration) return;
       if (!seduta) { this.notFound = true; return; }
 
+      // Il confronto e' con la volta prima di QUESTA seduta, non con l'ultima
+      // in assoluto: una seduta di settembre si legge accanto ad agosto.
+      const stessoGiorno = await Promise.race([this.sessions.listForDay(seduta.dayId), timeout]);
+      if (generation !== this.loadGeneration) return;
+
       this.sedutaSalvata = seduta;
+      this.sedutaPrecedente = precedenteDi(stessoGiorno.map(x => x.session), seduta.date);
       this.storicoDate = seduta.date;
       this.setDisplayDate(seduta.date);
       this.day = this.giornoDaSeduta(seduta);
       this.buildExercisesFromSession(seduta);
+      this.resocontoStorico = buildSessionSummary(seduta, this.sedutaPrecedente);
     } catch (e: any) {
       if (generation !== this.loadGeneration) return;
       console.error('Errore caricamento seduta:', e);
@@ -1294,21 +1314,6 @@ export class SchedaDetailComponent implements OnInit, AfterViewInit, OnDestroy {
     return this.sessionState.formatDuration(seconds);
   }
 
-  /** Il volume del riepilogo, gia' scritto. */
-  summaryVolume(kg: number): string {
-    return formatKg(kg);
-  }
-
-  summaryDelta(kg: number): string {
-    return (kg > 0 ? '+' : '−') + formatKg(Math.abs(kg));
-  }
-
-  summaryPrevDate(iso: string): string {
-    if (!iso) return '';
-    const d = new Date(iso + 'T00:00:00');
-    return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
-  }
-
   backToScheda(): void {
     this.nav.navigateBack(['/scheda']);
   }
@@ -1571,7 +1576,32 @@ export class SchedaDetailComponent implements OnInit, AfterViewInit, OnDestroy {
    * per la barra delle tab.
    */
   get barraInBasso(): boolean {
-    return this.avvioInBasso || (!this.recuperoInCorsa && this.azione !== null);
+    return this.avvioInBasso || this.fineInBasso || (!this.recuperoInCorsa && this.azione !== null);
+  }
+
+  /** A fine allenamento: "Torna alla scheda" nella pillola in basso. */
+  get fineInBasso(): boolean {
+    return !!this.summary && !this.isStorico;
+  }
+
+  /** Si sta leggendo un resoconto: a fine allenamento, o nello storico. */
+  get resocontoInVista(): boolean {
+    return !!this.summary || (this.isStorico && this.vistaStorico() === 'resoconto');
+  }
+
+  /** Le serie (elenco o slider) sono a schermo. */
+  get serieInVista(): boolean {
+    return !this.resocontoInVista;
+  }
+
+  /** Storico: Resoconto o Serie. Tornando al resoconto lo si rifa' con le serie come sono adesso. */
+  mostraVistaStorico(v: unknown): void {
+    if (v !== 'resoconto' && v !== 'serie') return;
+    if (v === 'resoconto' && this.sedutaSalvata) {
+      this.resocontoStorico = buildSessionSummary(this.sessioneCorrente(), this.sedutaPrecedente);
+    }
+    this.vistaStorico.set(v);
+    this.cdr.detectChanges();
   }
 
   /** Il recupero sta contando: in basso c'e' la fascia, non il tasto. */
@@ -1912,7 +1942,7 @@ export class SchedaDetailComponent implements OnInit, AfterViewInit, OnDestroy {
         // Il resoconto si costruisce dalla seduta appena scritta e dall'ultima
         // volta che si era fatto LO STESSO giorno: un Giorno 1 di petto e un
         // Giorno 2 di gambe non hanno niente da dirsi.
-        this.summary = buildSessionSummary(session, this.daySessions[this.daySessions.length - 1] ?? null);
+        this.summary = buildSessionSummary(session, precedenteDi(this.daySessions, isoDate));
       } else {
         this.state.saveStatus.set('err');
         this.toast.error('Errore durante il salvataggio. Riprova.');
@@ -2036,4 +2066,16 @@ export class SchedaDetailComponent implements OnInit, AfterViewInit, OnDestroy {
     this.erroreSalvataggio = 'Errore durante l\'eliminazione. Riprova.';
     this.cdr.detectChanges();
   }
+}
+
+/**
+ * L'ultima seduta prima di una data, fra quelle dello stesso giorno (in
+ * ordine di data). Non semplicemente l'ultima: salvando due volte lo stesso
+ * giorno la seduta di oggi c'e' gia', e confrontarla con se stessa direbbe
+ * "tutto uguale".
+ */
+export function precedenteDi(sedute: readonly WorkoutSession[], data: string): WorkoutSession | null {
+  let out: WorkoutSession | null = null;
+  for (const s of sedute) if (s.date < data && (!out || s.date > out.date)) out = s;
+  return out;
 }
