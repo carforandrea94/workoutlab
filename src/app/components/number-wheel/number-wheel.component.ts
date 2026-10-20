@@ -133,8 +133,15 @@ export class NumberWheelComponent implements AfterViewInit, OnChanges {
       this.centre('auto');
       return;
     }
-    this.index = wheelIndexOf(this.values, this.current);
+    // Un valore scritto da fuori (il foglio "Che peso metto", il massimale
+    // nella card) va anche fatto vedere: la ruota ci scorre. L'eco del proprio
+    // scorrimento no: onScroll ha gia' portato l'indice li', e la ruota e' gia'
+    // ferma su quel numero - riportarcela litigherebbe col dito.
+    const i = wheelIndexOf(this.values, this.current);
+    const daFuori = i !== this.index;
+    this.index = i;
     if (ch['placeholder']) this.centre('auto');
+    else if (daFuori) this.centre('smooth');
   }
 
   ngAfterViewInit(): void {

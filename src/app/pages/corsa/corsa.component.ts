@@ -50,8 +50,7 @@ export class CorsaComponent implements OnInit {
 
   readonly hasGoal = computed(() => hasRunGoal(this.state.goal()));
 
-  /** Le settimane aperte, per lunedi'. Quella in corso e' sempre aperta e non
-   *  passa di qui: non ha senso poterla chiudere. */
+  /** Le settimane dello storico aperte, per lunedi'. */
   private readonly opened = signal<ReadonlySet<string>>(new Set());
 
   readonly showAll = signal(false);
@@ -59,6 +58,12 @@ export class CorsaComponent implements OnInit {
   readonly history = computed(() =>
     buildWeekHistory(this.state.runs(), todayLocalISO(), this.showAll() ? 0 : WEEKS_SHOWN)
   );
+
+  /** La settimana in corso: sta per conto suo, sopra lo storico. */
+  readonly corrente = computed(() => this.history().weeks.find(w => w.isCurrent) ?? null);
+
+  /** Lo storico: tutte le altre settimane, dalla piu' recente. */
+  readonly passate = computed(() => this.history().weeks.filter(w => !w.isCurrent));
 
   constructor(
     public state: RunningStateService,
@@ -98,29 +103,30 @@ export class CorsaComponent implements OnInit {
 
   /** Intervallo della settimana in corso, es. "8 – 14 set". */
   get weekLabel(): string {
-    return this.history().weeks.find(w => w.isCurrent)?.label ?? '';
+    return this.corrente()?.label ?? '';
+  }
+
+  /**
+   * Accanto a "Questa settimana": l'intervallo e, senza un obiettivo che li
+   * dica nelle sue righe, quante corse e quanti minuti.
+   */
+  get notaSettimana(): string {
+    const w = this.corrente();
+    if (!w || this.hasGoal()) return this.weekLabel;
+    return `${w.label} · ${this.runsLabel(w)}` + (w.minutes ? ` · ${w.minutes} min` : '');
   }
 
   // --- Le settimane ----------------------------------------------------------
 
-  isOpen(w: WeekGroup): boolean {
-    return w.isCurrent || this.opened().has(w.mondayISO);
-  }
-
-  /** Le settimane aperte, per la fisarmonica: quella in corso sempre, piu' quelle aperte a mano. */
+  /** Le settimane dello storico aperte, per la fisarmonica. */
   aperte(): string[] {
-    return this.history().weeks.filter(w => this.isOpen(w)).map(w => w.mondayISO);
+    return this.passate().filter(w => this.opened().has(w.mondayISO)).map(w => w.mondayISO);
   }
 
-  /**
-   * La fisarmonica dice quali settimane sono aperte dopo un tocco. Quella in
-   * corso non passa di qui (e' readonly, sempre aperta): si tengono le altre.
-   */
+  /** La fisarmonica dice quali settimane sono aperte dopo un tocco. */
   settimaneCambiate(ev: Event): void {
     const v = (ev as CustomEvent<{ value?: string | string[] | null }>).detail?.value;
-    const lunedi = Array.isArray(v) ? v : v ? [v] : [];
-    const corrente = this.history().weeks.find(w => w.isCurrent)?.mondayISO;
-    this.opened.set(new Set(lunedi.filter(l => l !== corrente)));
+    this.opened.set(new Set(Array.isArray(v) ? v : v ? [v] : []));
   }
 
   /** Quanto della settimana e' stato coperto. Senza obiettivo la barra non
@@ -163,10 +169,15 @@ export class CorsaComponent implements OnInit {
 
   // --- Azioni ----------------------------------------------------------------
 
+  /** "Registra corsa" nella settimana in corso: parte da oggi. */
+  registraCorsa(): void {
+    this.nav.navigateForward(['/corsa/nuova'], { queryParams: { date: todayLocalISO() } });
+  }
+
   /**
-   * Nuova uscita dentro una settimana. In quella in corso parte da oggi; in una
-   * passata parte dalla sua domenica, cosi' il calendario si apre gia' nel
-   * punto giusto invece di costringere a girarlo all'indietro.
+   * Nuova corsa dentro una settimana dello storico: parte dalla sua domenica,
+   * cosi' il calendario si apre gia' nel punto giusto invece di costringere a
+   * girarlo all'indietro. In quella in corso, da oggi.
    */
   addRun(w: WeekGroup): void {
     const date = w.isCurrent ? todayLocalISO() : w.sundayISO;

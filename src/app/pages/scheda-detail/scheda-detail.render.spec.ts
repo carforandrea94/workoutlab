@@ -459,6 +459,239 @@ describe('SchedaDetailComponent — accessibilita\' delle testate (disegno vero)
   });
 
   /**
+   * Il massimale stimato e i pesi che ne vengono stanno nel foglio del
+   * massimale, come il recupero nel suo: lo apre il bilanciere nella testata
+   * di ogni esercizio. Nella card occupavano mezza schermata sotto le serie.
+   */
+  describe('il bilanciere e il foglio del massimale', () => {
+    const storia = [
+      { id: 's0', session: { date: '2026-09-26', exercises: [{ name: 'Panca piana', sets: [{ load: '75', reps: '6' }] }] } },
+      { id: 's1', session: { date: '2026-10-03', exercises: [{ name: 'Panca piana', sets: [{ load: '80', reps: '6' }, { load: '80', reps: '6' }] }] } }
+    ];
+    const pulito = (e: Element | null | undefined) => (e?.textContent ?? '').replace(/\s+/g, ' ').trim();
+    // Il foglio e' un ion-modal: Ionic lo disegna quando si apre.
+    const foglio = () => Array.from(document.querySelectorAll<HTMLElement>('.carico-sheet')).pop() ?? null;
+    async function apri(card: HTMLElement, aggiorna: () => void) {
+      card.querySelector<HTMLElement>('button.ex-chip.rm')!.click();
+      aggiorna();
+      await vi.waitFor(() => expect(foglio()).not.toBeNull());
+      aggiorna();
+      return foglio()!;
+    }
+
+    it('in ogni card c\'e\' il bilanciere, accanto al recupero, e il nome dice il massimale', async () => {
+      const { tutti } = await monta('slider', true, false, undefined, undefined, storia);
+      const chip = tutti('.exslide .ex-tags button.ex-chip.rm');
+      expect(chip.length).toBe(3);
+      expect(chip.every(b => b.previousElementSibling?.classList.contains('rest'))).toBe(true);
+      expect(chip.map(b => b.getAttribute('aria-label'))).toEqual([
+        'Massimale stimato 93 kg: apri i pesi', 'Massimale: apri i pesi', 'Massimale: apri i pesi'
+      ]);
+      expect(chip[0].querySelector('app-icona')).not.toBeNull();
+      // Nella card il massimale non c'e' piu': sta nel foglio.
+      expect(tutti('.exslide .massimale').length).toBe(0);
+    });
+
+    it('c\'e\' anche prima dell\'avvio e nell\'elenco', async () => {
+      expect((await monta('slider', false)).tutti('.exslide button.ex-chip.rm').length).toBe(3);
+      TestBed.resetTestingModule();
+      expect((await monta('list', true)).tutti('.ex button.ex-chip.rm').length).toBe(3);
+    });
+
+    it('il foglio dice il massimale stimato, da quale serie viene e quanto e\' cambiato', async () => {
+      const { tutti, aggiorna } = await monta('slider', true, false, undefined, undefined, storia);
+      const f = await apri(tutti('.exslide')[0], aggiorna);
+      expect(pulito(f.querySelector('.sheet-title'))).toBe('Massimale — Panca piana');
+      expect(pulito(f.querySelector('.massimale-kg'))).toBe('93 kg');
+      expect(pulito(f.querySelector('.massimale-da'))).toBe('Da 80 × 6 del 03/10 · +6 kg dalla volta prima');
+    });
+
+    it('sotto, i pesi della serie in corso, con la percentuale; la spunta e\' sul peso nella ruota', async () => {
+      const { c, tutti, aggiorna } = await monta('slider', true, false, undefined, undefined, storia, 85);
+      c.exercises[0].activeRow = 1;
+      aggiorna();
+      const f = await apri(tutti('.exslide')[0], aggiorna);
+      expect(c.foglioCarico!.serie).toBe(1);
+      expect(pulito(f.querySelector('.scelta-gruppo'))).toBe('Che peso metto · serie 2');
+      const voci = Array.from(f.querySelectorAll('ion-radio-group ion-item.scelta-opt'));
+      expect(voci.map(v => pulito(v.querySelector('.carico-titolo')))).toEqual(['Come l\'ultima volta', 'Per 10 ripetizioni', 'Dal programma, 85%']);
+      expect(pulito(voci[1].querySelector('.carico-dettaglio'))).toMatch(/^\d+% del massimale stimato$/);
+      expect((f.querySelector('ion-radio-group') as any).value).toBe('ultima');
+
+      c.scegliCarico(c.foglioCarico!, 'programma');
+      aggiorna();
+      expect(c.exercises[0].rows[1].load).toBe('79');
+      expect(c.foglioCaricoAperto).toBe(false);
+    });
+
+    it('nell\'elenco il tocco apre il foglio senza chiudere l\'esercizio', async () => {
+      const { c, tutti, aggiorna } = await monta('list', true, false, undefined, undefined, storia);
+      await apri(tutti('.ex')[0], aggiorna);
+      expect(c.foglioCaricoAperto).toBe(true);
+      expect(c.exercises[0].open).toBe(true);
+    });
+
+    it('prima dell\'avvio i pesi si leggono e basta: niente radio', async () => {
+      const { tutti, aggiorna } = await monta('slider', false, false, undefined, undefined, storia, 85);
+      const f = await apri(tutti('.exslide')[0], aggiorna);
+      expect(pulito(f.querySelector('.massimale-kg'))).toBe('93 kg');
+      expect(f.querySelector('ion-radio-group')).toBeNull();
+      expect(f.querySelectorAll('ion-list.carico-lettura ion-item.scelta-opt').length).toBe(3);
+      expect(pulito(f.querySelector('.carico-dopo'))).toBe('Ad allenamento avviato, toccane uno per metterlo nella ruota.');
+    });
+
+    it('senza storia il foglio dice perche\' non c\'e\' un massimale, e non propone pesi', async () => {
+      const { tutti, aggiorna } = await monta('slider', true);
+      const f = await apri(tutti('.exslide')[0], aggiorna);
+      expect(f.querySelector('.massimale')).toBeNull();
+      expect(pulito(f.querySelector('.massimale-vuoto'))).toBe('Ancora nessun massimale: lo stimo dalla prima sessione salvata con peso e ripetizioni di questo esercizio.');
+      expect(f.querySelector('.scelta-gruppo')).toBeNull();
+    });
+
+    it('su un esercizio a cluster dice che li\' non si stima', async () => {
+      const { c } = await monta('slider', true);
+      const vm = { ...c.exercises[0], cluster: { blocks: [5, 5], restSec: 20, end: 'fixed' } } as any;
+      expect(c.testoSenzaMassimale(vm)).toContain('a cluster il massimale non si stima');
+      expect(c.testoSenzaMassimale(c.exercises[0])).toContain('Ancora nessun massimale');
+    });
+
+    it('con le serie tutte fatte resta il massimale, senza pesi da scegliere', async () => {
+      const { c, tutti, aggiorna } = await monta('slider', true, false, undefined, undefined, storia);
+      c.exercises[0].rows.forEach((r: any) => r.done = true);
+      c.exercises[0].activeRow = null;
+      aggiorna();
+      const f = await apri(tutti('.exslide')[0], aggiorna);
+      expect(pulito(f.querySelector('.massimale-kg'))).toBe('93 kg');
+      expect(f.querySelector('.scelta-gruppo')).toBeNull();
+      expect(c.foglioCarico!.serie).toBeNull();
+      expect(c.opzioniDelFoglio(c.foglioCarico!)).toEqual([]);
+      expect(c.sceltaCarico(c.foglioCarico!)).toBe('');
+      const prima = c.exercises[0].rows.map((r: any) => r.load);
+      c.scegliCarico(c.foglioCarico!, 'ultima');
+      expect(c.exercises[0].rows.map((r: any) => r.load)).toEqual(prima);
+    });
+  });
+
+  /**
+   * La barra in basso ("Inizia", "Fatta") e' fatta e si comporta come la
+   * barra delle tab: una pillola di vetro sopra il contenuto, che scorrendo in
+   * giu' si fa piccola e torna intera tornando su; con la tastiera dell'app
+   * nativa se ne va.
+   */
+  describe('la barra in basso, come la barra delle tab', () => {
+    const contenuto = (root: HTMLElement) => root.querySelector<HTMLElement>('ion-content')!;
+    const barra = (root: HTMLElement) => root.querySelector<HTMLElement>('ion-footer.barra-azione');
+    function scorri(root: HTMLElement, aggiorna: () => void, y: number) {
+      const ct = contenuto(root);
+      // jsdom non impagina: la pagina "puo' scendere" quanto le si dice.
+      const parte = ct.shadowRoot?.querySelector<HTMLElement>('[part="scroll"]');
+      if (parte) {
+        Object.defineProperty(parte, 'scrollHeight', { value: 3000, configurable: true });
+        Object.defineProperty(parte, 'clientHeight', { value: 800, configurable: true });
+      }
+      ct.dispatchEvent(new CustomEvent('ionScroll', { detail: { scrollTop: y } }));
+      aggiorna();
+    }
+
+    it('"Fatta" sta nella pillola di vetro, e il contenuto le tiene lo spazio sotto', async () => {
+      const { root } = await monta('slider', true);
+      const b = barra(root)!;
+      expect(b.classList.contains('salva-footer')).toBe(true);
+      expect(b.querySelector(':scope > .barra-pillola ion-button.salva-btn')).not.toBeNull();
+      expect(contenuto(root).classList.contains('con-barra')).toBe(true);
+      expect(contenuto(root).classList.contains('con-fine-recupero')).toBe(false);
+    });
+
+    it('anche "Inizia allenamento"', async () => {
+      const { root } = await monta('list');
+      const b = barra(root)!;
+      expect(b.classList.contains('avvio-footer')).toBe(true);
+      expect(b.querySelector(':scope > .barra-pillola ion-button.avvio-btn')).not.toBeNull();
+      expect(contenuto(root).classList.contains('con-barra')).toBe(true);
+    });
+
+    it('senza barra (elenco in sessione, recupero che conta) il contenuto non tiene spazio', async () => {
+      const elenco = await monta('list', true);
+      expect(barra(elenco.root)).toBeNull();
+      expect(contenuto(elenco.root).classList.contains('con-barra')).toBe(false);
+      TestBed.resetTestingModule();
+      const { root, restTimer, aggiorna } = await monta('slider', true);
+      restTimer.set({ show: true, finished: false, remaining: 40 });
+      aggiorna();
+      expect(barra(root)).toBeNull();
+      expect(contenuto(root).classList.contains('con-barra')).toBe(false);
+    });
+
+    it('"Recupero finito" le sta appoggiato sopra, fuori dalla pillola, e il contenuto ne tiene conto', async () => {
+      const { root, restTimer, aggiorna } = await monta('slider', true);
+      restTimer.set({ show: true, finished: true, remaining: 0 });
+      aggiorna();
+      const riga = barra(root)!.querySelector(':scope > .fine-recupero');
+      expect(riga?.nextElementSibling?.classList.contains('barra-pillola')).toBe(true);
+      expect(contenuto(root).classList.contains('con-fine-recupero')).toBe(true);
+    });
+
+    it('scorrendo in giu\' si fa piccola, tornando su o in cima torna intera', async () => {
+      const { root, aggiorna } = await monta('slider', true);
+      const ridotta = () => barra(root)!.classList.contains('ridotta');
+      scorri(root, aggiorna, 100);
+      scorri(root, aggiorna, 300);
+      expect(ridotta()).toBe(true);
+      scorri(root, aggiorna, 250);
+      expect(ridotta()).toBe(false);
+      scorri(root, aggiorna, 400);
+      expect(ridotta()).toBe(true);
+      scorri(root, aggiorna, 5);
+      expect(ridotta()).toBe(false);
+    });
+
+    it('dopo il recupero torna intera', async () => {
+      const { root, aggiorna, restTimer } = await monta('slider', true);
+      scorri(root, aggiorna, 100);
+      scorri(root, aggiorna, 300);
+      expect(barra(root)!.classList.contains('ridotta')).toBe(true);
+      restTimer.set({ show: true, finished: false, remaining: 40 });
+      aggiorna();
+      restTimer.set({ show: true, finished: true, remaining: 0 });
+      aggiorna();
+      expect(barra(root)!.classList.contains('ridotta')).toBe(false);
+    });
+
+    it('anche "Inizia" si fa piccola scorrendo', async () => {
+      const { root, aggiorna } = await monta('slider');
+      scorri(root, aggiorna, 100);
+      scorri(root, aggiorna, 300);
+      expect(barra(root)!.classList.contains('ridotta')).toBe(true);
+    });
+
+    it('con la tastiera dell\'app nativa se ne va, e chiusa torna', async () => {
+      const { root, aggiorna } = await monta('slider', true);
+      window.dispatchEvent(new Event('keyboardWillShow'));
+      aggiorna();
+      expect(barra(root)!.classList.contains('con-tastiera')).toBe(true);
+      window.dispatchEvent(new Event('keyboardWillHide'));
+      aggiorna();
+      expect(barra(root)!.classList.contains('con-tastiera')).toBe(false);
+    });
+
+    it('uscendo dalla pagina smette di ascoltare', async () => {
+      const { c, fixture, root } = await monta('slider', true);
+      const ct = contenuto(root);
+      const parte = ct.shadowRoot?.querySelector<HTMLElement>('[part="scroll"]');
+      if (parte) {
+        Object.defineProperty(parte, 'scrollHeight', { value: 3000, configurable: true });
+        Object.defineProperty(parte, 'clientHeight', { value: 800, configurable: true });
+      }
+      fixture.destroy();
+      window.dispatchEvent(new Event('keyboardWillShow'));
+      ct.dispatchEvent(new CustomEvent('ionScroll', { detail: { scrollTop: 100 } }));
+      ct.dispatchEvent(new CustomEvent('ionScroll', { detail: { scrollTop: 300 } }));
+      expect(c.tastieraAperta()).toBe(false);
+      expect(c.barraRidotta()).toBe(false);
+    });
+  });
+
+  /**
    * Il comando principale della pagina sta in basso, sotto il pollice. Finche'
    * non c'e' una sessione la scheda e' spenta: l'avvio non deve essere un tondo
    * piccolo da cercare in alto a destra.

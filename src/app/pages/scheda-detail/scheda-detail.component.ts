@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef, ElementRef, Optional, ViewChild, effect, signal } from '@angular/core';
+import { AfterViewInit, Component, OnInit, OnDestroy, ChangeDetectorRef, ElementRef, Optional, ViewChild, effect, signal } from '@angular/core';
 import { NumberWheelComponent } from '../../components/number-wheel/number-wheel.component';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -27,6 +27,7 @@ import {
   AzioneInBasso, OpzioneCarico, UltimaVolta, azioneInBasso, fonteDelCarico, opzioneScelta, opzioniCarico
 } from '../../core/utils/carico-serie.util';
 import { ToastService } from '../../services/toast.service';
+import { RiduciBarra, posizioneDaEvento } from '../../tabs/riduci-barra';
 import {
   SerieRow, BlockRow, canAddSet, buildExtraSet, canRemoveSet, removeSetAt, mergeDraftRows, abbinaBozze
 } from '../../core/utils/extra-sets.util';
@@ -65,7 +66,8 @@ interface ExerciseVM {
 /** Il foglio "Che peso metto" aperto: su quale serie di quale esercizio. */
 interface FoglioCarico {
   vm: ExerciseVM;
-  serie: number;
+  /** La serie per cui si sceglie il peso; null se l'esercizio non ne ha una da fare. */
+  serie: number | null;
 }
 
 @Component({
@@ -77,7 +79,7 @@ interface FoglioCarico {
   ],
   templateUrl: './scheda-detail.component.html'
 })
-export class SchedaDetailComponent implements OnInit, OnDestroy {
+export class SchedaDetailComponent implements OnInit, AfterViewInit, OnDestroy {
   day!: Day;
   dayIndex = 0;
 
@@ -154,6 +156,24 @@ export class SchedaDetailComponent implements OnInit, OnDestroy {
   private scrollTicking = false;
 
   @ViewChild('sliderEl') sliderEl?: ElementRef<HTMLDivElement>;
+  @ViewChild('contenuto', { read: ElementRef }) private contenuto?: ElementRef<HTMLElement>;
+
+  /**
+   * La barra in basso ("Inizia allenamento", "Fatta") si comporta come la
+   * barra delle tab: scorrendo in giu' la pagina si fa un poco piu' piccola, e
+   * torna intera scorrendo in su, in cima, cambiando esercizio o quando torna
+   * dopo il recupero. La decisione e' la stessa (riduci-barra.ts).
+   */
+  readonly barraRidotta = signal(false);
+  private readonly riduci = new RiduciBarra(r => this.barraRidotta.set(r));
+  /** La tastiera dell'app nativa e' aperta: la barra in basso se ne va, come fa Ionic con la barra delle tab. */
+  readonly tastieraAperta = signal(false);
+  private alloScorrere = (e: Event): void => {
+    const p = posizioneDaEvento(e);
+    if (p) this.riduci.scorri(p.pagina, p.y, p.max);
+  };
+  private tastieraSu = (): void => this.tastieraAperta.set(true);
+  private tastieraGiu = (): void => this.tastieraAperta.set(false);
 
   constructor(
     private route: ActivatedRoute,
@@ -175,6 +195,7 @@ export class SchedaDetailComponent implements OnInit, OnDestroy {
     effect(() => {
       if (this.state.viewMode() === 'slider') {
         this.sliderIndex = 0;
+        this.barraRidotta.set(false);
         setTimeout(() => this.scrollToIndex(0), 0);
       }
     });
@@ -185,6 +206,8 @@ export class SchedaDetailComponent implements OnInit, OnDestroy {
     effect(() => {
       const t = this.state.restTimer();
       const inCorsa = !!t.show && !t.finished;
+      // Il tasto torna dopo il recupero intero, come la barra delle tab cambiando tab.
+      if (inCorsa) this.barraRidotta.set(false);
       if (inCorsaPrima && !inCorsa && typeof document !== 'undefined') {
         const a = document.activeElement;
         if (!a || a === document.body || a.closest?.('app-rest-bar')) this.portaFocus('ion-footer.salva-footer ion-button');
@@ -215,6 +238,7 @@ export class SchedaDetailComponent implements OnInit, OnDestroy {
       // anche lo scroll fisico del contenitore, dopo che si e' ridisegnato
       // con gli esercizi del nuovo giorno (da cui il setTimeout(..., 0)).
       this.sliderIndex = 0;
+      this.barraRidotta.set(false);
       setTimeout(() => this.scrollToIndex(0), 0);
       // Il bottom sheet "Recupero" appartiene al giorno che si sta lasciando:
       // se resta aperto mostra l'esercizio sbagliato sotto la pagina nuova.
@@ -415,7 +439,26 @@ export class SchedaDetailComponent implements OnInit, OnDestroy {
     }
   }
 
+  /**
+   * Lo scorrimento si ascolta a mano, come nella barra delle tab: con un
+   * (ionScroll) nel template ogni fotogramma rifarebbe il controllo della
+   * vista, mentre il signal ridisegna solo quando la barra cambia davvero. La
+   * tastiera la dicono gli eventi di Capacitor, gli stessi che ascolta Ionic:
+   * nel browser non arrivano, e la barra resta.
+   */
+  ngAfterViewInit(): void {
+    this.contenuto?.nativeElement.addEventListener('ionScroll', this.alloScorrere);
+    if (typeof window === 'undefined') return;
+    window.addEventListener('keyboardWillShow', this.tastieraSu);
+    window.addEventListener('keyboardWillHide', this.tastieraGiu);
+  }
+
   ngOnDestroy(): void {
+    this.contenuto?.nativeElement.removeEventListener('ionScroll', this.alloScorrere);
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('keyboardWillShow', this.tastieraSu);
+      window.removeEventListener('keyboardWillHide', this.tastieraGiu);
+    }
     // La fascia vive fuori da questa pagina: lasciata li' dopo l'uscita direbbe una
     // serie che non e' piu' sotto gli occhi.
     this.state.prossimaSerie.set(null);
@@ -615,6 +658,7 @@ export class SchedaDetailComponent implements OnInit, OnDestroy {
       // questo si mostra anche quella. Il confronto con la sessione prima e'
       // la parte che si guarda davvero: dice se si sta salendo.
       let oneRmText: string | null = null;
+      let oneRm: ExInsight['oneRm'] = null;
       const ultima = perSessione[perSessione.length - 1];
       // Su un esercizio a cluster non si stima niente, nemmeno quando una
       // coppia pulita si trova: quella coppia non descrive il lavoro che si
@@ -631,10 +675,12 @@ export class SchedaDetailComponent implements OnInit, OnDestroy {
 
         const precedente = perSessione[perSessione.length - 2];
         const prima = precedente ? oneRepMaxOf(precedente.sets) : null;
+        let delta: number | null = null;
         if (prima) {
-          const delta = Math.round((stima.value - prima.value) * 2) / 2;
+          delta = Math.round((stima.value - prima.value) * 2) / 2;
           if (delta !== 0) oneRmText += ` · ${delta > 0 ? '+' : '−'}${this.kg(Math.abs(delta))} kg`;
         }
+        oneRm = { value: stima.value, load: stima.from.load, reps: stima.from.reps, data: quando, delta: delta || null };
       }
 
       // L'ultima volta si scrive solo se non c'e' la stima: quando c'e', la
@@ -644,7 +690,7 @@ export class SchedaDetailComponent implements OnInit, OnDestroy {
 
       if (lastText || oneRmText) {
         vm.insight = {
-          lastText, oneRmText,
+          lastText, oneRmText, oneRm,
           rmRows: stima ? rmTable(stima.value) : null,
           programLoad: this.caricoDiProgramma(stima?.value ?? 0)
         };
@@ -682,6 +728,8 @@ export class SchedaDetailComponent implements OnInit, OnDestroy {
       const closest = findClosestSlideIndex(el);
       if (closest !== this.sliderIndex) {
         this.sliderIndex = closest;
+        // Cambiando esercizio la barra in basso torna intera, come cambiando tab.
+        this.barraRidotta.set(false);
         this.cdr.detectChanges();
       }
     });
@@ -1431,6 +1479,41 @@ export class SchedaDetailComponent implements OnInit, OnDestroy {
     return fonteDelCarico(opzioni, row.load, row.loadPlaceholder) ?? (opzioni.length ? 'scegli il peso' : null);
   }
 
+  /** Le fonti di un peso nel foglio: quelle della sua serie, nessuna se non ce n'e' una da fare. */
+  opzioniDelFoglio(f: FoglioCarico): OpzioneCarico[] {
+    return f.serie === null ? [] : this.opzioniCarico(f.vm, f.serie);
+  }
+
+  /**
+   * Il bilanciere nella testata: apre il foglio del massimale per la serie in
+   * corso, anche prima dell'avvio (li' i pesi si leggono soltanto) e anche
+   * senza una stima, che il foglio dice perche' manca. Come il chip del
+   * recupero, nell'elenco il tocco non apre e chiude l'esercizio.
+   */
+  apriMassimale(vm: ExerciseVM, evento: Event): void {
+    evento.stopPropagation();
+    this.foglioCarico = { vm, serie: vm.activeRow };
+    this.foglioCaricoAperto = true;
+  }
+
+  /** Il nome del bilanciere: un'icona sola non dice niente a chi non la vede. */
+  etichettaMassimale(vm: ExerciseVM): string {
+    const m = vm.insight?.oneRm;
+    return m ? `Massimale stimato ${this.kg(m.value)} kg: apri i pesi` : 'Massimale: apri i pesi';
+  }
+
+  /** Perche' il foglio non ha un massimale da dire. */
+  testoSenzaMassimale(vm: ExerciseVM): string {
+    return vm.cluster
+      ? 'Sugli esercizi a cluster il massimale non si stima: fra un blocco e l\'altro c\'è una pausa, e non è una serie dritta.'
+      : 'Ancora nessun massimale: lo stimo dalla prima sessione salvata con peso e ripetizioni di questo esercizio.';
+  }
+
+  /** "+1,5" o "−2": la differenza col massimale della volta prima, col segno. */
+  conSegno(n: number): string {
+    return `${n > 0 ? '+' : '−'}${this.kg(Math.abs(n))}`;
+  }
+
   apriCarico(vm: ExerciseVM, serie: number): void {
     if (this.setsLocked || !this.opzioniCarico(vm, serie).length) return;
     this.foglioCarico = { vm, serie };
@@ -1444,9 +1527,9 @@ export class SchedaDetailComponent implements OnInit, OnDestroy {
 
   /** L'opzione col peso che c'e' nella ruota; nessuna se l'hai girata tu. */
   sceltaCarico(f: FoglioCarico): string {
-    const row = f.vm.rows[f.serie];
+    const row = f.serie === null ? undefined : f.vm.rows[f.serie];
     const kg = row ? this.numero(row.load) ?? this.numero(row.loadPlaceholder) : null;
-    return opzioneScelta(this.opzioniCarico(f.vm, f.serie), kg)?.chiave ?? '';
+    return opzioneScelta(this.opzioniDelFoglio(f), kg)?.chiave ?? '';
   }
 
   /**
@@ -1456,8 +1539,8 @@ export class SchedaDetailComponent implements OnInit, OnDestroy {
    * prima. Conferma con Spazio, esce con Esc. Come nella Dieta.
    */
   scegliCarico(f: FoglioCarico, chiave: string, evento?: Event): void {
-    const o = this.opzioniCarico(f.vm, f.serie).find(x => x.chiave === chiave);
-    if (!o) return;
+    const o = this.opzioniDelFoglio(f).find(x => x.chiave === chiave);
+    if (!o || f.serie === null) return;
     this.setLoad(f.vm, f.serie, o.kg);
     if (!(typeof KeyboardEvent !== 'undefined' && evento instanceof KeyboardEvent)) this.foglioCaricoAperto = false;
     this.cdr.detectChanges();
@@ -1474,6 +1557,21 @@ export class SchedaDetailComponent implements OnInit, OnDestroy {
   get tastoInBasso(): boolean {
     return this.state.viewMode() === 'slider' && !this.isStorico && !!this.day && !this.loading
       && !this.errorMsg && !this.summary && this.isSessionOnThisDay;
+  }
+
+  /** Prima dell'avvio: in basso c'e' "Inizia allenamento". */
+  get avvioInBasso(): boolean {
+    return !!this.day && !this.loading && !this.errorMsg && !this.summary && !this.isStorico
+      && !this.sessionState.activeSession();
+  }
+
+  /**
+   * In basso c'e' la barra della pagina ("Inizia" o il tasto della serie): il
+   * contenuto le passa sotto, e in fondo le tiene lo stesso spazio che tiene
+   * per la barra delle tab.
+   */
+  get barraInBasso(): boolean {
+    return this.avvioInBasso || (!this.recuperoInCorsa && this.azione !== null);
   }
 
   /** Il recupero sta contando: in basso c'e' la fascia, non il tasto. */
