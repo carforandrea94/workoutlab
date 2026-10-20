@@ -156,7 +156,7 @@ export interface ExInsight {
   lastText: string;
   /** Il massimale stimato dall'ultima sessione, gia' scritto per chi legge. */
   oneRmText: string | null;
-  /** Lo stesso massimale in numeri, per la card dell'esercizio: il valore, la
+  /** Lo stesso massimale in numeri, per il foglio del massimale: il valore, la
    *  serie da cui viene (peso e ripetizioni), il giorno ("12/10", vuoto se non
    *  c'e') e quanto e' cambiato dalla sessione prima (null se non c'e'). */
   oneRm: { value: number; load: number; reps: number; data: string; delta: number | null } | null;

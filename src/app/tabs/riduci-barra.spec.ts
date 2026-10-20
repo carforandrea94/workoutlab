@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { CIMA_PX, RiduciBarra, SOGLIA_PX } from './riduci-barra';
+import { CIMA_PX, RiduciBarra, SOGLIA_PX, posizioneDaEvento } from './riduci-barra';
 
 /** La decisione della barra che si fa piccola: si passano le posizioni, si guarda cosa decide. */
 describe('RiduciBarra', () => {
@@ -82,11 +82,42 @@ describe('le pagine radice delle tab dicono quando scorrono', () => {
     'src/app/pages/scheda-list/scheda-list.component.html',
     'src/app/pages/dieta/dieta.component.html',
     'src/app/pages/corsa/corsa.component.html',
-    'src/app/pages/account/account.component.html'
+    'src/app/pages/account/account.component.html',
+    // Non e' una radice, ma la sua barra in basso si riduce allo stesso modo.
+    'src/app/pages/scheda-detail/scheda-detail.component.html'
   ])('%s', async file => {
     const nome = 'node:fs';
     const fs = await import(/* @vite-ignore */ nome);
     const html: string = fs.readFileSync(file, 'utf8');
     expect(html).toMatch(/<ion-content[^>]*\[scrollEvents\]="true"/);
+  });
+});
+
+/** La posizione di una pagina dal suo ionScroll: la leggono la barra delle tab e la barra dell'allenamento. */
+describe('posizioneDaEvento', () => {
+  const evento = (target: EventTarget, detail: unknown) => {
+    const e = new CustomEvent('ionScroll', { detail });
+    Object.defineProperty(e, 'target', { value: target });
+    return e;
+  };
+
+  it('il massimo e\' quanto puo\' scendere la parte che scorre davvero', () => {
+    const pagina = document.createElement('div');
+    const parte = document.createElement('div');
+    parte.setAttribute('part', 'scroll');
+    pagina.attachShadow({ mode: 'open' }).appendChild(parte);
+    Object.defineProperty(parte, 'scrollHeight', { value: 2000 });
+    Object.defineProperty(parte, 'clientHeight', { value: 700 });
+    expect(posizioneDaEvento(evento(pagina, { scrollTop: 120 }))).toEqual({ pagina, y: 120, max: 1300 });
+  });
+
+  it('senza la parte che scorre il massimo non si sa: nessun tetto', () => {
+    const pagina = document.createElement('div');
+    expect(posizioneDaEvento(evento(pagina, { scrollTop: 40 }))?.max).toBe(Infinity);
+  });
+
+  it('senza la posizione, o senza una pagina, niente', () => {
+    expect(posizioneDaEvento(evento(document.createElement('div'), {}))).toBeNull();
+    expect(posizioneDaEvento(evento(window, { scrollTop: 40 }))).toBeNull();
   });
 });

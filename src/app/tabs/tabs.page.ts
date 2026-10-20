@@ -10,7 +10,7 @@ import { RestBarComponent } from '../components/rest-bar/rest-bar.component';
 import { SchermoAccesoService } from '../services/schermo-acceso.service';
 import { SegnaleService } from '../services/segnale.service';
 import { TrascinaTab } from './trascina-tab';
-import { RiduciBarra } from './riduci-barra';
+import { RiduciBarra, posizioneDaEvento } from './riduci-barra';
 import { IconaComponent } from '../components/icona/icona.component';
 import { NomeIcona } from '../core/icone';
 
@@ -222,21 +222,11 @@ export class TabsPage implements OnInit, AfterViewInit, OnDestroy {
     this.ridotta.set(false);
   }
 
-  /**
-   * Una pagina radice scorre (ionScroll di ion-content, con scrollEvents). Il
-   * massimo lo da' l'elemento che scorre davvero, la parte "scroll" dentro
-   * ion-content: serve a non scambiare il rimbalzo in fondo per uno
-   * scorrimento verso l'alto. Non dal dettaglio dell'evento: Ionic lo manda un
-   * fotogramma dopo, e a quel punto il browser ha gia' tolto il target allo
-   * scroll nato nello shadow DOM.
-   */
+  /** Una pagina radice scorre (ionScroll di ion-content, con scrollEvents). */
   private alloScorrere = (e: Event): void => {
     if (this.paginaInterna()) return;
-    const contenuto = e.target;
-    const y = (e as CustomEvent<{ scrollTop?: number }>).detail?.scrollTop;
-    if (!(contenuto instanceof HTMLElement) || typeof y !== 'number') return;
-    const el = contenuto.shadowRoot?.querySelector<HTMLElement>('[part="scroll"]');
-    this.riduci.scorri(contenuto, y, el ? el.scrollHeight - el.clientHeight : Infinity);
+    const p = posizioneDaEvento(e);
+    if (p) this.riduci.scorri(p.pagina, p.y, p.max);
   };
 
   /**

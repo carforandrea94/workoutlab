@@ -111,8 +111,10 @@ describe('styles.css — la barra in basso si misura per quanto occupa davvero',
   it('nessuno spazio sopra la barra si calcola ancora con la sola altezza dei tasti', () => {
     const senzaCommenti = css.replace(/\/\*[\s\S]*?\*\//g, '');
     const regole = senzaCommenti.match(/[^{}]*\{[^}]*--tabbar-h[^}]*\}/g) ?? [];
-    // L'unico posto dove --tabbar-h puo' restare e' la barra stessa (height) e la sua definizione.
-    const intrusi = regole.filter(r => !/^\s*\.tabbar\{/.test(r) && !/--tabbar-outer:|--tabbar-h:\s*\d+px/.test(r));
+    // L'unico posto dove --tabbar-h puo' restare e' la barra stessa (height), la sua
+    // definizione e il tasto della barra in basso dell'allenamento, alto quanto i suoi.
+    const intrusi = regole.filter(r => !/^\s*\.tabbar\{/.test(r) && !/--tabbar-outer:|--tabbar-h:\s*\d+px/.test(r)
+      && !/^\s*ion-footer\.barra-azione ion-button\.setdone\{min-height:var\(--tabbar-h\);\}$/.test(r));
     expect(intrusi).toEqual([]);
   });
 
@@ -165,9 +167,13 @@ describe('styles.css — il vetro delle barre', () => {
   });
 
   type Rgba = [number, number, number, number];
+  // Come il browser: un token che il tema chiaro non ridefinisce viene dal
+  // :root, e un var() si legge coi valori del tema in cui si usa.
   const colore = (blocco: string, token: string): Rgba => {
-    const v = blocco.match(new RegExp(`--${token}:\\s*([^;]+);`))?.[1].trim();
+    const v = (blocco.match(new RegExp(`--${token}:\\s*([^;]+);`)) ?? scuro.match(new RegExp(`--${token}:\\s*([^;]+);`)))?.[1].trim();
     if (!v) throw new Error(`--${token} non trovato`);
+    const rif = v.match(/^var\(--([\w-]+)\)$/);
+    if (rif) return colore(blocco, rif[1]);
     const hex = v.match(/^#([0-9a-f]{6})$/i);
     if (hex) return [0, 2, 4].map(i => parseInt(hex[1].slice(i, i + 2), 16) / 255).concat(1) as Rgba;
     const rgba = v.match(/^rgba\(\s*(\d+),\s*(\d+),\s*(\d+),\s*([0-9.]+)\s*\)$/);
@@ -191,13 +197,19 @@ describe('styles.css — il vetro delle barre', () => {
       expect(colore(blocco(), 'glass-bg')[3]).toBeLessThan(1);   // e' davvero vetro
       expect(rapporto(sopra(colore(blocco(), 'label-3'), vetro), vetro)).toBeGreaterThanOrEqual(4.5);
       expect(rapporto(accento, vetro)).toBeGreaterThanOrEqual(4.5);
+      // "Recupero finito" sulla barra di "Fatta": la scritta nel colore del
+      // testo, il verde solo alla spunta, che come icona vuole 3:1.
+      expect(rapporto(colore(blocco(), 'label'), vetro)).toBeGreaterThanOrEqual(4.5);
+      expect(rapporto(colore(blocco(), 'state-success'), vetro)).toBeGreaterThanOrEqual(3);
     });
   }
 
   it('la sfocatura sta solo sulle barre che galleggiano, non sulle card', () => {
     const regole = css.match(/[^{}]*\{[^{}]*backdrop-filter[^{}]*\}/g) ?? [];
     const selettori = regole.map(r => r.slice(0, r.indexOf('{')).trim());
-    expect(selettori.sort()).toEqual(['.restbar', '.sessionpill', '.tabbar']);
+    expect(selettori.sort()).toEqual([
+      '.restbar', '.sessionpill', '.tabbar', 'ion-footer.barra-azione .fine-recupero'
+    ]);
   });
 
   it('senza backdrop-filter, o con "riduci trasparenza" e "aumenta contrasto", le barre tornano piene', () => {
@@ -502,3 +514,68 @@ describe('styles.css — i moduli di iOS', () => {
   });
 });
 
+
+/**
+ * La barra in basso dell'allenamento ("Inizia", "Fatta") e' la barra delle
+ * tab: stessi margini, stessa pillola di vetro, stesso tasto alto quanto i
+ * suoi, e si riduce scorrendo della stessa misura e con la stessa curva.
+ */
+describe('styles.css — la barra in basso dell\'allenamento come la barra delle tab', () => {
+  let css = '';
+  beforeAll(async () => {
+    const nome = 'node:fs';
+    const fs = await import(/* @vite-ignore */ nome);
+    css = fs.readFileSync('src/styles.css', 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  });
+  const regola = (sel: string) => css.match(new RegExp('(?:^|\\n)' + sel.replace(/[.()[\]>+:]/g, '\\$&') + '\\{[^}]*\\}'))?.[0] ?? '';
+
+  it('galleggia dove sta la barra delle tab, staccata dal fondo e dai lati come lei', () => {
+    const tab = regola('.tabbar');
+    const b = regola('ion-footer.barra-azione');
+    for (const d of ['position:fixed', 'left:16px', 'right:16px', 'bottom:var(--tabbar-gap)', 'z-index:60']) {
+      expect(tab).toContain(d);
+      expect(b).toContain(d);
+    }
+    // Il contenuto le passa sotto: niente fondo pieno, e i tocchi fuori dalla pillola vanno alla pagina.
+    expect(b).toContain('background:transparent');
+    expect(b).toContain('pointer-events:none');
+  });
+
+  it('la barra e\' il suo tasto: alto quanto quelli della barra delle tab, con la sua ombra, senza bordo ne\' imbottitura', () => {
+    const v = regola('ion-footer.barra-azione .barra-pillola');
+    for (const d of ['padding:0', 'border-radius:var(--r-pill)', 'transform-origin:50% 100%', 'pointer-events:auto']) {
+      expect(v).toContain(d);
+    }
+    expect(v).not.toContain('border:');
+    expect(v).not.toContain('background');
+    const tasto = regola('ion-footer.barra-azione ion-button.setdone');
+    expect(tasto).toContain('min-height:var(--barra-azione-h)');
+    expect(tasto).toContain('--box-shadow:var(--shadow-float)');
+    expect(css).toMatch(/--barra-azione-h:\s*var\(--tabbar-h\);/);
+    expect(css).toMatch(/\.tabbar\{[^}]*var\(--shadow-float\)/);
+  });
+
+  it('si riduce come la barra delle tab, e col focus da tastiera torna intera', () => {
+    expect(regola('ion-footer.barra-azione.ridotta .barra-pillola')).toContain('scale:var(--tabbar-ridotta)');
+    expect(regola('ion-footer.barra-azione.ridotta .barra-pillola:has(.ion-focused)')).toContain('scale:1');
+    expect(regola('ion-footer.barra-azione .barra-pillola')).toContain('transition:scale .38s cubic-bezier(0.32,0.72,0,1)');
+    expect(regola('ion-footer.barra-azione.ridotta .fine-recupero'))
+      .toContain('transform:translateY(calc(var(--barra-azione-h) * (1 - var(--tabbar-ridotta))))');
+  });
+
+  it('entra scivolando dal fondo con la curva della barra, e con la tastiera se ne va', () => {
+    expect(regola('ion-footer.barra-azione')).toContain('animation:barra-entra .42s cubic-bezier(0.32,0.72,0,1)');
+    expect(css).toContain('@keyframes barra-entra{from{transform:translateY(calc(var(--tabbar-outer) + var(--tabbar-gap) + 28px));opacity:0;}}');
+    expect(regola('ion-footer.barra-azione.con-tastiera')).toContain('display:none');
+    expect(regola('ion-footer.barra-azione .fine-recupero')).toContain('color:var(--label)');
+    expect(regola('ion-footer.barra-azione .fine-recupero app-icona')).toContain('color:var(--state-success)');
+    expect(css).toMatch(/@media \(prefers-reduced-motion:reduce\)\{ion-footer\.barra-azione\{animation:none;\}/);
+  });
+
+  it('il contenuto tiene sotto la barra con l\'aria della barra delle tab, e di piu\' con "Recupero finito"', () => {
+    const base = css.match(/(?:^|\n)ion-content\{[^}]*--padding-bottom:([^;]+);/)![1];
+    expect(regola(':root ion-content.con-barra')).toContain(`--padding-bottom:${base.replace('var(--tabbar-outer)', 'var(--barra-azione-h)')}`);
+    expect(regola(':root ion-content.con-barra')).toContain('--coperto-base:calc(var(--barra-azione-h) + var(--tabbar-gap))');
+    expect(regola(':root ion-content.con-barra.con-fine-recupero')).toContain('+ 42px');
+  });
+});

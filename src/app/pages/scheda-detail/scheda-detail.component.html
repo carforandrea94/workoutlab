@@ -15,7 +15,9 @@
   </ion-toolbar>
 </ion-header>
 
-<ion-content>
+<!-- scrollEvents: scorrendo, la barra in basso si fa piccola come la barra delle tab. -->
+<ion-content #contenuto [scrollEvents]="true" [class.con-barra]="barraInBasso"
+  [class.con-fine-recupero]="barraInBasso && tastoInBasso && recuperoFinito">
   <div class="wrap">
     <div *ngIf="loading" class="history-empty"><ion-spinner name="crescent" aria-label="Caricamento"></ion-spinner></div>
 
@@ -244,40 +246,6 @@
           <ng-container *ngIf="vm.insight">
             <div *ngIf="vm.insight.lastText" class="lastsession">{{ vm.insight.lastText }}</div>
 
-            <!-- Il massimale stimato e i pesi che ne vengono per la serie in
-                 corso, sempre in vista: per le sue ripetizioni (con la
-                 percentuale) e alla percentuale del programma. Sono le voci del
-                 foglio "Che peso metto", meno l'ultima volta che e' gia' in
-                 cima alla serie: la spunta dice quale peso e' nella ruota, e
-                 toccarne una ce lo mette. Nel foglio soltanto non si vedevano. -->
-            <div class="massimale" *ngIf="vm.insight.oneRm as m">
-              <div class="massimale-testa">
-                <span class="massimale-titolo">Massimale stimato</span>
-                <span class="massimale-kg">{{ kg(m.value) }} kg</span>
-              </div>
-              <p class="massimale-da">
-                Da {{ kg(m.load) }} × {{ m.reps }}<ng-container *ngIf="m.data"> del {{ m.data }}</ng-container><ng-container *ngIf="m.delta"> · {{ conSegno(m.delta) }} kg dalla volta prima</ng-container>
-              </p>
-              <ion-radio-group *ngIf="riferimenti(vm).length" [value]="riferimentoScelto(vm)"
-                (ionChange)="usaRiferimento(vm, $event.detail.value, $event.detail.event)"
-                [attr.aria-label]="'Pesi dal massimale per la serie ' + ((vm.activeRow ?? 0) + 1)">
-                <ion-item class="scelta-opt" *ngFor="let o of riferimenti(vm); let ultimo = last" [lines]="ultimo ? 'none' : 'full'">
-                  <ion-radio class="scelta-radio" [value]="o.chiave" justify="space-between" labelPlacement="start" [disabled]="setsLocked">
-                    <span class="carico-voce">
-                      <span class="carico-testo">
-                        <span class="carico-titolo">{{ o.titolo }}</span>
-                        <span class="carico-dettaglio">{{ o.dettaglio }}</span>
-                        <span class="carico-avviso" *ngIf="o.avviso">
-                          <app-icona name="information-circle" [size]="13"></app-icona>{{ o.avviso }}
-                        </span>
-                      </span>
-                      <span class="carico-kg">{{ kg(o.kg) }} kg</span>
-                    </span>
-                  </ion-radio>
-                </ion-item>
-              </ion-radio-group>
-            </div>
-
             <div class="suggestion-chip" *ngIf="vm.isFirst && vm.warmup" [innerHTML]="vm.warmup"></div>
           </ng-container>
         </div>
@@ -321,6 +289,13 @@
           <button class="ex-chip rest" *ngIf="!isStorico" (click)="openRestModal(vm, $event)"
             [attr.aria-label]="'Recupero ' + formatRest(vm.restSeconds) + ', tocca per cambiarlo'">
             <app-icona name="timer" [size]="12"></app-icona>{{ formatRest(vm.restSeconds) }}
+          </button>
+          <!-- Il massimale e i pesi che ne vengono stanno in un foglio, come il
+               recupero: il bilanciere lo apre. Nella card occupavano mezza
+               schermata sotto le serie. -->
+          <button class="ex-chip rm" *ngIf="!isStorico" (click)="apriMassimale(vm, $event)"
+            [attr.aria-label]="etichettaMassimale(vm)">
+            <app-icona name="barbell" [size]="14"></app-icona>
           </button>
           <!-- Solo quando e' WAVE: "FISSO" e' il caso normale e occupava una riga
                per non distinguere niente. -->
@@ -558,43 +533,83 @@
      </ng-template>
     </ion-modal>
 
-    <!-- Che peso metto: le fonti di un peso per questa serie, ognuna col suo
-         numero. Quella scelta va nella ruota, e da li' si corregge. -->
+    <!-- Il massimale dell'esercizio e che peso metto: lo apre il bilanciere
+         nella testata (per la serie in corso) e la riga in cima alla serie
+         (per quella serie). In testa il massimale stimato, da quale serie
+         viene e quanto e' cambiato; sotto le fonti di un peso, ognuna col suo
+         numero: quella scelta va nella ruota, e da li' si corregge. -->
     <ion-modal class="sheet-modal" *ngIf="day && !isStorico" [isOpen]="foglioCaricoAperto"
       [breakpoints]="[0, 1]" [initialBreakpoint]="1" (didDismiss)="caricoChiuso()">
      <ng-template>
       <div class="bottomsheet scelta-sheet carico-sheet" *ngIf="foglioCarico as f">
-        <p class="confirmtext sheet-title">Che peso metto · serie {{ f.serie + 1 }}</p>
-        <ion-radio-group [value]="sceltaCarico(f)" (ionChange)="scegliCarico(f, $event.detail.value, $event.detail.event)"
-          [attr.aria-label]="'Carico della serie ' + (f.serie + 1) + ' di ' + f.vm.ex.name">
-          <ion-item class="scelta-opt" lines="full" *ngFor="let o of opzioniCarico(f.vm, f.serie)">
-            <ion-radio class="scelta-radio" [value]="o.chiave" justify="space-between" labelPlacement="start">
-              <span class="carico-voce">
-                <span class="carico-testo">
-                  <span class="carico-titolo">{{ o.titolo }}</span>
-                  <span class="carico-dettaglio">{{ o.dettaglio }}</span>
-                  <span class="carico-avviso" *ngIf="o.avviso">
-                    <app-icona name="information-circle" [size]="13"></app-icona>{{ o.avviso }}
-                  </span>
-                </span>
-                <span class="carico-kg">{{ kg(o.kg) }} kg</span>
-              </span>
-            </ion-radio>
-          </ion-item>
-        </ion-radio-group>
-        <p class="carico-fonte" *ngIf="f.vm.insight?.oneRmText as t" [innerHTML]="t"></p>
+        <p class="confirmtext sheet-title">Massimale — {{ f.vm.ex.name }}</p>
+
+        <div class="massimale" *ngIf="f.vm.insight?.oneRm as m; else nessunaStima">
+          <div class="massimale-testa">
+            <span class="massimale-titolo">Massimale stimato</span>
+            <span class="massimale-kg">{{ kg(m.value) }} kg</span>
+          </div>
+          <p class="massimale-da">
+            Da {{ kg(m.load) }} × {{ m.reps }}<ng-container *ngIf="m.data"> del {{ m.data }}</ng-container><ng-container *ngIf="m.delta"> · {{ conSegno(m.delta) }} kg dalla volta prima</ng-container>
+          </p>
+        </div>
+        <ng-template #nessunaStima>
+          <p class="massimale-vuoto">{{ testoSenzaMassimale(f.vm) }}</p>
+        </ng-template>
+
+        <ng-container *ngIf="opzioniDelFoglio(f) as opzioni">
+          <ng-container *ngIf="opzioni.length">
+            <p class="scelta-gruppo">Che peso metto · serie {{ (f.serie ?? 0) + 1 }}</p>
+            <ion-radio-group *ngIf="!setsLocked; else soloDaLeggere" [value]="sceltaCarico(f)"
+              (ionChange)="scegliCarico(f, $event.detail.value, $event.detail.event)"
+              [attr.aria-label]="'Carico della serie ' + ((f.serie ?? 0) + 1) + ' di ' + f.vm.ex.name">
+              <ion-item class="scelta-opt" lines="full" *ngFor="let o of opzioni">
+                <ion-radio class="scelta-radio" [value]="o.chiave" justify="space-between" labelPlacement="start">
+                  <ng-container *ngTemplateOutlet="voceCarico; context: { o: o }"></ng-container>
+                </ion-radio>
+              </ion-item>
+            </ion-radio-group>
+            <!-- Prima dell'avvio i pesi si leggono e basta: la ruota non c'e' ancora. -->
+            <ng-template #soloDaLeggere>
+              <ion-list class="carico-lettura" lines="full">
+                <ion-item class="scelta-opt" *ngFor="let o of opzioni">
+                  <ng-container *ngTemplateOutlet="voceCarico; context: { o: o }"></ng-container>
+                </ion-item>
+              </ion-list>
+              <p class="scelta-hint carico-dopo">Ad allenamento avviato, toccane uno per metterlo nella ruota.</p>
+            </ng-template>
+          </ng-container>
+        </ng-container>
       </div>
      </ng-template>
     </ion-modal>
+
+    <ng-template #voceCarico let-o="o">
+      <span class="carico-voce">
+        <span class="carico-testo">
+          <span class="carico-titolo">{{ o.titolo }}</span>
+          <span class="carico-dettaglio">{{ o.dettaglio }}</span>
+          <span class="carico-avviso" *ngIf="o.avviso">
+            <app-icona name="information-circle" [size]="13"></app-icona>{{ o.avviso }}
+          </span>
+        </span>
+        <span class="carico-kg">{{ kg(o.kg) }} kg</span>
+      </span>
+    </ng-template>
   </div>
 </ion-content>
+
+<!-- La barra in basso e' fatta e si comporta come la barra delle tab (che
+     nelle pagine interne non c'e'): una pillola di vetro staccata dal fondo,
+     che scorrendo in giu' si fa piu' piccola e torna intera scorrendo in su.
+     Il contenuto le passa sotto. -->
 
 <!-- Avvio: il comando principale della pagina sta in basso, sotto il pollice, al
      posto in cui poi compare la fascia del recupero. Prima era un tondo da 34 px
      in alto a destra, e finche' non lo trovavi tutta la scheda restava spenta. -->
-<ion-footer class="avvio-footer ion-no-border"
-  *ngIf="day && !loading && !errorMsg && !summary && !isStorico && !sessionState.activeSession()">
-  <div class="avvio">
+<ion-footer class="avvio-footer barra-azione ion-no-border" *ngIf="avvioInBasso"
+  [class.ridotta]="barraRidotta()" [class.con-tastiera]="tastieraAperta()">
+  <div class="avvio barra-pillola">
     <ion-button type="button" class="setdone avvio-btn" (click)="startSession()">
       <app-icona name="play" [size]="18" [piena]="true"></app-icona>
       Inizia allenamento
@@ -606,12 +621,14 @@
      avviato. Durante il recupero qui c'e' la fascia col conto alla rovescia (la
      disegna la barra delle tab): i due si danno il cambio nello stesso posto.
      A recupero finito la fascia se ne va e sopra il tasto resta la riga
-     "Recupero finito" finche' non si segna la serie. -->
-<ion-footer class="salva-footer ion-no-border" *ngIf="!recuperoInCorsa && azione as a">
-  <div class="salva">
-    <p class="fine-recupero" *ngIf="recuperoFinito">
-      <app-icona name="checkmark" [size]="15"></app-icona>Recupero finito
-    </p>
+     "Recupero finito" finche' non si segna la serie: appoggiata sulla barra,
+     come la pillola della sessione sulla barra delle tab. -->
+<ion-footer class="salva-footer barra-azione ion-no-border" *ngIf="!recuperoInCorsa && azione as a"
+  [class.ridotta]="barraRidotta()" [class.con-tastiera]="tastieraAperta()">
+  <p class="fine-recupero" *ngIf="recuperoFinito">
+    <app-icona name="checkmark" [size]="15"></app-icona>Recupero finito
+  </p>
+  <div class="salva barra-pillola">
     <div class="salva-due" [class.doppio]="a.tipo === 'blocco' && a.chiudibile">
       <ion-button type="button" class="setdone salva-btn" (click)="eseguiAzione(a)">
         <!-- Un elemento solo dentro il pulsante: e' una flexbox, e fra due suoi figli lo spazio sparirebbe. -->

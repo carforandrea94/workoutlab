@@ -2,10 +2,12 @@
  * La barra delle tab che si fa piccola scorrendo, come su Instagram: si scorre
  * in giu' una pagina e la pillola si stringe un poco (restano tutte le icone,
  * si tocca come prima), si torna su e torna intera. In cima alla pagina e'
- * sempre intera.
+ * sempre intera. La barra in basso dell'allenamento ("Inizia", "Fatta") fa lo
+ * stesso, con la stessa decisione.
  *
  * Qui c'e' solo la decisione, senza Angular ne' DOM: chi la usa le passa la
- * posizione di ogni pagina che scorre e sa cosa vuol dire "ridotta".
+ * posizione di ogni pagina che scorre e sa cosa vuol dire "ridotta". In fondo,
+ * a parte, la lettura di quella posizione da un ionScroll.
  */
 
 /** Entro questi pixel dall'inizio della pagina la barra e' intera. */
@@ -50,4 +52,20 @@ export class RiduciBarra {
     this.ancora.set(pagina, y);
     this.cambia(dy > 0);
   }
+}
+
+/**
+ * La posizione di una pagina dal suo ionScroll (ion-content con scrollEvents):
+ * la pagina, quanto e' scesa e quanto puo' scendere. Il massimo lo da'
+ * l'elemento che scorre davvero, la parte "scroll" dentro ion-content: serve a
+ * non scambiare il rimbalzo in fondo per uno scorrimento verso l'alto. Non dal
+ * dettaglio dell'evento: Ionic lo manda un fotogramma dopo, e a quel punto il
+ * browser ha gia' tolto il target allo scroll nato nello shadow DOM.
+ */
+export function posizioneDaEvento(e: Event): { pagina: HTMLElement; y: number; max: number } | null {
+  const pagina = e.target;
+  const y = (e as CustomEvent<{ scrollTop?: number }>).detail?.scrollTop;
+  if (!(pagina instanceof HTMLElement) || typeof y !== 'number') return null;
+  const el = pagina.shadowRoot?.querySelector<HTMLElement>('[part="scroll"]');
+  return { pagina, y, max: el ? el.scrollHeight - el.clientHeight : Infinity };
 }

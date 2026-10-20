@@ -138,6 +138,9 @@
      66). Quello che si appoggia sopra la barra o le lascia posto va misurato da
      qui: la pillola della sessione, che contava 60, finiva 4 px dentro la barra. */
   --tabbar-outer: calc(var(--tabbar-h) + var(--tabbar-pad) * 2 + 2px);
+  /* La barra in basso dell'allenamento ("Inizia", "Fatta") e' il suo tasto,
+     alto quanto quelli della barra delle tab: niente imbottitura ne' bordo. */
+  --barra-azione-h: var(--tabbar-h);
   /*
    * Quanto la tabbar sta staccata dal fondo: ventidue pixel, scritti.
    *
@@ -611,6 +614,12 @@ ion-list.method-list{gap:0;}
 .ex-chip.rest{color:var(--label-2);gap:5px;cursor:pointer;}
 .ex-chip.rest:active{transform:scale(0.95);}
 .ex-chip.rest:hover{color:var(--label);background:var(--surface-raise-2);}
+/* Il bilanciere accanto al recupero: apre il foglio del massimale. Stessa
+   forma e stessi stati del chip del recupero, con la sola icona. */
+.ex-chip.rm{color:var(--label-2);padding:0 8px;cursor:pointer;}
+.ex-chip.rm app-icona{display:flex;}
+.ex-chip.rm:active{transform:scale(0.95);}
+.ex-chip.rm:hover{color:var(--label);background:var(--surface-raise-2);}
 .sheet-title{font-weight:700;margin-bottom:16px;}
 .rest-stepper{display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:14px;}
 ion-button.rest-stepbtn{--background:var(--surface-raise);--color:var(--label);--border-radius:var(--r-lg);--border-width:1px;--border-style:solid;--border-color:var(--border-line);--box-shadow:var(--shadow-card);--padding-start:0;--padding-end:0;--padding-top:0;--padding-bottom:0;--background-activated-opacity:0;--background-hover-opacity:0;--background-focused-opacity:.12;min-height:0;text-transform:none;width:44px;height:44px;font-variant-numeric:tabular-nums;font-weight:700;font-size:var(--text-sm);}
@@ -1386,9 +1395,9 @@ ion-button.setdone.salva-btn.fatto{--background:var(--surface-raise);--color:var
 /* Allineato all'elenco che introduce: centrato restava staccato dal testo e dalle opzioni. */
 .scelta-sheet .sheet-title{margin-bottom:4px;text-align:left;}
 .scelta-hint{margin:0 0 10px;font-size:var(--text-sm);line-height:1.45;color:var(--label-3);}
-:is(.scelta-sheet,.massimale) ion-item.scelta-opt{--background:transparent;--padding-start:0;--inner-padding-end:0;--min-height:52px;--border-color:var(--separator);--color:var(--label);}
-:is(.scelta-sheet,.massimale) ion-radio.scelta-radio{width:100%;--color:var(--label-3);--color-checked:var(--accent);}
-:is(.scelta-sheet,.massimale) ion-radio.scelta-radio::part(label){flex:1;min-width:0;margin-inline-end:12px;}
+.scelta-sheet ion-item.scelta-opt{--background:transparent;--padding-start:0;--inner-padding-end:0;--min-height:52px;--border-color:var(--separator);--color:var(--label);}
+.scelta-sheet ion-radio.scelta-radio{width:100%;--color:var(--label-3);--color-checked:var(--accent);}
+.scelta-sheet ion-radio.scelta-radio::part(label){flex:1;min-width:0;margin-inline-end:12px;}
 .scelta-voce{display:flex;align-items:baseline;justify-content:space-between;gap:12px;width:100%;}
 .scelta-nome{font-size:var(--text-md);font-weight:600;white-space:normal;}
 .scelta-qty{font-variant-numeric:tabular-nums;font-size:var(--text-sm);font-weight:600;color:var(--label-2);white-space:nowrap;}
@@ -1461,6 +1470,41 @@ ion-button.avvio-btn app-icona{margin-right:8px;}
    il "Vai" della fascia, non si spegne da solo. */
 .fine-recupero{display:flex;align-items:center;justify-content:center;gap:6px;margin:0 0 10px;font-size:var(--text-sm);font-weight:600;color:var(--state-success);}
 
+/* ===== Allenamento: la barra in basso e' la barra delle tab =====
+   "Inizia allenamento" e il tasto della serie stanno dove sta la barra delle
+   tab (che nelle pagine interne non c'e') e sono fatti come lei: una pillola
+   staccata dal fondo e dai lati degli stessi 22 e 16 px, con la sua ombra, e
+   alta quanto i suoi tasti. Senza imbottitura ne' bordo di vetro intorno: il
+   tasto e' la barra (con due tasti, sono due pillole affiancate). Il
+   contenuto le passa sotto, invece di finire contro una banda del colore del
+   fondo. Larga quanto la fascia del recupero, che le da' il cambio nello
+   stesso posto.
+   Si comporta come lei: scorrendo in giu' la pagina si fa piu' piccola verso
+   il fondo (con scale, della stessa misura) e torna intera scorrendo in su, in
+   cima, cambiando esercizio o col focus da tastiera dentro; arriva scivolando
+   dal fondo con la sua curva; con la tastiera dell'app nativa se ne va, come
+   Ionic fa con la barra delle tab. "Recupero finito" le sta appoggiato sopra,
+   come la pillola della sessione sulla barra, e scende con lei. */
+ion-footer.barra-azione{position:fixed;left:16px;right:16px;bottom:var(--tabbar-gap);z-index:60;width:auto;max-width:608px;margin:0 auto;background:transparent;display:flex;flex-direction:column;align-items:center;pointer-events:none;animation:barra-entra .42s cubic-bezier(0.32,0.72,0,1);}
+ion-footer.barra-azione .barra-pillola{pointer-events:auto;box-sizing:border-box;width:100%;max-width:none;margin:0;padding:0;border-radius:var(--r-pill);transform-origin:50% 100%;transition:scale .38s cubic-bezier(0.32,0.72,0,1);}
+ion-footer.barra-azione ion-button.setdone{--box-shadow:var(--shadow-float);min-height:var(--barra-azione-h);}
+ion-footer.barra-azione.ridotta .barra-pillola{scale:var(--tabbar-ridotta);}
+ion-footer.barra-azione.ridotta .barra-pillola:has(.ion-focused){scale:1;}
+ion-footer.barra-azione .fine-recupero{height:32px;margin:0 0 10px;padding:0 14px;color:var(--label);border-radius:var(--r-pill);background:var(--glass-bg);border:1px solid var(--glass-edge);box-shadow:inset 0 1px 0 var(--glass-hi),var(--shadow-float);-webkit-backdrop-filter:var(--glass-filter);backdrop-filter:var(--glass-filter);transition:transform .38s cubic-bezier(0.32,0.72,0,1);}
+/* Sul vetro il verde, in tema chiaro, non arriva a 4,5:1 come testo piccolo:
+   resta alla spunta (che come icona ne vuole 3), e la scritta e' nel colore del testo. */
+ion-footer.barra-azione .fine-recupero app-icona{color:var(--state-success);}
+ion-footer.barra-azione.ridotta .fine-recupero{transform:translateY(calc(var(--barra-azione-h) * (1 - var(--tabbar-ridotta))));}
+ion-footer.barra-azione.con-tastiera{display:none;}
+@keyframes barra-entra{from{transform:translateY(calc(var(--tabbar-outer) + var(--tabbar-gap) + 28px));opacity:0;}}
+@media (prefers-reduced-motion:reduce){ion-footer.barra-azione{animation:none;}ion-footer.barra-azione .barra-pillola,ion-footer.barra-azione .fine-recupero{transition:none;}}
+/* Il contenuto passa sotto la barra: in fondo tiene la barra, il suo stacco
+   dal fondo e la stessa aria che lascia sopra la barra delle tab (piu'
+   "Recupero finito", quando c'e'), e il Tab porta in vista quello che le sta
+   sotto (vedi --coperto-base). */
+:root ion-content.con-barra{--padding-bottom:calc(var(--barra-azione-h) + var(--tabbar-gap) + 28px);--coperto-base:calc(var(--barra-azione-h) + var(--tabbar-gap));}
+:root ion-content.con-barra.con-fine-recupero{--padding-bottom:calc(var(--barra-azione-h) + var(--tabbar-gap) + 28px + 42px);--coperto-base:calc(var(--barra-azione-h) + var(--tabbar-gap) + 42px);}
+
 /* La sessione e gli step in una card sola. Il tempo e' la cosa da leggere:
    grande, a sinistra, in chiaro. Il conto e' degli esercizi finiti. */
 .sessione-card{margin-bottom:12px;padding:10px 10px 10px 16px;border-radius:var(--r-lg);background:var(--surface-card);border:1px solid var(--border-line);}
@@ -1530,17 +1574,19 @@ button.setcard-fonte:disabled{color:var(--label-3);cursor:default;}
 .carico-avviso{display:flex;align-items:flex-start;gap:5px;font-size:var(--text-xs);line-height:1.4;color:var(--label-2);}
 .carico-avviso app-icona{display:flex;margin-top:1px;flex-shrink:0;}
 .carico-kg{font-variant-numeric:tabular-nums;font-size:var(--text-lg);font-weight:700;color:var(--label);white-space:nowrap;}
-/* Il massimale stimato nella card dell'esercizio, sotto le serie: il numero e
-   da dove viene, poi i pesi che ne escono per la serie in corso, con le voci
-   del foglio "Che peso metto" (le stesse regole .scelta-opt e .carico-*). */
-.massimale{padding:12px 14px 2px;border-radius:var(--r-md);background:var(--surface-raise);}
-.massimale-testa{display:flex;align-items:baseline;justify-content:space-between;gap:12px;}
+/* Il foglio del massimale (lo apre il bilanciere nella testata). In testa il
+   numero, che e' la cosa da leggere: grande come il recupero nel suo foglio,
+   poi da quale serie viene e quanto e' cambiato. Sotto, i pesi della serie con
+   le righe di "Che peso metto" (le regole .scelta-opt e .carico-* qui sopra). */
+.massimale,.massimale-vuoto{margin:0 0 6px;padding:14px 16px;border-radius:var(--r-md);background:var(--surface-raise);}
+.massimale-testa{display:flex;flex-direction:column;gap:2px;}
 .massimale-titolo{font-size:var(--text-sm);font-weight:600;color:var(--label-2);}
-.massimale-kg{font-variant-numeric:tabular-nums;font-size:var(--text-xl);font-weight:700;color:var(--label);white-space:nowrap;}
-.massimale-da{margin:2px 0 8px;font-variant-numeric:tabular-nums;font-size:var(--text-xs);line-height:1.45;color:var(--label-3);}
-.massimale ion-radio-group{display:block;border-top:1px solid var(--separator);}
-.carico-fonte{margin:12px 0 0;font-variant-numeric:tabular-nums;font-size:var(--text-2xs);line-height:1.5;color:var(--label-3);}
-.carico-fonte b{color:var(--label-2);font-weight:700;}
+.massimale-kg{font-variant-numeric:tabular-nums;font-size:var(--text-3xl);font-weight:700;letter-spacing:-.01em;line-height:1.1;color:var(--label);white-space:nowrap;}
+.massimale-da{margin:6px 0 0;font-variant-numeric:tabular-nums;font-size:var(--text-sm);line-height:1.45;color:var(--label-3);}
+.massimale-vuoto{font-size:var(--text-sm);line-height:1.5;color:var(--label-2);}
+/* Prima dell'avvio le stesse righe, senza radio: si leggono e basta. */
+ion-list.carico-lettura{margin:0;padding:0;background:transparent;}
+.scelta-hint.carico-dopo{margin:10px 0 0;}
 
 /* Pillola della sessione in corso, fuori dalla pagina del suo giorno. Sta
    sopra la tabbar (o al suo posto dove la tabbar e' nascosta) ed e' tutta un
@@ -1677,8 +1723,8 @@ input.daterow:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
 /* "Alternative (n)" e il chip del recupero sono alti 32 e 24: il disegno resta,
    il bersaglio arriva a 44 (vedi .tap44). Il chip e' dentro una riga che apre
    l'esercizio: un tocco vicino al chip e' per lui, non per la riga. */
-.ex-chip.rest{position:relative;}
-.ex-chip.rest::after{content:"";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:100%;min-width:44px;height:44px;}
+.ex-chip.rest,.ex-chip.rm{position:relative;}
+.ex-chip.rest::after,.ex-chip.rm::after{content:"";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:100%;min-width:44px;height:44px;}
 
 /* Una riga che si preme e' feedback, non un'entrata: scende in 140 ms e risale in
    200 con una curva che frena (ease-out), senza il rimbalzo della molla, che su
