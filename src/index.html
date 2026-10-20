@@ -28,12 +28,16 @@
        Il logo si costruisce davanti agli occhi, come si carica un bilanciere:
        le estremita' della sbarra escono dalla presa, i dischi ci entrano da
        fuori e si fermano uno contro l'altro (prima il piu' grande), poi la W e
-       la L si scrivono e sotto arriva il nome. Finche' la prima pagina non e'
+       la L entrano di scatto e sotto arriva il nome. Lettere del marchio e nome
+       sono in Kanit Bold Italic: il font e' qui sotto, in linea e con le sole
+       lettere di "Workout Lab", perche' ci sia gia' al primo fotogramma. Finche' la prima pagina non e'
        pronta i dischi si alzano a onda; allora l'intro si dissolve allargandosi
        appena (core/intro.ts, che aspetta almeno la fine della costruzione).
        Il primo fotogramma e' vuoto, solo il fondo: e' quello delle immagini
        d'avvio di iOS (apple-touch-startup-image), e il passaggio non si vede. -->
   <style id="intro-stile">
+    /* Kanit Bold Italic, solo le lettere di "Workout Lab". Copyright 2020 The Kanit Project Authors (https://github.com/cadsondemak/kanit), SIL Open Font License 1.1 (https://openfontlicense.org). La usa anche il titolo del login (.authtitle). */
+    @font-face{font-family:"Workout Lab Kanit";src:url(data:font/woff2;base64,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) format("woff2");font-weight:700;font-style:italic;font-display:block;}
     html{background:#0D0E10;}
     html[data-theme="light"]{background:#F5F4F2;}
     #intro{position:fixed;inset:0;z-index:100000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:#0D0E10;color:#FFFFFF;transition:opacity .32s cubic-bezier(.23,1,.32,1),transform .32s cubic-bezier(.23,1,.32,1);}
@@ -51,20 +55,18 @@
     html[data-theme="light"] #intro .intro-disco{fill:#0A6E91;}
     html[data-theme="light"] #intro .intro-disco.d2{fill-opacity:.78;}
     html[data-theme="light"] #intro .intro-disco.d3{fill-opacity:.56;}
-    #intro .intro-lettere{fill:none;stroke:#FFFFFF;stroke-width:66;stroke-linecap:round;stroke-linejoin:round;}
-    html[data-theme="light"] #intro .intro-lettere{stroke:#161A1C;}
-    #intro .intro-w{stroke-dasharray:800;animation:intro-scrivi-w .55s cubic-bezier(.65,0,.35,1) .48s both;}
-    #intro .intro-l{stroke-dasharray:312;animation:intro-scrivi-l .35s cubic-bezier(.65,0,.35,1) .86s both;}
-    #intro .intro-nome{margin:0;font:600 17px/1.2 -apple-system,BlinkMacSystemFont,system-ui,"Segoe UI",Roboto,sans-serif;letter-spacing:-.01em;animation:intro-nome .4s cubic-bezier(.23,1,.32,1) 1s both;}
+    #intro .intro-lettera{fill:#FFFFFF;transform-box:fill-box;transform-origin:left center;animation:intro-scatto .46s cubic-bezier(.16,1,.3,1) .5s both;}
+    html[data-theme="light"] #intro .intro-lettera{fill:#161A1C;}
+    #intro .intro-l{animation-delay:.62s;}
+    #intro .intro-nome{margin:0;font:italic 700 21px/1.1 "Workout Lab Kanit",-apple-system,BlinkMacSystemFont,system-ui,sans-serif;letter-spacing:-.005em;animation:intro-nome .4s cubic-bezier(.23,1,.32,1) 1s both;}
     #intro.intro-via{opacity:0;transform:scale(1.04);pointer-events:none;}
     @keyframes intro-sbarra{from{transform:scaleX(0);}to{transform:none;}}
     @keyframes intro-disco{from{opacity:0;transform:translateX(var(--da)) scaleY(.55);}to{opacity:1;transform:none;}}
-    @keyframes intro-scrivi-w{from{stroke-dashoffset:800;stroke-opacity:0;}8%{stroke-opacity:1;}to{stroke-dashoffset:0;stroke-opacity:1;}}
-    @keyframes intro-scrivi-l{from{stroke-dashoffset:312;stroke-opacity:0;}8%{stroke-opacity:1;}to{stroke-dashoffset:0;stroke-opacity:1;}}
+    @keyframes intro-scatto{from{opacity:0;transform:translateX(-120px) skewX(-14deg);}to{opacity:1;transform:none;}}
     @keyframes intro-nome{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:none;}}
     @keyframes intro-onda{0%,60%,100%{transform:scaleY(1);}25%{transform:scaleY(1.1);}}
     @keyframes intro-appare{from{opacity:0;}to{opacity:1;}}
-    @media (prefers-reduced-motion:reduce){#intro .intro-sbarra,#intro .intro-disco,#intro .intro-w,#intro .intro-l,#intro .intro-nome{animation:intro-appare .3s ease both;}#intro.intro-via{transform:none;}}
+    @media (prefers-reduced-motion:reduce){#intro .intro-sbarra,#intro .intro-disco,#intro .intro-lettera,#intro .intro-nome{animation:intro-appare .3s ease both;}#intro.intro-via{transform:none;}}
   </style>
   <title>Workout Lab</title>
   <base href="/">
@@ -118,16 +120,16 @@
         <linearGradient id="intro-d2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#47C8F0"/><stop offset="1" stop-color="#1A8FC0"/></linearGradient>
         <linearGradient id="intro-d3" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2FAEDD"/><stop offset="1" stop-color="#1478A6"/></linearGradient>
       </defs>
-      <rect class="intro-sbarra sx" x="104" y="494" width="196" height="36" rx="18"/>
-      <rect class="intro-sbarra dx" x="724" y="494" width="196" height="36" rx="18"/>
-      <rect class="intro-disco d1 sx" x="241" y="277" width="58" height="470" rx="29" fill="url(#intro-d1)"/>
-      <rect class="intro-disco d2 sx" x="181" y="332" width="50" height="360" rx="25" fill="url(#intro-d2)"/>
-      <rect class="intro-disco d3 sx" x="129" y="387" width="42" height="250" rx="21" fill="url(#intro-d3)"/>
-      <rect class="intro-disco d1 dx" x="725" y="277" width="58" height="470" rx="29" fill="url(#intro-d1)"/>
-      <rect class="intro-disco d2 dx" x="793" y="332" width="50" height="360" rx="25" fill="url(#intro-d2)"/>
-      <rect class="intro-disco d3 dx" x="853" y="387" width="42" height="250" rx="21" fill="url(#intro-d3)"/>
-      <polyline class="intro-lettere intro-w" points="353,392 365,630 450,492 485,630 581,392"/>
-      <polyline class="intro-lettere intro-l" points="643,392 601,630 671,630"/>
+      <rect class="intro-sbarra sx" x="104" y="494" width="173" height="36" rx="18"/>
+      <rect class="intro-sbarra dx" x="747" y="494" width="173" height="36" rx="18"/>
+      <rect class="intro-disco d1 sx" x="225" y="277" width="52" height="470" rx="26" fill="url(#intro-d1)"/>
+      <rect class="intro-disco d2 sx" x="172" y="332" width="44" height="360" rx="22" fill="url(#intro-d2)"/>
+      <rect class="intro-disco d3 sx" x="125" y="387" width="38" height="250" rx="19" fill="url(#intro-d3)"/>
+      <rect class="intro-disco d1 dx" x="747" y="277" width="52" height="470" rx="26" fill="url(#intro-d1)"/>
+      <rect class="intro-disco d2 dx" x="808" y="332" width="44" height="360" rx="22" fill="url(#intro-d2)"/>
+      <rect class="intro-disco d3 dx" x="861" y="387" width="38" height="250" rx="19" fill="url(#intro-d3)"/>
+      <path class="intro-lettera intro-w" d="M293.3 633.9 288 390.1H357.7L358.1 519.2L404.6 426.8L412.2 390.1H470.5L480.4 519.6L536.8 390.1H606.5L498.6 633.9H436.1L425.8 507.8L359.6 633.9Z"/>
+      <path class="intro-lettera intro-l" d="M543.6 633.9 595.1 390.1H666.3L626.2 579.4H736L724.6 633.9Z"/>
     </svg>
     <p class="intro-nome">Workout Lab</p>
   </div>

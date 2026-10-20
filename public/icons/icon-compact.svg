@@ -1,12 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="32" height="32" role="img" aria-label="Workout Lab">
   <!-- Variante per le misure minute (favicon 16-32 px): un disco solo per
-       parte e il monogramma piu' grande e piu' pieno. I dischi a gradini e il
-       bilanciere sotto i 32 px si impasterebbero in una macchia. -->
+       parte, piu' stretto e piu' in fuori, e la WL (Kanit Bold Italic) piu'
+       grande. I dischi a gradini e il bilanciere sotto i 32 px si
+       impasterebbero in una macchia. -->
   <rect width="1024" height="1024" fill="#0D0E10"/>
-  <rect x="96" y="232" width="130" height="560" rx="56" fill="#35C6F0"/>
-  <rect x="798" y="232" width="130" height="560" rx="56" fill="#35C6F0"/>
-  <g fill="none" stroke="#F2F5F8" stroke-width="104" stroke-linecap="round" stroke-linejoin="round">
-    <polyline points="313,330 311,694 420,520 467,694 593,330"/>
-    <polyline points="713,330 649,694 707,694"/>
+  <rect x="56" y="232" width="94" height="560" rx="47" fill="#35C6F0"/>
+  <rect x="874" y="232" width="94" height="560" rx="47" fill="#35C6F0"/>
+  <g fill="#F2F5F8">
+    <path d="M175.2 699.8 167 324.2H274.3L274.9 523.1L346.6 380.8L358.3 324.2H448.1L463.3 523.7L550.2 324.2H657.5L491.3 699.8H395.1L379.3 505.6L277.2 699.8Z"/>
+    <path d="M560.7 699.8 640 324.2H749.7L687.9 615.8H857L839.5 699.8Z"/>
   </g>
 </svg>

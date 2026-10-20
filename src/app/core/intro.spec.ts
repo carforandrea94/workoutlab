@@ -142,7 +142,7 @@ describe('l\'intro in index.html e le immagini d\'avvio', () => {
 
   it('il logo e\' quello dell\'app: stessa sbarra, stessi dischi, stesse lettere', () => {
     const icona = fs.readFileSync('public/icons/icon.svg', 'utf8');
-    const pezzi = (s: string) => s.match(/x="\d+" y="\d+" width="\d+" height="\d+" rx="\d+"|points="[^"]+"/g) ?? [];
+    const pezzi = (s: string) => s.match(/x="\d+" y="\d+" width="\d+" height="\d+" rx="\d+"|d="M[^"]+"/g) ?? [];
     expect(pezzi(intro())).toEqual(pezzi(icona));
     // I dischi sono sei, tre per lato; la sbarra due estremita'.
     expect(intro().match(/class="intro-disco d[123] (sx|dx)"/g)!.length).toBe(6);
@@ -156,17 +156,25 @@ describe('l\'intro in index.html e le immagini d\'avvio', () => {
     expect(logo).not.toMatch(/box-shadow|border-radius|background/);
   });
 
-  it('la W e la L si scrivono per intero: il tratteggio copre tutta la loro lunghezza', () => {
-    const lunghezza = (punti: string) => {
-      const p = punti.split(' ').map(c => c.split(',').map(Number));
-      return p.slice(1).reduce((tot, [x, y], i) => tot + Math.hypot(x - p[i][0], y - p[i][1]), 0);
-    };
-    for (const lettera of ['w', 'l']) {
-      const punti = intro().match(new RegExp(`intro-${lettera}" points="([^"]+)"`))![1];
-      const tratto = +stile().match(new RegExp(`#intro \\.intro-${lettera}\\{stroke-dasharray:(\\d+);`))![1];
-      expect(tratto, lettera).toBeGreaterThanOrEqual(lunghezza(punti));
-      expect(stile()).toContain(`@keyframes intro-scrivi-${lettera}{from{stroke-dashoffset:${tratto};`);
-    }
+  it('la W e la L entrano di scatto, prima la W', () => {
+    const lettera = stile().match(/#intro \.intro-lettera\{[^}]*\}/)![0];
+    expect(lettera).toMatch(/animation:intro-scatto \.46s cubic-bezier\([^)]*\) \.5s both/);
+    expect(stile()).toContain('#intro .intro-l{animation-delay:.62s;}');
+    expect(stile()).toMatch(/@keyframes intro-scatto\{from\{opacity:0;transform:translateX\(-\d+px\) skewX\(-\d+deg\);\}to\{opacity:1;transform:none;\}\}/);
+    expect(intro().match(/class="intro-lettera intro-[wl]"/g)!.length).toBe(2);
+  });
+
+  it('le lettere e il nome sono in Kanit Bold Italic, in linea: ci sono gia\' al primo fotogramma', () => {
+    const faccia = stile().match(/@font-face\{font-family:"Workout Lab Kanit";src:url\(data:font\/woff2;base64,([A-Za-z0-9+/=]+)\) format\("woff2"\);font-weight:700;font-style:italic;font-display:block;\}/);
+    expect(faccia).toBeTruthy();
+    const dati = atob(faccia![1]);
+    expect(dati.slice(0, 4)).toBe('wOF2');
+    // Solo le lettere di "Workout Lab": pochi KB, non il carattere intero.
+    expect(dati.length).toBeLessThan(8000);
+    expect(stile()).toContain('The Kanit Project Authors');
+    expect(stile()).toContain('SIL Open Font License 1.1');
+    expect(stile()).toMatch(/#intro \.intro-nome\{[^}]*font:italic 700 \d+px\/[\d.]+ "Workout Lab Kanit",/);
+    expect(css).toMatch(/\.authtitle\{font-family:"Workout Lab Kanit",[^}]*font-style:italic;font-weight:700;/);
   });
 
   it('l\'intro resta almeno fino alla fine della costruzione del logo', () => {
@@ -187,7 +195,7 @@ describe('l\'intro in index.html e le immagini d\'avvio', () => {
   it('la dissolvenza dura quanto aspetta il codice prima di toglierla; senza movimento il logo compare e basta', () => {
     expect(stile()).toContain(`transition:opacity ${String(INTRO_USCITA_MS / 1000).replace(/^0/, '')}s`);
     const ridotto = stile().match(/@media \(prefers-reduced-motion:reduce\)\{([\s\S]*)\}/)![1];
-    for (const parte of ['.intro-sbarra', '.intro-disco', '.intro-w', '.intro-l', '.intro-nome']) expect(ridotto).toContain(`#intro ${parte}`);
+    for (const parte of ['.intro-sbarra', '.intro-disco', '.intro-lettera', '.intro-nome']) expect(ridotto).toContain(`#intro ${parte}`);
     expect(ridotto).toContain('{animation:intro-appare .3s ease both;}');
   });
 

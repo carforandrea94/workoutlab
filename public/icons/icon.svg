@@ -1,7 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="512" height="512" role="img" aria-label="Workout Lab">
   <!-- WL nella presa: il bilanciere visto di lato, con i dischi che dal piu'
-       grande (dentro) al piu' piccolo (fuori) disegnano l'onda di carico, e il
-       monogramma dove si impugna. Il fondo copre tutto il quadrato (iOS e
+       grande (dentro) al piu' piccolo (fuori) disegnano l'onda di carico, e la
+       WL dove si impugna, nel corsivo della scritta (Kanit Bold Italic, le sue
+       lettere vere). Il fondo copre tutto il quadrato (iOS e
        Android ci mettono la loro maschera); il disegno sta dentro il cerchio di
        raggio 409,6 attorno al centro, la zona che Android non ritaglia quando
        l'icona e' dichiarata maskable: il punto piu' lontano, la punta del
@@ -14,16 +15,16 @@
   </defs>
   <rect width="1024" height="1024" fill="url(#fondo)"/>
   <!-- il bilanciere si vede solo fuori dai dischi: dentro c'e' il monogramma -->
-  <rect x="104" y="494" width="196" height="36" rx="18" fill="#6F7B88"/>
-  <rect x="724" y="494" width="196" height="36" rx="18" fill="#6F7B88"/>
-  <rect x="241" y="277" width="58" height="470" rx="29" fill="url(#d1)"/>
-  <rect x="181" y="332" width="50" height="360" rx="25" fill="url(#d2)"/>
-  <rect x="129" y="387" width="42" height="250" rx="21" fill="url(#d3)"/>
-  <rect x="725" y="277" width="58" height="470" rx="29" fill="url(#d1)"/>
-  <rect x="793" y="332" width="50" height="360" rx="25" fill="url(#d2)"/>
-  <rect x="853" y="387" width="42" height="250" rx="21" fill="url(#d3)"/>
-  <g fill="none" stroke="#F2F5F8" stroke-width="66" stroke-linecap="round" stroke-linejoin="round">
-    <polyline points="353,392 365,630 450,492 485,630 581,392"/>
-    <polyline points="643,392 601,630 671,630"/>
+  <rect x="104" y="494" width="173" height="36" rx="18" fill="#6F7B88"/>
+  <rect x="747" y="494" width="173" height="36" rx="18" fill="#6F7B88"/>
+  <rect x="225" y="277" width="52" height="470" rx="26" fill="url(#d1)"/>
+  <rect x="172" y="332" width="44" height="360" rx="22" fill="url(#d2)"/>
+  <rect x="125" y="387" width="38" height="250" rx="19" fill="url(#d3)"/>
+  <rect x="747" y="277" width="52" height="470" rx="26" fill="url(#d1)"/>
+  <rect x="808" y="332" width="44" height="360" rx="22" fill="url(#d2)"/>
+  <rect x="861" y="387" width="38" height="250" rx="19" fill="url(#d3)"/>
+  <g fill="#F2F5F8">
+    <path d="M293.3 633.9 288 390.1H357.7L358.1 519.2L404.6 426.8L412.2 390.1H470.5L480.4 519.6L536.8 390.1H606.5L498.6 633.9H436.1L425.8 507.8L359.6 633.9Z"/>
+    <path d="M543.6 633.9 595.1 390.1H666.3L626.2 579.4H736L724.6 633.9Z"/>
   </g>
 </svg>
