@@ -19,8 +19,8 @@ const giorniFa = (n: number) => {
  * corso sempre aperta.
  */
 describe('CorsaComponent — obiettivo e settimane', () => {
-  function monta(opz: { goal?: any } = {}) {
-    const runs = [
+  function monta(opz: { goal?: any; runs?: any[] } = {}) {
+    const runs = opz.runs ?? [
       { id: 'r1', run: { date: todayLocalISO(), durationMin: 35, type: 'lento', effort: 'facile' } },
       // Sette giorni fa e' sempre nella settimana prima; otto, il lunedi', e' due settimane fa.
       { id: 'r2', run: { date: giorniFa(7), durationMin: 45, type: 'lento', effort: 'dura' } }
@@ -59,51 +59,78 @@ describe('CorsaComponent — obiettivo e settimane', () => {
     expect(root.querySelector('ion-list.obiettivo')).toBeNull();
   });
 
-  it('le settimane sono una fisarmonica raggruppata: piu\' aperte insieme, quella in corso sempre aperta e non chiudibile', () => {
-    const { settimane, gruppo, c } = monta();
-    const [corrente, passata] = settimane();
+  it('la settimana in corso sta per conto suo, fuori dalla fisarmonica: niente voci in sola lettura', () => {
+    const { root, testo } = monta();
+    const corrente = root.querySelector<HTMLElement>('ion-list.uscite.corrente')!;
+    // In sola lettura Ionic spegne i tocchi anche del contenuto (pointer-events:none):
+    // "Registra" e le corse di questa settimana stavano li' dentro e non rispondevano.
+    expect(corrente.closest('ion-accordion')).toBeNull();
+    expect(Array.from(root.querySelectorAll<HTMLElement & { readonly?: boolean }>('ion-accordion')).some(a => a.readonly)).toBe(false);
+    expect(testo(corrente.querySelector('ion-item.runline ion-note'))).toBe('35min');
+    expect(corrente.querySelectorAll('ion-item.runline').length).toBe(1);
+    // Il titolo e' il testo dell'etichetta senza la nota (in jsdom textContent di
+    // ion-label torna vuoto: Stencil ne riscrive gli accessori per gli slot).
+    const titoli = Array.from(root.querySelectorAll('ion-list-header.sezione ion-label'))
+      .map(e => e.innerHTML.replace(/<span class="sezione-nota">.*?<\/span>/, '').replace(/<[^>]*>/g, '').trim());
+    expect(titoli).toEqual(['Questa settimana', 'Storico']);
+  });
+
+  it('lo storico ha solo le settimane passate, che si aprono toccandole, anche piu\' d\'una', () => {
+    const { settimane, gruppo, c, fixture } = monta();
+    expect(settimane().length).toBe(1);
+    expect(settimane()[0].value).toBe(c.passate()[0].mondayISO);
+    expect(c.passate().every(w => !w.isCurrent)).toBe(true);
     expect(gruppo().getAttribute('expand')).toBe('inset');
     expect(gruppo().multiple).toBe(true);
-    expect(corrente.classList.contains('current')).toBe(true);
-    expect(corrente.readonly).toBe(true);
-    expect(passata.readonly).toBe(false);
-    expect(gruppo().value).toEqual([corrente.value]);
-    expect(c.aperte()).toEqual([corrente.value]);
-  });
-
-  it('aperta una settimana passata resta aperta insieme a quella in corso; chiudendo tutto, quella in corso resta', () => {
-    const { settimane, c, fixture, gruppo } = monta();
-    const [corrente, passata] = settimane();
-    c.settimaneCambiate(new CustomEvent('ionChange', { detail: { value: [corrente.value, passata.value] } }));
+    expect(gruppo().value).toEqual([]);
+    c.settimaneCambiate(new CustomEvent('ionChange', { detail: { value: [settimane()[0].value] } }));
     fixture.detectChanges();
-    expect(gruppo().value).toEqual([corrente.value, passata.value]);
+    expect(gruppo().value).toEqual([settimane()[0].value]);
     c.settimaneCambiate(new CustomEvent('ionChange', { detail: { value: [] } }));
     fixture.detectChanges();
-    expect(gruppo().value).toEqual([corrente.value]);
+    expect(gruppo().value).toEqual([]);
   });
 
-  it('un\'uscita e\' una riga: giorno e tipo, fatica sotto, minuti a destra; toccata si modifica', () => {
-    const { settimane, testo, nav } = monta();
-    const riga = settimane()[0].querySelector<HTMLElement>('ion-item.runline')!;
+  it('una corsa e\' una riga: giorno e tipo, fatica sotto, minuti a destra; toccata si modifica', () => {
+    const { root, settimane, nav } = monta();
+    const riga = root.querySelector<HTMLElement>('ion-list.uscite.corrente ion-item.runline')!;
     expect(riga.querySelector('ion-label p')!.textContent!.trim()).toBe('Facile');
-    expect(testo(riga.querySelector('ion-note'))).toBe('35min');
     // La fatica si legge anche dalla misura del pallino, non solo dal colore.
     expect(riga.querySelector<HTMLElement>('.runline-dot')!.style.width).toBe('5px');
-    expect(settimane()[1].querySelector<HTMLElement>('.runline-dot')!.style.width).toBe('11px');
+    expect(settimane()[0].querySelector<HTMLElement>('.runline-dot')!.style.width).toBe('11px');
     riga.click();
     expect(nav.navigateForward).toHaveBeenCalledWith(['/corsa/nuova'], { queryParams: { id: 'r1' } });
   });
 
-  it('"Registra un\'uscita" e\' una riga d\'azione senza chevron, e parte dalla data giusta', () => {
-    const { settimane, nav, c } = monta();
-    const [corrente, passata] = settimane();
-    const aggiungi = corrente.querySelector<HTMLElement & { detail?: boolean }>('ion-item.runadd')!;
-    expect(aggiungi.textContent!.trim()).toBe('Registra un\'uscita');
+  it('"Registra corsa" e\' una riga d\'azione senza chevron: da oggi in questa settimana, dalla domenica in una passata', () => {
+    const { root, settimane, nav, c } = monta();
+    const aggiungi = root.querySelector<HTMLElement & { detail?: boolean }>('ion-list.uscite.corrente ion-item.runadd')!;
+    expect(aggiungi.textContent!.trim()).toBe('Registra corsa');
     expect(aggiungi.detail).toBe(false);
     aggiungi.click();
     expect(nav.navigateForward).toHaveBeenLastCalledWith(['/corsa/nuova'], { queryParams: { date: todayLocalISO() } });
-    passata.querySelector<HTMLElement>('ion-item.runadd')!.click();
-    const domenica = c.history().weeks.find(w => !w.isCurrent)!.sundayISO;
-    expect(nav.navigateForward).toHaveBeenLastCalledWith(['/corsa/nuova'], { queryParams: { date: domenica } });
+    const passata = settimane()[0].querySelector<HTMLElement>('ion-item.runadd')!;
+    expect(passata.textContent!.trim()).toBe('Registra corsa');
+    passata.click();
+    expect(nav.navigateForward).toHaveBeenLastCalledWith(['/corsa/nuova'], { queryParams: { date: c.passate()[0].sundayISO } });
+    expect(root.textContent).not.toContain('Registra un\'uscita');
+  });
+
+  it('accanto a "Questa settimana" l\'intervallo; senza obiettivo anche corse e minuti', () => {
+    const conObiettivo = monta();
+    expect(conObiettivo.c.notaSettimana).toBe(conObiettivo.c.weekLabel);
+    TestBed.resetTestingModule();
+    const senza = monta({ goal: null });
+    expect(senza.c.notaSettimana).toBe(`${senza.c.weekLabel} · 1 uscita · 35 min`);
+    expect(senza.root.querySelector('ion-list-header.sezione .sezione-nota')!.textContent).toBe(senza.c.notaSettimana);
+  });
+
+  it('senza corse: "Registra corsa" in questa settimana e niente storico', () => {
+    const { root, c } = monta({ runs: [] });
+    expect(c.passate()).toEqual([]);
+    expect(root.querySelector('ion-accordion-group')).toBeNull();
+    expect(root.querySelectorAll('ion-list.uscite.corrente ion-item').length).toBe(1);
+    expect(root.querySelector('ion-list.uscite.corrente ion-item.runadd')).not.toBeNull();
+    expect(c.notaSettimana).toBe(c.weekLabel);
   });
 });

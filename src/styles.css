@@ -826,21 +826,19 @@ ion-button.closing-discard.button-disabled{opacity:.4;}
 .delta{font-variant-numeric:tabular-nums;font-size:var(--text-xs);font-weight:600;color:var(--label-2);}
 
 /* ===================== CORSA ===================== */
-/* La Corsa e' fatta di liste iOS (.liste-ios sopra): l'obiettivo della
-   settimana e lo storico per settimana, una fisarmonica raggruppata. Qui
-   restano il pallino della fatica e la settimana in corso, sempre aperta. */
+/* La Corsa e' fatta di liste iOS (.liste-ios sopra): la settimana in corso
+   (l'obiettivo, le corse, "Registra corsa") e sotto lo storico per settimana,
+   una fisarmonica raggruppata. Qui resta il pallino della fatica. */
 .liste-ios ion-list-header .sezione-nota{font-size:var(--text-sm);font-weight:500;color:var(--label-2);margin-left:6px;letter-spacing:0;}
 .liste-ios ion-accordion{background:var(--surface-card);}
 .liste-ios ion-accordion ion-list.uscite{background:transparent;padding:0;}
-.liste-ios ion-accordion ion-item.runline{--padding-start:16px;--min-height:52px;}
-/* La settimana in corso non si chiude: niente freccia, e il fondo pieno (readonly). */
-.liste-ios ion-accordion.current ion-item[slot=header] .ion-accordion-toggle-icon{display:none;}
+.liste-ios ion-item.runline{--padding-start:16px;--min-height:52px;}
 .liste-ios ion-accordion ion-progress-bar.piena{--progress-background:var(--state-success);}
 /* La fatica di un'uscita: colore e misura (vedi EFFORT_STYLE in corsa.component.ts),
    centrata in uno spazio fisso perche' i testi delle righe restino allineati. */
 .runline-segno{width:14px;height:14px;display:flex;align-items:center;justify-content:center;margin-inline-end:14px;}
 .runline-dot{flex-shrink:0;border-radius:50%;}
-/* Aggiungere un'uscita: la riga d'azione delle liste iOS, segno e testo d'accento. */
+/* "Registra corsa": la riga d'azione delle liste iOS, segno e testo d'accento. */
 .liste-ios ion-item.runadd{--min-height:48px;color:var(--accent);font-weight:600;}
 .liste-ios ion-item.runadd app-icona{margin-inline-end:12px;}
 /* La riga che toglie qualcosa ("Rimuovi pasto"): in rosso, come le righe

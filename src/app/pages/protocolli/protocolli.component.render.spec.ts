@@ -8,7 +8,7 @@ import { ProtocolliComponent } from './protocolli.component';
 
 /**
  * I protocolli come lista iOS: un gruppo solo, e il nuovo protocollo e'
- * l'ultima riga del gruppo (come "Registra un'uscita" nella Corsa), non un
+ * l'ultima riga del gruppo (come "Registra corsa" nella Corsa), non un
  * tasto pieno sopra la lista.
  */
 describe('ProtocolliComponent — disegno vero', () => {
