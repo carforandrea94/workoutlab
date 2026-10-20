@@ -92,6 +92,17 @@ describe('l\'icona dell\'app', () => {
     }
   });
 
+  it('nel marchio la W e la L sono graffiate; nel favicon, troppo piccolo per i graffi, sono lisce', () => {
+    // Una lettera di Kanit e' un contorno solo: i graffi tolti dalla forma la
+    // spezzano in piu' pezzi (e ci aprono dei buchi).
+    const contorni = (d: string) => (d.match(/M/g) ?? []).length;
+    const [w, l] = lettere(testo('public/icons/icon.svg'));
+    expect(contorni(w)).toBeGreaterThanOrEqual(5);
+    expect(contorni(l)).toBeGreaterThanOrEqual(2);
+    const piccole = lettere(testo('public/icons/icon-compact.svg'));
+    expect(piccole.map(contorni)).toEqual([1, 1]);
+  });
+
   it('il marchio del login e\' lo stesso segno dell\'icona, con i colori del tema e nessun colore fisso', () => {
     const icona = testo('public/icons/icon.svg');
     const logo = testo('src/app/components/logo/logo.component.html');

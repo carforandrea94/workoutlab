@@ -1,8 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="32" height="32" role="img" aria-label="Workout Lab">
   <!-- Variante per le misure minute (favicon 16-32 px): un disco solo per
        parte, piu' stretto e piu' in fuori, e la WL (Kanit Bold Italic) piu'
-       grande. I dischi a gradini e il bilanciere sotto i 32 px si
-       impasterebbero in una macchia. -->
+       grande, e senza i graffi del marchio. I dischi a gradini, il bilanciere
+       e i graffi sotto i 32 px si impasterebbero in una macchia. -->
   <rect width="1024" height="1024" fill="#0D0E10"/>
   <rect x="56" y="232" width="94" height="560" rx="47" fill="#35C6F0"/>
   <rect x="874" y="232" width="94" height="560" rx="47" fill="#35C6F0"/>
