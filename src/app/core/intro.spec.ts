@@ -1,7 +1,7 @@
 import { NavigationEnd, NavigationError, NavigationStart } from '@angular/router';
 import { Subject } from 'rxjs';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { INTRO_MINIMO_MS, INTRO_TETTO_MS, INTRO_USCITA_MS, chiudiIntroAllaPrimaPagina } from './intro';
+import { INTRO_MINIMO_MS, INTRO_MINIMO_RIDOTTO_MS, INTRO_TETTO_MS, INTRO_USCITA_MS, chiudiIntroAllaPrimaPagina } from './intro';
 
 /**
  * L'intro dell'avvio se ne va quando la prima pagina e' arrivata, non prima
@@ -85,6 +85,15 @@ describe('l\'intro dell\'avvio se ne va alla prima pagina', () => {
     expect(doc.querySelector('app-root')).not.toBeNull();
   });
 
+  it('con "riduci movimento" il logo non si costruisce: basta il minimo ridotto', () => {
+    Object.defineProperty(doc, 'defaultView', { value: { matchMedia: (q: string) => ({ matches: q === '(prefers-reduced-motion: reduce)' }) } });
+    avvia();
+    eventi.next(fine());
+    vi.advanceTimersByTime(INTRO_MINIMO_RIDOTTO_MS - adesso + 32);
+    expect(intro()!.classList.contains('intro-via')).toBe(true);
+    expect(INTRO_MINIMO_RIDOTTO_MS).toBeLessThan(INTRO_MINIMO_MS);
+  });
+
   it('senza l\'intro nella pagina non fa niente', () => {
     doc.getElementById('intro')!.remove();
     expect(() => { avvia(); eventi.next(fine()); vi.advanceTimersByTime(INTRO_TETTO_MS); }).not.toThrow();
@@ -129,18 +138,57 @@ describe('l\'intro in index.html e le immagini d\'avvio', () => {
     expect(stile()).toContain(`html[data-theme="light"] #intro{background:${token(chiaro, 'bg')};color:${token(chiaro, 'label')};}`);
   });
 
-  it('l\'icona e\' quella dell\'app: stessi dischi, stesse lettere', () => {
+  const intro = () => index.match(/<div id="intro"[\s\S]*?<\/div>/)![0];
+
+  it('il logo e\' quello dell\'app: stessa sbarra, stessi dischi, stesse lettere', () => {
     const icona = fs.readFileSync('public/icons/icon.svg', 'utf8');
     const pezzi = (s: string) => s.match(/x="\d+" y="\d+" width="\d+" height="\d+" rx="\d+"|points="[^"]+"/g) ?? [];
-    const intro = index.match(/<div id="intro"[\s\S]*?<\/div>/)![0];
-    expect(pezzi(intro)).toEqual(pezzi(icona));
-    // I dischi che fanno l'onda sono tutti e sei, a tre a tre per lato.
-    expect(intro.match(/class="intro-disco d[123]"/g)!.length).toBe(6);
+    expect(pezzi(intro())).toEqual(pezzi(icona));
+    // I dischi sono sei, tre per lato; la sbarra due estremita'.
+    expect(intro().match(/class="intro-disco d[123] (sx|dx)"/g)!.length).toBe(6);
+    expect(intro().match(/class="intro-sbarra (sx|dx)"/g)!.length).toBe(2);
   });
 
-  it('la dissolvenza dura quanto aspetta il codice prima di toglierla; senza movimento, niente onda', () => {
+  it('senza il riquadro dell\'icona: niente fondo, angoli o ombra intorno al logo', () => {
+    expect(intro()).not.toMatch(/<rect width="1024"/);
+    expect(intro()).not.toContain('clipPath');
+    const logo = stile().match(/#intro \.intro-logo\{[^}]*\}/)![0];
+    expect(logo).not.toMatch(/box-shadow|border-radius|background/);
+  });
+
+  it('la W e la L si scrivono per intero: il tratteggio copre tutta la loro lunghezza', () => {
+    const lunghezza = (punti: string) => {
+      const p = punti.split(' ').map(c => c.split(',').map(Number));
+      return p.slice(1).reduce((tot, [x, y], i) => tot + Math.hypot(x - p[i][0], y - p[i][1]), 0);
+    };
+    for (const lettera of ['w', 'l']) {
+      const punti = intro().match(new RegExp(`intro-${lettera}" points="([^"]+)"`))![1];
+      const tratto = +stile().match(new RegExp(`#intro \\.intro-${lettera}\\{stroke-dasharray:(\\d+);`))![1];
+      expect(tratto, lettera).toBeGreaterThanOrEqual(lunghezza(punti));
+      expect(stile()).toContain(`@keyframes intro-scrivi-${lettera}{from{stroke-dashoffset:${tratto};`);
+    }
+  });
+
+  it('l\'intro resta almeno fino alla fine della costruzione del logo', () => {
+    // Le animazioni che finiscono (non l'onda, che gira finche' serve): durata + ritardo.
+    const base = stile().split('@media')[0].replace(/cubic-bezier\([^)]*\)/g, 'curva');
+    const tempi = (s: string) => (s.match(/\d*\.?\d+s/g) ?? []).map(t => parseFloat(t) * 1000);
+    const fini = [...base.matchAll(/[;{]animation:([^;]+);/g)]
+      .flatMap(m => m[1].split(','))
+      .filter(a => !a.includes('infinite'))
+      .map(a => { const [durata, ritardo = 0] = tempi(a); return durata + ritardo; });
+    // I dischi piu' piccoli entrano piu' tardi: il loro ritardo e' scritto a parte.
+    const disco = tempi(base.match(/#intro \.intro-disco\{[^}]*animation:([^,;]+)/)![1])[0];
+    for (const m of base.matchAll(/animation-delay:([^,;]+)/g)) fini.push(tempi(m[1])[0] + disco);
+    expect(fini.length).toBeGreaterThan(6);
+    expect(INTRO_MINIMO_MS).toBeGreaterThanOrEqual(Math.max(...fini));
+  });
+
+  it('la dissolvenza dura quanto aspetta il codice prima di toglierla; senza movimento il logo compare e basta', () => {
     expect(stile()).toContain(`transition:opacity ${String(INTRO_USCITA_MS / 1000).replace(/^0/, '')}s`);
-    expect(stile()).toMatch(/@media \(prefers-reduced-motion:reduce\)\{#intro \.intro-disco\{animation:none;\}/);
+    const ridotto = stile().match(/@media \(prefers-reduced-motion:reduce\)\{([\s\S]*)\}/)![1];
+    for (const parte of ['.intro-sbarra', '.intro-disco', '.intro-w', '.intro-l', '.intro-nome']) expect(ridotto).toContain(`#intro ${parte}`);
+    expect(ridotto).toContain('{animation:intro-appare .3s ease both;}');
   });
 
   it('per ogni misura di iPhone c\'e\' l\'immagine scura e quella chiara, opache e della misura giusta', () => {
@@ -157,5 +205,48 @@ describe('l\'intro in index.html e le immagini d\'avvio', () => {
       misure.set(k, (misure.get(k) ?? new Set()).add(schema));
     }
     for (const [k, schemi] of misure) expect([...schemi].sort(), k).toEqual(['dark', 'light']);
+  });
+
+  it('le immagini d\'avvio sono il primo fotogramma dell\'intro: il solo fondo del tema', async () => {
+    const nome = 'node:zlib';
+    const zlib = await import(/* @vite-ignore */ nome);
+    const scuro = css.match(/:root\s*\{([\s\S]*?)\n\}/)![1];
+    const chiaro = css.match(/:root\[data-theme="light"\]\s*\{([\s\S]*?)\n\}/)![1];
+    const rgb = (hex: string) => [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16));
+    /** I pixel di una PNG a 8 bit RGB, senza interlacciamento: i blocchi IDAT, inflate e i filtri di riga. */
+    const pixel = (p: string) => {
+      const b: Uint8Array = fs.readFileSync(p);
+      const dv = new DataView(b.buffer, b.byteOffset, b.byteLength);
+      const w = dv.getUint32(16), h = dv.getUint32(20);
+      expect([b[24], b[25], b[28]], p).toEqual([8, 2, 0]);
+      const idat: Uint8Array[] = [];
+      for (let o = 8; o < b.length;) {
+        const n = dv.getUint32(o), tipo = String.fromCharCode(...b.subarray(o + 4, o + 8));
+        if (tipo === 'IDAT') idat.push(b.subarray(o + 8, o + 8 + n));
+        o += 12 + n;
+      }
+      const tutto = new Uint8Array(idat.reduce((t, c) => t + c.length, 0));
+      idat.reduce((o, c) => { tutto.set(c, o); return o + c.length; }, 0);
+      const dati: Uint8Array = zlib.inflateSync(tutto);
+      const riga = w * 3, out = new Uint8Array(riga * h);
+      for (let y = 0; y < h; y++) {
+        const f = dati[y * (riga + 1)];
+        for (let x = 0; x < riga; x++) {
+          const v = dati[y * (riga + 1) + 1 + x];
+          const a = x >= 3 ? out[y * riga + x - 3] : 0, su = y ? out[(y - 1) * riga + x] : 0, c = x >= 3 && y ? out[(y - 1) * riga + x - 3] : 0;
+          const pa = Math.abs(su - c), pb = Math.abs(a - c), pc = Math.abs(a + su - 2 * c);
+          const pred = [0, a, su, (a + su) >> 1, pa <= pb && pa <= pc ? a : pb <= pc ? su : c][f];
+          out[y * riga + x] = (v + pred) & 255;
+        }
+      }
+      return out;
+    };
+    for (const [file, blocco] of [['avvio-750x1334-scuro', scuro], ['avvio-750x1334-chiaro', chiaro], ['avvio-1320x2868-scuro', scuro], ['avvio-1320x2868-chiaro', chiaro]] as const) {
+      const fondo = rgb(token(blocco, 'bg'));
+      const px = pixel(`public/avvio/${file}.png`);
+      let diversi = 0;
+      for (let i = 0; i < px.length; i += 3) if (px[i] !== fondo[0] || px[i + 1] !== fondo[1] || px[i + 2] !== fondo[2]) diversi++;
+      expect(diversi, file).toBe(0);
+    }
   });
 });

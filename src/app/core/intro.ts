@@ -5,8 +5,10 @@ import { filter, take } from 'rxjs/operators';
 /**
  * L'intro dell'avvio, al posto della schermata nera.
  *
- * La disegna index.html (#intro), prima che Angular parta: l'icona dell'app
- * con i dischi che si alzano a onda e il nome. Prima, fra il tocco sull'icona
+ * La disegna index.html (#intro), prima che Angular parta: il logo che si
+ * costruisce come si carica un bilanciere (la sbarra, i dischi da fuori, la
+ * W e la L che si scrivono), il nome sotto, e i dischi che si alzano a onda
+ * finche' l'app non e' pronta. Prima, fra il tocco sull'icona
  * e la prima pagina, si vedeva il fondo nero per tutto il tempo in cui l'app
  * si avviava e le guardie aspettavano l'accesso, il profilo e il protocollo.
  * Qui c'e' solo come se ne va: quando la prima pagina e' arrivata, con una
@@ -14,11 +16,14 @@ import { filter, take } from 'rxjs/operators';
  */
 
 /**
- * Quanto resta almeno, dall'inizio del caricamento della pagina: un'intro
- * che sparisce dopo un attimo e' un lampo, non un'intro. Basta al nome per
- * arrivare e ai dischi per fare un'onda; se l'avvio e' piu' lento non pesa.
+ * Quanto resta almeno, dall'inizio del caricamento della pagina: il logo che
+ * si costruisce va visto finire (l'ultima animazione, il nome, finisce a
+ * 1,4 s), altrimenti la dissolvenza lo taglia a meta'. Se l'avvio e' piu'
+ * lento non pesa.
  */
-export const INTRO_MINIMO_MS = 600;
+export const INTRO_MINIMO_MS = 1400;
+/** Con "riduci movimento" il logo non si costruisce, compare: basta molto meno. */
+export const INTRO_MINIMO_RIDOTTO_MS = 400;
 /** La dissolvenza in uscita (la transizione di #intro.intro-via in index.html). */
 export const INTRO_USCITA_MS = 320;
 /**
@@ -35,7 +40,7 @@ function dopoIlDisegno(fn: () => void): void {
 
 /**
  * Toglie l'intro alla prima navigazione finita (anche finita male: dietro
- * deve vedersi l'errore, non l'icona), non prima di INTRO_MINIMO_MS dall'avvio.
+ * deve vedersi l'errore, non il logo), non prima del minimo dall'avvio.
  * `ora` e' il tempo dall'inizio del caricamento, come performance.now().
  */
 export function chiudiIntroAllaPrimaPagina(
@@ -45,6 +50,8 @@ export function chiudiIntroAllaPrimaPagina(
 ): void {
   const intro = doc.getElementById('intro');
   if (!intro) return;
+  const ridotto = !!doc.defaultView?.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  const minimo = ridotto ? INTRO_MINIMO_RIDOTTO_MS : INTRO_MINIMO_MS;
   let fatto = false;
   let sub: Subscription | null = null;
   const via = () => {
@@ -61,5 +68,5 @@ export function chiudiIntroAllaPrimaPagina(
   const tetto = setTimeout(via, INTRO_TETTO_MS);
   sub = router.events
     .pipe(filter(e => e instanceof NavigationEnd || e instanceof NavigationError), take(1))
-    .subscribe(() => setTimeout(via, Math.max(0, INTRO_MINIMO_MS - ora())));
+    .subscribe(() => setTimeout(via, Math.max(0, minimo - ora())));
 }
