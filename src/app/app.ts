@@ -1,15 +1,18 @@
 import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 import { SwUpdate } from '@angular/service-worker';
 import { filter } from 'rxjs/operators';
 import { IonApp, IonRouterOutlet } from '@ionic/angular';
 import { ToastComponent } from './components/toast/toast.component';
 import { ThemeService } from './services/theme.service';
+import { chiudiIntroAllaPrimaPagina } from './core/intro';
 
 /**
  * La radice dell'app. Non sa piu' niente di titoli, frecce e pulsanti: nella
  * versione Ionic ogni pagina ha il suo ion-header, e la barra in basso e' di
  * TabsPage. Qui restano solo le cose davvero globali: l'outlet di Ionic, i
- * il toast e l'aggiornamento della PWA.
+ * il toast, l'aggiornamento della PWA e l'uscita dell'intro dell'avvio
+ * (core/intro.ts), che index.html disegna prima di Angular.
  */
 @Component({
   selector: 'app-root',
@@ -27,7 +30,9 @@ import { ThemeService } from './services/theme.service';
 export class App implements OnInit {
   // ThemeService si inietta qui anche se non si usa: e' il costruttore ad
   // applicare il tema salvato, e deve succedere prima della prima pagina.
-  constructor(private swUpdate: SwUpdate, private theme: ThemeService) {}
+  constructor(private swUpdate: SwUpdate, private theme: ThemeService, router: Router) {
+    chiudiIntroAllaPrimaPagina(router);
+  }
 
   ngOnInit(): void {
     this.setupAutoUpdate();
