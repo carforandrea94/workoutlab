@@ -142,8 +142,12 @@ describe('l\'intro in index.html e le immagini d\'avvio', () => {
 
   it('il logo e\' quello dell\'app: stessa sbarra, stessi dischi, stesse lettere', () => {
     const icona = fs.readFileSync('public/icons/icon.svg', 'utf8');
-    const pezzi = (s: string) => s.match(/x="\d+" y="\d+" width="\d+" height="\d+" rx="\d+"|points="[^"]+"/g) ?? [];
-    expect(pezzi(intro())).toEqual(pezzi(icona));
+    const rettangoli = (s: string) => s.match(/x="\d+" y="\d+" width="\d+" height="\d+" rx="\d+"/g) ?? [];
+    expect(rettangoli(intro())).toEqual(rettangoli(icona));
+    // Le lettere sono la forma che ritaglia il pennello: quella dell'icona, graffi compresi.
+    const forme = [...intro().matchAll(/<clipPath id="intro-forma-([wl])"><path d="(M[^"]+)"\/><\/clipPath>/g)];
+    expect(forme.map(f => f[1])).toEqual(['w', 'l']);
+    expect(forme.map(f => f[2])).toEqual([...icona.matchAll(/<path d="(M[^"]+)"\/>/g)].map(m => m[1]));
     // I dischi sono sei, tre per lato; la sbarra due estremita'.
     expect(intro().match(/class="intro-disco d[123] (sx|dx)"/g)!.length).toBe(6);
     expect(intro().match(/class="intro-sbarra (sx|dx)"/g)!.length).toBe(2);
@@ -151,22 +155,76 @@ describe('l\'intro in index.html e le immagini d\'avvio', () => {
 
   it('senza il riquadro dell\'icona: niente fondo, angoli o ombra intorno al logo', () => {
     expect(intro()).not.toMatch(/<rect width="1024"/);
-    expect(intro()).not.toContain('clipPath');
+    // Gli unici ritagli sono le due lettere, e ritagliano solo il loro pennello.
+    expect(intro().match(/<clipPath id="[^"]+"/g)).toEqual(['<clipPath id="intro-forma-w"', '<clipPath id="intro-forma-l"']);
+    expect(intro().match(/clip-path="[^"]+"/g)).toEqual(['clip-path="url(#intro-forma-w)"', 'clip-path="url(#intro-forma-l)"']);
     const logo = stile().match(/#intro \.intro-logo\{[^}]*\}/)![0];
     expect(logo).not.toMatch(/box-shadow|border-radius|background/);
   });
 
-  it('la W e la L si scrivono per intero: il tratteggio copre tutta la loro lunghezza', () => {
-    const lunghezza = (punti: string) => {
-      const p = punti.split(' ').map(c => c.split(',').map(Number));
-      return p.slice(1).reduce((tot, [x, y], i) => tot + Math.hypot(x - p[i][0], y - p[i][1]), 0);
+  it('la W e la L si dipingono con una pennellata secca e graffiata, prima la W', () => {
+    const gruppi = [...intro().matchAll(/<g class="intro-lettera intro-([wl])" clip-path="url\(#intro-forma-\1\)">([\s\S]*?)<\/g>/g)];
+    expect(gruppi.map(g => g[1])).toEqual(['w', 'l']);
+    /** Quanta parte del tratto e' dipinta, con il trattino spostato di `spostamento`. */
+    const dipinto = (trattini: number[], lungo: number, spostamento: number) => {
+      const giro = trattini.reduce((t, v) => t + v, 0);
+      let pieno = 0;
+      for (let x = Math.floor(spostamento / giro) * giro; x < spostamento + lungo;) {
+        trattini.forEach((v, i) => {
+          if (i % 2 === 0) pieno += Math.max(0, Math.min(x + v, spostamento + lungo) - Math.max(x, spostamento));
+          x += v;
+        });
+      }
+      return pieno / lungo;
     };
-    for (const lettera of ['w', 'l']) {
-      const punti = intro().match(new RegExp(`intro-${lettera}" points="([^"]+)"`))![1];
-      const tratto = +stile().match(new RegExp(`#intro \\.intro-${lettera}\\{stroke-dasharray:(\\d+);`))![1];
-      expect(tratto, lettera).toBeGreaterThanOrEqual(lunghezza(punti));
-      expect(stile()).toContain(`@keyframes intro-scrivi-${lettera}{from{stroke-dashoffset:${tratto};`);
+    const ritardi: Record<string, number[]> = {};
+    for (const [, lettera, corpo] of gruppi) {
+      const tratti = [...corpo.matchAll(/<path class="intro-(setola|passata)" d="([^"]+)" stroke-width="(\d+)" style="stroke-dasharray:([^;]+);stroke-dashoffset:(\d+);animation-delay:([\d.]+)s;animation-duration:([\d.]+)s"\/>/g)];
+      // Dentro la lettera non c'e' altro che pennello.
+      expect(tratti.length, lettera).toBe(corpo.match(/<path /g)!.length);
+      const setole = tratti.filter(t => t[1] === 'setola');
+      const passate = tratti.filter(t => t[1] === 'passata');
+      expect(setole.length, lettera).toBeGreaterThanOrEqual(5);
+      expect(passate.length, lettera).toBe(1);
+      for (const [, tipo, d, largo, trattini, spostamento] of tratti) {
+        const punti = [...d.matchAll(/[ML] ?([\d.]+) ([\d.]+)/g)].map(m => [+m[1], +m[2]]);
+        const lungo = punti.slice(1).reduce((t, p, i) => t + Math.hypot(p[0] - punti[i][0], p[1] - punti[i][1]), 0);
+        const lista = trattini.trim().split(/[ ,]+/).map(Number);
+        // Un numero dispari di valori SVG lo ripete: un vuoto diventerebbe pennello.
+        expect(lista.length % 2, `${lettera} ${tipo}`).toBe(0);
+        // All'inizio il tratto e' tutto nascosto; alla fine la passata copre tutta la lettera,
+        // le setole quasi: i vuoti del pennello asciutto.
+        expect(dipinto(lista, lungo, +spostamento), `${lettera} ${tipo}`).toBe(0);
+        if (tipo === 'passata') {
+          expect(+largo).toBeGreaterThanOrEqual(100);
+          expect(dipinto(lista, lungo, 0)).toBe(1);
+        } else {
+          expect(dipinto(lista, lungo, 0), `${lettera} setola`).toBeGreaterThan(0.8);
+          expect(dipinto(lista, lungo, 0), `${lettera} setola`).toBeLessThan(0.97);
+        }
+      }
+      ritardi[lettera] = tratti.map(t => +t[6]);
     }
+    // Prima la W: la L comincia quando la W ha gia' tutte le setole sulla carta.
+    expect(Math.min(...ritardi['l'])).toBeGreaterThan(Math.max(...ritardi['w']));
+    expect(stile()).toContain('#intro .intro-setola,#intro .intro-passata{fill:none;stroke-linejoin:round;animation:intro-pennello ');
+    // Niente var() nei keyframes: lo spostamento di partenza e' quello in linea sul tratto.
+    expect(stile()).toContain('@keyframes intro-pennello{to{stroke-dashoffset:0;}}');
+    expect(stile()).toContain('#intro .intro-lettera{stroke:#FFFFFF;}');
+    expect(stile()).toContain('html[data-theme="light"] #intro .intro-lettera{stroke:#161A1C;}');
+  });
+
+  it('le lettere e il nome sono in Kanit Bold Italic, in linea: ci sono gia\' al primo fotogramma', () => {
+    const faccia = stile().match(/@font-face\{font-family:"Workout Lab Kanit";src:url\(data:font\/woff2;base64,([A-Za-z0-9+/=]+)\) format\("woff2"\);font-weight:700;font-style:italic;font-display:block;\}/);
+    expect(faccia).toBeTruthy();
+    const dati = atob(faccia![1]);
+    expect(dati.slice(0, 4)).toBe('wOF2');
+    // Solo le lettere di "Workout Lab": pochi KB, non il carattere intero.
+    expect(dati.length).toBeLessThan(8000);
+    expect(stile()).toContain('The Kanit Project Authors');
+    expect(stile()).toContain('SIL Open Font License 1.1');
+    expect(stile()).toMatch(/#intro \.intro-nome\{[^}]*font:italic 700 \d+px\/[\d.]+ "Workout Lab Kanit",/);
+    expect(css).toMatch(/\.authtitle\{font-family:"Workout Lab Kanit",[^}]*font-style:italic;font-weight:700;/);
   });
 
   it('l\'intro resta almeno fino alla fine della costruzione del logo', () => {
@@ -180,6 +238,10 @@ describe('l\'intro in index.html e le immagini d\'avvio', () => {
     // I dischi piu' piccoli entrano piu' tardi: il loro ritardo e' scritto a parte.
     const disco = tempi(base.match(/#intro \.intro-disco\{[^}]*animation:([^,;]+)/)![1])[0];
     for (const m of base.matchAll(/animation-delay:([^,;]+)/g)) fini.push(tempi(m[1])[0] + disco);
+    // I tratti del pennello hanno ritardo e durata in linea, uno per uno.
+    const pennello = [...intro().matchAll(/animation-delay:([\d.]+)s;animation-duration:([\d.]+)s/g)].map(m => (+m[1] + +m[2]) * 1000);
+    expect(pennello.length).toBe(intro().match(/class="intro-(setola|passata)"/g)!.length);
+    fini.push(...pennello);
     expect(fini.length).toBeGreaterThan(6);
     expect(INTRO_MINIMO_MS).toBeGreaterThanOrEqual(Math.max(...fini));
   });
@@ -187,8 +249,10 @@ describe('l\'intro in index.html e le immagini d\'avvio', () => {
   it('la dissolvenza dura quanto aspetta il codice prima di toglierla; senza movimento il logo compare e basta', () => {
     expect(stile()).toContain(`transition:opacity ${String(INTRO_USCITA_MS / 1000).replace(/^0/, '')}s`);
     const ridotto = stile().match(/@media \(prefers-reduced-motion:reduce\)\{([\s\S]*)\}/)![1];
-    for (const parte of ['.intro-sbarra', '.intro-disco', '.intro-w', '.intro-l', '.intro-nome']) expect(ridotto).toContain(`#intro ${parte}`);
+    for (const parte of ['.intro-sbarra', '.intro-disco', '.intro-lettera', '.intro-nome']) expect(ridotto).toContain(`#intro ${parte}`);
     expect(ridotto).toContain('{animation:intro-appare .3s ease both;}');
+    // Fermo, il pennello deve essere gia' steso: lo spostamento in linea lo terrebbe nascosto.
+    expect(ridotto).toContain('#intro .intro-setola,#intro .intro-passata{animation:none;stroke-dashoffset:0!important;}');
   });
 
   it('per ogni misura di iPhone c\'e\' l\'immagine scura e quella chiara, opache e della misura giusta', () => {

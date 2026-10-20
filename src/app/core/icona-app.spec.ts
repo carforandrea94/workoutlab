@@ -52,6 +52,20 @@ describe('l\'icona dell\'app', () => {
     expect(png('public/icons/icon-32x32.png')).toMatchObject({ w: 32, h: 32 });
   });
 
+  /** I punti di un path con soli comandi assoluti (M L H V Q C Z), come li scrive fontTools. */
+  const puntiDelPath = (d: string): [number, number][] => {
+    const out: [number, number][] = [];
+    let x = 0, y = 0;
+    for (const [, cmd, args] of d.matchAll(/([MLHVQCZ])([^MLHVQCZ]*)/g)) {
+      const n = (args.match(/-?\d*\.?\d+/g) ?? []).map(Number);
+      if (cmd === 'H') { for (const v of n) { x = v; out.push([x, y]); } continue; }
+      if (cmd === 'V') { for (const v of n) { y = v; out.push([x, y]); } continue; }
+      for (let i = 0; i + 1 < n.length; i += 2) { x = n[i]; y = n[i + 1]; out.push([x, y]); }
+    }
+    return out;
+  };
+  const lettere = (s: string) => [...s.matchAll(/<path (?:class="[^"]*" )?d="(M[^"]+)"/g)].map(m => m[1]);
+
   it('il fondo copre tutto il quadrato e il disegno sta nel cerchio che Android non ritaglia (raggio 409,6)', () => {
     const svg = testo('public/icons/icon.svg');
     expect(svg).toContain('<rect width="1024" height="1024"');
@@ -61,20 +75,42 @@ describe('l\'icona dell\'app', () => {
       const [x, y, w, h] = m.slice(1).map(Number);
       for (const px of [x, x + w]) for (const py of [y, y + h]) peggio = Math.max(peggio, dist(px, py));
     }
-    const tratto = Number(svg.match(/stroke-width="(\d+)"/)![1]) / 2;
-    for (const m of svg.matchAll(/points="([^"]+)"/g))
-      for (const p of m[1].split(' ')) { const [x, y] = p.split(',').map(Number); peggio = Math.max(peggio, dist(x, y) + tratto); }
+    expect(lettere(svg).length).toBe(2);
+    for (const d of lettere(svg)) for (const [x, y] of puntiDelPath(d)) peggio = Math.max(peggio, dist(x, y));
     expect(peggio).toBeGreaterThan(300);
     expect(peggio).toBeLessThanOrEqual(409.6);
+  });
+
+  it('la W e la L stanno fra i dischi interni, senza toccarli', () => {
+    for (const f of ['public/icons/icon.svg', 'public/icons/logo.svg']) {
+      const svg = testo(f);
+      const xs = lettere(svg).flatMap(d => puntiDelPath(d).map(p => p[0]));
+      const dischi = [...svg.matchAll(/<rect x="([\d.]+)" y="277" width="([\d.]+)"/g)].map(m => [+m[1], +m[1] + +m[2]]);
+      expect(dischi.length, f).toBe(2);
+      expect(Math.min(...xs), f).toBeGreaterThan(dischi[0][1]);
+      expect(Math.max(...xs), f).toBeLessThan(dischi[1][0]);
+    }
+  });
+
+  it('nel marchio la W e la L sono graffiate; nel favicon, troppo piccolo per i graffi, sono lisce', () => {
+    // Una lettera di Kanit e' un contorno solo: i graffi tolti dalla forma la
+    // spezzano in piu' pezzi (e ci aprono dei buchi).
+    const contorni = (d: string) => (d.match(/M/g) ?? []).length;
+    const [w, l] = lettere(testo('public/icons/icon.svg'));
+    expect(contorni(w)).toBeGreaterThanOrEqual(5);
+    expect(contorni(l)).toBeGreaterThanOrEqual(2);
+    const piccole = lettere(testo('public/icons/icon-compact.svg'));
+    expect(piccole.map(contorni)).toEqual([1, 1]);
   });
 
   it('il marchio del login e\' lo stesso segno dell\'icona, con i colori del tema e nessun colore fisso', () => {
     const icona = testo('public/icons/icon.svg');
     const logo = testo('src/app/components/logo/logo.component.html');
-    const punti = (s: string) => [...s.matchAll(/points="([^"]+)"/g)].map(m => m[1]);
-    expect(punti(logo)).toEqual(punti(icona));
+    const pezzi = (s: string) => s.match(/x="\d+" y="\d+" width="\d+" height="\d+" rx="\d+"/g) ?? [];
+    expect(lettere(logo)).toEqual(lettere(icona));
+    expect(pezzi(logo).sort()).toEqual(pezzi(icona).sort());
     expect(logo).toContain('fill="var(--accent)"');
-    expect(logo).toContain('stroke="var(--label)"');
+    expect(logo).toContain('<g fill="var(--label)">');
     expect(logo).not.toMatch(/#[0-9A-Fa-f]{3,6}\b/);
   });
 });
