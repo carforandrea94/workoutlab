@@ -615,6 +615,7 @@ export class SchedaDetailComponent implements OnInit, OnDestroy {
       // questo si mostra anche quella. Il confronto con la sessione prima e'
       // la parte che si guarda davvero: dice se si sta salendo.
       let oneRmText: string | null = null;
+      let oneRm: ExInsight['oneRm'] = null;
       const ultima = perSessione[perSessione.length - 1];
       // Su un esercizio a cluster non si stima niente, nemmeno quando una
       // coppia pulita si trova: quella coppia non descrive il lavoro che si
@@ -631,10 +632,12 @@ export class SchedaDetailComponent implements OnInit, OnDestroy {
 
         const precedente = perSessione[perSessione.length - 2];
         const prima = precedente ? oneRepMaxOf(precedente.sets) : null;
+        let delta: number | null = null;
         if (prima) {
-          const delta = Math.round((stima.value - prima.value) * 2) / 2;
+          delta = Math.round((stima.value - prima.value) * 2) / 2;
           if (delta !== 0) oneRmText += ` · ${delta > 0 ? '+' : '−'}${this.kg(Math.abs(delta))} kg`;
         }
+        oneRm = { value: stima.value, load: stima.from.load, reps: stima.from.reps, data: quando, delta: delta || null };
       }
 
       // L'ultima volta si scrive solo se non c'e' la stima: quando c'e', la
@@ -644,7 +647,7 @@ export class SchedaDetailComponent implements OnInit, OnDestroy {
 
       if (lastText || oneRmText) {
         vm.insight = {
-          lastText, oneRmText,
+          lastText, oneRmText, oneRm,
           rmRows: stima ? rmTable(stima.value) : null,
           programLoad: this.caricoDiProgramma(stima?.value ?? 0)
         };
@@ -1429,6 +1432,36 @@ export class SchedaDetailComponent implements OnInit, OnDestroy {
     if (!row) return null;
     const opzioni = this.opzioniCarico(vm, serie);
     return fonteDelCarico(opzioni, row.load, row.loadPlaceholder) ?? (opzioni.length ? 'scegli il peso' : null);
+  }
+
+  /**
+   * I pesi che vengono dal massimale per la serie in corso: per le sue
+   * ripetizioni e, se e' accesa, alla percentuale del programma. Stanno in
+   * vista nella card, sotto le serie, con la spunta su quello che c'e' nella
+   * ruota. L'ultima volta no: e' gia' scritta in cima alla serie.
+   */
+  riferimenti(vm: ExerciseVM): OpzioneCarico[] {
+    if (vm.activeRow === null) return [];
+    return this.opzioniCarico(vm, vm.activeRow).filter(o => o.chiave !== 'ultima');
+  }
+
+  /** Il riferimento col peso che c'e' nella ruota; nessuno se e' un altro peso (anche quello dell'ultima volta). */
+  riferimentoScelto(vm: ExerciseVM): string {
+    if (vm.activeRow === null) return '';
+    const row = vm.rows[vm.activeRow];
+    const kg = row ? this.numero(row.load) ?? this.numero(row.loadPlaceholder) : null;
+    return opzioneScelta(this.riferimenti(vm), kg)?.chiave ?? '';
+  }
+
+  /** Toccare un riferimento mette il suo peso nella ruota della serie in corso (a sessione ferma setLoad non scrive). */
+  usaRiferimento(vm: ExerciseVM, chiave: string, evento?: Event): void {
+    if (vm.activeRow === null) return;
+    this.scegliCarico({ vm, serie: vm.activeRow }, chiave, evento);
+  }
+
+  /** "+1,5" o "−2": la differenza col massimale della volta prima, col segno. */
+  conSegno(n: number): string {
+    return `${n > 0 ? '+' : '−'}${this.kg(Math.abs(n))}`;
   }
 
   apriCarico(vm: ExerciseVM, serie: number): void {

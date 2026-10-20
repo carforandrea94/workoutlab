@@ -425,3 +425,34 @@ describe('NumberWheel — per tastiera e screen reader', () => {
     });
   });
 });
+
+/**
+ * Un peso scelto altrove (il foglio "Che peso metto", il massimale nella card)
+ * arriva come nuovo valore: la ruota deve portarcisi, o mostrerebbe ancora il
+ * numero di prima mentre la serie ne salva un altro.
+ */
+describe('NumberWheel — un valore che arriva da fuori', () => {
+  it('vicino a quello di prima, la ruota ci scorre e non emette niente', () => {
+    const { c, emessi } = monta({ value: 55 });
+    vi.runAllTimers();
+    c.value = 59;
+    c.ngOnChanges({ value: {} as any });
+    vi.runAllTimers();
+    expect(c.values[c.index]).toBe(59);
+    expect(c.trackEl!.nativeElement.scrollTop).toBe(c.index * WHEEL_ITEM_H);
+    expect(emessi).toEqual([]);
+  });
+
+  it('l\'eco del proprio scorrimento non la riporta indietro sotto il dito', () => {
+    const { c } = monta({ value: 30 });
+    vi.runAllTimers();
+    const el = c.trackEl!.nativeElement;
+    const scorre = vi.spyOn(el, 'scrollTo');
+    scorriA(c, c.index + 1);
+    c.value = 30.5;
+    c.ngOnChanges({ value: {} as any });
+    vi.runAllTimers();
+    expect(scorre).not.toHaveBeenCalled();
+  });
+});
+

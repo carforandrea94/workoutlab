@@ -244,6 +244,40 @@
           <ng-container *ngIf="vm.insight">
             <div *ngIf="vm.insight.lastText" class="lastsession">{{ vm.insight.lastText }}</div>
 
+            <!-- Il massimale stimato e i pesi che ne vengono per la serie in
+                 corso, sempre in vista: per le sue ripetizioni (con la
+                 percentuale) e alla percentuale del programma. Sono le voci del
+                 foglio "Che peso metto", meno l'ultima volta che e' gia' in
+                 cima alla serie: la spunta dice quale peso e' nella ruota, e
+                 toccarne una ce lo mette. Nel foglio soltanto non si vedevano. -->
+            <div class="massimale" *ngIf="vm.insight.oneRm as m">
+              <div class="massimale-testa">
+                <span class="massimale-titolo">Massimale stimato</span>
+                <span class="massimale-kg">{{ kg(m.value) }} kg</span>
+              </div>
+              <p class="massimale-da">
+                Da {{ kg(m.load) }} × {{ m.reps }}<ng-container *ngIf="m.data"> del {{ m.data }}</ng-container><ng-container *ngIf="m.delta"> · {{ conSegno(m.delta) }} kg dalla volta prima</ng-container>
+              </p>
+              <ion-radio-group *ngIf="riferimenti(vm).length" [value]="riferimentoScelto(vm)"
+                (ionChange)="usaRiferimento(vm, $event.detail.value, $event.detail.event)"
+                [attr.aria-label]="'Pesi dal massimale per la serie ' + ((vm.activeRow ?? 0) + 1)">
+                <ion-item class="scelta-opt" *ngFor="let o of riferimenti(vm); let ultimo = last" [lines]="ultimo ? 'none' : 'full'">
+                  <ion-radio class="scelta-radio" [value]="o.chiave" justify="space-between" labelPlacement="start" [disabled]="setsLocked">
+                    <span class="carico-voce">
+                      <span class="carico-testo">
+                        <span class="carico-titolo">{{ o.titolo }}</span>
+                        <span class="carico-dettaglio">{{ o.dettaglio }}</span>
+                        <span class="carico-avviso" *ngIf="o.avviso">
+                          <app-icona name="information-circle" [size]="13"></app-icona>{{ o.avviso }}
+                        </span>
+                      </span>
+                      <span class="carico-kg">{{ kg(o.kg) }} kg</span>
+                    </span>
+                  </ion-radio>
+                </ion-item>
+              </ion-radio-group>
+            </div>
+
             <div class="suggestion-chip" *ngIf="vm.isFirst && vm.warmup" [innerHTML]="vm.warmup"></div>
           </ng-container>
         </div>

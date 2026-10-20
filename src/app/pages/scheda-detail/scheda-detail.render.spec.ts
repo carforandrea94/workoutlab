@@ -459,6 +459,66 @@ describe('SchedaDetailComponent — accessibilita\' delle testate (disegno vero)
   });
 
   /**
+   * Il massimale stimato e i pesi che ne vengono restano in vista nella card
+   * dell'esercizio, sotto le serie: nel solo foglio "Che peso metto" non si
+   * vedevano piu'. La spunta dice quale peso e' nella ruota.
+   */
+  describe('il massimale nella card', () => {
+    const storia = [
+      { id: 's0', session: { date: '2026-09-26', exercises: [{ name: 'Panca piana', sets: [{ load: '75', reps: '6' }] }] } },
+      { id: 's1', session: { date: '2026-10-03', exercises: [{ name: 'Panca piana', sets: [{ load: '80', reps: '6' }, { load: '80', reps: '6' }] }] } }
+    ];
+    const pulito = (e: Element | null) => (e?.textContent ?? '').replace(/\s+/g, ' ').trim();
+
+    it('dice il massimale stimato, da quale serie viene e quanto e\' cambiato', async () => {
+      const { c, tutti } = await monta('slider', true, false, undefined, undefined, storia);
+      const box = tutti('.exslide')[0].querySelector('.massimale')!;
+      const m = c.exercises[0].insight!.oneRm!;
+      expect(pulito(box.querySelector('.massimale-kg'))).toBe(`${c.kg(m.value)} kg`);
+      expect(pulito(box.querySelector('.massimale-da'))).toBe(`Da 80 × 6 del 03/10 · ${c.conSegno(m.delta!)} kg dalla volta prima`);
+      expect(m.delta).toBeGreaterThan(0);
+    });
+
+    it('sotto, i pesi per le ripetizioni della serie (con la percentuale) e dal programma', async () => {
+      const { tutti } = await monta('slider', true, false, undefined, undefined, storia, 85);
+      const voci = Array.from(tutti('.exslide')[0].querySelectorAll('.massimale ion-item.scelta-opt'));
+      expect(voci.map(v => pulito(v.querySelector('.carico-titolo')))).toEqual(['Per 10 ripetizioni', 'Dal programma, 85%']);
+      expect(pulito(voci[0].querySelector('.carico-dettaglio'))).toMatch(/^\d+% del massimale stimato$/);
+      expect(voci.every(v => /\d kg$/.test(pulito(v.querySelector('.carico-kg'))))).toBe(true);
+    });
+
+    it('senza la percentuale accesa c\'e\' solo il peso per le ripetizioni', async () => {
+      const { c } = await monta('slider', true, false, undefined, undefined, storia);
+      expect(c.riferimenti(c.exercises[0]).map((o: any) => o.chiave)).toEqual(['rm']);
+    });
+
+    it('la spunta segue il peso nella ruota; toccare una voce ce lo mette', async () => {
+      const { c, tutti, aggiorna } = await monta('slider', true, false, undefined, undefined, storia, 85);
+      const vm = c.exercises[0];
+      expect(c.riferimentoScelto(vm)).toBe('');
+      c.usaRiferimento(vm, 'programma');
+      aggiorna();
+      expect(vm.rows[0].load).toBe('79');
+      expect(c.riferimentoScelto(vm)).toBe('programma');
+      expect((tutti('.exslide')[0].querySelector('.massimale ion-radio-group') as any).value).toBe('programma');
+      expect(c.foglioCaricoAperto).toBe(false);
+    });
+
+    it('a sessione non avviata non si sceglie: la ruota non cambia', async () => {
+      const { c } = await monta('slider', false, false, undefined, undefined, storia, 85);
+      const vm = c.exercises[0];
+      const prima = vm.rows[0].load;
+      c.usaRiferimento(vm, 'programma');
+      expect(vm.rows[0].load).toBe(prima);
+    });
+
+    it('senza storia non c\'e\' un massimale da dire', async () => {
+      const { tutti } = await monta('slider', true);
+      expect(tutti('.exslide')[0].querySelector('.massimale')).toBeNull();
+    });
+  });
+
+  /**
    * Il comando principale della pagina sta in basso, sotto il pollice. Finche'
    * non c'e' una sessione la scheda e' spenta: l'avvio non deve essere un tondo
    * piccolo da cercare in alto a destra.

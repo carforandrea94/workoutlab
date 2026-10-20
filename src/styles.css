@@ -1386,9 +1386,9 @@ ion-button.setdone.salva-btn.fatto{--background:var(--surface-raise);--color:var
 /* Allineato all'elenco che introduce: centrato restava staccato dal testo e dalle opzioni. */
 .scelta-sheet .sheet-title{margin-bottom:4px;text-align:left;}
 .scelta-hint{margin:0 0 10px;font-size:var(--text-sm);line-height:1.45;color:var(--label-3);}
-.scelta-sheet ion-item.scelta-opt{--background:transparent;--padding-start:0;--inner-padding-end:0;--min-height:52px;--border-color:var(--separator);--color:var(--label);}
-.scelta-sheet ion-radio.scelta-radio{width:100%;--color:var(--label-3);--color-checked:var(--accent);}
-.scelta-sheet ion-radio.scelta-radio::part(label){flex:1;min-width:0;margin-inline-end:12px;}
+:is(.scelta-sheet,.massimale) ion-item.scelta-opt{--background:transparent;--padding-start:0;--inner-padding-end:0;--min-height:52px;--border-color:var(--separator);--color:var(--label);}
+:is(.scelta-sheet,.massimale) ion-radio.scelta-radio{width:100%;--color:var(--label-3);--color-checked:var(--accent);}
+:is(.scelta-sheet,.massimale) ion-radio.scelta-radio::part(label){flex:1;min-width:0;margin-inline-end:12px;}
 .scelta-voce{display:flex;align-items:baseline;justify-content:space-between;gap:12px;width:100%;}
 .scelta-nome{font-size:var(--text-md);font-weight:600;white-space:normal;}
 .scelta-qty{font-variant-numeric:tabular-nums;font-size:var(--text-sm);font-weight:600;color:var(--label-2);white-space:nowrap;}
@@ -1530,6 +1530,15 @@ button.setcard-fonte:disabled{color:var(--label-3);cursor:default;}
 .carico-avviso{display:flex;align-items:flex-start;gap:5px;font-size:var(--text-xs);line-height:1.4;color:var(--label-2);}
 .carico-avviso app-icona{display:flex;margin-top:1px;flex-shrink:0;}
 .carico-kg{font-variant-numeric:tabular-nums;font-size:var(--text-lg);font-weight:700;color:var(--label);white-space:nowrap;}
+/* Il massimale stimato nella card dell'esercizio, sotto le serie: il numero e
+   da dove viene, poi i pesi che ne escono per la serie in corso, con le voci
+   del foglio "Che peso metto" (le stesse regole .scelta-opt e .carico-*). */
+.massimale{padding:12px 14px 2px;border-radius:var(--r-md);background:var(--surface-raise);}
+.massimale-testa{display:flex;align-items:baseline;justify-content:space-between;gap:12px;}
+.massimale-titolo{font-size:var(--text-sm);font-weight:600;color:var(--label-2);}
+.massimale-kg{font-variant-numeric:tabular-nums;font-size:var(--text-xl);font-weight:700;color:var(--label);white-space:nowrap;}
+.massimale-da{margin:2px 0 8px;font-variant-numeric:tabular-nums;font-size:var(--text-xs);line-height:1.45;color:var(--label-3);}
+.massimale ion-radio-group{display:block;border-top:1px solid var(--separator);}
 .carico-fonte{margin:12px 0 0;font-variant-numeric:tabular-nums;font-size:var(--text-2xs);line-height:1.5;color:var(--label-3);}
 .carico-fonte b{color:var(--label-2);font-weight:700;}
 

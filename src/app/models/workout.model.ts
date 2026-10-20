@@ -156,6 +156,10 @@ export interface ExInsight {
   lastText: string;
   /** Il massimale stimato dall'ultima sessione, gia' scritto per chi legge. */
   oneRmText: string | null;
+  /** Lo stesso massimale in numeri, per la card dell'esercizio: il valore, la
+   *  serie da cui viene (peso e ripetizioni), il giorno ("12/10", vuoto se non
+   *  c'e') e quanto e' cambiato dalla sessione prima (null se non c'e'). */
+  oneRm: { value: number; load: number; reps: number; data: string; delta: number | null } | null;
   /** Il carico per ogni numero di ripetizioni, da 1 a 15. */
   rmRows: RmRow[] | null;
   /** Il peso alla percentuale scelta per il programma. null se la percentuale
