@@ -7,7 +7,7 @@ import { filter, take } from 'rxjs/operators';
  *
  * La disegna index.html (#intro), prima che Angular parta: il logo che si
  * costruisce come si carica un bilanciere (la sbarra, i dischi da fuori, la
- * W e la L che si scrivono), il nome sotto, e i dischi che si alzano a onda
+ * W e la L dipinte con una pennellata graffiata), il nome sotto, e i dischi che si alzano a onda
  * finche' l'app non e' pronta. Prima, fra il tocco sull'icona
  * e la prima pagina, si vedeva il fondo nero per tutto il tempo in cui l'app
  * si avviava e le guardie aspettavano l'accesso, il profilo e il protocollo.
