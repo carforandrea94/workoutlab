@@ -9,7 +9,7 @@
   </ion-toolbar>
 </ion-header>
 
-<ion-content>
+<ion-content appBarraAzione #barra="barraAzione" [scrollEvents]="true" [class.con-barra]="!loading">
   <div class="wrap">
     <div *ngIf="loading" class="history-empty"><ion-spinner name="crescent" aria-label="Caricamento"></ion-spinner></div>
 
@@ -53,9 +53,11 @@
 
 <!-- Il comando principale sta in basso, sotto il pollice, con la scritta: prima era una spunta
      senza testo in alto a destra, la zona piu' lontana dello schermo. Resta spento finche' non
-     c'e' niente da salvare, cosi' si vede anche se quello che si e' scritto e' stato preso. -->
-<ion-footer *ngIf="!loading" class="salva-footer ion-no-border">
-  <div class="salva">
+     c'e' niente da salvare, cosi' si vede anche se quello che si e' scritto e' stato preso.
+     Sta dove nelle tab sta la barra, ed e' fatto come lei (vedi BarraAzioneDirective). -->
+<ion-footer *ngIf="!loading" class="salva-footer barra-azione ion-no-border"
+  [class.ridotta]="barra.ridotta()" [class.con-tastiera]="barra.tastiera()">
+  <div class="salva barra-pillola">
     <ion-button type="button" class="setdone salva-btn" [disabled]="measureState.saving() || !hasAnyValue()" (click)="save()">
       {{ etichettaSalva }}
     </ion-button>

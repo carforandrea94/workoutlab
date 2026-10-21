@@ -42,6 +42,33 @@ describe('coerenza delle pagine', () => {
     expect(css).toMatch(/\.navtitle\{[^}]*white-space:nowrap;overflow:hidden;text-overflow:ellipsis;/);
   });
 
+  it('il comando in basso di una pagina interna e\' fatto come la barra delle tab: ogni ion-footer e\' una barra-azione, e il contenuto le passa sotto', () => {
+    const conFooter = template().filter(f => f.testo.includes('<ion-footer'));
+    expect(conFooter.map(f => f.nome.split('/').pop()).sort()).toEqual([
+      'corsa-nuova.component.html', 'dieta-detail.component.html', 'misura-categoria.component.html',
+      'protocollo-import.component.html', 'scheda-detail.component.html'
+    ]);
+    for (const f of conFooter) {
+      for (const t of f.testo.match(/<ion-footer[^>]*>/g)!) {
+        expect(t, f.nome).toMatch(/class="[^"]*\bbarra-azione\b/);
+        expect(t, f.nome).toContain('[class.ridotta]=');
+      }
+      expect(f.testo, f.nome).toMatch(/<ion-content[^>]*con-barra/);
+    }
+    // I tasti principali non stanno piu' in fondo al contenuto.
+    expect(template().filter(f => /class="savebar|class="runsave/.test(f.testo)).map(f => f.nome)).toEqual([]);
+  });
+
+  it('sopra il contenuto che passa sotto la barra i tasti sono pieni: spento non va a meta\', "fatto" e\' il vetro della barra delle tab', () => {
+    const css = fs.readFileSync('src/styles.css', 'utf8');
+    const spento = css.match(/ion-footer\.barra-azione ion-button\.setdone\.button-disabled\{[^}]*\}/)![0];
+    expect(spento).toContain('opacity:1;');
+    expect(spento).toContain('--background:color-mix(in srgb,var(--accent) 50%,var(--bg))');
+    const fatto = css.match(/ion-footer\.barra-azione ion-button\.setdone\.salva-btn\.fatto\{[^}]*\}/)![0];
+    expect(fatto).toContain('--background:var(--glass-bg);');
+    expect(fatto).toContain('backdrop-filter:var(--glass-filter);');
+  });
+
   it('nessuna pagina ripete come prima sezione il titolo che ha gia\' in testata', () => {
     const doppi = template().filter(f => {
       const titolo = f.testo.match(/<div class="navtitle">([^<{]+)<\/div>/)?.[1]?.trim();

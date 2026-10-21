@@ -208,7 +208,9 @@ describe('styles.css — il vetro delle barre', () => {
     const regole = css.match(/[^{}]*\{[^{}]*backdrop-filter[^{}]*\}/g) ?? [];
     const selettori = regole.map(r => r.slice(0, r.indexOf('{')).trim());
     expect(selettori.sort()).toEqual([
-      '.restbar', '.sessionpill', '.tabbar', 'ion-footer.barra-azione .fine-recupero'
+      '.restbar', '.sessionpill', '.tabbar', 'ion-footer.barra-azione .fine-recupero',
+      // "Segna come da fare" della Dieta: il tasto della barra in basso, a pasto fatto.
+      'ion-footer.barra-azione ion-button.setdone.salva-btn.fatto'
     ]);
   });
 

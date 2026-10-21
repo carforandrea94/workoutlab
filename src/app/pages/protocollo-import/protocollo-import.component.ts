@@ -9,9 +9,10 @@ import { todayLocalISO } from '../../core/utils/date.util';
 import { Protocol } from '../../models/protocol.model';
 import { Diet, NamedMeal, newNamedMeal, SupplementItem } from '../../models/diet.model';
 import { IONIC_PAGE } from '../../core/ionic-page';
-import { IonLoading, NavController, IonButton, IonLabel, IonNote } from '@ionic/angular';
+import { IonLoading, NavController, IonButton, IonFooter, IonLabel, IonNote } from '@ionic/angular';
 import { IONIC_LIST } from '../../core/ionic-list';
 import { IconaComponent } from '../../components/icona/icona.component';
+import { BarraAzioneDirective } from '../../core/directives/barra-azione.directive';
 
 type QualePdf = 'scheda' | 'dieta' | 'integrazione';
 interface RigaPdf { id: QualePdf; nome: string; nota: string; }
@@ -34,7 +35,7 @@ const STEP_TIMEOUT_MS = 25000;
 @Component({
   selector: 'app-protocollo-import',
   standalone: true,
-  imports: [IonButton, IonLabel, IonNote, ...IONIC_LIST, ...IONIC_PAGE, IonLoading, CommonModule, IconaComponent],
+  imports: [BarraAzioneDirective, IonButton, IonFooter, IonLabel, IonNote, ...IONIC_LIST, ...IONIC_PAGE, IonLoading, CommonModule, IconaComponent],
   templateUrl: './protocollo-import.component.html'
 })
 export class ProtocolloImportComponent implements OnInit, OnDestroy {

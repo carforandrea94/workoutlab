@@ -3,6 +3,7 @@ import { ActivatedRoute, convertToParamMap } from '@angular/router';
 import { of } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
 import { providerPagina } from '../../../test-support/pagina';
+import { controllaBarraInBasso } from '../../../test-support/barra-azione';
 import { RunsService } from '../../services/runs.service';
 import { RunningStateService } from '../../services/running-state.service';
 import { ConfirmDialogService } from '../../services/confirm-dialog.service';
@@ -12,7 +13,7 @@ import { CorsaNuovaComponent } from './corsa-nuova.component';
 /**
  * Nuova uscita come "Aggiungi dati" in Salute: righe con l'etichetta e il
  * valore a destra, le scelte nei segmenti con la loro intestazione, il
- * salvataggio in fondo, e in modifica la riga rossa per eliminare.
+ * salvataggio nella barra in basso, e in modifica la riga rossa per eliminare.
  */
 describe('CorsaNuovaComponent — disegno vero', () => {
   async function monta(query: Record<string, string> = {}, runs: any[] = []) {
@@ -78,6 +79,33 @@ describe('CorsaNuovaComponent — disegno vero', () => {
     const { root } = await monta();
     const etichette = Array.from(root.querySelectorAll<HTMLElement & { label?: string }>('ion-list.campi ion-input')).map(i => i.label ?? i.getAttribute('label'));
     expect(etichette).toEqual(['Minuti', 'Note']);
+  });
+
+  it('"Salva uscita" sta nella barra in basso, come la barra delle tab, non in fondo al modulo', async () => {
+    const { fixture, root, testo } = await monta();
+    const tasto = controllaBarraInBasso(fixture);
+    expect(testo(tasto)).toBe('Salva uscita');
+    expect(root.querySelector('ion-content ion-button')).toBeNull();
+  });
+
+  it('il tasto e\' spento finche\' non ci sono minuti, poi salva', async () => {
+    const { fixture, root, c } = await monta();
+    const tasto = root.querySelector('ion-footer.barra-azione ion-button') as any;
+    expect(tasto.disabled).toBe(true);
+    const minuti = root.querySelector('ion-input.a-destra') as any;
+    minuti.value = '40';
+    minuti.dispatchEvent(new CustomEvent('ionInput', { bubbles: true, detail: { value: '40' } }));
+    fixture.detectChanges();
+    expect(tasto.disabled).toBe(false);
+    const salva = vi.spyOn(c, 'save').mockResolvedValue();
+    tasto.click();
+    expect(salva).toHaveBeenCalled();
+  });
+
+  it('in modifica il tasto dice "Salva modifiche"', async () => {
+    const run = { id: 'r1', run: { date: '2026-10-01', durationMin: 40, type: 'lento', effort: 'giusta', note: '' } };
+    const { root, testo } = await monta({ id: 'r1' }, [run]);
+    expect(testo(root.querySelector('ion-footer.barra-azione ion-button'))).toBe('Salva modifiche');
   });
 
   it('un\'uscita nuova non ha la riga per eliminarla', async () => {

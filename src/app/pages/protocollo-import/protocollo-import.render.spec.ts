@@ -13,6 +13,7 @@ import { ActivatedRoute, convertToParamMap } from '@angular/router';
 import { of } from 'rxjs';
 import { describe, expect, it } from 'vitest';
 import { providerPagina } from '../../../test-support/pagina';
+import { controllaBarraInBasso } from '../../../test-support/barra-azione';
 import { PdfImportService } from '../../services/pdf-import.service';
 import { ProtocolService } from '../../services/protocol.service';
 import { ConfirmDialogService } from '../../services/confirm-dialog.service';
@@ -69,8 +70,10 @@ describe('ProtocolloImportComponent — disegno vero', () => {
   });
 
   it('scelto il file, la riga dice quale, mette la spunta e il tasto si accende', async () => {
-    const { fixture, righe, campi, testo, c } = await monta();
+    const { fixture, root, righe, campi, testo, c } = await monta();
     expect(c.canProcess).toBe(false);
+    const tasto = root.querySelector('ion-footer.barra-azione ion-button') as any;
+    expect(tasto.disabled).toBe(true);
     const pdf = new File(['%PDF'], 'scheda-ottobre.pdf', { type: 'application/pdf' });
     Object.defineProperty(campi()[0], 'files', { value: [pdf] });
     campi()[0].dispatchEvent(new Event('change'));
@@ -82,6 +85,19 @@ describe('ProtocolloImportComponent — disegno vero', () => {
     expect(riga.querySelector('app-icona.file-segno')!.classList.contains('scelto')).toBe(true);
     expect(righe()[1].querySelector('app-icona.file-segno')!.classList.contains('scelto')).toBe(false);
     expect(c.canProcess).toBe(true);
+    expect(tasto.disabled).toBe(false);
+  });
+
+  it('"Elabora e crea bozza" sta nella barra in basso, come la barra delle tab, non in fondo alla pagina', async () => {
+    const { fixture, root, testo } = await monta();
+    const tasto = controllaBarraInBasso(fixture);
+    expect(testo(tasto)).toBe('Elabora e crea bozza');
+    expect(root.querySelector('ion-content ion-button, .savebar')).toBeNull();
+  });
+
+  it('nell\'aggiornamento il tasto dice "Aggiorna protocollo"', async () => {
+    const { root, testo } = await monta('p1');
+    expect(testo(root.querySelector('ion-footer.barra-azione ion-button'))).toBe('Aggiorna protocollo');
   });
 
   it('nell\'aggiornamento anche la scheda e\' facoltativa', async () => {
