@@ -33,6 +33,15 @@ describe('coerenza delle pagine', () => {
     expect(fs.readFileSync('src/index.html', 'utf8')).not.toContain('Plex');
   });
 
+  it('in testata un titolo lungo finisce coi puntini prima delle azioni, non ci passa sotto', () => {
+    const css = fs.readFileSync('src/styles.css', 'utf8');
+    // Un elemento flex non si restringe sotto la larghezza del suo testo: senza
+    // min-width:0 "Dorso-Delt.post-Bicipiti" finiva sotto il selettore elenco/slider.
+    const titolo = css.match(/ion-toolbar ion-title:not\(\.title-large\)\{[^}]*\}/)![0];
+    expect(titolo).toContain('min-width:0;');
+    expect(css).toMatch(/\.navtitle\{[^}]*white-space:nowrap;overflow:hidden;text-overflow:ellipsis;/);
+  });
+
   it('nessuna pagina ripete come prima sezione il titolo che ha gia\' in testata', () => {
     const doppi = template().filter(f => {
       const titolo = f.testo.match(/<div class="navtitle">([^<{]+)<\/div>/)?.[1]?.trim();
