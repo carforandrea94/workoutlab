@@ -318,7 +318,12 @@ ion-header{background:var(--bg);}
    restano allineati alle schede invece di stare ai bordi dello schermo con le
    card in mezzo (iPad in verticale, PWA su desktop). */
 ion-toolbar{--background:var(--bg);--color:var(--label);--border-width:0;--min-height:52px;--padding-start:max(16px,calc((100vw - 640px) / 2 + 16px));--padding-end:max(16px,calc((100vw - 640px) / 2 + 16px));--padding-top:8px;--padding-bottom:6px;}
-ion-toolbar ion-title:not(.title-large){position:static;width:auto;height:auto;padding:0;transform:none;text-align:left;pointer-events:auto;}
+/* Il titolo sta fra la freccia e le azioni e prende lo spazio che resta.
+   min-width:0 gli permette di stare in quello spazio: un elemento flex, di
+   suo, non si restringe sotto la larghezza del testo, e un nome lungo
+   ("Dorso-Delt.post-Bicipiti") passava sotto le azioni invece di finire coi
+   puntini prima di loro. */
+ion-toolbar ion-title:not(.title-large){position:static;width:auto;height:auto;min-width:0;padding:0;transform:none;text-align:left;pointer-events:auto;}
 /* Distanza fissa fra titolo e pulsanti, e nessun margine di Ionic sui gruppi:
    freccia e azioni stanno sullo stesso filo delle card (16px dal bordo). */
 ion-toolbar ion-buttons{margin:0;}
