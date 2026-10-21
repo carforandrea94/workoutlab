@@ -1,74 +1,51 @@
-import { Component, OnInit, computed, signal } from '@angular/core';
+import { Component, OnInit, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 import { RunningStateService } from '../../services/running-state.service';
-import { RUN_TYPE_LABELS, RUN_EFFORT_LABELS, RunEffort, hasRunGoal, Run } from '../../models/run.model';
+import { hasRunGoal } from '../../models/run.model';
 import { goalPct } from '../../core/utils/run-math.util';
 import { todayLocalISO } from '../../core/utils/date.util';
-import { buildWeekHistory, WeekGroup } from '../../core/utils/week-history.util';
-import { IONIC_PAGE } from '../../core/ionic-page';
+import { buildWeekHistory } from '../../core/utils/week-history.util';
+import { IONIC_LINKS, IONIC_PAGE } from '../../core/ionic-page';
 import { IONIC_REFRESH, completaRefresh } from '../../core/ionic-refresh';
-import {
-  NavController, IonAccordion, IonAccordionGroup, IonButton, IonItem, IonLabel, IonList, IonListHeader, IonNote, IonProgressBar
-} from '@ionic/angular';
+import { NavController, IonItem, IonLabel, IonList, IonListHeader, IonNote, IonProgressBar } from '@ionic/angular';
 import { IconaComponent } from '../../components/icona/icona.component';
-
-const WEEKDAYS = ['dom', 'lun', 'mar', 'mer', 'gio', 'ven', 'sab'];
-
-/**
- * Quante settimane si vedono senza chiederlo. Dodici sono tre mesi: oltre,
- * l'elenco tornerebbe lungo come quello che ha sostituito.
- */
-const WEEKS_SHOWN = 12;
+import { RigaCorsa } from './riga-corsa';
 
 /**
- * La fatica di un'uscita, detta due volte: con il colore e con la MISURA del
- * pallino, che cresce col peso della giornata.
- *
- * Il colore da solo non basterebbe. I tre hanno contrasto di sovrabbondanza
- * sulla card — oltre 5:1 in entrambi i temi, contro i 3:1 che servono a un
- * segno non testuale — ma le loro luminosita' sono quasi identiche, quindi
- * chi confonde le tinte vedrebbe tre pallini uguali. Il diametro e' il
- * secondo canale, e si legge anche senza colori.
+ * La Corsa e' la settimana in corso: l'obiettivo, le corse fatte e "Registra
+ * corsa". Le settimane passate stanno nello Storico, una pagina dentro la
+ * tab (corsa-storico): qui c'e' solo la riga che lo apre, con la settimana
+ * scorsa. Prima erano tutte qui sotto, e la pagina era soprattutto storico.
  */
-const EFFORT_STYLE: Record<RunEffort, { color: string; size: number }> = {
-  facile: { color: 'var(--state-success)', size: 5 },
-  giusta: { color: 'var(--accent)', size: 8 },
-  dura: { color: 'var(--effort-hard)', size: 11 }
-};
-
 @Component({
   selector: 'app-corsa',
   standalone: true,
   imports: [
-    IonAccordion, IonAccordionGroup, IonButton, IonItem, IonLabel, IonList, IonListHeader, IonNote, IonProgressBar,
-    ...IONIC_PAGE, ...IONIC_REFRESH, CommonModule, IconaComponent
+    IonItem, IonLabel, IonList, IonListHeader, IonNote, IonProgressBar,
+    ...IONIC_PAGE, ...IONIC_REFRESH, ...IONIC_LINKS, CommonModule, IconaComponent
   ],
   templateUrl: './corsa.component.html'
 })
-export class CorsaComponent implements OnInit {
+export class CorsaComponent extends RigaCorsa implements OnInit {
 
   readonly hasGoal = computed(() => hasRunGoal(this.state.goal()));
 
-  /** Le settimane dello storico aperte, per lunedi'. */
-  private readonly opened = signal<ReadonlySet<string>>(new Set());
+  /** Tutte le settimane, dalla piu' recente: qui servono quella in corso e la scorsa. */
+  private readonly history = computed(() => buildWeekHistory(this.state.runs(), todayLocalISO(), 0));
 
-  readonly showAll = signal(false);
-
-  readonly history = computed(() =>
-    buildWeekHistory(this.state.runs(), todayLocalISO(), this.showAll() ? 0 : WEEKS_SHOWN)
-  );
-
-  /** La settimana in corso: sta per conto suo, sopra lo storico. */
+  /** La settimana in corso. */
   readonly corrente = computed(() => this.history().weeks.find(w => w.isCurrent) ?? null);
 
-  /** Lo storico: tutte le altre settimane, dalla piu' recente. */
+  /** Le settimane passate: se ce n'e' almeno una, c'e' lo Storico. */
   readonly passate = computed(() => this.history().weeks.filter(w => !w.isCurrent));
 
   constructor(
     public state: RunningStateService,
     private nav: NavController
-  ) {}
+  ) {
+    super();
+  }
 
   /** Tira per aggiornare. */
   aggiorna(ev: Event): Promise<void> {
@@ -116,55 +93,13 @@ export class CorsaComponent implements OnInit {
     return `${w.label} · ${this.runsLabel(w)}` + (w.minutes ? ` · ${w.minutes} min` : '');
   }
 
-  // --- Le settimane ----------------------------------------------------------
-
-  /** Le settimane dello storico aperte, per la fisarmonica. */
-  aperte(): string[] {
-    return this.passate().filter(w => this.opened().has(w.mondayISO)).map(w => w.mondayISO);
-  }
-
-  /** La fisarmonica dice quali settimane sono aperte dopo un tocco. */
-  settimaneCambiate(ev: Event): void {
-    const v = (ev as CustomEvent<{ value?: string | string[] | null }>).detail?.value;
-    this.opened.set(new Set(Array.isArray(v) ? v : v ? [v] : []));
-  }
-
-  /** Quanto della settimana e' stato coperto. Senza obiettivo la barra non
-   *  compare: una percentuale su un bersaglio che non c'e' non vuol dire niente. */
-  pct(w: WeekGroup): number {
-    return goalPct(w.minutes, this.goalMinutes);
-  }
-
-  reached(w: WeekGroup): boolean {
-    return this.goalMinutes > 0 && w.minutes >= this.goalMinutes;
-  }
-
-  runsLabel(w: WeekGroup): string {
-    if (!w.runs.length) return 'nessuna uscita';
-    return w.runs.length === 1 ? '1 uscita' : `${w.runs.length} uscite`;
-  }
-
-  /** "dom 27 · lento" — il giorno serve perche' dentro una settimana passata
-   *  "domenica" da sola non dice piu' quale. */
-  runLineLabel(run: Run): string {
-    const d = new Date(run.date + 'T00:00:00');
-    const giorno = isNaN(d.getTime())
-      ? ''
-      : `${WEEKDAYS[d.getDay()]} ${d.getDate()}`;
-    const tipo = RUN_TYPE_LABELS[run.type]?.toLowerCase() ?? '';
-    return tipo ? `${giorno} · ${tipo}` : giorno;
-  }
-
-  effortColor(effort: RunEffort): string {
-    return (EFFORT_STYLE[effort] ?? EFFORT_STYLE.giusta).color;
-  }
-
-  effortSize(effort: RunEffort): number {
-    return (EFFORT_STYLE[effort] ?? EFFORT_STYLE.giusta).size;
-  }
-
-  effortLabel(effort: RunEffort): string {
-    return RUN_EFFORT_LABELS[effort] ?? '';
+  /** Sotto "Storico": com'e' andata la settimana scorsa. */
+  get notaStorico(): string {
+    const scorsa = this.passate()[0];
+    if (!scorsa) return '';
+    return scorsa.runs.length
+      ? `La settimana scorsa ${scorsa.minutes} min in ${this.runsLabel(scorsa)}`
+      : 'La settimana scorsa nessuna uscita';
   }
 
   // --- Azioni ----------------------------------------------------------------
@@ -172,16 +107,6 @@ export class CorsaComponent implements OnInit {
   /** "Registra corsa" nella settimana in corso: parte da oggi. */
   registraCorsa(): void {
     this.nav.navigateForward(['/corsa/nuova'], { queryParams: { date: todayLocalISO() } });
-  }
-
-  /**
-   * Nuova corsa dentro una settimana dello storico: parte dalla sua domenica,
-   * cosi' il calendario si apre gia' nel punto giusto invece di costringere a
-   * girarlo all'indietro. In quella in corso, da oggi.
-   */
-  addRun(w: WeekGroup): void {
-    const date = w.isCurrent ? todayLocalISO() : w.sundayISO;
-    this.nav.navigateForward(['/corsa/nuova'], { queryParams: { date } });
   }
 
   editRun(id: string): void {
