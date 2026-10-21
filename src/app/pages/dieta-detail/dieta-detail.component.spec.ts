@@ -424,6 +424,51 @@ describe('DietaDetailComponent', () => {
       expect(c.pastoCorrente?.meal.id).toBe('m2');
     });
 
+    it('aprendo il piano lo slider e\' gia\' sul primo pasto da fare: ci va di colpo, non scorre mentre la pagina entra', async () => {
+      const visti: unknown[] = [];
+      const prima = HTMLElement.prototype.scrollIntoView;
+      HTMLElement.prototype.scrollIntoView = function (o?: unknown) { visti.push(o); } as any;
+      try {
+        const { c } = await monta('slider', { date: todayLocalISO(), done: { m1: true } });
+        expect(c.sliderIndex).toBe(1);
+        expect(visti.length).toBeGreaterThan(0);
+        for (const v of visti) expect(v).toEqual({ behavior: 'instant', inline: 'center', block: 'nearest' });
+      } finally {
+        HTMLElement.prototype.scrollIntoView = prima;
+      }
+    });
+
+    it('toccato un pasto, mentre lo slider ci va il segmento resta sulla meta; arrivati, segue di nuovo lo slider', async () => {
+      const { c, root } = await monta('slider');
+      // jsdom non impagina: le card stanno una accanto all'altra, larghe 393.
+      const slider = root.querySelector<HTMLElement>('.dietslider')!;
+      Array.from(slider.children).forEach((card, i) => Object.defineProperty(card, 'offsetLeft', { value: i * 393 }));
+      let x = 0;
+      Object.defineProperty(slider, 'scrollLeft', { get: () => x, configurable: true });
+      const scorri = async (v: number) => { x = v; c.onSliderScroll(); await new Promise(r => setTimeout(r, 40)); };
+
+      c.vaiAlPasto('m2');
+      // Il primo pezzo di strada e' ancora sulla Colazione: prima il segmento ci tornava.
+      await scorri(20);
+      expect(c.sliderIndex).toBe(1);
+      await scorri(393);
+      expect(c.sliderIndex).toBe(1);
+      await scorri(0);
+      expect(c.sliderIndex).toBe(0);
+    });
+
+    it('se il dito riprende lo slider, il segmento segue di nuovo quello che si vede', async () => {
+      const { c, root } = await monta('slider');
+      const slider = root.querySelector<HTMLElement>('.dietslider')!;
+      Array.from(slider.children).forEach((card, i) => Object.defineProperty(card, 'offsetLeft', { value: i * 393 }));
+      Object.defineProperty(slider, 'scrollLeft', { get: () => 10, configurable: true });
+      c.vaiAlPasto('m2');
+      slider.dispatchEvent(new Event('pointerdown'));
+      c.onSliderScroll();
+      await new Promise(r => setTimeout(r, 40));
+      expect(c.sliderIndex).toBe(0);
+    });
+
     it('"Ho mangiato questo" sta nella barra in basso, fatta come la barra delle tab', async () => {
       const { fixture, testo } = await monta('slider');
       expect(controllaBarraInBasso(fixture).classList.contains('salva-btn')).toBe(true);

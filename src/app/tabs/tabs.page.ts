@@ -95,12 +95,14 @@ export function eRadiceDiTab(url: string, tabs: readonly { id: string }[] = TABS
         }
       </ion-tab-bar>
       <!-- Durante una seduta la barra lascia il posto al recupero: in mezzo a
-           un allenamento serve sapere quanto manca, non cambiare sezione. -->
+           un allenamento serve sapere quanto manca, non cambiare sezione.
+           Fascia e pillola se ne vanno con un'animazione (animate.leave, vedi
+           styles.css): Angular le toglie quando e' finita. -->
       @if (showRestBar) {
-        <app-rest-bar></app-rest-bar>
+        <app-rest-bar animate.leave="fascia-via"></app-rest-bar>
       }
       @if (sessione(); as s) {
-        <button type="button" class="sessionpill" [class.senza-barra]="nascondiBarra" [class.in-pausa]="s.inPausa"
+        <button type="button" class="sessionpill" animate.leave="pillola-via" [class.senza-barra]="nascondiBarra" [class.in-pausa]="s.inPausa"
           (click)="riprendiSessione()" [attr.aria-label]="s.aria">
           <span class="sessionpill-dot" aria-hidden="true"></span>
           <span class="sessionpill-stato">{{ s.inPausa ? 'In pausa' : 'In corso' }}</span>

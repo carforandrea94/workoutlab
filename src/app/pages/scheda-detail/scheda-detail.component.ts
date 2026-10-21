@@ -19,7 +19,7 @@ import {
   clusterSetDone, blocksLabel, blocksLoadLabel, clusterLabel, formatClusterRest
 } from '../../core/utils/cluster.util';
 import { todayLocalISO } from '../../core/utils/date.util';
-import { findClosestSlideIndex, scrollToSlide } from '../../core/utils/horizontal-slider.util';
+import { MetaSlider, findClosestSlideIndex, scrollToSlide } from '../../core/utils/horizontal-slider.util';
 import {
   PerformedSet, oneRepMaxOf, rmTable, MAX_TRUSTED_REPS,
   loadAtPercent, repsAtPercent, numeroSevero
@@ -166,6 +166,8 @@ export class SchedaDetailComponent implements OnInit, AfterViewInit, OnDestroy {
   restModalValue = 90;
 
   sliderIndex = 0;
+  /** L'esercizio toccato negli step in cima, finche' lo slider non ci arriva (vedi MetaSlider). */
+  readonly meta = new MetaSlider();
   private scrollTicking = false;
 
   @ViewChild('sliderEl') sliderEl?: ElementRef<HTMLDivElement>;
@@ -761,8 +763,8 @@ export class SchedaDetailComponent implements OnInit, AfterViewInit, OnDestroy {
       this.scrollTicking = false;
       const el = this.sliderEl?.nativeElement;
       if (!el) return;
-      const closest = findClosestSlideIndex(el);
-      if (closest !== this.sliderIndex) {
+      const closest = this.meta.letto(findClosestSlideIndex(el));
+      if (closest !== null && closest !== this.sliderIndex) {
         this.sliderIndex = closest;
         // Cambiando esercizio la barra in basso torna intera, come cambiando tab.
         this.barraRidotta.set(false);
@@ -1441,6 +1443,7 @@ export class SchedaDetailComponent implements OnInit, AfterViewInit, OnDestroy {
     const i = typeof valore === 'string' ? parseInt(valore.replace(/^p/, ''), 10) : NaN;
     if (!isFinite(i) || i < 0 || i >= this.slideCount || i === this.sliderIndex) return;
     this.sliderIndex = i;
+    this.meta.vai(i);
     this.scrollToIndex(i);
   }
 
@@ -1643,7 +1646,16 @@ export class SchedaDetailComponent implements OnInit, AfterViewInit, OnDestroy {
    * per la barra delle tab.
    */
   get barraInBasso(): boolean {
-    return this.avvioInBasso || this.fineInBasso || (!this.recuperoInCorsa && this.azione !== null);
+    return this.avvioInBasso || this.fineInBasso || this.azione !== null;
+  }
+
+  /**
+   * Il recupero conta: la barra resta, ma cede il posto alla fascia (si
+   * dissolve li' e non si tocca). Lo spazio in fondo resta, cosi' il contenuto
+   * non salta a ogni serie.
+   */
+  get barraCeduta(): boolean {
+    return !this.avvioInBasso && this.recuperoInCorsa;
   }
 
   /** A fine allenamento: "Torna alla scheda" nella pillola in basso. */
