@@ -8,21 +8,21 @@ import { todayLocalISO } from '../../core/utils/date.util';
 import { buildWeekHistory } from '../../core/utils/week-history.util';
 import { IONIC_LINKS, IONIC_PAGE } from '../../core/ionic-page';
 import { IONIC_REFRESH, completaRefresh } from '../../core/ionic-refresh';
-import { NavController, IonItem, IonLabel, IonList, IonListHeader, IonNote, IonProgressBar } from '@ionic/angular';
+import { NavController, IonButton, IonItem, IonLabel, IonList, IonListHeader, IonNote, IonProgressBar } from '@ionic/angular';
 import { IconaComponent } from '../../components/icona/icona.component';
 import { RigaCorsa } from './riga-corsa';
 
 /**
  * La Corsa e' la settimana in corso: l'obiettivo, le corse fatte e "Registra
  * corsa". Le settimane passate stanno nello Storico, una pagina dentro la
- * tab (corsa-storico): qui c'e' solo la riga che lo apre, con la settimana
- * scorsa. Prima erano tutte qui sotto, e la pagina era soprattutto storico.
+ * tab (corsa-storico), che si apre dal tasto in alto a destra. Prima erano
+ * tutte qui sotto, e la pagina era soprattutto storico.
  */
 @Component({
   selector: 'app-corsa',
   standalone: true,
   imports: [
-    IonItem, IonLabel, IonList, IonListHeader, IonNote, IonProgressBar,
+    IonButton, IonItem, IonLabel, IonList, IonListHeader, IonNote, IonProgressBar,
     ...IONIC_PAGE, ...IONIC_REFRESH, ...IONIC_LINKS, CommonModule, IconaComponent
   ],
   templateUrl: './corsa.component.html'
@@ -31,14 +31,10 @@ export class CorsaComponent extends RigaCorsa implements OnInit {
 
   readonly hasGoal = computed(() => hasRunGoal(this.state.goal()));
 
-  /** Tutte le settimane, dalla piu' recente: qui servono quella in corso e la scorsa. */
-  private readonly history = computed(() => buildWeekHistory(this.state.runs(), todayLocalISO(), 0));
-
-  /** La settimana in corso. */
-  readonly corrente = computed(() => this.history().weeks.find(w => w.isCurrent) ?? null);
-
-  /** Le settimane passate: se ce n'e' almeno una, c'e' lo Storico. */
-  readonly passate = computed(() => this.history().weeks.filter(w => !w.isCurrent));
+  /** La settimana in corso: qui serve solo lei (la piu' recente, se non ci sono corse datate nel futuro). */
+  readonly corrente = computed(() =>
+    buildWeekHistory(this.state.runs(), todayLocalISO(), 0).weeks.find(w => w.isCurrent) ?? null
+  );
 
   constructor(
     public state: RunningStateService,
@@ -91,15 +87,6 @@ export class CorsaComponent extends RigaCorsa implements OnInit {
     const w = this.corrente();
     if (!w || this.hasGoal()) return this.weekLabel;
     return `${w.label} · ${this.runsLabel(w)}` + (w.minutes ? ` · ${w.minutes} min` : '');
-  }
-
-  /** Sotto "Storico": com'e' andata la settimana scorsa. */
-  get notaStorico(): string {
-    const scorsa = this.passate()[0];
-    if (!scorsa) return '';
-    return scorsa.runs.length
-      ? `La settimana scorsa ${scorsa.minutes} min in ${this.runsLabel(scorsa)}`
-      : 'La settimana scorsa nessuna uscita';
   }
 
   // --- Azioni ----------------------------------------------------------------

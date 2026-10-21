@@ -3,6 +3,13 @@
     <ion-title>
       <div class="navtitle">Corsa</div>
     </ion-title>
+    <!-- Le settimane passate stanno nello Storico, una pagina dentro la tab:
+         si apre da qui, come lo storico degli allenamenti nella Scheda. -->
+    <ion-buttons slot="end">
+      <ion-button class="navicon" routerLink="/corsa/storico" routerDirection="forward" aria-label="Storico" title="Storico">
+        <app-icona name="time" [size]="22"></app-icona>
+      </ion-button>
+    </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
@@ -59,20 +66,6 @@
       <ion-item class="runadd" [button]="true" [detail]="false" lines="none" (click)="registraCorsa()">
         <app-icona slot="start" name="add" [size]="22"></app-icona>
         <ion-label>Registra corsa</ion-label>
-      </ion-item>
-    </ion-list>
-
-    <!--
-      Le settimane passate stanno nello Storico, una pagina dentro la tab: qui
-      resta la riga che lo apre, con com'e' andata la settimana scorsa. Prima
-      erano tutte qui sotto, e la Corsa era soprattutto storico.
-    -->
-    <ion-list [inset]="true" class="voce-storico" *ngIf="passate().length">
-      <ion-item [button]="true" [detail]="true" routerLink="/corsa/storico" routerDirection="forward">
-        <ion-label class="ion-text-wrap">
-          <h2>Storico</h2>
-          <p>{{ notaStorico }}</p>
-        </ion-label>
       </ion-item>
     </ion-list>
 

@@ -870,9 +870,9 @@ ion-segment.seg.vista-seduta{margin:0 0 16px;}
 
 /* ===================== CORSA ===================== */
 /* La Corsa e' fatta di liste iOS (.liste-ios sopra): la settimana in corso
-   (l'obiettivo, le corse, "Registra corsa") e la riga che apre lo Storico,
-   dove le settimane passate sono una fisarmonica raggruppata. Qui resta il
-   pallino della fatica. */
+   (l'obiettivo, le corse, "Registra corsa"); lo Storico si apre dal tasto in
+   alto a destra, e le settimane passate sono una fisarmonica raggruppata.
+   Qui resta il pallino della fatica. */
 .liste-ios ion-list-header .sezione-nota{font-size:var(--text-sm);font-weight:500;color:var(--label-2);margin-left:6px;letter-spacing:0;}
 .liste-ios ion-accordion{background:var(--surface-card);}
 .liste-ios ion-accordion ion-list.uscite{background:transparent;padding:0;}

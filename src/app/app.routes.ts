@@ -114,7 +114,7 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/corsa/corsa.component').then(m => m.CorsaComponent)
       },
       {
-        // Le settimane passate: una pagina dentro la tab, aperta dalla riga "Storico".
+        // Le settimane passate: una pagina dentro la tab, aperta dal tasto in alto a destra della Corsa.
         path: 'corsa/storico',
         loadComponent: () => import('./pages/corsa-storico/corsa-storico.component').then(m => m.CorsaStoricoComponent)
       },
