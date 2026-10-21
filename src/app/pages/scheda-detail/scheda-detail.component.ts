@@ -1087,12 +1087,7 @@ export class SchedaDetailComponent implements OnInit, AfterViewInit, OnDestroy {
     }
     if (i === -1) return;
 
-    const b = (row.blocks ?? [])[i];
-    b.done = true;
-    if (!b.reps && b.ripPlaceholder) b.reps = b.ripPlaceholder;
-    // Il carico e' del BLOCCO: in un cluster di solito e' lo stesso ovunque,
-    // ma al terzo blocco si cala, e la serie deve poterlo dire.
-    if (!b.load && b.loadPlaceholder) b.load = b.loadPlaceholder;
+    this.segnaBlocco((row.blocks ?? [])[i]);
 
     // A esaurimento il blocco dopo non esiste finche' non serve: si crea qui,
     // cosi' la striscia mostra sempre dove si sta andando.
@@ -1109,15 +1104,39 @@ export class SchedaDetailComponent implements OnInit, AfterViewInit, OnDestroy {
     this.scheduleDraft();
   }
 
-  /** La serie finisce qui: a blocchi finiti, o perche' non ne escono altri. */
+  /** Il blocco e' fatto: quello che non hai scritto e' quello del piano. */
+  private segnaBlocco(b: BlockRow): void {
+    b.done = true;
+    if (!b.reps && b.ripPlaceholder) b.reps = b.ripPlaceholder;
+    // Il carico e' del BLOCCO: in un cluster di solito e' lo stesso ovunque,
+    // ma al terzo blocco si cala, e la serie deve poterlo dire.
+    if (!b.load && b.loadPlaceholder) b.load = b.loadPlaceholder;
+  }
+
+  /**
+   * "Chiudo la serie", a esaurimento: il blocco su cui stai lavorando e'
+   * l'ultimo, e conta come fatto (con i valori delle ruote, o quelli del piano
+   * se non le hai toccate); poi la serie si chiude. Prima quel blocco andava
+   * perso: chi chiudeva dopo averlo fatto si ritrovava la serie con un blocco
+   * in meno. Uno segnato per sbaglio si toglie con "Togli l'ultimo blocco",
+   * che riapre la serie.
+   */
+  chiudiSerie(vm: ExerciseVM, rowIdx: number): void {
+    if (this.setsLocked || !vm.cluster) return;
+    const b = this.block(vm.rows[rowIdx]);
+    if (b) this.segnaBlocco(b);
+    this.closeClusterSet(vm, rowIdx);
+  }
+
+  /** La serie finisce qui: a blocchi finiti, o con "Chiudo la serie". */
   closeClusterSet(vm: ExerciseVM, rowIdx: number): void {
     if (this.setsLocked) return;
     const row = vm.rows[rowIdx];
     if (!row.blocks?.some(b => b.done)) return;
     this.ultimoEsercizio = this.exercises.indexOf(vm);
 
-    // A esaurimento l'ultimo blocco e' quello che stavi per fare e non hai
-    // fatto: e' li' perche' la striscia mostrasse dove si stava andando, e
+    // A esaurimento un blocco non fatto in fondo (riaprendo una serie, o dopo
+    // "Togli l'ultimo blocco") e' solo dove la striscia diceva che si andava:
     // nello storico non deve restare come una serie mancata.
     if (vm.cluster?.end === 'open') {
       while (row.blocks.length && !row.blocks[row.blocks.length - 1].done) row.blocks.pop();
@@ -1725,7 +1744,7 @@ export class SchedaDetailComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  /** Il tasto in basso. `chiudi` e' il secondo tasto di un cluster a esaurimento: "Chiudo la serie". */
+  /** Il tasto in basso. `chiudi` e' il secondo tasto di un cluster a esaurimento: "Chiudo la serie" (il blocco in corso conta). */
   eseguiAzione(a: AzioneInBasso, chiudi = false): void {
     const vm = this.exercises[this.sliderIndex];
     if (!vm) return;
@@ -1736,7 +1755,7 @@ export class SchedaDetailComponent implements OnInit, AfterViewInit, OnDestroy {
         if (j !== null) this.confirmSet(vm, j);
         break;
       case 'blocco':
-        if (j !== null) { if (chiudi) this.closeClusterSet(vm, j); else this.doneBlock(vm, j); }
+        if (j !== null) { if (chiudi) this.chiudiSerie(vm, j); else this.doneBlock(vm, j); }
         break;
       case 'torna':
         vm.activeRow = a.serie - 1;

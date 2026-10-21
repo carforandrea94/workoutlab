@@ -205,16 +205,18 @@
               <ion-button type="button" class="setdone" *ngIf="!row.done && !isCluster(vm, row)" [disabled]="setsLocked"
                 (click)="confirmSet(vm, j)">Fatta</ion-button>
 
-              <!-- A esaurimento, dopo ogni blocco le scelte sono due e sono pari:
-                   un altro, oppure basta. Stanno affiancate e dello stesso peso,
-                   perche' prima il "chiudo" era un tasto tratteggiato sotto a uno
-                   rosso, e non si capiva che la serie si poteva finire. -->
+              <!-- A esaurimento, a ogni blocco le scelte sono due e sono pari:
+                   fatto, e ne viene un altro; oppure fatto, ed e' l'ultimo ("Chiudo
+                   la serie" segna il blocco in corso e chiude). Stanno affiancate e
+                   dello stesso peso, perche' prima il "chiudo" era un tasto
+                   tratteggiato sotto a uno rosso, e non si capiva che la serie si
+                   poteva finire. -->
               <div class="clusterfork" *ngIf="!row.done && isCluster(vm, row) && canCloseCluster(vm, row)">
                 <ion-button type="button" class="setdone" [disabled]="setsLocked"
                   (click)="doneBlock(vm, j)">Fatto il {{ blockLabel(vm, row).toLowerCase() }}</ion-button>
                 <ion-button type="button" class="setdone calmo" [disabled]="setsLocked"
-                  (click)="closeClusterSet(vm, j)"
-                  aria-label="Non ne escono altri, chiudi la serie">Chiudo la serie</ion-button>
+                  (click)="chiudiSerie(vm, j)"
+                  aria-label="Fatto il blocco in corso, ed è l'ultimo: chiudi la serie">Chiudo la serie</ion-button>
               </div>
 
               <!-- A blocchi contati non c'e' niente da decidere: la serie si chiude
@@ -622,10 +624,10 @@
             <!-- Un elemento solo dentro il pulsante: e' una flexbox, e fra due suoi figli lo spazio sparirebbe. -->
             <span *ngIf="testoAzione(a) as t">{{ t.testo }}<span class="salva-sub" *ngIf="t.sub"> · {{ t.sub }}</span></span>
           </ion-button>
-          <!-- A esaurimento, dopo ogni blocco le scelte sono due e sono pari: un
-               altro, oppure basta. -->
+          <!-- A esaurimento, a ogni blocco le scelte sono due e sono pari: fatto
+               e un altro, oppure fatto ed e' l'ultimo (il blocco in corso conta). -->
           <ion-button type="button" class="setdone calmo salva-btn" *ngIf="a.tipo === 'blocco' && a.chiudibile"
-            (click)="eseguiAzione(a, true)" aria-label="Non ne escono altri, chiudi la serie">Chiudo la serie</ion-button>
+            (click)="eseguiAzione(a, true)" aria-label="Fatto il blocco in corso, ed è l'ultimo: chiudi la serie">Chiudo la serie</ion-button>
         </div>
       </div>
     </ng-container>

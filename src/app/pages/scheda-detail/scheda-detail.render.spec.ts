@@ -340,6 +340,49 @@ describe('SchedaDetailComponent — accessibilita\' delle testate (disegno vero)
    * Nello slider, ad allenamento avviato, il comando della serie sta in basso,
    * sotto il pollice; durante il recupero gli da' il cambio la fascia.
    */
+  /**
+   * A esaurimento, nell'elenco "Chiudo la serie" sta nella card: il blocco su
+   * cui si sta lavorando conta, e la serie si chiude.
+   */
+  describe('"Chiudo la serie" a esaurimento', () => {
+    async function conCluster(vista: 'list' | 'slider') {
+      const m = await monta(vista, true);
+      const vm = m.c.exercises[0];
+      vm.cluster = { blocks: [5], restSec: 30, end: 'open' };
+      vm.rows[0].blocks = [
+        { reps: '5', load: '85', done: true, ripPlaceholder: '5', loadPlaceholder: '85' },
+        { reps: '5', load: '85', done: true, ripPlaceholder: '5', loadPlaceholder: '85' },
+        { reps: '5', load: '85', done: false, ripPlaceholder: '5', loadPlaceholder: '85' }
+      ];
+      vm.activeRow = 0;
+      m.aggiorna();
+      return { ...m, vm };
+    }
+
+    it('nella card dell\'elenco segna il blocco in corso e chiude la serie', async () => {
+      const { root, vm, aggiorna } = await conCluster('list');
+      const chiudo = Array.from(root.querySelectorAll<HTMLElement>('.clusterfork ion-button')).find(b => b.textContent!.trim() === 'Chiudo la serie')!;
+      // ion-button sposta aria-label dall'host al <button> interno: si legge dove sta.
+      const etichetta = chiudo.getAttribute('aria-label') ?? chiudo.shadowRoot?.querySelector('button')?.getAttribute('aria-label')
+        ?? (chiudo as any).inheritedAttributes?.['aria-label'];
+      expect(etichetta).toBe('Fatto il blocco in corso, ed è l\'ultimo: chiudi la serie');
+      chiudo.click();
+      aggiorna();
+      expect(vm.rows[0].done).toBe(true);
+      expect(vm.rows[0].reps).toBe('5+5+5');
+    });
+
+    it('nello slider il secondo tasto in basso fa lo stesso', async () => {
+      const { root, vm, aggiorna } = await conCluster('slider');
+      const tasti = Array.from(root.querySelectorAll<HTMLElement>('ion-footer.salva-footer ion-button'));
+      expect(tasti.map(t => t.textContent!.replace(/\s+/g, ' ').trim())).toEqual(['Fatto il blocco 3', 'Chiudo la serie']);
+      tasti[1].click();
+      aggiorna();
+      expect(vm.rows[0].done).toBe(true);
+      expect(vm.rows[0].reps).toBe('5+5+5');
+    });
+  });
+
   describe('il tasto in basso', () => {
     const tasti = (testo: (s: string) => string[]) => testo('ion-footer.salva-footer ion-button');
 
