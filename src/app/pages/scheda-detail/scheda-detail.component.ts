@@ -603,6 +603,8 @@ export class SchedaDetailComponent implements OnInit, AfterViewInit, OnDestroy {
        *  per sessione, perche' il massimale parla dell'ultima volta e non di
        *  tutta la storia. */
       const perSessione: { data: string; sets: PerformedSet[] }[] = [];
+      /** Le coppie lette dal primo blocco di un cluster: il foglio lo dice. */
+      const daBlocco = new WeakSet<PerformedSet>();
 
       sessions.forEach(s => {
         const sexData = s.exercises.find(e => e.name === exName);
@@ -612,12 +614,27 @@ export class SchedaDetailComponent implements OnInit, AfterViewInit, OnDestroy {
         if (maxLoad > 0) maxLoads.push(maxLoad);
         const diQuesta: PerformedSet[] = [];
         sexData.sets.forEach(sr => {
-          // Le serie a cluster restano fuori. Il loro carico e le loro
-          // ripetizioni sono riassunti scritti per essere letti ("5+5+3",
-          // "62,5-55"), non numeri, e un cluster non e' comunque una serie
-          // dritta - fra un blocco e l'altro c'e' una pausa - quindi nessuna
-          // di queste formule lo sa leggere.
-          if (sr.blocks?.length) return;
+          // Una serie a cluster si legge dal suo PRIMO blocco: e' l'unico
+          // fatto a muscolo fresco, come una serie dritta. Dopo, la pausa di
+          // venti o trenta secondi non basta a recuperare, e i blocchi che
+          // seguono direbbero un massimale piu' basso del vero. Il carico e le
+          // ripetizioni della serie sono invece riassunti scritti per essere
+          // letti ("5+5+3", "62,5-55"), non numeri: quelli restano fuori.
+          if (sr.blocks?.length) {
+            const primo = sr.blocks[0];
+            const load = numeroSevero(primo?.load);
+            const reps = numeroSevero(primo?.reps);
+            if (load === null || reps === null) return;
+            const coppia = { load, reps };
+            daBlocco.add(coppia);
+            diQuesta.push(coppia);
+            return;
+          }
+          // Su un esercizio a cluster una serie senza blocchi non e' il lavoro
+          // che si fa: e' una seduta vecchia, di prima del cluster. Un 3 x 5
+          // rimasto li' diventava "massimale 3,5 kg" sotto un esercizio
+          // caricato a 30.
+          if (vm.cluster) return;
           // E si leggono solo i numeri interi e puliti. Non basta fidarsi dei
           // blocchi: una seduta vecchia, o salvata a meta', puo' avere il
           // riassunto senza di loro, e parseFloat da "5+5+3" cava 5 senza
@@ -680,17 +697,14 @@ export class SchedaDetailComponent implements OnInit, AfterViewInit, OnDestroy {
       let oneRmText: string | null = null;
       let oneRm: ExInsight['oneRm'] = null;
       const ultima = perSessione[perSessione.length - 1];
-      // Su un esercizio a cluster non si stima niente, nemmeno quando una
-      // coppia pulita si trova: quella coppia non descrive il lavoro che si
-      // sta facendo. Un "5 ripetizioni, 30 secondi, a esaurimento" non ha un
-      // massimale da cui dedurre il carico di oggi, e un numero inventato li'
-      // in mezzo si legge come se lo avesse - l'ultima volta, invece, e' un
-      // fatto, e resta.
-      const stima = ultima && !vm.cluster ? oneRepMaxOf(ultima.sets) : null;
+      // Anche sui cluster: la coppia e' quella del primo blocco (vedi sopra).
+      const stima = ultima ? oneRepMaxOf(ultima.sets) : null;
       if (stima) {
         const quando = this.giornoMese(ultima.data);
+        const blocco = daBlocco.has(stima.from);
         oneRmText = `Dal massimale stimato di <b>${this.kg(stima.value)} kg</b>`
           + ` · ${this.kg(stima.from.load)} × ${stima.from.reps}`
+          + (blocco ? ' (primo blocco)' : '')
           + (quando ? ` del ${quando}` : '');
 
         const precedente = perSessione[perSessione.length - 2];
@@ -700,7 +714,7 @@ export class SchedaDetailComponent implements OnInit, AfterViewInit, OnDestroy {
           delta = Math.round((stima.value - prima.value) * 2) / 2;
           if (delta !== 0) oneRmText += ` · ${delta > 0 ? '+' : '−'}${this.kg(Math.abs(delta))} kg`;
         }
-        oneRm = { value: stima.value, load: stima.from.load, reps: stima.from.reps, data: quando, delta: delta || null };
+        oneRm = { value: stima.value, load: stima.from.load, reps: stima.from.reps, data: quando, delta: delta || null, blocco };
       }
 
       // L'ultima volta si scrive solo se non c'e' la stima: quando c'e', la
@@ -1510,7 +1524,7 @@ export class SchedaDetailComponent implements OnInit, AfterViewInit, OnDestroy {
   /** Perche' il foglio non ha un massimale da dire. */
   testoSenzaMassimale(vm: ExerciseVM): string {
     return vm.cluster
-      ? 'Sugli esercizi a cluster il massimale non si stima: fra un blocco e l\'altro c\'è una pausa, e non è una serie dritta.'
+      ? 'Ancora nessun massimale: lo stimo dal primo blocco, appena c\'è una sessione salvata con il suo peso e le sue ripetizioni.'
       : 'Ancora nessun massimale: lo stimo dalla prima sessione salvata con peso e ripetizioni di questo esercizio.';
   }
 

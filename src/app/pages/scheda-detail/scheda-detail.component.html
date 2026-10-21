@@ -526,7 +526,7 @@
             <span class="massimale-kg">{{ kg(m.value) }} kg</span>
           </div>
           <p class="massimale-da">
-            Da {{ kg(m.load) }} × {{ m.reps }}<ng-container *ngIf="m.data"> del {{ m.data }}</ng-container><ng-container *ngIf="m.delta"> · {{ conSegno(m.delta) }} kg dalla volta prima</ng-container>
+            Da {{ kg(m.load) }} × {{ m.reps }}<ng-container *ngIf="m.blocco">, primo blocco,</ng-container><ng-container *ngIf="m.data"> del {{ m.data }}</ng-container><ng-container *ngIf="m.delta"> · {{ conSegno(m.delta) }} kg dalla volta prima</ng-container>
           </p>
         </div>
         <ng-template #nessunaStima>

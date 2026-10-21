@@ -770,13 +770,12 @@ describe('SchedaDetailComponent — la percentuale del massimale', () => {
 });
 
 /**
- * Gli esercizi a cluster non hanno un massimale da cui dedurre il carico.
- *
- * "5 ripetizioni, 30 secondi di pausa, a esaurimento" non e' una serie
- * dritta: fra un blocco e l'altro si riposa, e nessuna delle formule sa
- * leggerlo. Un numero messo li' in mezzo si legge come se invece lo sapesse.
+ * Sugli esercizi a cluster il massimale si stima dal PRIMO blocco: e' l'unico
+ * fatto a muscolo fresco, come una serie dritta. Gli altri, dopo una pausa di
+ * venti o trenta secondi, direbbero meno del vero (o di piu', se il carico
+ * sale). Le serie senza blocchi, su un esercizio a cluster, restano fuori.
  */
-describe('SchedaDetailComponent — niente stime sui cluster', () => {
+describe('SchedaDetailComponent — il massimale sui cluster, dal primo blocco', () => {
   function conCluster(sets: any[]) {
     const { component } = makeComponent({ sessionSuQuestoGiorno: true });
     const vm = makeVm();
@@ -788,14 +787,46 @@ describe('SchedaDetailComponent — niente stime sui cluster', () => {
     ]);
     return { component, vm };
   }
+  const cluster = (blocchi: [string, string][]) => ({
+    load: blocchi.map(b => b[0]).join('-'), reps: blocchi.map(b => b[1]).join('+'), done: true,
+    blocks: blocchi.map(([load, reps]) => ({ load, reps, done: true }))
+  });
 
-  it('non stima niente, nemmeno quando trova una coppia pulita', () => {
+  it('stima dal primo blocco, e il foglio dice da dove viene', () => {
+    // 60 x 8: 60 * 36 / 29 = 74,5. Non "16 ripetizioni".
+    const { component, vm } = conCluster([cluster([['60', '8'], ['60', '8']])]);
+    expect(vm.insight.oneRm).toMatchObject({ value: 74.5, load: 60, reps: 8, blocco: true, data: '21/09' });
+    expect(vm.insight.oneRmText).toContain('(primo blocco)');
+    expect(vm.insight.rmRows.length).toBe(15);
+    expect(vm.insight.programLoad).not.toBeNull();
+    expect(component.etichettaMassimale(vm)).toBe('Massimale stimato 74,5 kg: apri i pesi');
+  });
+
+  it('i blocchi dopo il primo non contano, nemmeno se il carico sale', () => {
+    // 60 x 5 -> 67,5; il 70 x 5 del secondo blocco darebbe 78,5.
+    const { vm } = conCluster([cluster([['60', '5'], ['70', '5']])]);
+    expect(vm.insight.oneRm.value).toBe(67.5);
+    expect(vm.insight.oneRm.load).toBe(60);
+  });
+
+  it('fra piu\' serie a cluster vale il primo blocco migliore', () => {
+    const { vm } = conCluster([cluster([['60', '5'], ['60', '5']]), cluster([['65', '5'], ['65', '4']])]);
+    expect(vm.insight.oneRm).toMatchObject({ load: 65, reps: 5, value: 73 });
+  });
+
+  it('una serie senza blocchi, su un cluster, resta fuori', () => {
     // E' il caso visto a schermo: un 3 x 5 rimasto in una seduta vecchia
     // diventava "massimale stimato 3,5 kg" sotto un esercizio caricato a 30.
-    const { vm } = conCluster([{ load: '3', reps: '5', done: true }]);
+    const { component, vm } = conCluster([{ load: '3', reps: '5', done: true }]);
     expect(vm.insight.oneRmText).toBeNull();
     expect(vm.insight.rmRows).toBeNull();
     expect(vm.insight.programLoad).toBeNull();
+    expect(component.testoSenzaMassimale(vm)).toBe('Ancora nessun massimale: lo stimo dal primo blocco, appena c\'è una sessione salvata con il suo peso e le sue ripetizioni.');
+  });
+
+  it('un primo blocco oltre le 12 ripetizioni non da\' una stima', () => {
+    const { vm } = conCluster([cluster([['20', '15'], ['20', '10']])]);
+    expect(vm.insight.oneRm).toBeNull();
   });
 
   it('l\'ultima volta resta: quella e\' un fatto', () => {
@@ -803,7 +834,7 @@ describe('SchedaDetailComponent — niente stime sui cluster', () => {
     expect(vm.insight.lastText).toBe('Ultimo (21/09): 30 kg');
   });
 
-  it('su una serie dritta la stima torna', () => {
+  it('su una serie dritta la stima non e\' "primo blocco"', () => {
     const { component } = makeComponent({ sessionSuQuestoGiorno: true });
     const vm = makeVm();
     component.exercises = [vm];
@@ -811,6 +842,19 @@ describe('SchedaDetailComponent — niente stime sui cluster', () => {
       { id: 'a', session: { date: '2026-09-21', exercises: [{ name: 'Panca piana', sets: [{ load: '80', reps: '6' }] }] } }
     ]);
     expect(vm.insight.oneRmText).toContain('93 kg');
+    expect(vm.insight.oneRmText).not.toContain('primo blocco');
+    expect(vm.insight.oneRm.blocco).toBe(false);
+    expect(component.testoSenzaMassimale(vm)).toContain('dalla prima sessione salvata');
+  });
+
+  it('se il protocollo non e\' piu\' a cluster, i primi blocchi delle sedute vecchie valgono ancora', () => {
+    const { component } = makeComponent({ sessionSuQuestoGiorno: true });
+    const vm = makeVm();
+    component.exercises = [vm];
+    (component as any).loadInsights([
+      { id: 'a', session: { date: '2026-09-21', exercises: [{ name: 'Panca piana', sets: [cluster([['60', '8'], ['60', '8']])] }] } }
+    ]);
+    expect(vm.insight.oneRm).toMatchObject({ value: 74.5, blocco: true });
   });
 });
 

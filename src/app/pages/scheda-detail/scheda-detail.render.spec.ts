@@ -549,11 +549,21 @@ describe('SchedaDetailComponent — accessibilita\' delle testate (disegno vero)
       expect(f.querySelector('.scelta-gruppo')).toBeNull();
     });
 
-    it('su un esercizio a cluster dice che li\' non si stima', async () => {
+    it('su un esercizio a cluster, senza stima, dice che la fara\' dal primo blocco', async () => {
       const { c } = await monta('slider', true);
       const vm = { ...c.exercises[0], cluster: { blocks: [5, 5], restSec: 20, end: 'fixed' } } as any;
-      expect(c.testoSenzaMassimale(vm)).toContain('a cluster il massimale non si stima');
+      expect(c.testoSenzaMassimale(vm)).toContain('lo stimo dal primo blocco');
       expect(c.testoSenzaMassimale(c.exercises[0])).toContain('Ancora nessun massimale');
+    });
+
+    it('stimato da un cluster, il foglio dice che viene dal primo blocco', async () => {
+      const blocchi = [{ id: 's1', session: { date: '2026-10-03', exercises: [{ name: 'Panca piana', sets: [
+        { load: '60-60', reps: '8+8', done: true, blocks: [{ load: '60', reps: '8', done: true }, { load: '60', reps: '8', done: true }] }
+      ] }] } }];
+      const { tutti, aggiorna } = await monta('slider', true, false, undefined, undefined, blocchi);
+      const f = await apri(tutti('.exslide')[0], aggiorna);
+      expect(pulito(f.querySelector('.massimale-kg'))).toBe('74,5 kg');
+      expect(pulito(f.querySelector('.massimale-da'))).toBe('Da 60 × 8, primo blocco, del 03/10');
     });
 
     it('con le serie tutte fatte resta il massimale, senza pesi da scegliere', async () => {

@@ -280,6 +280,19 @@ describe('buildSessionSummary — esercizio per esercizio', () => {
     expect(s.esercizi[0].volume?.oggi).toBe(960);
   });
 
+  it('la forza di un cluster e\' quella del primo blocco, come il massimale della scheda', () => {
+    const conBlocchi = (date: string, blocchi: [string, string, boolean][]) => buildSessionSummary({
+      dayId: 'day1', dayLabel: 'Giorno 1', date,
+      exercises: [{ name: 'Panca', sets: [{ load: '', reps: '', done: true, blocks: blocchi.map(([load, reps, done]) => ({ load, reps, done })) }] }]
+    }, null).esercizi[0];
+    // 60 x 5 = 67,5; il 70 x 5 del secondo blocco (78,5) non conta. Il volume si', tutto.
+    const e = conBlocchi('2026-10-20', [['60', '5', true], ['70', '5', true]]);
+    expect(e.forza?.oggi).toBe(67.5);
+    expect(e.volume?.oggi).toBe(650);
+    // Un primo blocco non fatto non e' una misura.
+    expect(conBlocchi('2026-10-20', [['60', '5', false], ['70', '5', true]]).forza).toBeNull();
+  });
+
   it('porta la data della seduta', () => {
     expect(buildSessionSummary(OGGI, PRIMA).date).toBe('2026-09-25');
   });

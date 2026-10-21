@@ -130,6 +130,25 @@ function doneUnits(
 /** Per le formule passa solo cio' che e' tutto un numero: "62,5-55" non e' un carico. */
 const severo = (raw: string | null | undefined) => numeroSevero(raw) ?? 0;
 
+/**
+ * Le serie da cui si misura la forza. Di una serie a cluster conta il PRIMO
+ * blocco, come per il massimale della scheda: e' l'unico fatto a muscolo
+ * fresco; dopo una pausa di venti secondi gli altri blocchi direbbero meno
+ * del vero, o di piu' se il carico sale.
+ */
+function unitaDiForza(ex: { sets?: WorkoutSession['exercises'][number]['sets'] }): { load: number; reps: number }[] {
+  const out: { load: number; reps: number }[] = [];
+  for (const s of ex.sets ?? []) {
+    if (s?.blocks?.length) {
+      const primo = s.blocks[0];
+      if (primo?.done) out.push({ load: severo(primo.load), reps: severo(primo.reps) });
+      continue;
+    }
+    if (s?.done) out.push({ load: severo(s.load), reps: severo(s.reps) });
+  }
+  return out;
+}
+
 function bestOf(session: WorkoutSession | null, exercise: string): Best | null {
   const ex = session?.exercises?.find(e => e.name === exercise);
   if (!ex?.sets?.length) return null;
@@ -241,16 +260,13 @@ function confronti(current: WorkoutSession, previous: WorkoutSession | null, rec
     const primaMigliore = bestOf(previous, ex.name);
     // La forza passa dalle formule e vuole numeri veri; il volume si conta
     // come il totale della seduta (sessionTonnage), cosi' le righe tornano.
-    const prima = (leggi: typeof num) => {
-      const u = exPrima ? doneUnits(exPrima, leggi) : [];
-      return u.length ? u : null;
-    };
+    const comeUnita = (u: Unita) => (u.length ? u : null);
     out.push({
       nome: ex.name,
       oggi: label(migliore),
       prima: primaMigliore ? label(primaMigliore) : null,
-      forza: forzaDi(doneUnits(ex, severo), prima(severo)),
-      volume: volumeDi(doneUnits(ex), prima(num)),
+      forza: forzaDi(unitaDiForza(ex), exPrima ? comeUnita(unitaDiForza(exPrima)) : null),
+      volume: volumeDi(doneUnits(ex), exPrima ? comeUnita(doneUnits(exPrima)) : null),
       record: records.some(r => r.exercise === ex.name)
     });
   }
