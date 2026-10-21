@@ -4,6 +4,7 @@ import { ActivatedRoute, convertToParamMap } from '@angular/router';
 import { of } from 'rxjs';
 import { vi } from 'vitest';
 import { providerPagina } from '../../../test-support/pagina';
+import { controllaBarraInBasso } from '../../../test-support/barra-azione';
 import { MisuraCategoriaComponent } from './misura-categoria.component';
 import { MeasurementDataService } from '../../services/measurement-data.service';
 import { MeasureCategoryStateService } from '../../services/measure-category-state.service';
@@ -75,6 +76,11 @@ describe('MisuraCategoriaComponent — la pagina vera', () => {
       expect(q('ion-footer.salva-footer ion-button.salva-btn')!.textContent!.trim()).toBe('Salva');
       expect(root.querySelector('ion-header ion-buttons[slot="end"]')).toBeNull();
       expect(root.querySelector('ion-header ion-button.navicon')).toBeNull();
+    });
+
+    it('sta nella barra in basso, fatta come la barra delle tab', async () => {
+      const { fixture, q } = await monta();
+      expect(controllaBarraInBasso(fixture)).toBe(q('ion-button.salva-btn'));
     });
 
     it('e\' spento finche\' non c\'e\' niente da salvare, e si accende scrivendo', async () => {

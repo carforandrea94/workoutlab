@@ -14,11 +14,12 @@ import { IONIC_LIST } from '../../core/ionic-list';
 import { ConModificheNonSalvate } from '../../core/guards/modifiche-non-salvate.guard';
 import { senzaSwipeIndietro } from '../../core/swipe-indietro';
 import { NomeCampoDirective } from '../../core/nome-campo.directive';
+import { BarraAzioneDirective } from '../../core/directives/barra-azione.directive';
 
 @Component({
   selector: 'app-misura-categoria',
   standalone: true,
-  imports: [NomeCampoDirective, IonButton, IonFooter, IonInput, IonLabel, ...IONIC_LIST, IonSpinner, ...IONIC_PAGE, CommonModule, FormsModule],
+  imports: [NomeCampoDirective, IonButton, IonFooter, IonInput, IonLabel, ...IONIC_LIST, IonSpinner, ...IONIC_PAGE, CommonModule, FormsModule, BarraAzioneDirective],
   templateUrl: './misura-categoria.component.html'
 })
 export class MisuraCategoriaComponent implements OnInit, OnDestroy, ConModificheNonSalvate {

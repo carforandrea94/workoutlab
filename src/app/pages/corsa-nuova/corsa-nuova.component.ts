@@ -13,16 +13,17 @@ import {
 import { parseMinutes, formatMinutes } from '../../core/utils/run-math.util';
 import { todayLocalISO } from '../../core/utils/date.util';
 import { IONIC_PAGE } from '../../core/ionic-page';
-import { NavController, IonInput, IonSegment, IonSegmentButton, IonButton, IonRouterOutlet, IonLabel, IonNote, IonListHeader } from '@ionic/angular';
+import { NavController, IonInput, IonSegment, IonSegmentButton, IonButton, IonRouterOutlet, IonLabel, IonNote, IonListHeader, IonFooter } from '@ionic/angular';
 import { IONIC_LIST } from '../../core/ionic-list';
 import { ConModificheNonSalvate } from '../../core/guards/modifiche-non-salvate.guard';
 import { senzaSwipeIndietro } from '../../core/swipe-indietro';
 import { NomeCampoDirective } from '../../core/nome-campo.directive';
+import { BarraAzioneDirective } from '../../core/directives/barra-azione.directive';
 
 @Component({
   selector: 'app-corsa-nuova',
   standalone: true,
-  imports: [NomeCampoDirective, IonButton, IonInput, IonLabel, IonNote, IonListHeader, ...IONIC_LIST, IonSegment, IonSegmentButton, ...IONIC_PAGE, CommonModule, FormsModule],
+  imports: [NomeCampoDirective, BarraAzioneDirective, IonButton, IonFooter, IonInput, IonLabel, IonNote, IonListHeader, ...IONIC_LIST, IonSegment, IonSegmentButton, ...IONIC_PAGE, CommonModule, FormsModule],
   templateUrl: './corsa-nuova.component.html'
 })
 export class CorsaNuovaComponent implements OnInit, OnDestroy, ConModificheNonSalvate {

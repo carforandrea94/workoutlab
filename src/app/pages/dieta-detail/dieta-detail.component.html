@@ -17,7 +17,7 @@
   </ion-toolbar>
 </ion-header>
 
-<ion-content>
+<ion-content appBarraAzione #barra="barraAzione" [scrollEvents]="true" [class.con-barra]="!!(plan && state.viewMode() === 'slider' && pastoCorrente)">
   <div class="wrap" *ngIf="plan">
     <div class="dayprog">
       <span class="dayprog-cnt">{{ fatti }} di {{ meals.length }} pasti</span>
@@ -125,9 +125,11 @@
   </div>
 </ion-content>
 
-<!-- Il gesto della pagina, dove arriva il pollice: si riferisce alla card visibile. -->
-<ion-footer class="salva-footer ion-no-border" *ngIf="plan && state.viewMode() === 'slider' && pastoCorrente as vm">
-  <div class="salva">
+<!-- Il gesto della pagina, dove arriva il pollice: si riferisce alla card visibile.
+     Sta dove nelle tab sta la barra, ed e' fatto come lei (vedi BarraAzioneDirective). -->
+<ion-footer class="salva-footer barra-azione ion-no-border" *ngIf="plan && state.viewMode() === 'slider' && pastoCorrente as vm"
+  [class.ridotta]="barra.ridotta()" [class.con-tastiera]="barra.tastiera()">
+  <div class="salva barra-pillola">
     <ion-button class="setdone salva-btn" [class.fatto]="vm.completed" (click)="toggleMealCompleted(vm)">
       {{ vm.completed ? 'Segna come da fare' : 'Ho mangiato questo' }}
     </ion-button>

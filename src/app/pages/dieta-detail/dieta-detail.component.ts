@@ -19,6 +19,7 @@ import {
   IonItem, IonProgressBar
 } from '@ionic/angular';
 import { IconaComponent } from '../../components/icona/icona.component';
+import { BarraAzioneDirective } from '../../core/directives/barra-azione.directive';
 
 interface MealVM {
   meal: NamedMeal;
@@ -36,7 +37,7 @@ type Foglio = { tipo: 'combo'; vm: MealVM } | { tipo: 'macro'; vm: MealVM; cat: 
   standalone: true,
   imports: [
     IonSegment, IonSegmentButton, IonButton, IonFooter, IonModal, IonRadioGroup, IonRadio, IonItem, IonProgressBar,
-    ...IONIC_PAGE, CommonModule, IconaComponent, TastoDirective
+    ...IONIC_PAGE, CommonModule, IconaComponent, TastoDirective, BarraAzioneDirective
   ],
   templateUrl: './dieta-detail.component.html'
 })

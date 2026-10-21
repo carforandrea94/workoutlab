@@ -9,10 +9,10 @@
   </ion-toolbar>
 </ion-header>
 
-<ion-content>
+<ion-content appBarraAzione #barra="barraAzione" [scrollEvents]="true" class="con-barra">
   <!-- Un modulo di iOS, come "Aggiungi dati" in Salute: le righe con
        l'etichetta e il valore a destra, le scelte nei segmenti, il salvataggio
-       in fondo e la riga rossa per eliminare. -->
+       nella barra in basso e la riga rossa per eliminare. -->
   <div class="wrap liste-ios">
     <ion-list [inset]="true" class="campi">
       <ion-item>
@@ -48,10 +48,6 @@
 
     <p class="autherror" *ngIf="errorMsg">{{ errorMsg }}</p>
 
-    <ion-button class="runsave tap44 press-fx" [disabled]="!canSave" (click)="save()">
-      {{ saving ? 'Salvataggio…' : (editId ? 'Salva modifiche' : 'Salva uscita') }}
-    </ion-button>
-
     <ion-list [inset]="true" class="azioni-uscita mt-5" *ngIf="editId">
       <ion-item class="riga-distruttiva" [button]="true" [detail]="false" [disabled]="saving" (click)="remove()">
         <ion-label>Elimina questa uscita</ion-label>
@@ -59,3 +55,15 @@
     </ion-list>
   </div>
 </ion-content>
+
+<!-- Salvare e' il comando della pagina: sta dove nelle tab sta la barra, ed e'
+     fatto come lei (vedi BarraAzioneDirective). Prima era un tasto in fondo al
+     modulo, fra le note e la riga per eliminare. -->
+<ion-footer class="salva-footer barra-azione ion-no-border"
+  [class.ridotta]="barra.ridotta()" [class.con-tastiera]="barra.tastiera()">
+  <div class="salva barra-pillola">
+    <ion-button type="button" class="setdone salva-btn" [disabled]="!canSave" (click)="save()">
+      {{ saving ? 'Salvataggio…' : (editId ? 'Salva modifiche' : 'Salva uscita') }}
+    </ion-button>
+  </div>
+</ion-footer>

@@ -9,7 +9,7 @@
   </ion-toolbar>
 </ion-header>
 
-<ion-content>
+<ion-content appBarraAzione #barra="barraAzione" [scrollEvents]="true" class="con-barra">
   <div class="wrap liste-ios">
     <!-- Un PDF per riga, come un allegato in iOS: si tocca la riga e si sceglie
          il file; la riga dice poi quale. Il campo file del browser scriveva
@@ -47,14 +47,19 @@
 
     <p class="autherror" *ngIf="errorMsg">{{ errorMsg }}</p>
 
-    <div class="savebar">
-      <ion-button class="savebtn" [disabled]="!canProcess" (click)="process()">
-        {{ processing ? 'Elaborazione in corso…' : (loadingExisting ? 'Caricamento protocollo…' : (isUpdateMode ? 'Aggiorna protocollo' : 'Elabora e crea bozza')) }}
-      </ion-button>
-    </div>
-
     <!-- L'elaborazione del PDF blocca la pagina: ion-loading con la fase e la percentuale. -->
     <ion-loading [isOpen]="processing" [backdropDismiss]="false" spinner="crescent"
       [message]="(stage || 'Elaborazione…') + ' · ' + progressPercent + '%'"></ion-loading>
   </div>
 </ion-content>
+
+<!-- Elaborare e' il comando della pagina: sta dove nelle tab sta la barra, ed
+     e' fatto come lei (vedi BarraAzioneDirective). -->
+<ion-footer class="salva-footer barra-azione ion-no-border"
+  [class.ridotta]="barra.ridotta()" [class.con-tastiera]="barra.tastiera()">
+  <div class="salva barra-pillola">
+    <ion-button type="button" class="setdone salva-btn" [disabled]="!canProcess" (click)="process()">
+      {{ processing ? 'Elaborazione in corso…' : (loadingExisting ? 'Caricamento protocollo…' : (isUpdateMode ? 'Aggiorna protocollo' : 'Elabora e crea bozza')) }}
+    </ion-button>
+  </div>
+</ion-footer>

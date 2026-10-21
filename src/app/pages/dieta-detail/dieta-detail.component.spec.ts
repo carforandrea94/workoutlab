@@ -3,6 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap } from '@angular/router';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { providerPagina } from '../../../test-support/pagina';
+import { controllaBarraInBasso } from '../../../test-support/barra-azione';
 import { DietaDetailComponent } from './dieta-detail.component';
 import { DietDataService } from '../../services/diet-data.service';
 import { DietStateService } from '../../services/diet-state.service';
@@ -173,6 +174,8 @@ describe('DietaDetailComponent', () => {
     it('nell\'elenco il tasto in fondo non c\'e\': ogni pasto ha la sua spunta', async () => {
       const { tutti } = await monta('list');
       expect(tutti('ion-footer').length).toBe(0);
+      // e il contenuto non tiene lo spazio per una barra che non c'e'.
+      expect(tutti('ion-content')[0].classList.contains('con-barra')).toBe(false);
     });
   });
 
@@ -419,6 +422,12 @@ describe('DietaDetailComponent', () => {
       expect(c.pastoCorrente?.meal.id).toBe('m2');
       c.vaiAlPasto('inesistente');
       expect(c.pastoCorrente?.meal.id).toBe('m2');
+    });
+
+    it('"Ho mangiato questo" sta nella barra in basso, fatta come la barra delle tab', async () => {
+      const { fixture, testo } = await monta('slider');
+      expect(controllaBarraInBasso(fixture).classList.contains('salva-btn')).toBe(true);
+      expect(testo('ion-footer.barra-azione ion-button')).toEqual(['Ho mangiato questo']);
     });
 
     it('in fondo c\'e\' "Ho mangiato questo": segna il pasto della card e lo salva', async () => {
