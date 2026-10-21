@@ -427,12 +427,13 @@ describe('ProtocolloBuilderComponent — disegno vero', () => {
       expect(nome.label).toBe('Nome');
     });
 
-    it('un pasto e\' una riga che si apre: il nome, cosa c\'e\' dentro, il chevron', async () => {
+    it('un pasto e\' una riga che si apre: il nome e il chevron, senza sottotitolo', async () => {
       const { c, fixture, root, titolo } = await conPiano();
       const righe = Array.from(root.querySelectorAll<HTMLElement & { button?: boolean; detail?: boolean }>('ion-item.pasto-riga'));
       expect(righe.length).toBe(1);
       expect(testo(righe[0].querySelector('h2'))).toBe('Colazione');
-      expect(testo(righe[0].querySelector('p'))).toBe('Pane');
+      // Gli alimenti si leggono aprendo il pasto: sotto il nome non c'e' altro.
+      expect(righe[0].querySelector('ion-label p')).toBeNull();
       expect([righe[0].button, righe[0].detail]).toEqual([true, true]);
       // Niente anteprima che ripete il pasto: ne' combinazioni, ne' alternative, ne' cestini.
       expect(root.querySelector('.meal-preview-card, .variant-tabs, .altwrap-header, ion-button.delete-btn')).toBeNull();
@@ -449,16 +450,6 @@ describe('ProtocolloBuilderComponent — disegno vero', () => {
       fixture.detectChanges();
       expect(c.editingPlan!.meals).toEqual([]);
       expect(root.querySelector('ion-item.pasto-riga')).toBeNull();
-    });
-
-    it('il riassunto del pasto: gli alimenti della prima combinazione e gli integratori, o che non ce ne sono', async () => {
-      const { c } = await conPiano();
-      const pasto: any = {
-        combinations: [{ carb: { name: 'Avena' }, protein: { name: ' ' }, fat: { name: 'Burro d\'arachidi' } }, { carb: { name: 'Riso' } }],
-        supplements: [{ name: 'Creatina' }]
-      };
-      expect(c.riassuntoPasto(pasto)).toBe('Avena, Burro d\'arachidi, Creatina');
-      expect(c.riassuntoPasto({ combinations: [{ carb: null, protein: null, fat: null }] } as any)).toBe('Nessun alimento ancora');
     });
 
     it('le combinazioni: il segmento c\'e\' da due in su e sceglie quella da scrivere', async () => {

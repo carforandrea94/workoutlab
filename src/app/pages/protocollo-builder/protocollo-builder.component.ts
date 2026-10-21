@@ -760,19 +760,6 @@ export class ProtocolloBuilderComponent implements OnInit, OnDestroy, DoCheck {
     if (combo) this.setActiveCombo(meal, combo);
   }
 
-  /**
-   * La riga di un pasto nel piano: cosa c'e' dentro, in breve. Gli alimenti
-   * della prima combinazione e gli integratori; il resto si vede aprendolo.
-   */
-  riassuntoPasto(meal: NamedMeal): string {
-    const base = meal.combinations[0];
-    const nomi = [
-      ...this.foodCategories.map(cat => base?.[cat]?.name?.trim() ?? ''),
-      ...(meal.supplements ?? []).map(s => s.name?.trim() ?? '')
-    ].filter(Boolean);
-    return nomi.length ? nomi.join(', ') : 'Nessun alimento ancora';
-  }
-
   setActiveCombo(meal: NamedMeal, combo: MealCombination, event?: Event): void {
     event?.stopPropagation();
     this.activeCombo[meal.id] = combo.id;

@@ -396,9 +396,10 @@
 
         <!-- ===================== IL PIANO =====================
              Come le liste di iOS: il nome e' una riga di modulo, i pasti sono
-             righe che si aprono (col chevron) e dicono cosa c'e' dentro. Il
-             pasto si legge e si modifica aprendolo: l'anteprima completa di
-             ogni pasto qui ripeteva tutto quello che c'e' dentro. Un pasto si
+             righe che si aprono (col chevron), col solo nome e, se ce n'e' piu'
+             d'una, quante combinazioni. Il pasto si legge e si modifica
+             aprendolo: sotto il nome c'era l'elenco degli alimenti, e cinque
+             pasti diventavano una pagina da leggere invece che da scorrere. Un pasto si
              elimina scorrendo la riga, come in iOS, o da dentro ("Rimuovi
              pasto"), che resta per chi non usa i gesti. -->
         <ng-container *ngIf="editingPlan && !editingMeal">
@@ -415,7 +416,6 @@
                 <ion-item class="pasto-riga" [button]="true" [detail]="true" (click)="openMeal(meal)">
                   <ion-label class="ion-text-wrap">
                     <h2>{{ meal.name || 'Pasto senza nome' }}</h2>
-                    <p>{{ riassuntoPasto(meal) }}</p>
                   </ion-label>
                   <ion-note slot="end" *ngIf="meal.combinations.length > 1">{{ meal.combinations.length }} combinazioni</ion-note>
                 </ion-item>
