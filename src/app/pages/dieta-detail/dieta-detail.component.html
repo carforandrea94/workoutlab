@@ -106,7 +106,7 @@
 
       <!-- Ogni card e' alta quanto il suo pasto: prima prendevano tutte l'altezza
            della piu' lunga, e una colazione da tre righe aveva mezza card vuota. -->
-      <div class="exslider dietslider" #sliderEl (scroll)="onSliderScroll()">
+      <div class="exslider dietslider" #sliderEl (scroll)="onSliderScroll()" (pointerdown)="meta.lascia()" (wheel)="meta.lascia()">
         <div class="meal mealslide exslide" *ngFor="let vm of meals" [class.fatto]="vm.completed">
           <div class="meal-summary noclick">
             <span>{{ vm.meal.name }}</span>
@@ -127,7 +127,7 @@
 
 <!-- Il gesto della pagina, dove arriva il pollice: si riferisce alla card visibile.
      Sta dove nelle tab sta la barra, ed e' fatto come lei (vedi BarraAzioneDirective). -->
-<ion-footer class="salva-footer barra-azione ion-no-border" *ngIf="plan && state.viewMode() === 'slider' && pastoCorrente as vm"
+<ion-footer class="salva-footer barra-azione ion-no-border" *ngIf="plan && state.viewMode() === 'slider' && pastoCorrente as vm" animate.leave="barra-via"
   [class.ridotta]="barra.ridotta()" [class.con-tastiera]="barra.tastiera()">
   <div class="salva barra-pillola">
     <ion-button class="setdone salva-btn" [class.fatto]="vm.completed" (click)="toggleMealCompleted(vm)">

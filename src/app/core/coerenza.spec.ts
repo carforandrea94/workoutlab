@@ -59,6 +59,21 @@ describe('coerenza delle pagine', () => {
     expect(template().filter(f => /class="savebar|class="runsave/.test(f.testo)).map(f => f.nome)).toEqual([]);
   });
 
+  it('fascia del recupero, pillola della sessione e barre che spariscono dentro la pagina se ne vanno con un\'animazione, non di colpo', () => {
+    // animate.leave: Angular mette la classe e toglie l'elemento a animazione finita (vedi styles.css).
+    const tabs = file.find(f => f.nome.endsWith('tabs.page.ts'))!.testo;
+    expect(tabs).toContain('<app-rest-bar animate.leave="fascia-via"></app-rest-bar>');
+    expect(tabs).toContain('class="sessionpill" animate.leave="pillola-via"');
+    for (const nome of ['scheda-detail.component.html', 'dieta-detail.component.html']) {
+      const t = template().find(f => f.nome.endsWith(nome))!.testo;
+      expect(t, nome).toMatch(/<ion-footer[^>]*barra-azione[^>]*animate\.leave="barra-via"/);
+    }
+    // Nell'allenamento "Inizia" e il tasto della serie sono una barra sola: toccando
+    // "Inizia" non esce e rientra. L'altra e' quella del resoconto.
+    const scheda = template().find(f => f.nome.endsWith('scheda-detail.component.html'))!.testo;
+    expect(scheda.match(/<ion-footer/g)!.length).toBe(2);
+  });
+
   it('sopra il contenuto che passa sotto la barra i tasti sono pieni: spento non va a meta\', "fatto" e\' il vetro della barra delle tab', () => {
     const css = fs.readFileSync('src/styles.css', 'utf8');
     const spento = css.match(/ion-footer\.barra-azione ion-button\.setdone\.button-disabled\{[^}]*\}/)![0];

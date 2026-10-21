@@ -4,7 +4,7 @@ import { ActivatedRoute } from '@angular/router';
 import { DietDataService } from '../../services/diet-data.service';
 import { DietStateService } from '../../services/diet-state.service';
 import { AppStateService } from '../../services/app-state.service';
-import { findClosestSlideIndex, scrollToSlide } from '../../core/utils/horizontal-slider.util';
+import { MetaSlider, findClosestSlideIndex, scrollToSlide } from '../../core/utils/horizontal-slider.util';
 import { firstUncompletedIndex } from '../../core/utils/meal-completion.util';
 import { todayLocalISO } from '../../core/utils/date.util';
 import {
@@ -49,6 +49,8 @@ export class DietaDetailComponent implements OnInit {
   readonly foodCategoryLabels = FOOD_CATEGORY_LABELS;
 
   sliderIndex = 0;
+  /** Il pasto toccato nel segmento, finche' lo slider non ci arriva (vedi MetaSlider). */
+  readonly meta = new MetaSlider();
   private scrollTicking = false;
 
   /**
@@ -83,7 +85,7 @@ export class DietaDetailComponent implements OnInit {
     effect(() => {
       if (this.state.viewMode() === 'slider') {
         this.sliderIndex = firstUncompletedIndex(this.meals);
-        setTimeout(() => this.scrollToIndex(this.sliderIndex), 0);
+        setTimeout(() => this.scrollToIndex(this.sliderIndex, false), 0);
       }
     });
   }
@@ -108,7 +110,7 @@ export class DietaDetailComponent implements OnInit {
     }
 
     this.sliderIndex = firstUncompletedIndex(this.meals);
-    this.scrollToIndex(this.sliderIndex);
+    this.scrollToIndex(this.sliderIndex, false);
     this.cdr.detectChanges();
   }
 
@@ -228,6 +230,7 @@ export class DietaDetailComponent implements OnInit {
     const i = this.meals.findIndex(vm => vm.meal.id === id);
     if (i < 0 || i === this.sliderIndex) return;
     this.sliderIndex = i;
+    this.meta.vai(i);
     this.scrollToIndex(i);
   }
 
@@ -238,15 +241,15 @@ export class DietaDetailComponent implements OnInit {
       this.scrollTicking = false;
       const el = this.sliderEl?.nativeElement;
       if (!el) return;
-      const closest = findClosestSlideIndex(el);
-      if (closest !== this.sliderIndex) {
+      const closest = this.meta.letto(findClosestSlideIndex(el));
+      if (closest !== null && closest !== this.sliderIndex) {
         this.sliderIndex = closest;
         this.cdr.detectChanges();
       }
     });
   }
 
-  scrollToIndex(idx: number): void {
-    scrollToSlide(this.sliderEl?.nativeElement, idx);
+  scrollToIndex(idx: number, morbido = true): void {
+    scrollToSlide(this.sliderEl?.nativeElement, idx, morbido);
   }
 }

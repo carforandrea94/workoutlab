@@ -565,13 +565,39 @@ describe('styles.css — la barra in basso dell\'allenamento come la barra delle
       .toContain('transform:translateY(calc(var(--barra-azione-h) * (1 - var(--tabbar-ridotta))))');
   });
 
-  it('entra scivolando dal fondo con la curva della barra, e con la tastiera se ne va', () => {
-    expect(regola('ion-footer.barra-azione')).toContain('animation:barra-entra .42s cubic-bezier(0.32,0.72,0,1)');
-    expect(css).toContain('@keyframes barra-entra{from{transform:translateY(calc(var(--tabbar-outer) + var(--tabbar-gap) + 28px));opacity:0;}}');
+  it('dentro la pagina compare e se ne va sul posto, in fretta (dal fondo la porta la transizione), e con la tastiera se ne va', () => {
+    // Niente piu' arrivo dal fondo a ogni comparsa: quello lo fa la transizione
+    // di pagina (page-transition.ts), insieme alla pagina.
+    expect(css).not.toContain('barra-entra');
+    expect(regola('ion-footer.barra-azione')).toContain('animation:barra-compare .2s cubic-bezier(.23,1,.32,1)');
+    expect(css).toContain('@keyframes barra-compare{from{opacity:0;translate:0 8px;}}');
+    expect(regola('ion-footer.barra-azione.barra-via')).toContain('animation:barra-via .15s ease-out forwards');
+    expect(css).toContain('@keyframes barra-via{to{opacity:0;translate:0 8px;}}');
     expect(regola('ion-footer.barra-azione.con-tastiera')).toContain('display:none');
     expect(regola('ion-footer.barra-azione .fine-recupero')).toContain('color:var(--label)');
     expect(regola('ion-footer.barra-azione .fine-recupero app-icona')).toContain('color:var(--state-success)');
-    expect(css).toMatch(/@media \(prefers-reduced-motion:reduce\)\{ion-footer\.barra-azione\{animation:none;\}/);
+    expect(css).toMatch(/@media \(prefers-reduced-motion:reduce\)\{ion-footer\.barra-azione,ion-footer\.barra-azione\.barra-via\{animation:none;\}/);
+  });
+
+  it('durante il recupero cede il posto alla fascia dissolvendosi li\', e torna allo stesso modo; la fascia se ne va dissolvendosi', () => {
+    expect(regola('ion-footer.barra-azione')).toContain('transition:opacity .2s ease-out,visibility 0s');
+    const ceduta = regola('ion-footer.barra-azione.ceduta');
+    for (const d of ['opacity:0', 'visibility:hidden', 'transition:opacity .15s ease-out,visibility 0s .15s']) expect(ceduta).toContain(d);
+    // Lo spazio in fondo resta (il contenuto non salta), e lo dice la fascia, piu' alta.
+    expect(regola(':root.con-fascia ion-content.con-barra')).toContain('--coperto-base:calc(var(--restbar-h) + var(--tabbar-gap))');
+    expect(regola('app-rest-bar.fascia-via')).toContain('animation:fascia-via .15s ease-out forwards');
+    expect(css).toContain('@keyframes fascia-via{to{opacity:0;}}');
+  });
+
+  it('la pillola della sessione arriva e se ne va con la barra delle tab, con la sua curva e la sua durata', () => {
+    const curva = '.42s cubic-bezier(0.32,0.72,0,1)';
+    expect(css).toContain(`\n.tabbar{transition:transform ${curva}`);
+    expect(css).toContain(`\n.sessionpill{animation:pillola-entra ${curva};}`);
+    expect(regola('.sessionpill.pillola-via')).toContain(`animation:pillola-via ${curva} forwards`);
+    // translate, non transform: transform tiene la pillola sopra la barra.
+    expect(css).toContain('@keyframes pillola-entra{from{translate:0 calc(var(--tabbar-outer) + var(--tabbar-gap) + 28px + 54px);opacity:0;}}');
+    expect(css).toContain('@keyframes pillola-via{to{translate:0 calc(var(--tabbar-outer) + var(--tabbar-gap) + 28px + 54px);opacity:0;}}');
+    expect(css).toContain('@media (prefers-reduced-motion: reduce){.sessionpill{transition:none;animation:none;}.sessionpill.pillola-via{animation:fascia-via .15s ease-out forwards;}}');
   });
 
   it('il contenuto tiene sotto la barra con l\'aria della barra delle tab, e di piu\' con "Recupero finito"', () => {

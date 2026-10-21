@@ -650,6 +650,80 @@ describe('SchedaDetailComponent — storico: le correzioni si salvano da sole', 
  * sotto i piedi la si ricava da loro, altrimenti i blocchi resterebbero a
  * schermo senza nessun comando per toccarli.
  */
+/**
+ * A esaurimento, "Chiudo la serie" vuol dire: questo blocco l'ho fatto, ed e'
+ * l'ultimo. Prima il blocco su cui si stava lavorando andava perso (la serie
+ * si chiudeva con quelli gia' segnati), e chi chiudeva dopo averlo fatto si
+ * ritrovava un blocco in meno.
+ */
+describe('SchedaDetailComponent — "Chiudo la serie" a esaurimento', () => {
+  const blocco = (b: Partial<{ reps: string; load: string; done: boolean; ripPlaceholder: string; loadPlaceholder: string }>) =>
+    ({ reps: '', load: '', done: false, ripPlaceholder: '5', loadPlaceholder: '80', ...b });
+
+  /** T-bar come nella foto: blocchi 1 e 2 fatti a 85 kg, il 3 in corso. */
+  function tBar(terzo: ReturnType<typeof blocco>) {
+    const m = makeComponent({ sessionSuQuestoGiorno: true });
+    const vm = makeVm();
+    vm.ex = { name: 'T bar', muscle: 'Dorso', scheme: 'fisso' };
+    vm.cluster = { blocks: [5], restSec: 30, end: 'open' };
+    vm.rows = [
+      { reps: '', load: '', done: false, ripPlaceholder: '', loadPlaceholder: '', blocks: [
+        blocco({ reps: '5', load: '85', done: true }), blocco({ reps: '5', load: '85', done: true }), terzo
+      ] },
+      { reps: '', load: '', done: false, ripPlaceholder: '', loadPlaceholder: '' }
+    ];
+    vm.activeRow = 0;
+    m.component.exercises = [vm];
+    return { ...m, vm };
+  }
+
+  it('il blocco in corso conta, con quello che c\'e\' sulle ruote, e la serie si chiude', () => {
+    const { component, vm, startRestTimer } = tBar(blocco({ reps: '5', load: '85' }));
+    component.chiudiSerie(vm, 0);
+    const serie = vm.rows[0];
+    expect(serie.blocks.map((b: any) => [b.reps, b.load, b.done])).toEqual([['5', '85', true], ['5', '85', true], ['5', '85', true]]);
+    expect(serie.done).toBe(true);
+    expect(serie.reps).toBe('5+5+5');
+    expect(serie.load).toBe('85');
+    // Finita la serie parte il recupero lungo dell'esercizio, non la pausa del cluster.
+    expect(startRestTimer).toHaveBeenCalledWith(90, 'T bar', 'day1');
+    expect(component.isPausing(vm, 0)).toBe(false);
+  });
+
+  it('se le ruote non sono state toccate valgono i numeri del piano, come con "Fatto il blocco"', () => {
+    const { component, vm } = tBar(blocco({ ripPlaceholder: '4', loadPlaceholder: '80' }));
+    component.chiudiSerie(vm, 0);
+    // Il blocco si salva con i suoi numeri, non vuoto: e' quello che resta nello storico.
+    expect([vm.rows[0].blocks[2].reps, vm.rows[0].blocks[2].load]).toEqual(['4', '80']);
+    expect(vm.rows[0].reps).toBe('5+5+4');
+    expect(vm.rows[0].load).toBe('85-80');
+  });
+
+  it('senza un blocco in corso (tolto l\'ultimo, per esempio) chiude con quelli fatti', () => {
+    const { component, vm } = tBar(blocco({ reps: '5', load: '85', done: true }));
+    component.chiudiSerie(vm, 0);
+    expect(vm.rows[0].done).toBe(true);
+    expect(vm.rows[0].reps).toBe('5+5+5');
+  });
+
+  it('il tasto in basso fa lo stesso', () => {
+    const { component, vm } = tBar(blocco({ reps: '6', load: '85' }));
+    component.sliderIndex = 0;
+    component.eseguiAzione({ tipo: 'blocco', etichetta: 'Blocco 3', chiudibile: true } as any, true);
+    expect(vm.rows[0].reps).toBe('5+5+6');
+    expect(vm.rows[0].done).toBe(true);
+  });
+
+  it('a sessione non avviata non fa niente', () => {
+    const { component, vm, sessionState } = tBar(blocco({ reps: '5', load: '85' }));
+    sessionState.matchesDay = () => false;
+    sessionState.activeSession = () => null;
+    component.chiudiSerie(vm, 0);
+    expect(vm.rows[0].done).toBe(false);
+    expect(vm.rows[0].blocks[2].done).toBe(false);
+  });
+});
+
 describe('SchedaDetailComponent — storico: i cluster salvati', () => {
   const SEDUTA_CLUSTER = {
     dayId: 'day1', dayLabel: 'Petto', date: '2026-10-01',

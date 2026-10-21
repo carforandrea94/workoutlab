@@ -205,16 +205,18 @@
               <ion-button type="button" class="setdone" *ngIf="!row.done && !isCluster(vm, row)" [disabled]="setsLocked"
                 (click)="confirmSet(vm, j)">Fatta</ion-button>
 
-              <!-- A esaurimento, dopo ogni blocco le scelte sono due e sono pari:
-                   un altro, oppure basta. Stanno affiancate e dello stesso peso,
-                   perche' prima il "chiudo" era un tasto tratteggiato sotto a uno
-                   rosso, e non si capiva che la serie si poteva finire. -->
+              <!-- A esaurimento, a ogni blocco le scelte sono due e sono pari:
+                   fatto, e ne viene un altro; oppure fatto, ed e' l'ultimo ("Chiudo
+                   la serie" segna il blocco in corso e chiude). Stanno affiancate e
+                   dello stesso peso, perche' prima il "chiudo" era un tasto
+                   tratteggiato sotto a uno rosso, e non si capiva che la serie si
+                   poteva finire. -->
               <div class="clusterfork" *ngIf="!row.done && isCluster(vm, row) && canCloseCluster(vm, row)">
                 <ion-button type="button" class="setdone" [disabled]="setsLocked"
                   (click)="doneBlock(vm, j)">Fatto il {{ blockLabel(vm, row).toLowerCase() }}</ion-button>
                 <ion-button type="button" class="setdone calmo" [disabled]="setsLocked"
-                  (click)="closeClusterSet(vm, j)"
-                  aria-label="Non ne escono altri, chiudi la serie">Chiudo la serie</ion-button>
+                  (click)="chiudiSerie(vm, j)"
+                  aria-label="Fatto il blocco in corso, ed è l'ultimo: chiudi la serie">Chiudo la serie</ion-button>
               </div>
 
               <!-- A blocchi contati non c'e' niente da decidere: la serie si chiude
@@ -450,7 +452,7 @@
         <ng-container *ngTemplateOutlet="passi"></ng-container>
       </ng-container>
 
-      <div class="exslider" #sliderEl (scroll)="onSliderScroll()">
+      <div class="exslider" #sliderEl (scroll)="onSliderScroll()" (pointerdown)="meta.lascia()" (wheel)="meta.lascia()">
         <div class="ex exslide" *ngFor="let vm of exercises; let i = index">
           <div class="ex-summary noclick">
             <ng-container *ngTemplateOutlet="exHeader; context: { vm: vm, i: i }"></ng-container>
@@ -588,40 +590,46 @@
   </div>
 </ion-footer>
 
-<!-- Avvio: il comando principale della pagina sta in basso, sotto il pollice, al
-     posto in cui poi compare la fascia del recupero. Prima era un tondo da 34 px
-     in alto a destra, e finche' non lo trovavi tutta la scheda restava spenta. -->
-<ion-footer class="avvio-footer barra-azione ion-no-border" *ngIf="avvioInBasso"
+<!-- Prima dell'avvio "Inizia allenamento", poi il comando della serie: una
+     barra sola, sotto il pollice. Prima erano due footer, e toccando "Inizia"
+     la barra spariva e risaliva dal fondo: ora resta dov'e' e cambia la scritta.
+     ("Inizia" in alto a destra era un tondo da 34 px, e finche' non lo trovavi
+     tutta la scheda restava spenta.)
+     Il comando della serie c'e' nello slider, ad allenamento avviato. Durante il
+     recupero qui c'e' la fascia col conto alla rovescia (la disegna la barra
+     delle tab): la barra le cede il posto dissolvendosi sul posto (ceduta, inert)
+     e torna allo stesso modo, senza uscire e rientrare. A recupero finito la
+     fascia se ne va e sopra il tasto resta la riga "Recupero finito" finche' non
+     si segna la serie: appoggiata sulla barra, come la pillola della sessione
+     sulla barra delle tab. Sulla card della chiusura se ne va sul posto
+     (animate.leave). -->
+<ion-footer class="barra-azione ion-no-border" *ngIf="avvioInBasso || azione" animate.leave="barra-via"
+  [class.avvio-footer]="avvioInBasso" [class.salva-footer]="!avvioInBasso"
+  [class.ceduta]="barraCeduta" [attr.inert]="barraCeduta ? '' : null"
   [class.ridotta]="barraRidotta()" [class.con-tastiera]="tastieraAperta()">
-  <div class="avvio barra-pillola">
+  <div class="avvio barra-pillola" *ngIf="avvioInBasso; else serie">
     <ion-button type="button" class="setdone avvio-btn" (click)="startSession()">
       <app-icona name="play" [size]="18" [piena]="true"></app-icona>
       Inizia allenamento
     </ion-button>
   </div>
-</ion-footer>
-
-<!-- Il comando della serie, sotto il pollice: nello slider, ad allenamento
-     avviato. Durante il recupero qui c'e' la fascia col conto alla rovescia (la
-     disegna la barra delle tab): i due si danno il cambio nello stesso posto.
-     A recupero finito la fascia se ne va e sopra il tasto resta la riga
-     "Recupero finito" finche' non si segna la serie: appoggiata sulla barra,
-     come la pillola della sessione sulla barra delle tab. -->
-<ion-footer class="salva-footer barra-azione ion-no-border" *ngIf="!recuperoInCorsa && azione as a"
-  [class.ridotta]="barraRidotta()" [class.con-tastiera]="tastieraAperta()">
-  <p class="fine-recupero" *ngIf="recuperoFinito">
-    <app-icona name="checkmark" [size]="15"></app-icona>Recupero finito
-  </p>
-  <div class="salva barra-pillola">
-    <div class="salva-due" [class.doppio]="a.tipo === 'blocco' && a.chiudibile">
-      <ion-button type="button" class="setdone salva-btn" (click)="eseguiAzione(a)">
-        <!-- Un elemento solo dentro il pulsante: e' una flexbox, e fra due suoi figli lo spazio sparirebbe. -->
-        <span *ngIf="testoAzione(a) as t">{{ t.testo }}<span class="salva-sub" *ngIf="t.sub"> · {{ t.sub }}</span></span>
-      </ion-button>
-      <!-- A esaurimento, dopo ogni blocco le scelte sono due e sono pari: un
-           altro, oppure basta. -->
-      <ion-button type="button" class="setdone calmo salva-btn" *ngIf="a.tipo === 'blocco' && a.chiudibile"
-        (click)="eseguiAzione(a, true)" aria-label="Non ne escono altri, chiudi la serie">Chiudo la serie</ion-button>
-    </div>
-  </div>
+  <ng-template #serie>
+    <ng-container *ngIf="azione as a">
+      <p class="fine-recupero" *ngIf="recuperoFinito">
+        <app-icona name="checkmark" [size]="15"></app-icona>Recupero finito
+      </p>
+      <div class="salva barra-pillola">
+        <div class="salva-due" [class.doppio]="a.tipo === 'blocco' && a.chiudibile">
+          <ion-button type="button" class="setdone salva-btn" (click)="eseguiAzione(a)">
+            <!-- Un elemento solo dentro il pulsante: e' una flexbox, e fra due suoi figli lo spazio sparirebbe. -->
+            <span *ngIf="testoAzione(a) as t">{{ t.testo }}<span class="salva-sub" *ngIf="t.sub"> · {{ t.sub }}</span></span>
+          </ion-button>
+          <!-- A esaurimento, a ogni blocco le scelte sono due e sono pari: fatto
+               e un altro, oppure fatto ed e' l'ultimo (il blocco in corso conta). -->
+          <ion-button type="button" class="setdone calmo salva-btn" *ngIf="a.tipo === 'blocco' && a.chiudibile"
+            (click)="eseguiAzione(a, true)" aria-label="Fatto il blocco in corso, ed è l'ultimo: chiudi la serie">Chiudo la serie</ion-button>
+        </div>
+      </div>
+    </ng-container>
+  </ng-template>
 </ion-footer>

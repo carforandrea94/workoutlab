@@ -1470,7 +1470,12 @@ ion-footer.barra-azione ion-button.setdone.salva-btn.fatto{--background:var(--gl
    scorre solo la soglia fra tacchette accese e spente. */
 /* La fascia del recupero prende il posto e i margini della tabbar, e sta
    dentro la stessa imbottitura in fondo al contenuto. E' piu' alta (76 contro
-   60) perche' il conto e' il numero piu' grande dello schermo. */
+   60) perche' il conto e' il numero piu' grande dello schermo.
+   Finito il recupero se ne va dissolvendosi sul posto (fascia-via, che
+   animate.leave mette sul componente in TabsPage prima di toglierlo), mentre
+   il tasto della serie torna nello stesso punto: prima spariva di colpo. */
+app-rest-bar.fascia-via{animation:fascia-via .15s ease-out forwards;pointer-events:none;}
+@keyframes fascia-via{to{opacity:0;}}
 .restbar{position:fixed;left:16px;right:16px;bottom:var(--tabbar-gap);z-index:60;height:var(--restbar-h);background:var(--glass-bg);border:1px solid var(--glass-edge);border-radius:var(--r-pill);box-shadow:inset 0 1px 0 var(--glass-hi),var(--shadow-float);-webkit-backdrop-filter:var(--glass-filter);backdrop-filter:var(--glass-filter);max-width:608px;margin:0 auto;padding:10px 14px 10px 24px;display:flex;flex-direction:column;justify-content:center;gap:6px;animation:fade .25s ease;}
 .restbar-row{display:flex;align-items:center;gap:12px;min-height:36px;}
 .restbar-time{font-variant-numeric:tabular-nums;font-weight:700;font-size:var(--text-timer);line-height:1;letter-spacing:-.02em;color:var(--accent);flex-shrink:0;min-width:4.4ch;}
@@ -1525,11 +1530,17 @@ ion-button.avvio-btn app-icona{margin-right:8px;}
    stesso posto.
    Si comporta come lei: scorrendo in giu' la pagina si fa piu' piccola verso
    il fondo (con scale, della stessa misura) e torna intera scorrendo in su, in
-   cima, cambiando esercizio o col focus da tastiera dentro; arriva scivolando
-   dal fondo con la sua curva; con la tastiera dell'app nativa se ne va, come
-   Ionic fa con la barra delle tab. "Recupero finito" le sta appoggiato sopra,
-   come la pillola della sessione sulla barra, e scende con lei. */
-ion-footer.barra-azione{position:fixed;left:16px;right:16px;bottom:var(--tabbar-gap);z-index:60;width:auto;max-width:608px;margin:0 auto;background:transparent;display:flex;flex-direction:column;align-items:center;pointer-events:none;animation:barra-entra .42s cubic-bezier(0.32,0.72,0,1);}
+   cima, cambiando esercizio o col focus da tastiera dentro; sale dal fondo con
+   la pagina che entra e ci scende con quella che esce (lo fa la transizione,
+   page-transition.ts, che la tiene ferma di lato); con la tastiera dell'app
+   nativa se ne va, come Ionic fa con la barra delle tab. "Recupero finito" le
+   sta appoggiato sopra, come la pillola della sessione sulla barra, e scende
+   con lei.
+   Dentro una pagina gia' aperta (Dieta da elenco a slider, Misure finito di
+   caricare, la card della chiusura) compare e se ne va sul posto, in fretta:
+   barra-via la mette animate.leave, ad Angular, prima di toglierla. Prima
+   rientrava ogni volta dal fondo, e se ne andava di colpo. */
+ion-footer.barra-azione{position:fixed;left:16px;right:16px;bottom:var(--tabbar-gap);z-index:60;width:auto;max-width:608px;margin:0 auto;background:transparent;display:flex;flex-direction:column;align-items:center;pointer-events:none;animation:barra-compare .2s cubic-bezier(.23,1,.32,1);transition:opacity .2s ease-out,visibility 0s;}
 ion-footer.barra-azione .barra-pillola{pointer-events:auto;box-sizing:border-box;width:100%;max-width:none;margin:0;padding:0;border-radius:var(--r-pill);transform-origin:50% 100%;transition:scale .38s cubic-bezier(0.32,0.72,0,1);}
 ion-footer.barra-azione ion-button.setdone{--box-shadow:var(--shadow-float);min-height:var(--barra-azione-h);}
 /* Spento (Salva senza niente di scritto, Nuova uscita senza durata, Importa
@@ -1545,14 +1556,26 @@ ion-footer.barra-azione .fine-recupero{height:32px;margin:0 0 10px;padding:0 14p
 ion-footer.barra-azione .fine-recupero app-icona{color:var(--state-success);}
 ion-footer.barra-azione.ridotta .fine-recupero{transform:translateY(calc(var(--barra-azione-h) * (1 - var(--tabbar-ridotta))));}
 ion-footer.barra-azione.con-tastiera{display:none;}
-@keyframes barra-entra{from{transform:translateY(calc(var(--tabbar-outer) + var(--tabbar-gap) + 28px));opacity:0;}}
-@media (prefers-reduced-motion:reduce){ion-footer.barra-azione{animation:none;}ion-footer.barra-azione .barra-pillola,ion-footer.barra-azione .fine-recupero{transition:none;}}
+@keyframes barra-compare{from{opacity:0;translate:0 8px;}}
+@keyframes barra-via{to{opacity:0;translate:0 8px;}}
+ion-footer.barra-azione.barra-via{animation:barra-via .15s ease-out forwards;pointer-events:none;}
+/* Nell'allenamento, durante il recupero, la barra cede il posto alla fascia
+   nello stesso punto: si dissolve li', e finito il recupero torna allo stesso
+   modo mentre la fascia se ne va (le due si incrociano). Prima spariva di
+   colpo, per due fotogrammi in basso non c'era niente, e a fine recupero il
+   tasto risaliva dal fondo: venti volte per allenamento. visibility a fine
+   corsa la toglie dal Tab e dallo screen reader (e inert subito). */
+ion-footer.barra-azione.ceduta{opacity:0;visibility:hidden;transition:opacity .15s ease-out,visibility 0s .15s;}
+@media (prefers-reduced-motion:reduce){ion-footer.barra-azione,ion-footer.barra-azione.barra-via{animation:none;}ion-footer.barra-azione .barra-pillola,ion-footer.barra-azione .fine-recupero{transition:none;}}
 /* Il contenuto passa sotto la barra: in fondo tiene la barra, il suo stacco
    dal fondo e la stessa aria che lascia sopra la barra delle tab (piu'
    "Recupero finito", quando c'e'), e il Tab porta in vista quello che le sta
    sotto (vedi --coperto-base). */
 :root ion-content.con-barra{--padding-bottom:calc(var(--barra-azione-h) + var(--tabbar-gap) + 28px);--coperto-base:calc(var(--barra-azione-h) + var(--tabbar-gap));}
 :root ion-content.con-barra.con-fine-recupero{--padding-bottom:calc(var(--barra-azione-h) + var(--tabbar-gap) + 28px + 42px);--coperto-base:calc(var(--barra-azione-h) + var(--tabbar-gap) + 42px);}
+/* Mentre la barra ha ceduto il posto alla fascia (piu' alta) lo spazio in fondo
+   resta (niente salto del contenuto), ed e' la fascia a dire quanto copre. */
+:root.con-fascia ion-content.con-barra{--coperto-base:calc(var(--restbar-h) + var(--tabbar-gap));}
 
 /* La sessione e gli step in una card sola. Il tempo e' la cosa da leggere:
    grande, a sinistra, in chiaro. Il conto e' degli esercizi finiti. */
@@ -1642,6 +1665,16 @@ ion-list.carico-lettura{margin:0;padding:0;background:transparent;}
    bottone: tocchi e torni sulla sessione. */
 .sessionpill{position:fixed;left:16px;right:16px;bottom:var(--tabbar-gap);z-index:58;height:44px;max-width:var(--tabbar-outer-w);margin:0 auto;display:flex;align-items:center;gap:8px;padding:0 14px 0 16px;border-radius:var(--r-pill);border:1px solid var(--glass-edge);background:var(--glass-bg);box-shadow:inset 0 1px 0 var(--glass-hi),var(--shadow-float);-webkit-backdrop-filter:var(--glass-filter);backdrop-filter:var(--glass-filter);color:var(--label);font-family:inherit;cursor:pointer;text-align:left;transform:translateY(calc(-1 * (var(--tabbar-outer) + 10px)));transition:transform .42s cubic-bezier(0.32,0.72,0,1);}
 .sessionpill.senza-barra{transform:none;}
+/* Arriva e se ne va con la barra delle tab, con la sua curva e la sua
+   durata: uscendo dal giorno sale insieme a lei, entrando nel giorno scende
+   con lei (pillola-via la mette animate.leave in TabsPage). Prima compariva
+   di colpo gia' in alto, sospesa sopra una barra che doveva ancora arrivare, e
+   spariva di colpo. Con translate, non con transform, che tiene il suo posto
+   sopra la barra. */
+.sessionpill{animation:pillola-entra .42s cubic-bezier(0.32,0.72,0,1);}
+.sessionpill.pillola-via{animation:pillola-via .42s cubic-bezier(0.32,0.72,0,1) forwards;pointer-events:none;}
+@keyframes pillola-entra{from{translate:0 calc(var(--tabbar-outer) + var(--tabbar-gap) + 28px + 54px);opacity:0;}}
+@keyframes pillola-via{to{translate:0 calc(var(--tabbar-outer) + var(--tabbar-gap) + 28px + 54px);opacity:0;}}
 /* Con la barra ridotta la pillola scende con lei: resta appoggiata alla stessa
    distanza, non sospesa sopra un vuoto. */
 :root.barra-ridotta .sessionpill:not(.senza-barra){transform:translateY(calc(-1 * (var(--tabbar-outer) * var(--tabbar-ridotta) + 10px)));}
@@ -1652,7 +1685,7 @@ ion-list.carico-lettura{margin:0;padding:0;background:transparent;}
 .sessionpill-tempo{font-variant-numeric:tabular-nums;font-size:var(--text-md);font-weight:600;color:var(--label);}
 .sessionpill-vai{margin-left:auto;display:flex;align-items:center;gap:2px;font-size:var(--text-sm);font-weight:600;color:var(--accent);}
 .sessionpill-vai svg{display:block;}
-@media (prefers-reduced-motion: reduce){.sessionpill{transition:none;}}
+@media (prefers-reduced-motion: reduce){.sessionpill{transition:none;animation:none;}.sessionpill.pillola-via{animation:fascia-via .15s ease-out forwards;}}
 
 /* ===== TESTI E BOTTONI DEI FOGLI (la conferma e' un ion-alert, vedi sotto) ===== */
 .confirmtext{font-size:var(--text-md);color:var(--label);line-height:1.5;text-align:center;margin-bottom:18px;}

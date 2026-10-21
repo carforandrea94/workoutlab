@@ -47,6 +47,7 @@ describe('SchedaDetailComponent — accessibilita\' delle testate (disegno vero)
     const viewMode = signal<'list' | 'slider'>(vista);
     const restTimer = signal<any>({ show: false, finished: false });
     const inPausa = signal(false);
+    const avviata = signal(sessioneAvviata);
     TestBed.configureTestingModule({
       imports: [SchedaDetailComponent],
       providers: [
@@ -70,8 +71,8 @@ describe('SchedaDetailComponent — accessibilita\' delle testate (disegno vero)
         { provide: ConfirmDialogService, useValue: {} },
         { provide: ToastService, useValue: {} },
         { provide: WorkoutSessionStateService, useValue: {
-          matchesDay: () => sessioneAvviata, isPaused: () => inPausa(), togglePause: () => inPausa.set(!inPausa()),
-          activeSession: () => (sessioneAvviata ? { dayId: 'day1', dayLabel: 'Petto' }
+          matchesDay: () => avviata(), isPaused: () => inPausa(), togglePause: () => inPausa.set(!inPausa()),
+          activeSession: () => (avviata() ? { dayId: 'day1', dayLabel: 'Petto' }
             : altraSessione ? { dayId: 'altro', dayLabel: 'Gambe' } : null),
           elapsedSec: signal(0), formatDuration: (s: number) => `${s}`, start
         } }
@@ -93,7 +94,7 @@ describe('SchedaDetailComponent — accessibilita\' delle testate (disegno vero)
       el.dispatchEvent(ev);
       return ev;
     };
-    return { fixture, c: fixture.componentInstance, root, nomi, passi, tutti, testo, aggiorna, tasto, start, startRestTimer, restTimer, viewMode, inPausa };
+    return { fixture, c: fixture.componentInstance, root, nomi, passi, tutti, testo, aggiorna, tasto, start, startRestTimer, restTimer, viewMode, inPausa, avviata };
   }
 
   describe('vista elenco', () => {
@@ -191,6 +192,27 @@ describe('SchedaDetailComponent — accessibilita\' delle testate (disegno vero)
       c.vaiAlPasso('p9');
       c.vaiAlPasso(undefined);
       expect(vai).toHaveBeenCalledTimes(1);
+    });
+
+    it('saltando al terzo esercizio lo step resta sulla meta mentre lo slider passa sul secondo', async () => {
+      const { c, root } = await monta('slider');
+      const slider = root.querySelector<HTMLElement>('.exslider')!;
+      Array.from(slider.children).forEach((card, i) => Object.defineProperty(card, 'offsetLeft', { value: i * 393 }));
+      let x = 0;
+      Object.defineProperty(slider, 'scrollLeft', { get: () => x, configurable: true });
+      const scorri = async (v: number) => { x = v; c.onSliderScroll(); await new Promise(r => setTimeout(r, 40)); };
+
+      c.vaiAlPasso('p2');
+      // Prima lo step tornava al primo e passava dal secondo prima di arrivare.
+      await scorri(30);
+      expect(c.sliderIndex).toBe(2);
+      await scorri(393);
+      expect(c.sliderIndex).toBe(2);
+      await scorri(786);
+      expect(c.sliderIndex).toBe(2);
+      // Arrivati, lo slider torna a comandare: il dito porta al secondo.
+      await scorri(393);
+      expect(c.sliderIndex).toBe(1);
     });
 
     it('a sessione avviata c\'e\' la bandiera della chiusura, col suo nome', async () => {
@@ -318,6 +340,49 @@ describe('SchedaDetailComponent — accessibilita\' delle testate (disegno vero)
    * Nello slider, ad allenamento avviato, il comando della serie sta in basso,
    * sotto il pollice; durante il recupero gli da' il cambio la fascia.
    */
+  /**
+   * A esaurimento, nell'elenco "Chiudo la serie" sta nella card: il blocco su
+   * cui si sta lavorando conta, e la serie si chiude.
+   */
+  describe('"Chiudo la serie" a esaurimento', () => {
+    async function conCluster(vista: 'list' | 'slider') {
+      const m = await monta(vista, true);
+      const vm = m.c.exercises[0];
+      vm.cluster = { blocks: [5], restSec: 30, end: 'open' };
+      vm.rows[0].blocks = [
+        { reps: '5', load: '85', done: true, ripPlaceholder: '5', loadPlaceholder: '85' },
+        { reps: '5', load: '85', done: true, ripPlaceholder: '5', loadPlaceholder: '85' },
+        { reps: '5', load: '85', done: false, ripPlaceholder: '5', loadPlaceholder: '85' }
+      ];
+      vm.activeRow = 0;
+      m.aggiorna();
+      return { ...m, vm };
+    }
+
+    it('nella card dell\'elenco segna il blocco in corso e chiude la serie', async () => {
+      const { root, vm, aggiorna } = await conCluster('list');
+      const chiudo = Array.from(root.querySelectorAll<HTMLElement>('.clusterfork ion-button')).find(b => b.textContent!.trim() === 'Chiudo la serie')!;
+      // ion-button sposta aria-label dall'host al <button> interno: si legge dove sta.
+      const etichetta = chiudo.getAttribute('aria-label') ?? chiudo.shadowRoot?.querySelector('button')?.getAttribute('aria-label')
+        ?? (chiudo as any).inheritedAttributes?.['aria-label'];
+      expect(etichetta).toBe('Fatto il blocco in corso, ed è l\'ultimo: chiudi la serie');
+      chiudo.click();
+      aggiorna();
+      expect(vm.rows[0].done).toBe(true);
+      expect(vm.rows[0].reps).toBe('5+5+5');
+    });
+
+    it('nello slider il secondo tasto in basso fa lo stesso', async () => {
+      const { root, vm, aggiorna } = await conCluster('slider');
+      const tasti = Array.from(root.querySelectorAll<HTMLElement>('ion-footer.salva-footer ion-button'));
+      expect(tasti.map(t => t.textContent!.replace(/\s+/g, ' ').trim())).toEqual(['Fatto il blocco 3', 'Chiudo la serie']);
+      tasti[1].click();
+      aggiorna();
+      expect(vm.rows[0].done).toBe(true);
+      expect(vm.rows[0].reps).toBe('5+5+5');
+    });
+  });
+
   describe('il tasto in basso', () => {
     const tasti = (testo: (s: string) => string[]) => testo('ion-footer.salva-footer ion-button');
 
@@ -343,14 +408,22 @@ describe('SchedaDetailComponent — accessibilita\' delle testate (disegno vero)
       expect(startRestTimer).toHaveBeenCalledWith(90, 'Panca piana', 'day1');
     });
 
-    it('durante il recupero non c\'e\' (c\'e\' la fascia); a recupero finito torna, con la riga sopra', async () => {
+    it('durante il recupero cede il posto alla fascia: resta, dissolta e intoccabile; a recupero finito torna la stessa, con la riga sopra', async () => {
       const { testo, tutti, aggiorna, restTimer, root } = await monta('slider', true);
+      const barra = root.querySelector<HTMLElement>('ion-footer.salva-footer')!;
+      expect(barra.classList.contains('ceduta')).toBe(false);
       restTimer.set({ show: true, finished: false, remaining: 40 });
       aggiorna();
-      expect(root.querySelector('ion-footer.salva-footer')).toBeNull();
+      // Non esce e rientra (prima spariva, e finito il recupero risaliva dal fondo): si dissolve sul posto.
+      expect(root.querySelector('ion-footer.salva-footer')).toBe(barra);
+      expect(barra.classList.contains('ceduta')).toBe(true);
+      expect(barra.hasAttribute('inert')).toBe(true);
 
       restTimer.set({ show: true, finished: true, remaining: 0 });
       aggiorna();
+      expect(root.querySelector('ion-footer.salva-footer')).toBe(barra);
+      expect(barra.classList.contains('ceduta')).toBe(false);
+      expect(barra.hasAttribute('inert')).toBe(false);
       expect(tasti(testo)).toEqual(['Fatta · serie 1 di 2']);
       expect(testo('.fine-recupero')).toEqual(['Recupero finito']);
       // La fascia, che lo annunciava, se ne va: lo annuncia la pagina.
@@ -621,16 +694,18 @@ describe('SchedaDetailComponent — accessibilita\' delle testate (disegno vero)
       expect(contenuto(root).classList.contains('con-barra')).toBe(true);
     });
 
-    it('senza barra (elenco in sessione, recupero che conta) il contenuto non tiene spazio', async () => {
+    it('senza barra (elenco in sessione) il contenuto non tiene spazio', async () => {
       const elenco = await monta('list', true);
       expect(barra(elenco.root)).toBeNull();
       expect(contenuto(elenco.root).classList.contains('con-barra')).toBe(false);
-      TestBed.resetTestingModule();
+    });
+
+    it('mentre il recupero conta lo spazio in fondo resta: il contenuto non salta a ogni serie', async () => {
       const { root, restTimer, aggiorna } = await monta('slider', true);
       restTimer.set({ show: true, finished: false, remaining: 40 });
       aggiorna();
-      expect(barra(root)).toBeNull();
-      expect(contenuto(root).classList.contains('con-barra')).toBe(false);
+      expect(barra(root)!.classList.contains('ceduta')).toBe(true);
+      expect(contenuto(root).classList.contains('con-barra')).toBe(true);
     });
 
     it('"Recupero finito" le sta appoggiato sopra, fuori dalla pillola, e il contenuto ne tiene conto', async () => {
@@ -725,6 +800,27 @@ describe('SchedaDetailComponent — accessibilita\' delle testate (disegno vero)
     it('c\'e\' anche nello slider', async () => {
       const { root } = await monta('slider');
       expect(pulsante(root)).not.toBeNull();
+    });
+
+    it('toccato, la barra resta la stessa e diventa quella della serie: non esce e rientra dal fondo', async () => {
+      const { root, avviata, aggiorna } = await monta('slider');
+      const prima = footer(root)!;
+      avviata.set(true);
+      aggiorna();
+      const dopo = root.querySelector<HTMLElement>('ion-footer.barra-azione')!;
+      expect(dopo).toBe(prima);
+      expect(dopo.classList.contains('avvio-footer')).toBe(false);
+      expect(dopo.classList.contains('salva-footer')).toBe(true);
+      expect(dopo.querySelector('ion-button.salva-btn')!.textContent!.trim()).toBe('Fatta · serie 1 di 2');
+      expect(root.querySelectorAll('ion-footer.barra-azione').length).toBe(1);
+    });
+
+    it('un recupero rimasto acceso senza sessione non nasconde "Inizia": la barra cede il posto solo alla fascia della sessione', async () => {
+      const { root, restTimer, aggiorna } = await monta('slider');
+      restTimer.set({ show: true, finished: false, remaining: 40 });
+      aggiorna();
+      expect(footer(root)!.classList.contains('ceduta')).toBe(false);
+      expect(footer(root)!.hasAttribute('inert')).toBe(false);
     });
 
     it('a sessione avviata sparisce: il suo posto lo prende la fascia del recupero', async () => {

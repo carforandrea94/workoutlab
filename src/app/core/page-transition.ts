@@ -25,6 +25,12 @@ import { Animation, AnimationBuilder, createAnimation, iosTransitionAnimation } 
  *  - il fondo della pagina in cima lascia vedere la testata sotto finche' gli
  *    elementi non si sono scambiati, poi la copre.
  *
+ * La barra in basso di una pagina interna (ion-footer.barra-azione) e' la
+ * barra delle tab di quella pagina: come lei non scorre di lato con il
+ * contenuto, sale dal fondo con la pagina che entra e scende con quella che
+ * esce. Prima scivolava con la pagina e insieme saliva per conto suo: entrava
+ * in diagonale, e usciva di lato mentre la barra delle tab saliva.
+ *
  * Il titolo grande (ion-header collapse="condense") sta nel contenuto e scorre
  * con la pagina: niente copia che vola verso la freccia, che qui non ha testo.
  * Il titolo piccolo della barra, quando Ionic lo tiene nascosto perche' il
@@ -132,8 +138,31 @@ function elemento(radice: Animation, el: Element | Element[] | null, opacita: Fo
 function contenutoEPiedi(pagina: HTMLElement): { contenuto: HTMLElement | null; extra: Element[] } {
   return {
     contenuto: pagina.querySelector<HTMLElement>(':scope > ion-content'),
-    extra: Array.from(pagina.querySelectorAll(':scope > ion-header > *:not(ion-toolbar), :scope > ion-footer > *'))
+    extra: Array.from(pagina.querySelectorAll(':scope > ion-header > *:not(ion-toolbar), :scope > ion-footer:not(.barra-azione) > *'))
   };
+}
+
+/** Oltre il bordo dello schermo, l'ombra compresa: come la barra delle tab quando scivola via. */
+const SOTTO_IL_BORDO = 28;
+
+/**
+ * La barra in basso di una pagina sale dal fondo (entra) o ci scende (esce),
+ * con la curva e la durata della pagina: anche col dito, nel gesto per tornare
+ * indietro, la segue passo passo. Con "riduci movimento" si dissolve sul posto.
+ */
+function barraInBasso(radice: Animation, pagina: HTMLElement, entra: boolean): void {
+  const barre = Array.from(pagina.querySelectorAll<HTMLElement>(':scope > ion-footer.barra-azione'))
+    .filter(b => b.getBoundingClientRect().height > 0);
+  if (barre.length === 0) return;
+  const vista = pagina.ownerDocument.defaultView;
+  const ridotto = !!vista?.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  const anim = createAnimation().addElement(barre).fromTo('opacity', entra ? 0 : 1, entra ? 1 : 0);
+  if (!ridotto) {
+    const alto = Math.min(...barre.map(b => b.getBoundingClientRect().top));
+    const sotto = `translateY(${Math.max(0, Math.ceil((vista?.innerHeight ?? 0) - alto)) + SOTTO_IL_BORDO}px)`;
+    anim.fromTo('transform', entra ? sotto : 'translateY(0px)', entra ? 'translateY(0px)' : sotto);
+  }
+  radice.addAnimation(anim.afterClearStyles(['opacity', 'transform']));
 }
 
 /** Ombra e velo che Ionic mette sul contenuto durante lo scorrimento: stanno nello shadow di ion-content. */
@@ -194,6 +223,7 @@ export const transizionePagina: AnimationBuilder = (navEl, opts) => {
     }
     radice.addAnimation(animDentro);
     effettoContenuto(animDentro, dentro.contenuto, true);
+    barraInBasso(radice, entrando, true);
 
     // ---- contenuto di chi esce
     if (uscendo) {
@@ -210,6 +240,7 @@ export const transizionePagina: AnimationBuilder = (navEl, opts) => {
       }
       radice.addAnimation(animFuori);
       effettoContenuto(animFuori, fuori.contenuto, false);
+      barraInBasso(radice, uscendo, false);
     }
 
     // ---- testata
