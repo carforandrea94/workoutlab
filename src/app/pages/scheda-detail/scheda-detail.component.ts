@@ -596,7 +596,7 @@ export class SchedaDetailComponent implements OnInit, AfterViewInit, OnDestroy {
 
       // Collect max loads per session for this exercise
       const maxLoads: number[] = [];
-      let lastSessionData: { load: string | null; reps: string | null; blocks?: { load: string | null }[] }[] = [];
+      let lastSessionData: { load: string | null; reps: string | null; blocks?: { load: string | null; reps: string | null }[] }[] = [];
       let lastSessionDate = '';
       /** Carico e ripetizioni della stessa serie vanno tenuti insieme: e' la
        *  coppia, non il solo carico, a dire quanto e' stato faticoso. Divise
@@ -646,19 +646,21 @@ export class SchedaDetailComponent implements OnInit, AfterViewInit, OnDestroy {
         if (diQuesta.length > 0) perSessione.push({ data: s.date, sets: diQuesta });
         lastSessionData = sexData.sets.map(sr => ({
           load: sr.load, reps: sr.reps,
-          blocks: sr.blocks?.map(b => ({ load: b.load }))
+          blocks: sr.blocks?.map(b => ({ load: b.load, reps: b.reps }))
         }));
         lastSessionDate = s.date;
       });
 
       // Da dove vengono i pesi suggeriti: serve alla riga "come il 03/10" e
       // alla prima scelta del foglio. Un cluster ha il peso nei blocchi, non
-      // nella serie: li' l'ultima volta resta fuori.
+      // nella serie: li' il peso della serie resta fuori e vanno i blocchi.
       const dataUltima = this.giornoMese(lastSessionDate);
       if (lastSessionData.length > 0 && dataUltima) {
         vm.ultima = {
           data: dataUltima,
-          serie: lastSessionData.map(sr => ({ load: sr.blocks?.length ? null : sr.load, reps: sr.reps }))
+          serie: lastSessionData.map(sr => sr.blocks?.length
+            ? { load: null, reps: sr.reps, blocchi: sr.blocks.map(b => ({ load: b.load, reps: b.reps ?? null })) }
+            : { load: sr.load, reps: sr.reps })
         };
       }
 
@@ -1040,6 +1042,21 @@ export class SchedaDetailComponent implements OnInit, AfterViewInit, OnDestroy {
     const b = this.block(vm.rows[rowIdx]);
     if (!b) return;
     b.load = this.write(v);
+    this.scheduleDraft();
+  }
+
+  /**
+   * Il peso scelto nel foglio, su un cluster: va nella ruota del blocco in
+   * corso, e ai blocchi che restano si suggerisce lo stesso. In un cluster di
+   * solito e' uguale ovunque; quando al terzo blocco si cala, lo si cala li'.
+   */
+  caricaBlocchi(vm: ExerciseVM, rowIdx: number, v: number): void {
+    if (this.setsLocked) return;
+    const blocks = vm.rows[rowIdx]?.blocks ?? [];
+    const k = currentBlock(blocks);
+    if (k === -1) return;
+    blocks[k].load = this.write(v);
+    for (const b of blocks.slice(k + 1)) if (!b.done) b.loadPlaceholder = this.write(v);
     this.scheduleDraft();
   }
 
@@ -1474,11 +1491,36 @@ export class SchedaDetailComponent implements OnInit, AfterViewInit, OnDestroy {
   foglioCarico: FoglioCarico | null = null;
   foglioCaricoAperto = false;
 
-  /** Le fonti di un peso per questa serie. Vuoto su un cluster (li' il peso e'
-   *  del blocco) e nello storico (li' c'e' quello che hai fatto, non un suggerimento). */
+  /**
+   * Le fonti di un peso per questa serie. Vuoto nello storico (li' c'e' quello
+   * che hai fatto, non un suggerimento).
+   *
+   * Su un cluster il peso e' del BLOCCO, e la ruota e' quella del blocco in
+   * corso: le fonti parlano di lui. L'ultima volta e' lo stesso blocco della
+   * stessa serie; le ripetizioni sono quelle del blocco. A serie finita non
+   * c'e' un blocco da caricare.
+   */
   opzioniCarico(vm: ExerciseVM, serie: number): OpzioneCarico[] {
     const row = vm.rows[serie];
-    if (!row || vm.cluster || this.isStorico) return [];
+    if (!row || this.isStorico) return [];
+    if (vm.cluster) {
+      const k = this.blockIndex(row);
+      const b = k === -1 ? null : (row.blocks ?? [])[k];
+      if (!b) return [];
+      return opzioniCarico({
+        serie,
+        blocco: k + 1,
+        ultima: vm.ultima ? {
+          data: vm.ultima.data,
+          serie: vm.ultima.serie.map(s => s.blocchi?.[k] ?? { load: null, reps: null })
+        } : null,
+        ripetizioni: this.numero(b.reps) ?? this.numero(b.ripPlaceholder),
+        rmRows: vm.insight?.rmRows ?? null,
+        programma: vm.insight?.programLoad ?? null,
+        previste: numeroSevero(b.ripPlaceholder),
+        soglia: this.rmSoftOver
+      });
+    }
     return opzioniCarico({
       serie,
       ultima: vm.ultima,
@@ -1547,8 +1589,18 @@ export class SchedaDetailComponent implements OnInit, AfterViewInit, OnDestroy {
   /** L'opzione col peso che c'e' nella ruota; nessuna se l'hai girata tu. */
   sceltaCarico(f: FoglioCarico): string {
     const row = f.serie === null ? undefined : f.vm.rows[f.serie];
-    const kg = row ? this.numero(row.load) ?? this.numero(row.loadPlaceholder) : null;
+    // Su un cluster il peso nella ruota e' quello del blocco in corso.
+    const dove = row && f.vm.cluster ? this.block(row) : row;
+    const kg = dove ? this.numero(dove.load) ?? this.numero(dove.loadPlaceholder) : null;
     return opzioneScelta(this.opzioniDelFoglio(f), kg)?.chiave ?? '';
+  }
+
+  /** Su un cluster, il blocco di cui parla il foglio (da 1); null altrove. */
+  bloccoDelFoglio(f: FoglioCarico): number | null {
+    if (!f.vm.cluster || f.serie === null) return null;
+    const row = f.vm.rows[f.serie];
+    const k = row ? this.blockIndex(row) : -1;
+    return k === -1 ? null : k + 1;
   }
 
   /**
@@ -1560,7 +1612,8 @@ export class SchedaDetailComponent implements OnInit, AfterViewInit, OnDestroy {
   scegliCarico(f: FoglioCarico, chiave: string, evento?: Event): void {
     const o = this.opzioniDelFoglio(f).find(x => x.chiave === chiave);
     if (!o || f.serie === null) return;
-    this.setLoad(f.vm, f.serie, o.kg);
+    if (f.vm.cluster) this.caricaBlocchi(f.vm, f.serie, o.kg);
+    else this.setLoad(f.vm, f.serie, o.kg);
     if (!(typeof KeyboardEvent !== 'undefined' && evento instanceof KeyboardEvent)) this.foglioCaricoAperto = false;
     this.cdr.detectChanges();
   }

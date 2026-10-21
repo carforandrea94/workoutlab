@@ -761,10 +761,13 @@ describe('SchedaDetailComponent — la percentuale del massimale', () => {
     expect(programma(component, vm).avviso).toBeNull();
   });
 
-  it('su un cluster il foglio non si apre: li\' il peso e\' del blocco', () => {
-    // "8+8" non e' una serie dritta: nessuna di queste formule la legge.
+  it('su un cluster a serie finita non c\'e\' un blocco da caricare', () => {
     const { component, vm } = conPercentuale(80);
     vm.cluster = { blocks: [8, 8], restSec: 20, end: 'fixed' };
+    vm.rows[0].blocks = [
+      { reps: '8', load: '60', ripPlaceholder: '8', loadPlaceholder: '', done: true },
+      { reps: '8', load: '60', ripPlaceholder: '8', loadPlaceholder: '', done: true }
+    ];
     expect(component.opzioniCarico(vm, 0)).toEqual([]);
   });
 });
@@ -775,6 +778,87 @@ describe('SchedaDetailComponent — la percentuale del massimale', () => {
  * venti o trenta secondi, direbbero meno del vero (o di piu', se il carico
  * sale). Le serie senza blocchi, su un esercizio a cluster, restano fuori.
  */
+/**
+ * "Che peso metto" anche sui cluster. La ruota e' quella del blocco in corso,
+ * e le fonti parlano di lui: l'ultima volta e' lo stesso blocco della stessa
+ * serie, le ripetizioni sono quelle del blocco. Scegliere mette il peso nel
+ * blocco e lo suggerisce ai blocchi che restano.
+ */
+describe('SchedaDetailComponent — che peso metto su un cluster', () => {
+  const blocco = (load: string, reps: string, done = true) => ({ load, reps, done });
+  function conCluster(percentuale: number | null = 80) {
+    const { component, patchField } = makeComponent({ sessionSuQuestoGiorno: true });
+    const vm = makeVm();
+    vm.cluster = { blocks: [8, 8, 8], restSec: 20, end: 'fixed' };
+    vm.rows = [0, 1].map(() => ({ reps: '', load: '', done: false, ripPlaceholder: '', loadPlaceholder: '',
+      blocks: [0, 1, 2].map(() => ({ reps: '', load: '', ripPlaceholder: '8', loadPlaceholder: '', done: false })) }));
+    component.exercises = [vm];
+    (component as any).percentualeProgramma = percentuale;
+    (component as any).loadInsights([{ id: 'a', session: { date: '2026-10-15', exercises: [{ name: 'Panca piana', sets: [
+      { load: '60-60-55', reps: '8+8+8', done: true, blocks: [blocco('60', '8'), blocco('60', '8'), blocco('55', '8')] },
+      { load: '62,5-60-55', reps: '8+7+6', done: true, blocks: [blocco('62,5', '8'), blocco('60', '7'), blocco('55', '6')] }
+    ] }] } }]);
+    return { component, vm, patchField };
+  }
+
+  it('le tre voci, per il blocco in corso', () => {
+    const { component, vm } = conCluster();
+    // 62,5 x 8 dal primo blocco della serie 2: 62,5 * 36 / 29 = 77,5.
+    expect(vm.insight.oneRm.value).toBe(77.5);
+    const opzioni = component.opzioniCarico(vm, 0);
+    expect(opzioni.map(o => o.chiave)).toEqual(['ultima', 'rm', 'programma']);
+    expect(opzioni[0]).toMatchObject({ titolo: 'Come l\'ultima volta', dettaglio: 'Serie 1, blocco 1, del 15/10, 8 ripetizioni', kg: 60 });
+    expect(opzioni[1]).toMatchObject({ titolo: 'Per 8 ripetizioni', kg: vm.insight.rmRows.find((r: any) => r.reps === 8).load });
+    expect(opzioni[2].titolo).toBe('Dal programma, 80%');
+  });
+
+  it('l\'ultima volta e\' lo stesso blocco della stessa serie', () => {
+    const { component, vm } = conCluster();
+    vm.rows[1].blocks[0].done = true;
+    vm.rows[1].blocks[1].done = true;
+    const ultima = component.opzioniCarico(vm, 1)[0];
+    expect(ultima.dettaglio).toBe('Serie 2, blocco 3, del 15/10, 6 ripetizioni');
+    expect(ultima.kg).toBe(55);
+    expect(component.bloccoDelFoglio({ vm, serie: 1 })).toBe(3);
+  });
+
+  it('le ripetizioni sono quelle nella ruota del blocco', () => {
+    const { component, vm } = conCluster();
+    vm.rows[0].blocks[0].reps = '6';
+    expect(component.opzioniCarico(vm, 0)[1].titolo).toBe('Per 6 ripetizioni');
+  });
+
+  it('scegliere mette il peso nel blocco in corso e lo suggerisce ai blocchi che restano', () => {
+    const { component, vm } = conCluster();
+    vm.rows[0].blocks[0].done = true;
+    vm.rows[0].blocks[0].load = '60';
+    const f = { vm, serie: 0 };
+    component.scegliCarico(f, 'programma');
+    const kg = component.kg(vm.insight.programLoad.load).replace(',', '.');
+    expect(vm.rows[0].blocks[0].load).toBe('60');
+    expect(vm.rows[0].blocks[1].load).toBe(kg);
+    expect(vm.rows[0].blocks[2].loadPlaceholder).toBe(kg);
+    // La serie non ha un peso suo: in un cluster e' dei blocchi.
+    expect(vm.rows[0].load).toBe('');
+    expect(component.sceltaCarico(f)).toBe('programma');
+  });
+
+  it('senza blocco da caricare non sceglie niente; senza percentuale la voce del programma non c\'e\'', () => {
+    const { component, vm } = conCluster(null);
+    expect(component.opzioniCarico(vm, 0).map(o => o.chiave)).toEqual(['ultima', 'rm']);
+    expect(component.bloccoDelFoglio({ vm, serie: null })).toBeNull();
+    vm.rows[0].blocks.forEach((b: any) => b.done = true);
+    component.caricaBlocchi(vm, 0, 70);
+    expect(vm.rows[0].blocks.map((b: any) => b.load)).toEqual(['', '', '']);
+  });
+
+  it('su una serie dritta il foglio non parla di blocchi', () => {
+    const { component } = makeComponent({ sessionSuQuestoGiorno: true });
+    const vm = makeVm();
+    expect(component.bloccoDelFoglio({ vm, serie: 0 })).toBeNull();
+  });
+});
+
 describe('SchedaDetailComponent — il massimale sui cluster, dal primo blocco', () => {
   function conCluster(sets: any[]) {
     const { component } = makeComponent({ sessionSuQuestoGiorno: true });
