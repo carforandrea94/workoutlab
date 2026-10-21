@@ -526,7 +526,7 @@
             <span class="massimale-kg">{{ kg(m.value) }} kg</span>
           </div>
           <p class="massimale-da">
-            Da {{ kg(m.load) }} × {{ m.reps }}<ng-container *ngIf="m.data"> del {{ m.data }}</ng-container><ng-container *ngIf="m.delta"> · {{ conSegno(m.delta) }} kg dalla volta prima</ng-container>
+            Da {{ kg(m.load) }} × {{ m.reps }}<ng-container *ngIf="m.blocco">, primo blocco,</ng-container><ng-container *ngIf="m.data"> del {{ m.data }}</ng-container><ng-container *ngIf="m.delta"> · {{ conSegno(m.delta) }} kg dalla volta prima</ng-container>
           </p>
         </div>
         <ng-template #nessunaStima>
@@ -535,7 +535,7 @@
 
         <ng-container *ngIf="opzioniDelFoglio(f) as opzioni">
           <ng-container *ngIf="opzioni.length">
-            <p class="scelta-gruppo">Che peso metto · serie {{ (f.serie ?? 0) + 1 }}</p>
+            <p class="scelta-gruppo">Che peso metto · serie {{ (f.serie ?? 0) + 1 }}<ng-container *ngIf="bloccoDelFoglio(f) as k">, blocco {{ k }}</ng-container></p>
             <ion-radio-group *ngIf="!setsLocked; else soloDaLeggere" [value]="sceltaCarico(f)"
               (ionChange)="scegliCarico(f, $event.detail.value, $event.detail.event)"
               [attr.aria-label]="'Carico della serie ' + ((f.serie ?? 0) + 1) + ' di ' + f.vm.ex.name">

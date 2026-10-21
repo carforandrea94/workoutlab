@@ -18,7 +18,8 @@ export type FonteCarico = 'ultima' | 'rm' | 'programma';
 export interface UltimaVolta {
   /** "03/10". */
   data: string;
-  serie: { load: string | null; reps: string | null }[];
+  /** Su un cluster `load` e' null (il peso e' dei blocchi) e i blocchi sono in `blocchi`. */
+  serie: { load: string | null; reps: string | null; blocchi?: { load: string | null; reps: string | null }[] }[];
 }
 
 export interface OpzioneCarico {
@@ -35,6 +36,8 @@ export interface OpzioneCarico {
 export interface DatiCarico {
   /** La serie, da 0. */
   serie: number;
+  /** Su un cluster, il blocco (da 1): le fonti parlano di lui. */
+  blocco?: number;
   ultima: UltimaVolta | null;
   /** Le ripetizioni nella ruota adesso (o quelle previste). */
   ripetizioni: number | null;
@@ -78,7 +81,8 @@ export function opzioniCarico(d: DatiCarico): OpzioneCarico[] {
     out.push({
       chiave: 'ultima',
       titolo: 'Come l\'ultima volta',
-      dettaglio: `Serie ${d.serie + 1} del ${d.ultima.data}` + (rip ? `, ${rip} ${rip === 1 ? 'ripetizione' : 'ripetizioni'}` : ''),
+      dettaglio: `Serie ${d.serie + 1}` + (d.blocco ? `, blocco ${d.blocco},` : '') + ` del ${d.ultima.data}`
+        + (rip ? `, ${rip} ${rip === 1 ? 'ripetizione' : 'ripetizioni'}` : ''),
       avviso: null,
       kg: kgUltima,
       breve: `come il ${d.ultima.data}`

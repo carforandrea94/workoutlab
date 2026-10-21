@@ -158,8 +158,9 @@ export interface ExInsight {
   oneRmText: string | null;
   /** Lo stesso massimale in numeri, per il foglio del massimale: il valore, la
    *  serie da cui viene (peso e ripetizioni), il giorno ("12/10", vuoto se non
-   *  c'e') e quanto e' cambiato dalla sessione prima (null se non c'e'). */
-  oneRm: { value: number; load: number; reps: number; data: string; delta: number | null } | null;
+   *  c'e') e quanto e' cambiato dalla sessione prima (null se non c'e').
+   *  `blocco` dice che la serie e' il primo blocco di un cluster. */
+  oneRm: { value: number; load: number; reps: number; data: string; delta: number | null; blocco: boolean } | null;
   /** Il carico per ogni numero di ripetizioni, da 1 a 15. */
   rmRows: RmRow[] | null;
   /** Il peso alla percentuale scelta per il programma. null se la percentuale

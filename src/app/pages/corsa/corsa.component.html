@@ -3,6 +3,13 @@
     <ion-title>
       <div class="navtitle">Corsa</div>
     </ion-title>
+    <!-- Le settimane passate stanno nello Storico, una pagina dentro la tab:
+         si apre da qui, come lo storico degli allenamenti nella Scheda. -->
+    <ion-buttons slot="end">
+      <ion-button class="navicon" routerLink="/corsa/storico" routerDirection="forward" aria-label="Storico" title="Storico">
+        <app-icona name="time" [size]="22"></app-icona>
+      </ion-button>
+    </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
@@ -21,7 +28,7 @@
 
   <div class="wrap">
     <!--
-      La settimana in corso sta per conto suo, sopra lo storico: l'obiettivo
+      La settimana in corso: l'obiettivo
       (se il coach ne ha impostato uno), le corse fatte e "Registra corsa".
       Prima era la prima voce della fisarmonica, tenuta aperta in sola
       lettura: e Ionic, in sola lettura, spegne i tocchi anche del contenuto
@@ -62,45 +69,6 @@
       </ion-item>
     </ion-list>
 
-    <!--
-      Lo storico, una riga per SETTIMANA invece di una per uscita. Prima era un
-      elenco piatto che cresceva per sempre: dopo tre mesi erano quaranta righe
-      uguali, senza totali e senza un modo di vedere se si stesse correndo di piu'
-      o di meno. E' una fisarmonica raggruppata di Ionic, con le sole settimane
-      passate: si aprono toccandole, anche piu' d'una.
-    -->
-    <ng-container *ngIf="passate().length">
-      <ion-list-header class="sezione">
-        <ion-label>Storico</ion-label>
-      </ion-list-header>
-      <ion-accordion-group class="settimane" expand="inset" [multiple]="true" [value]="aperte()"
-        (ionChange)="settimaneCambiate($event)">
-        <ion-accordion *ngFor="let w of passate()" class="week" [value]="w.mondayISO">
-          <ion-item slot="header">
-            <ion-label>
-              <h2>{{ w.label }}</h2>
-              <p>{{ runsLabel(w) }}</p>
-              <ion-progress-bar *ngIf="goalMinutes > 0" [value]="pct(w) / 100" [class.piena]="reached(w)"
-                aria-hidden="true"></ion-progress-bar>
-            </ion-label>
-            <ion-note slot="end" class="valore" [class.vuoto]="!w.minutes">{{ w.minutes || '—' }}<small *ngIf="w.minutes">min</small></ion-note>
-          </ion-item>
-          <ion-list slot="content" class="uscite">
-            <ng-container *ngFor="let r of w.runs">
-              <ng-container *ngTemplateOutlet="rigaCorsa; context: { r: r }"></ng-container>
-            </ng-container>
-            <!-- Il tasto sta DENTRO la settimana, che e' dove la corsa andra' a
-                 finire, e porta con se' la sua data: recuperare una corsa
-                 dimenticata non costa di girare il calendario all'indietro. -->
-            <ion-item class="runadd" [button]="true" [detail]="false" lines="none" (click)="addRun(w)">
-              <app-icona slot="start" name="add" [size]="22"></app-icona>
-              <ion-label>Registra corsa</ion-label>
-            </ion-item>
-          </ion-list>
-        </ion-accordion>
-      </ion-accordion-group>
-    </ng-container>
-
     <!-- Una corsa: giorno e tipo, la fatica sotto, i minuti a destra. Toccata si modifica. -->
     <ng-template #rigaCorsa let-r="r">
       <ion-item class="runline" [button]="true" [detail]="true" (click)="editRun(r.id)">
@@ -115,10 +83,6 @@
         <ion-note slot="end" class="valore">{{ r.run.durationMin }}<small>min</small></ion-note>
       </ion-item>
     </ng-template>
-
-    <ion-button class="week-more" fill="clear" expand="block" *ngIf="history().hidden && !showAll()" (click)="showAll.set(true)">
-      Mostra le altre {{ history().hidden }} settimane
-    </ion-button>
 
     <div class="history-empty" *ngIf="state.loaded() && !state.runs().length">
       Nessuna uscita registrata. I minuti si contano da qui.

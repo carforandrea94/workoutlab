@@ -1,0 +1,62 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/corsa" aria-label="Indietro"></ion-back-button>
+    </ion-buttons>
+    <ion-title>
+      <div class="navtitle">Storico</div>
+    </ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="liste-ios">
+  <ion-refresher slot="fixed" (ionRefresh)="aggiorna($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  <div class="wrap">
+    <ion-accordion-group class="settimane" expand="inset" [multiple]="true" [value]="aperte()"
+      (ionChange)="settimaneCambiate($event)" *ngIf="passate().length">
+      <ion-accordion *ngFor="let w of passate()" class="week" [value]="w.mondayISO">
+        <ion-item slot="header">
+          <ion-label>
+            <h2>{{ w.label }}</h2>
+            <p>{{ runsLabel(w) }}</p>
+            <ion-progress-bar *ngIf="goalMinutes > 0" [value]="pct(w) / 100" [class.piena]="reached(w)"
+              aria-hidden="true"></ion-progress-bar>
+          </ion-label>
+          <ion-note slot="end" class="valore" [class.vuoto]="!w.minutes">{{ w.minutes || '—' }}<small *ngIf="w.minutes">min</small></ion-note>
+        </ion-item>
+        <ion-list slot="content" class="uscite">
+          <!-- Una corsa: giorno e tipo, la fatica sotto, i minuti a destra. Toccata si modifica. -->
+          <ion-item class="runline" *ngFor="let r of w.runs" [button]="true" [detail]="true" (click)="editRun(r.id)">
+            <span slot="start" class="runline-segno" aria-hidden="true">
+              <span class="runline-dot" [style.background]="effortColor(r.run.effort)"
+                [style.width.px]="effortSize(r.run.effort)" [style.height.px]="effortSize(r.run.effort)"></span>
+            </span>
+            <ion-label>
+              <h2>{{ runLineLabel(r.run) }}</h2>
+              <p>{{ effortLabel(r.run.effort) }}</p>
+            </ion-label>
+            <ion-note slot="end" class="valore">{{ r.run.durationMin }}<small>min</small></ion-note>
+          </ion-item>
+          <!-- Il tasto sta DENTRO la settimana, che e' dove la corsa andra' a
+               finire, e porta con se' la sua data: recuperare una corsa
+               dimenticata non costa di girare il calendario all'indietro. -->
+          <ion-item class="runadd" [button]="true" [detail]="false" lines="none" (click)="addRun(w)">
+            <app-icona slot="start" name="add" [size]="22"></app-icona>
+            <ion-label>Registra corsa</ion-label>
+          </ion-item>
+        </ion-list>
+      </ion-accordion>
+    </ion-accordion-group>
+
+    <ion-button class="week-more" fill="clear" expand="block" *ngIf="history().hidden && !showAll()" (click)="showAll.set(true)">
+      Mostra le altre {{ history().hidden }} settimane
+    </ion-button>
+
+    <div class="history-empty" *ngIf="state.loaded() && !passate().length">
+      Nessuna corsa nelle settimane passate. Quelle di questa settimana sono nella Corsa.
+    </div>
+  </div>
+</ion-content>
