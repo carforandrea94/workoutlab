@@ -344,6 +344,21 @@ describe('SchedaDetailComponent — accessibilita\' delle testate (disegno vero)
    * A esaurimento, nell'elenco "Chiudo la serie" sta nella card: il blocco su
    * cui si sta lavorando conta, e la serie si chiude.
    */
+  it('dalla testata elenco e slider si scambiano dissolvendosi (dentro una View Transition)', async () => {
+    const { root, viewMode, aggiorna } = await monta('slider');
+    const transizione = vi.fn((fn: () => void) => { fn(); return {}; });
+    (document as any).startViewTransition = transizione;
+    try {
+      root.querySelector<HTMLElement>('ion-header ion-segment-button[value="list"]')!.click();
+      aggiorna();
+      expect(transizione).toHaveBeenCalledTimes(1);
+      expect(viewMode()).toBe('list');
+      expect(root.querySelector('.exlist')).not.toBeNull();
+    } finally {
+      delete (document as any).startViewTransition;
+    }
+  });
+
   describe('"Chiudo la serie" a esaurimento', () => {
     async function conCluster(vista: 'list' | 'slider') {
       const m = await monta(vista, true);

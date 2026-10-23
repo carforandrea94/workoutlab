@@ -68,6 +68,9 @@ describe('coerenza delle pagine', () => {
       const t = template().find(f => f.nome.endsWith(nome))!.testo;
       expect(t, nome).toMatch(/<ion-footer[^>]*barra-azione[^>]*animate\.leave="barra-via"/);
     }
+    // "Recupero finito" se ne va dissolvendosi segnando la serie.
+    expect(template().find(f => f.nome.endsWith('scheda-detail.component.html'))!.testo)
+      .toContain('<p class="fine-recupero" *ngIf="recuperoFinito" animate.leave="svanisce">');
     // Nell'allenamento "Inizia" e il tasto della serie sono una barra sola: toccando
     // "Inizia" non esce e rientra. L'altra e' quella del resoconto.
     const scheda = template().find(f => f.nome.endsWith('scheda-detail.component.html'))!.testo;

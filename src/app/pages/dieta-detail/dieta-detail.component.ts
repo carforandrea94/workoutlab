@@ -5,6 +5,7 @@ import { DietDataService } from '../../services/diet-data.service';
 import { DietStateService } from '../../services/diet-state.service';
 import { AppStateService } from '../../services/app-state.service';
 import { MetaSlider, findClosestSlideIndex, scrollToSlide } from '../../core/utils/horizontal-slider.util';
+import { conDissolvenza } from '../../core/dissolvenza';
 import { firstUncompletedIndex } from '../../core/utils/meal-completion.util';
 import { todayLocalISO } from '../../core/utils/date.util';
 import {
@@ -232,6 +233,18 @@ export class DietaDetailComponent implements OnInit {
     this.sliderIndex = i;
     this.meta.vai(i);
     this.scrollToIndex(i);
+  }
+
+  /**
+   * Elenco o slider, dalla testata: le due viste si scambiano dissolvendosi
+   * nello stesso posto (conDissolvenza), invece di saltare da una all'altra.
+   */
+  cambiaVista(m: 'list' | 'slider'): void {
+    if (this.state.viewMode() === m) return;
+    conDissolvenza(() => {
+      this.state.setViewMode(m);
+      this.cdr.detectChanges();
+    });
   }
 
   onSliderScroll(): void {

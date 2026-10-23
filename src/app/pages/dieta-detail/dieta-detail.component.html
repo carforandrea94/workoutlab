@@ -10,8 +10,8 @@
     </ion-title>
     <ion-buttons slot="end">
       <ion-segment class="seg" [value]="state.viewMode()">
-        <ion-segment-button value="list" (click)="state.setViewMode('list')" aria-label="Vista elenco" title="Elenco"><app-icona name="list" [size]="16"></app-icona></ion-segment-button>
-        <ion-segment-button value="slider" (click)="state.setViewMode('slider')" aria-label="Vista slider" title="Slider"><app-icona name="albums" [size]="16"></app-icona></ion-segment-button>
+        <ion-segment-button value="list" (click)="cambiaVista('list')" aria-label="Vista elenco" title="Elenco"><app-icona name="list" [size]="16"></app-icona></ion-segment-button>
+        <ion-segment-button value="slider" (click)="cambiaVista('slider')" aria-label="Vista slider" title="Slider"><app-icona name="albums" [size]="16"></app-icona></ion-segment-button>
       </ion-segment>
     </ion-buttons>
   </ion-toolbar>

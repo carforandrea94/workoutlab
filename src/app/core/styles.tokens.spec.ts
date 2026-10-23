@@ -607,3 +607,38 @@ describe('styles.css — la barra in basso dell\'allenamento come la barra delle
     expect(regola(':root ion-content.con-barra.con-fine-recupero')).toContain('+ 42px');
   });
 });
+
+/**
+ * Comparire e svanire: quello che cambia sul posto si dissolve invece di
+ * esserci e non esserci in un fotogramma, e le due viste di una pagina si
+ * incrociano. Solo opacita' (e un poco di sfocato nell'incrocio): niente
+ * spostamenti, cosi' vale anche con "riduci movimento".
+ */
+describe('styles.css — dissolvenze', () => {
+  let css = '';
+  beforeAll(async () => {
+    const nome = 'node:fs';
+    const fs = await import(/* @vite-ignore */ nome);
+    css = fs.readFileSync('src/styles.css', 'utf8');
+  });
+
+  it('comparire e svanire sono solo opacita\'', () => {
+    expect(css).toContain('@keyframes compare{from{opacity:0;}}');
+    expect(css).toContain('@keyframes svanisce{to{opacity:0;}}');
+    expect(css).toContain('\n.svanisce{animation:svanisce .15s ease-out forwards;pointer-events:none;}');
+  });
+
+  it('elenco e slider si incrociano: la vecchia esce in fretta, la nuova arriva decelerando, tutte e due un poco sfocate', () => {
+    expect(css).toContain('::view-transition-old(root){animation:vista-via .16s ease-out both;}');
+    expect(css).toContain('::view-transition-new(root){animation:vista-entra .28s cubic-bezier(0.16,1,0.3,1) both;}');
+    expect(css).toContain('@keyframes vista-via{to{opacity:0;filter:blur(4px);}}');
+    expect(css).toContain('@keyframes vista-entra{from{opacity:0;filter:blur(4px);}}');
+  });
+
+  it('il colore dei tasti passa, "Vai" diventa verde passando, "Recupero finito" e gli errori compaiono', () => {
+    expect(css).toContain('ion-button.setdone::part(native){transition:background-color .2s ease-out,color .2s ease-out;}');
+    expect(css).toContain('\n.restbar .restbar-time{transition:color .3s ease-out;}');
+    expect(css).toContain('\nion-footer.barra-azione .fine-recupero{animation:compare .2s ease-out;}');
+    expect(css).toContain('\n.autherror{animation:compare .2s ease-out;}');
+  });
+});
