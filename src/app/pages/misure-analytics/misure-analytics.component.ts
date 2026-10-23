@@ -1,18 +1,24 @@
 import { Component, OnInit, ChangeDetectorRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { MeasurementDataService } from '../../services/measurement-data.service';
 import {
+  MeasureCategory,
   MeasureField,
+  MeasurementEntry,
   MeasurementKey,
+  CATEGORY_LABELS,
   PESO_FIELDS,
   PLICHE_FIELDS,
   CENTIMETRI_FIELDS
 } from '../../models/measurement.model';
 import { IONIC_PAGE } from '../../core/ionic-page';
-import { TastoDirective } from '../../core/tasto.directive';
 import { IONIC_REFRESH, completaRefresh } from '../../core/ionic-refresh';
-import { IonContent, IonSpinner, IonButton } from '@ionic/angular';
+import {
+  IonContent, IonSpinner, IonButton, IonSegment, IonSegmentButton, IonList, IonItem, IonLabel, IonNote,
+  IonRadioGroup, IonRadio, IonAccordionGroup, IonAccordion
+} from '@ionic/angular';
+import { GraficoAndamentoComponent } from '../../components/grafico-andamento/grafico-andamento.component';
+import { PuntoMisura, dataBreve, dataLunga, numeroIt, uguale, variazioneIt } from '../../core/utils/grafico-andamento.util';
 
 interface FieldOption {
   field: MeasureField;
@@ -20,39 +26,60 @@ interface FieldOption {
   lastValue: string | null;
 }
 
+/** Una riga della tabella sotto il grafico: gli stessi numeri, senza doverli cercare col dito. */
+interface RigaMisurazione {
+  date: string;
+  data: string;
+  valore: string;
+  cambio: string;
+}
+
+/** Nell'ordine della pagina e del segmento in cima. */
+export const CATEGORIE_ANDAMENTO: MeasureCategory[] = ['peso', 'pliche', 'centimetri'];
+
+/**
+ * L'andamento di una misura alla volta. In cima il segmento sceglie il gruppo
+ * (peso, pliche, centimetri), poi la card col grafico, sotto la lista delle
+ * misure del gruppo e la tabella delle misurazioni.
+ *
+ * Prima le diciassette misure stavano tutte in una lista sola sotto il
+ * grafico, e il peso aveva un gruppo per una riga sola che ripeteva il titolo.
+ */
 @Component({
   selector: 'app-misure-analytics',
   standalone: true,
-  imports: [IonButton, IonSpinner, ...IONIC_PAGE, ...IONIC_REFRESH, CommonModule, TastoDirective],
+  imports: [
+    IonButton, IonSpinner, IonSegment, IonSegmentButton, IonList, IonItem, IonLabel, IonNote, IonRadioGroup, IonRadio,
+    IonAccordionGroup, IonAccordion, ...IONIC_PAGE, ...IONIC_REFRESH, CommonModule, GraficoAndamentoComponent
+  ],
   templateUrl: './misure-analytics.component.html'
 })
 export class MisureAnalyticsComponent implements OnInit {
-  group1: FieldOption[] = [];
-  group2: FieldOption[] = [];
-  group3: FieldOption[] = [];
+  readonly categorie = CATEGORIE_ANDAMENTO;
+  readonly nomiCategorie = CATEGORY_LABELS;
+
+  gruppi: Record<MeasureCategory, FieldOption[]> = { peso: [], pliche: [], centimetri: [] };
+  categoria: MeasureCategory = 'peso';
+  /** L'ultima misura vista in ogni gruppo: tornando al gruppo si ritrova quella. */
+  private sceltaPerGruppo: Partial<Record<MeasureCategory, MeasurementKey>> = {};
 
   selectedKey: MeasurementKey = 'peso';
   selectedField: MeasureField | null = null;
 
-  chartSvg: SafeHtml | null = null;
-  hasEnoughData = false;
+  punti: PuntoMisura[] = [];
+  righe: RigaMisurazione[] = [];
   hasAnyHistory = false;
-
-  firstValue: string | null = null;
-  lastValue: string | null = null;
-  delta: number | null = null;
-  deltaText: string | null = null;
+  /** Per lo screen reader, a ogni cambio di misura. */
+  annuncio = '';
 
   @ViewChild(IonContent) content?: IonContent;
 
-  private allEntries: import('../../models/measurement.model').MeasurementEntry[] = [];
-  private allHistory: { date: string; value: number }[] = [];
+  private allEntries: MeasurementEntry[] = [];
   loading = true;
   errorMsg = '';
 
   constructor(
     private data: MeasurementDataService,
-    private sanitizer: DomSanitizer,
     private cdr: ChangeDetectorRef
   ) {}
 
@@ -63,6 +90,15 @@ export class MisureAnalyticsComponent implements OnInit {
 
   ngOnInit(): void {
     this.load();
+  }
+
+  /** Le misure del gruppo mostrato. */
+  get opzioni(): FieldOption[] {
+    return this.gruppi[this.categoria];
+  }
+
+  haDati(cat: MeasureCategory): boolean {
+    return this.gruppi[cat].some(o => o.hasData);
   }
 
   /** `silenzioso`: il gesto "tira per aggiornare" rilegge senza far sparire l'elenco dietro lo spinner. */
@@ -89,14 +125,13 @@ export class MisureAnalyticsComponent implements OnInit {
           lastValue: lastValues[field.key] ?? null
         }));
 
-      this.group1 = buildGroup(PESO_FIELDS);
-      this.group2 = buildGroup(PLICHE_FIELDS);
-      this.group3 = buildGroup(CENTIMETRI_FIELDS);
+      this.gruppi = { peso: buildGroup(PESO_FIELDS), pliche: buildGroup(PLICHE_FIELDS), centimetri: buildGroup(CENTIMETRI_FIELDS) };
 
-      // Seleziona di default il primo campo con dati sufficienti (almeno 2 punti), altrimenti 'peso'
-      const allOptions = [...this.group1, ...this.group2, ...this.group3];
-      const firstWithData = allOptions.find(o => o.hasData);
-      this.selectField(firstWithData ? firstWithData.field : this.group1[0].field);
+      // Ricaricando resta la misura che si guardava; la prima volta, la prima che ha dei dati.
+      const tutte = CATEGORIE_ANDAMENTO.flatMap(c => this.gruppi[c]);
+      const ancora = this.selectedField && tutte.find(o => o.field.key === this.selectedKey && o.hasData);
+      const scelta = ancora || tutte.find(o => o.hasData) || tutte[0];
+      this.selectField(scelta.field);
     } catch (e: any) {
       console.error('Errore caricamento analisi misure:', e);
       this.errorMsg = e?.message === 'TIMEOUT'
@@ -108,10 +143,27 @@ export class MisureAnalyticsComponent implements OnInit {
     }
   }
 
+  /** Il segmento in cima: si torna all'ultima misura vista nel gruppo, o alla prima che ha dei dati. */
+  cambiaCategoria(valore: unknown): void {
+    const cat = valore as MeasureCategory;
+    if (!CATEGORIE_ANDAMENTO.includes(cat) || cat === this.categoria || !this.haDati(cat)) return;
+    const gruppo = this.gruppi[cat];
+    const ricordata = gruppo.find(o => o.field.key === this.sceltaPerGruppo[cat] && o.hasData);
+    const scelta = ricordata || gruppo.find(o => o.hasData)!;
+    this.selectField(scelta.field);
+    this.cdr.detectChanges();
+  }
+
+  /** La scelta dalla lista (ion-radio-group). */
+  sceltaDallaLista(valore: unknown): Promise<void> {
+    const o = this.opzioni.find(x => x.field.key === valore);
+    return o ? this.scegli(o.field) : Promise.resolve();
+  }
+
   /**
    * La scelta fatta dall'utente, dalla lista: il grafico sta in cima e la lista
-   * sotto, e scegliendo "Plica sottoscapolare" a meta' pagina il grafico cambiava
-   * fuori vista. Se la pagina e' scesa, si torna su dal grafico (piano, o di colpo
+   * sotto, e scegliendo "Quadricipite Sx" in fondo il grafico cambiava fuori
+   * vista. Se la pagina e' scesa, si torna su dal grafico (piano, o di colpo
    * per chi ha ridotto le animazioni); se si e' gia' in cima non si muove niente.
    */
   async scegli(field: MeasureField): Promise<void> {
@@ -131,34 +183,36 @@ export class MisureAnalyticsComponent implements OnInit {
   selectField(field: MeasureField): void {
     this.selectedKey = field.key;
     this.selectedField = field;
+    const cat = CATEGORIE_ANDAMENTO.find(c => this.gruppi[c].some(o => o.field.key === field.key));
+    if (cat) {
+      this.categoria = cat;
+      this.sceltaPerGruppo[cat] = field.key;
+    }
 
     const history = this.allEntries.slice().reverse(); // dal piu' vecchio al piu' recente
-    const points = history
+    this.punti = history
       .map(e => ({ date: e.date, value: this.data.parseMeasureValue(e[field.key] as string | null) }))
-      .filter((p): p is { date: string; value: number } => p.value !== null);
+      .filter((p): p is PuntoMisura => p.value !== null);
 
-    this.allHistory = points;
-    this.hasEnoughData = points.length >= 2;
+    const conAnno = this.punti.length > 0 && this.punti[0].date.slice(0, 4) !== this.punti[this.punti.length - 1].date.slice(0, 4);
+    this.righe = this.punti.map((p, i) => ({
+      date: p.date,
+      data: dataLunga(p.date),
+      valore: numeroIt(p.value),
+      cambio: i === 0 ? 'Prima misura'
+        : uguale(p.value - this.punti[i - 1].value) ? 'Uguale alla precedente'
+        : `${variazioneIt(p.value - this.punti[i - 1].value)} ${field.unit} dalla precedente`
+    })).reverse();
 
-    if (points.length >= 1) {
-      this.firstValue = this.data.formatMeasureNumber(points[0].value);
-      this.lastValue = this.data.formatMeasureNumber(points[points.length - 1].value);
-    } else {
-      this.firstValue = null;
-      this.lastValue = null;
-    }
-
-    if (this.hasEnoughData) {
-      const diff = points[points.length - 1].value - points[0].value;
-      this.delta = Math.round(diff * 10) / 10;
-      this.deltaText = (this.delta > 0 ? '+' : '') + this.data.formatMeasureNumber(this.delta);
-      const svg = this.data.buildTrendSVG(points);
-      this.chartSvg = this.sanitizer.bypassSecurityTrustHtml(svg);
-    } else {
-      this.delta = null;
-      this.deltaText = null;
-      this.chartSvg = null;
-    }
+    const ultimo = this.punti[this.punti.length - 1];
+    const primo = this.punti[0];
+    this.annuncio = !ultimo
+      ? `${field.label}: nessuna misurazione`
+      : this.punti.length < 2
+        ? `${field.label}: ${numeroIt(ultimo.value)} ${field.unit}, una sola misurazione`
+        : `${field.label}: ${numeroIt(ultimo.value)} ${field.unit}, ` + (uguale(ultimo.value - primo.value)
+          ? `uguale al ${dataBreve(primo.date, conAnno)}`
+          : `${variazioneIt(ultimo.value - primo.value)} ${field.unit} dal ${dataBreve(primo.date, conAnno)}`);
   }
 
   isSelected(field: MeasureField): boolean {
