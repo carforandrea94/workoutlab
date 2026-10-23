@@ -20,6 +20,7 @@ import {
 } from '../../core/utils/cluster.util';
 import { todayLocalISO } from '../../core/utils/date.util';
 import { MetaSlider, findClosestSlideIndex, scrollToSlide } from '../../core/utils/horizontal-slider.util';
+import { conDissolvenza } from '../../core/dissolvenza';
 import {
   PerformedSet, oneRepMaxOf, rmTable, MAX_TRUSTED_REPS,
   loadAtPercent, repsAtPercent, numeroSevero
@@ -749,6 +750,18 @@ export class SchedaDetailComponent implements OnInit, AfterViewInit, OnDestroy {
           vm.warmup = `Riscaldamento: <b>${w1} kg</b> x${r1}, <b>${w2} kg</b> x${r2}, <b>${w3} kg</b> x${r3}`;
         }
       }
+    });
+  }
+
+  /**
+   * Elenco o slider, dalla testata: le due viste si scambiano dissolvendosi
+   * nello stesso posto (conDissolvenza), invece di saltare da una all'altra.
+   */
+  cambiaVista(m: 'list' | 'slider'): void {
+    if (this.state.viewMode() === m) return;
+    conDissolvenza(() => {
+      this.state.setViewMode(m);
+      this.cdr.detectChanges();
     });
   }
 

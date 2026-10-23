@@ -8,8 +8,8 @@
     </ion-title>
     <ion-buttons slot="end" *ngIf="!resocontoInVista">
       <ion-segment class="seg" [value]="state.viewMode()">
-        <ion-segment-button value="list" (click)="state.setViewMode('list')" aria-label="Vista elenco" title="Elenco"><app-icona name="list" [size]="16"></app-icona></ion-segment-button>
-        <ion-segment-button value="slider" (click)="state.setViewMode('slider')" aria-label="Vista slider" title="Slider"><app-icona name="albums" [size]="16"></app-icona></ion-segment-button>
+        <ion-segment-button value="list" (click)="cambiaVista('list')" aria-label="Vista elenco" title="Elenco"><app-icona name="list" [size]="16"></app-icona></ion-segment-button>
+        <ion-segment-button value="slider" (click)="cambiaVista('slider')" aria-label="Vista slider" title="Slider"><app-icona name="albums" [size]="16"></app-icona></ion-segment-button>
       </ion-segment>
     </ion-buttons>
   </ion-toolbar>
@@ -615,7 +615,7 @@
   </div>
   <ng-template #serie>
     <ng-container *ngIf="azione as a">
-      <p class="fine-recupero" *ngIf="recuperoFinito">
+      <p class="fine-recupero" *ngIf="recuperoFinito" animate.leave="svanisce">
         <app-icona name="checkmark" [size]="15"></app-icona>Recupero finito
       </p>
       <div class="salva barra-pillola">

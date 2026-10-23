@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, input, output, signal, untracked } from '@angular/core';
 import { Andamento } from '../../core/utils/session-summary.util';
 
 /** Un raggio: un esercizio, e di quanto e' cambiato dalla volta scorsa. */
@@ -26,6 +26,13 @@ const R = 100;
 const R_NUMERI = R + 24;
 const f = (n: number) => n.toFixed(1);
 
+/** La prima volta la forma di oggi nasce dal tratteggio: il momento del resoconto. */
+export const NASCITA_MS = 720;
+/** Fra Forza e Volume si trasforma da una misura all'altra, piu' in fretta. */
+export const CAMBIO_MS = 420;
+/** Decelerazione esponenziale: parte decisa e si posa piano, senza rimbalzi. */
+const decelera = (k: number) => 1 - Math.pow(1 - k, 4);
+
 /** La distanza dal centro di una variazione: il centro e' -30%, il tratteggio (la volta scorsa) zero, il bordo +30%. */
 export function raggioDi(v: number): number {
   const c = Math.max(-SCALA_RAGNATELA, Math.min(SCALA_RAGNATELA, v));
@@ -47,6 +54,12 @@ export function raggioDi(v: number): number {
  * variazione per chi non vede): scelgono l'esercizio di cui il resoconto
  * mostra il dettaglio. Il disegno e' nascosto allo screen reader, che ha
  * l'elenco degli esercizi con le stesse cifre.
+ *
+ * La forma di oggi non compare gia' fatta: nasce dal tratteggio della volta
+ * scorsa e si allarga (o si stringe) fino a dove si e' arrivati oggi, cosi' si
+ * vede il cambiamento, non solo il risultato. Passando fra Forza e Volume si
+ * trasforma da una misura all'altra; cambiando idea a meta' riparte da dove
+ * si trova. Con "riduci movimento" e' gia' al suo posto.
  */
 @Component({
   selector: 'app-ragnatela',
@@ -67,6 +80,52 @@ export class RagnatelaComponent {
   readonly centro = { x: CX, y: CY };
   readonly scala = `+${Math.round(SCALA_RAGNATELA * 100)}%`;
 
+  /** I raggi della forma di oggi mentre si muove; null quando e' ferma al suo posto. */
+  private readonly inMoto = signal<number[] | null>(null);
+  /** I raggi a cui si sta andando (o dove si e' arrivati). */
+  private meta: number[] | null = null;
+  private fotogramma = 0;
+
+  constructor() {
+    effect(() => {
+      const meta = this.assi().map(a => raggioDi(a.v));
+      untracked(() => this.muovi(meta));
+    });
+    inject(DestroyRef).onDestroy(() => this.ferma());
+  }
+
+  private muovi(meta: number[]): void {
+    const vista = typeof window === 'undefined' ? null : window;
+    const anima = !!vista && typeof vista.requestAnimationFrame === 'function' && typeof vista.matchMedia === 'function'
+      && !vista.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    // Da dove si parte: da dove la forma e' adesso (anche a meta' strada); la
+    // prima volta, o se i raggi non sono gli stessi, dal tratteggio.
+    const adesso = this.inMoto() ?? this.meta;
+    const nasce = !adesso || adesso.length !== meta.length;
+    this.meta = meta;
+    this.ferma();
+    if (!anima || (!nasce && adesso.every((r, i) => r === meta[i]))) {
+      this.inMoto.set(null);
+      return;
+    }
+    const da = nasce ? meta.map(() => raggioDi(0)) : adesso;
+    const durata = nasce ? NASCITA_MS : CAMBIO_MS;
+    const t0 = performance.now();
+    const passo = (t: number) => {
+      const k = Math.min(1, Math.max(0, (t - t0) / durata));
+      const e = decelera(k);
+      this.inMoto.set(k < 1 ? da.map((r, i) => r + (meta[i] - r) * e) : null);
+      this.fotogramma = k < 1 ? requestAnimationFrame(passo) : 0;
+    };
+    this.inMoto.set(da);
+    this.fotogramma = requestAnimationFrame(passo);
+  }
+
+  private ferma(): void {
+    if (this.fotogramma) cancelAnimationFrame(this.fotogramma);
+    this.fotogramma = 0;
+  }
+
   private readonly angolo = (i: number) => (-90 + i * 360 / this.assi().length) * Math.PI / 180;
   private readonly punto = (i: number, r: number): [number, number] =>
     [CX + r * Math.cos(this.angolo(i)), CY + r * Math.sin(this.angolo(i))];
@@ -78,15 +137,18 @@ export class RagnatelaComponent {
   readonly disegno = computed(() => {
     const assi = this.assi();
     const zero = raggioDi(0);
+    const mossi = this.inMoto();
+    // Durante il movimento i raggi sono quelli del fotogramma; fermi, i loro.
+    const raggio = (i: number) => (mossi && mossi.length === assi.length ? mossi[i] : raggioDi(assi[i].v));
     return {
       // Fra il tratteggio e il bordo: dove si e' fatto meglio.
       meglio: `${this.tracciato(R)} ${this.tracciato(zero)}`,
       griglia: [-0.15, 0.15, SCALA_RAGNATELA].map(v => this.poligono(() => raggioDi(v))),
       raggi: assi.map((_, i) => this.punto(i, R).map(f)),
       prima: this.poligono(() => zero),
-      oggi: this.poligono(i => raggioDi(assi[i].v)),
+      oggi: this.poligono(raggio),
       punte: assi.map((a, i) => {
-        const [x, y] = this.punto(i, raggioDi(a.v));
+        const [x, y] = this.punto(i, raggio(i));
         if (a.v <= SCALA_RAGNATELA) return { oltre: false, x: f(x), y: f(y), punti: '' };
         const u = [Math.cos(this.angolo(i)), Math.sin(this.angolo(i))];
         const p = [-u[1], u[0]];

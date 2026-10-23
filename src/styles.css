@@ -686,6 +686,10 @@ ion-button.setdone{--background:var(--accent);--color:var(--accent-contrast);--b
 /* "Fatta" si preme una dozzina di volte a seduta, e da premuto era identico al
    pixel a da fermo: niente diceva che il tocco era arrivato. */
 ion-button.setdone:active{transform:scale(.97);}
+/* Cambiando stato il colore passa, non scatta: "Ho mangiato questo" che
+   diventa "Segna come da fare", "Salva" che si accende scrivendo. E' il
+   fondo del <button> interno (part native) a cambiare. */
+ion-button.setdone::part(native){transition:background-color .2s ease-out,color .2s ease-out;}
 /* Spento, un .setdone resta a meta' (e' il disabled di ion-button). Il "Togli la
    spunta" invece non cambiava aspetto: qui nemmeno. */
 ion-button.setundo{--background:transparent;--color:var(--label-2);--border-radius:var(--r-md);--border-width:1px;--border-style:solid;--border-color:var(--border-line);width:100%;min-height:44px;font-family:'Inter',sans-serif;font-size:var(--text-sm);font-weight:600;}
@@ -1022,6 +1026,8 @@ app-icona ion-icon{display:block;font-size:inherit;}
 .authfield .measure-input-wrap > :is(input,ion-input,ion-select){min-height:42px;}
 .authfield .fielderr,.fielderr{font-size:var(--text-xs);color:var(--state-danger-text);margin-top:5px;line-height:1.4;}
 .autherror{font-size:var(--text-sm);color:var(--state-danger-text);background:rgba(var(--state-danger-rgb),.10);border:1px solid rgba(var(--state-danger-rgb),.25);border-radius:var(--r-sm);padding:10px 12px;margin-bottom:14px;line-height:1.4;}
+/* Un errore compare dissolvendosi: arriva dopo un tocco, e cosi' si legge come la sua risposta. */
+.autherror{animation:compare .2s ease-out;}
 /* I link erano alti quanto la loro riga di testo, una ventina di px: sotto i
    44 che l'app tiene ovunque, e sono gli unici tre bersagli della schermata
    oltre al tasto. */
@@ -1480,6 +1486,8 @@ app-rest-bar.fascia-via{animation:fascia-via .15s ease-out forwards;pointer-even
 .restbar-row{display:flex;align-items:center;gap:12px;min-height:36px;}
 .restbar-time{font-variant-numeric:tabular-nums;font-weight:700;font-size:var(--text-timer);line-height:1;letter-spacing:-.02em;color:var(--accent);flex-shrink:0;min-width:4.4ch;}
 .restbar.finished .restbar-time{color:var(--state-success);}
+/* A fine recupero il conto diventa "Vai" e il verde arriva passando, non di colpo. */
+.restbar .restbar-time{transition:color .3s ease-out;}
 .restbar-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px;}
 .restbar-label{font-size:var(--text-xs);line-height:1.25;color:var(--label-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 /* Senza recupero la fascia ha una riga sola, e quella riga e' la sua voce. */
@@ -1554,6 +1562,11 @@ ion-footer.barra-azione .fine-recupero{height:32px;margin:0 0 10px;padding:0 14p
 /* Sul vetro il verde, in tema chiaro, non arriva a 4,5:1 come testo piccolo:
    resta alla spunta (che come icona ne vuole 3), e la scritta e' nel colore del testo. */
 ion-footer.barra-azione .fine-recupero app-icona{color:var(--state-success);}
+/* "Recupero finito" compare dissolvendosi sopra la barra e se ne va allo stesso
+   modo segnando la serie (svanisce, con animate.leave): prima c'era e non
+   c'era in un fotogramma. */
+ion-footer.barra-azione .fine-recupero{animation:compare .2s ease-out;}
+.svanisce{animation:svanisce .15s ease-out forwards;pointer-events:none;}
 ion-footer.barra-azione.ridotta .fine-recupero{transform:translateY(calc(var(--barra-azione-h) * (1 - var(--tabbar-ridotta))));}
 ion-footer.barra-azione.con-tastiera{display:none;}
 @keyframes barra-compare{from{opacity:0;translate:0 8px;}}
@@ -1820,6 +1833,19 @@ input.daterow:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }
 }
+/* Comparire e svanire sul posto: solo opacita', senza spostamenti, e valgono
+   anche con "riduci movimento" (dicono che qualcosa e' cambiato). */
+@keyframes compare{from{opacity:0;}}
+@keyframes svanisce{to{opacity:0;}}
+
+/* Elenco e slider si scambiano dissolvendosi (conDissolvenza, View
+   Transitions): la vista vecchia esce in fretta e un poco sfocata, la nuova
+   arriva nello stesso posto e si mette a fuoco. Lo sfocato tiene insieme le
+   due viste mentre si incrociano, invece di mostrarne due sovrapposte. */
+::view-transition-old(root){animation:vista-via .16s ease-out both;}
+::view-transition-new(root){animation:vista-entra .28s cubic-bezier(0.16,1,0.3,1) both;}
+@keyframes vista-via{to{opacity:0;filter:blur(4px);}}
+@keyframes vista-entra{from{opacity:0;filter:blur(4px);}}
 
 /* ===================================================================
    SUPERFICI E BADGE

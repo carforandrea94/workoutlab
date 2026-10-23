@@ -469,6 +469,22 @@ describe('DietaDetailComponent', () => {
       expect(c.sliderIndex).toBe(0);
     });
 
+    it('da slider a elenco le viste si scambiano dissolvendosi; sulla vista gia\' aperta non succede niente', async () => {
+      const { c } = await monta('slider');
+      const transizione = vi.fn((fn: () => void) => { fn(); return {}; });
+      (document as any).startViewTransition = transizione;
+      try {
+        c.cambiaVista('slider');
+        expect(transizione).not.toHaveBeenCalled();
+        expect(c.state.setViewMode).not.toHaveBeenCalled();
+        c.cambiaVista('list');
+        expect(transizione).toHaveBeenCalledTimes(1);
+        expect(c.state.setViewMode).toHaveBeenCalledWith('list');
+      } finally {
+        delete (document as any).startViewTransition;
+      }
+    });
+
     it('"Ho mangiato questo" sta nella barra in basso, fatta come la barra delle tab', async () => {
       const { fixture, testo } = await monta('slider');
       expect(controllaBarraInBasso(fixture).classList.contains('salva-btn')).toBe(true);
