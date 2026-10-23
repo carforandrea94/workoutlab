@@ -9,12 +9,12 @@
   </ion-toolbar>
 </ion-header>
 
-<ion-content>
+<ion-content class="liste-ios">
   <ion-refresher slot="fixed" (ionRefresh)="aggiorna($event)">
     <ion-refresher-content></ion-refresher-content>
   </ion-refresher>
 
-  <div class="wrap">
+  <div class="wrap andamento">
     <div *ngIf="loading" class="history-empty"><ion-spinner name="crescent" aria-label="Caricamento"></ion-spinner></div>
 
     <div *ngIf="!loading && errorMsg" class="history-empty">
@@ -26,77 +26,53 @@
       Nessuna misurazione salvata.<br>Inserisci le tue misure per vedere qui l'andamento nel tempo.
     </div>
 
-    <ng-container *ngIf="!loading && !errorMsg && hasAnyHistory">
+    <ng-container *ngIf="!loading && !errorMsg && hasAnyHistory && selectedField">
 
-      <!-- Grafico unico -->
-      <div class="infocard chart-card">
-        <!-- Cambia scegliendo una riga dalla lista: chi non guarda lo schermo deve sentirlo. -->
-        <div class="chart-head" aria-live="polite" aria-atomic="true">
-          <div>
-            <div class="chart-title">{{ selectedField?.label }}</div>
-            <div class="chart-sub" *ngIf="hasEnoughData">
-              {{ firstValue }} → {{ lastValue }} {{ selectedField?.unit }}
-            </div>
-            <div class="chart-sub" *ngIf="!hasEnoughData">Servono almeno 2 misurazioni per il grafico</div>
-          </div>
-          <span *ngIf="delta !== null" class="delta">
-            {{ deltaText }} {{ selectedField?.unit }}
-          </span>
-        </div>
+      <!-- Il gruppo di misure: un gruppo senza nessun dato non si puo' scegliere. -->
+      <ion-segment class="seg labelseg fullseg andamento-gruppi" [value]="categoria"
+        (ionChange)="cambiaCategoria($event.detail.value)" aria-label="Gruppo di misure">
+        <ion-segment-button *ngFor="let c of categorie" [value]="c" [disabled]="!haDati(c)">
+          {{ nomiCategorie[c] }}
+        </ion-segment-button>
+      </ion-segment>
 
-        <div class="chart-wrap" *ngIf="hasEnoughData">
-          <div [innerHTML]="chartSvg"></div>
-        </div>
-        <div class="chart-empty" *ngIf="!hasEnoughData">
-          <span *ngIf="lastValue">Ultimo valore: {{ lastValue }} {{ selectedField?.unit }}</span>
-        </div>
-      </div>
+      <app-grafico-andamento [punti]="punti" [nome]="selectedField.label" [unita]="selectedField.unit"></app-grafico-andamento>
+      <p class="sr-only" aria-live="polite" aria-atomic="true">{{ annuncio }}</p>
 
-      <!-- Lista misure selezionabili: se ne sceglie UNA per tutte e tre le sezioni, quindi un solo gruppo. -->
-      <div role="radiogroup" aria-label="Misura da mostrare nel grafico">
-      <p class="sectiontitle">Peso</p>
-      <div class="grouplist measure-selectlist">
-        <div class="daycard press-fx measure-selectrow" *ngFor="let o of group1"
-          [class.selected]="isSelected(o.field)" appTasto="radio" [attr.aria-checked]="isSelected(o.field)"
-          (click)="scegli(o.field)">
-          <div class="ms-dot" [class.on]="isSelected(o.field)"></div>
-          <div class="info">
-            <div class="lbl">{{ o.field.label }}</div>
-            <div class="meta" *ngIf="o.lastValue">{{ o.lastValue }} {{ o.field.unit }}</div>
-            <div class="meta" *ngIf="!o.lastValue">Nessun dato</div>
-          </div>
-        </div>
-      </div>
+      <!-- Le misure del gruppo: il peso e' una sola, e la lista non serve. -->
+      <ion-list [inset]="true" class="andamento-misure" *ngIf="opzioni.length > 1">
+        <ion-radio-group [value]="selectedKey" (ionChange)="sceltaDallaLista($event.detail.value)"
+          aria-label="Misura da mostrare nel grafico">
+          <ion-item *ngFor="let o of opzioni" [class.senza-dati]="!o.hasData">
+            <ion-radio [value]="o.field.key" justify="space-between" labelPlacement="start" [disabled]="!o.hasData">
+              <span class="misura-voce">
+                <span class="misura-nome">{{ o.field.label }}</span>
+                <span class="misura-valore" *ngIf="o.lastValue">{{ o.lastValue }} {{ o.field.unit }}</span>
+                <span class="misura-valore" *ngIf="!o.lastValue">Nessun dato</span>
+              </span>
+            </ion-radio>
+          </ion-item>
+        </ion-radio-group>
+      </ion-list>
 
-      <p class="sectiontitle">Pliche</p>
-      <div class="grouplist measure-selectlist">
-        <div class="daycard press-fx measure-selectrow" *ngFor="let o of group2"
-          [class.selected]="isSelected(o.field)" appTasto="radio" [attr.aria-checked]="isSelected(o.field)"
-          (click)="scegli(o.field)">
-          <div class="ms-dot" [class.on]="isSelected(o.field)"></div>
-          <div class="info">
-            <div class="lbl">{{ o.field.label }}</div>
-            <div class="meta" *ngIf="o.lastValue">{{ o.lastValue }} {{ o.field.unit }}</div>
-            <div class="meta" *ngIf="!o.lastValue">Nessun dato</div>
-          </div>
-        </div>
-      </div>
-
-      <p class="sectiontitle">Centimetri</p>
-      <div class="grouplist measure-selectlist">
-        <div class="daycard press-fx measure-selectrow" *ngFor="let o of group3"
-          [class.selected]="isSelected(o.field)" appTasto="radio" [attr.aria-checked]="isSelected(o.field)"
-          (click)="scegli(o.field)">
-          <div class="ms-dot" [class.on]="isSelected(o.field)"></div>
-          <div class="info">
-            <div class="lbl">{{ o.field.label }}</div>
-            <div class="meta" *ngIf="o.lastValue">{{ o.lastValue }} {{ o.field.unit }}</div>
-            <div class="meta" *ngIf="!o.lastValue">Nessun dato</div>
-          </div>
-        </div>
-      </div>
-
-      </div>
+      <!-- Gli stessi numeri del grafico, in tabella: si leggono senza cercarli col dito. -->
+      <ion-accordion-group expand="inset" class="andamento-tabella" *ngIf="righe.length">
+        <ion-accordion value="misurazioni">
+          <ion-item slot="header">
+            <ion-label>Misurazioni</ion-label>
+            <ion-note slot="end">{{ righe.length }}</ion-note>
+          </ion-item>
+          <ion-list slot="content">
+            <ion-item *ngFor="let r of righe; let ultima = last" [lines]="ultima ? 'none' : 'full'">
+              <ion-label>
+                <h2>{{ r.data }}</h2>
+                <p>{{ r.cambio }}</p>
+              </ion-label>
+              <ion-note slot="end" class="valore">{{ r.valore }}<small>{{ selectedField.unit }}</small></ion-note>
+            </ion-item>
+          </ion-list>
+        </ion-accordion>
+      </ion-accordion-group>
 
     </ng-container>
   </div>

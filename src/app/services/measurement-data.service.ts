@@ -191,64 +191,6 @@ export class MeasurementDataService {
     })());
   }
 
-  /**
-   * Genera un grafico a linea SVG per l'andamento di un campo nel tempo.
-   * points: array di {date, value} gia' ordinato dal piu' vecchio al piu' recente.
-   */
-  buildTrendSVG(points: { date: string; value: number }[]): string {
-    const w = 340, h = 180;
-    const padL = 40, padR = 14, padT = 18, padB = 26;
-    const innerW = w - padL - padR;
-    const innerH = h - padT - padB;
-
-    const values = points.map(p => p.value);
-    let min = Math.min(...values);
-    let max = Math.max(...values);
-    if (min === max) { min -= 1; max += 1; }
-    const range = max - min;
-
-    const coords = points.map((p, i) => ({
-      x: padL + (points.length === 1 ? innerW / 2 : innerW * (i / (points.length - 1))),
-      y: padT + innerH - innerH * ((p.value - min) / range)
-    }));
-
-    const linePts = coords.map(c => `${c.x.toFixed(1)},${c.y.toFixed(1)}`).join(' ');
-    const areaPts = `${padL.toFixed(1)},${(padT + innerH).toFixed(1)} ${linePts} ${(padL + innerW).toFixed(1)},${(padT + innerH).toFixed(1)}`;
-
-    const dots = coords.map((c, i) => {
-      const isLast = i === coords.length - 1;
-      return `<circle cx="${c.x.toFixed(1)}" cy="${c.y.toFixed(1)}" r="${isLast ? 4 : 2.5}" fill="${isLast ? 'var(--accent)' : 'var(--label-2)'}" stroke="var(--bg)" stroke-width="1.5"/>`;
-    }).join('');
-
-    const gridYs = [padT, padT + innerH / 2, padT + innerH];
-    const gridLabels = [max, (max + min) / 2, min];
-    const grid = gridYs.map((gy, i) => `
-      <line x1="${padL}" y1="${gy.toFixed(1)}" x2="${padL + innerW}" y2="${gy.toFixed(1)}" stroke="var(--separator)" stroke-width="1"/>
-      <text x="${(padL - 8).toFixed(1)}" y="${(gy + 3).toFixed(1)}" text-anchor="end" font-family="Inter, sans-serif" style="font-variant-numeric:tabular-nums" font-size="11" fill="var(--label-3)">${this.formatAxisNum(gridLabels[i])}</text>
-    `).join('');
-
-    const firstDate = this.formatShortDate(points[0].date);
-    const lastDate = this.formatShortDate(points[points.length - 1].date);
-    const xLabels = `
-      <text x="${padL}" y="${h - 6}" text-anchor="start" font-family="Inter, sans-serif" style="font-variant-numeric:tabular-nums" font-size="11" fill="var(--label-3)">${firstDate}</text>
-      <text x="${padL + innerW}" y="${h - 6}" text-anchor="end" font-family="Inter, sans-serif" style="font-variant-numeric:tabular-nums" font-size="11" fill="var(--label-3)">${lastDate}</text>
-    `;
-
-    return `<svg width="100%" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-hidden="true">
-      <defs>
-        <linearGradient id="trendFill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.35"/>
-          <stop offset="100%" stop-color="var(--accent)" stop-opacity="0"/>
-        </linearGradient>
-      </defs>
-      ${grid}
-      <polygon points="${areaPts}" fill="url(#trendFill)"/>
-      <polyline points="${linePts}" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-      ${dots}
-      ${xLabels}
-    </svg>`;
-  }
-
   /** I valori sono digitati/salvati con la virgola italiana (es. "109,5"): parseFloat da sola tronca al primo carattere non numerico e perde il decimale. */
   parseMeasureValue(raw: string | null | undefined): number | null {
     if (!raw) return null;
@@ -259,15 +201,5 @@ export class MeasurementDataService {
   /** Formatta un numero calcolato (differenza, primo/ultimo valore) con la virgola italiana, coerente con come i valori grezzi sono gia' mostrati altrove. */
   formatMeasureNumber(n: number): string {
     return (Math.round(n * 10) / 10).toString().replace('.', ',');
-  }
-
-  /** Con la virgola, come ogni altro numero dell'app: l'asse diceva "80.6" mentre la testata scriveva "79,2". */
-  private formatAxisNum(n: number): string {
-    return (Number.isInteger(n) ? String(n) : n.toFixed(1)).replace('.', ',');
-  }
-
-  private formatShortDate(iso: string): string {
-    const d = new Date(iso + 'T00:00:00');
-    return `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}`;
   }
 }

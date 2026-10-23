@@ -642,3 +642,47 @@ describe('styles.css — dissolvenze', () => {
     expect(css).toContain('\n.autherror{animation:compare .2s ease-out;}');
   });
 });
+
+/**
+ * Andamento: il grafico in una ion-card con la veste delle altre card, la
+ * testata nell'ordine giusto (Ionic in iOS la gira), il riquadro che si legge
+ * col dito senza bloccare lo scorrimento, e le misure mai prese leggibili.
+ */
+describe('styles.css — Andamento', () => {
+  let css = '';
+  beforeAll(async () => {
+    const nome = 'node:fs';
+    const fs = await import(/* @vite-ignore */ nome);
+    css = fs.readFileSync('src/styles.css', 'utf8');
+  });
+  const regola = (sel: string) => css.match(new RegExp('(?:^|\\n)' + sel.replace(/[.()[\]>+:]/g, '\\$&') + '\\{[^}]*\\}'))?.[0] ?? '';
+
+  it('la card ha il raggio e il bordo delle altre, e non l\'ombra di Ionic', () => {
+    const r = regola('ion-card.andamento-card');
+    expect(r).toContain('border-radius:var(--r-lg)');
+    expect(r).toContain('border:1px solid var(--border-line)');
+    expect(r).toContain('box-shadow:none');
+  });
+
+  it('nella testata il nome viene prima del valore', () => {
+    expect(regola('ion-card.andamento-card ion-card-header')).toContain('flex-direction:column;');
+  });
+
+  it('il grafico si trascina in orizzontale e la pagina scorre ancora in verticale', () => {
+    const r = regola('.andamento-piano');
+    expect(r).toContain('touch-action:pan-y');
+    expect(r).toContain('user-select:none');
+    expect(regola('.andamento-piano:focus-visible')).toContain('var(--accent)');
+  });
+
+  it('linea sottile, griglia a filo, testi coi colori del tema', () => {
+    expect(regola('.andamento-piano .linea')).toContain('stroke-width:2;');
+    expect(regola('.andamento-piano .griglia')).toContain('stroke:var(--separator)');
+    expect(regola('.andamento-piano .asse')).toContain('fill:var(--label-3)');
+    expect(regola('.andamento-piano .pallino')).toContain('stroke:var(--surface-card)');
+  });
+
+  it('una misura senza dati non sparisce sotto le opacita\' di Ionic', () => {
+    expect(regola('.andamento ion-list.andamento-misure ion-radio.radio-disabled')).toContain('opacity:1');
+  });
+});

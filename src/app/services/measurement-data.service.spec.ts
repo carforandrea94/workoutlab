@@ -158,30 +158,3 @@ describe('ultimiValori', () => {
     expect(r.peso).toEqual({ value: '83', date: '2026-10-03' });
   });
 });
-
-describe('MeasurementDataService.buildTrendSVG', () => {
-  async function svg(valori: number[]) {
-    const service = await makeService();
-    return service.buildTrendSVG(valori.map((value, i) => ({ date: `2026-05-0${i + 1}`, value })));
-  }
-
-  it('l\'asse scrive i decimali con la virgola, come tutto il resto', async () => {
-    // Prima: "80.6" nel grafico e "79,2" nella testata della stessa pagina.
-    const s = await svg([79.2, 80.6]);
-    expect(s).toContain('>80,6<');
-    expect(s).toContain('>79,2<');
-    expect(s).not.toMatch(/>\d+\.\d</);
-  });
-
-  it('i numeri interi restano interi', async () => {
-    const s = await svg([79, 81]);
-    expect(s).toContain('>81<');
-    expect(s).toContain('>79<');
-  });
-
-  it('la griglia usa il colore del tema: quello fisso in bianco non si vedeva in chiaro', async () => {
-    const s = await svg([79, 81]);
-    expect(s).toContain('stroke="var(--separator)"');
-    expect(s).not.toContain('rgba(255,255,255');
-  });
-});

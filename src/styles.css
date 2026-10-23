@@ -973,22 +973,47 @@ ion-button.runremove{--background:transparent;--color:var(--state-danger-text);-
 ion-button.runremove.button-disabled{opacity:.45;}
 
 
-/* ===================== MISURE — ANALYTICS ===================== */
-.chart-card{margin-bottom:18px;overflow:hidden;}
-.chart-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:14px;}
-.chart-title{font-weight:700;font-size:var(--text-lg);color:var(--label);}
-.chart-sub{font-variant-numeric:tabular-nums;font-size:var(--text-xs);color:var(--label-3);margin-top:3px;}
-.chart-wrap{width:100%;line-height:0;}
-.chart-wrap svg{width:100%;height:auto;display:block;}
-.chart-empty{padding:24px 4px;text-align:center;font-size:var(--text-sm);color:var(--label-3);}
+/* ===================== MISURE — ANDAMENTO ===================== */
+/* In cima il segmento dei gruppi, poi il grafico in una ion-card, la lista
+   delle misure del gruppo (ion-radio: la spunta di iOS) e la tabella delle
+   misurazioni in una fisarmonica. La card ha la stessa veste delle altre
+   card dell'app: niente ombra di Ionic, il bordo sottile. */
+.andamento ion-segment.andamento-gruppi{margin:4px 0 16px;}
+ion-card.andamento-card{--background:var(--surface-card);--color:var(--label);margin:0 0 20px;border:1px solid var(--border-line);border-radius:var(--r-lg);box-shadow:none;}
+/* In iOS Ionic mette la testata della card al contrario (column-reverse): qui il nome viene prima del valore. */
+ion-card.andamento-card ion-card-header{flex-direction:column;padding:16px 16px 4px;}
+ion-card.andamento-card ion-card-title{font-size:var(--text-lg);font-weight:600;letter-spacing:-.005em;line-height:1.3;color:var(--label-2);}
+/* Il valore e' quello della misurazione scelta col dito, o l'ultima: cifre proporzionali, a quella misura le tabulari sembrano larghe. */
+.andamento-card .lettura{display:flex;align-items:baseline;gap:5px;margin:2px 0 0;color:var(--label);}
+.andamento-card .lettura-valore{font-size:var(--text-3xl);font-weight:700;letter-spacing:-.01em;line-height:1.15;}
+.andamento-card .lettura-unita{font-size:var(--text-lg);font-weight:600;color:var(--label-2);}
+.andamento-card .lettura-quando{margin:3px 0 0;font-size:var(--text-sm);line-height:1.4;color:var(--label-2);}
+.andamento-card .lettura-quando .delta{font-size:inherit;font-weight:600;color:var(--label);}
+ion-card.andamento-card ion-card-content{padding:10px 8px 10px;}
+/* Il riquadro del grafico: si tocca e si trascina in orizzontale (in verticale la pagina scorre ancora). */
+.andamento-piano{border-radius:var(--r-md);outline:none;touch-action:pan-y;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;cursor:crosshair;}
+.andamento-piano:focus-visible{box-shadow:0 0 0 2px var(--accent);}
+.andamento-piano svg{display:block;overflow:visible;}
+.andamento-piano .griglia{stroke:var(--separator);stroke-width:1;shape-rendering:crispEdges;}
+.andamento-piano .asse{font-family:inherit;font-size:11px;font-variant-numeric:tabular-nums;fill:var(--label-3);}
+.andamento-piano .sfuma-alto{stop-color:var(--accent);stop-opacity:.22;}
+.andamento-piano .sfuma-basso{stop-color:var(--accent);stop-opacity:0;}
+.andamento-piano .linea{fill:none;stroke:var(--accent);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+.andamento-piano .mirino{stroke:var(--label-3);stroke-width:1;shape-rendering:crispEdges;}
+.andamento-piano .pallino{fill:var(--accent);stroke:var(--surface-card);stroke-width:2;}
+.andamento-piano .pallino.scelto{stroke-width:2.5;}
+.andamento-vuoto{margin:0;padding:18px 8px 10px;font-size:var(--text-sm);line-height:1.45;color:var(--label-2);text-align:center;}
 
-.measure-selectlist{margin-bottom:16px;}
-.measure-selectrow{padding:10px 16px;min-height:56px;}
-.measure-selectrow .lbl{font-weight:600;font-size:var(--text-lg);color:var(--label);}
-.measure-selectrow .meta{font-variant-numeric:tabular-nums;font-size:var(--text-sm);color:var(--label-2);margin-top:2px;}
-.measure-selectrow.selected{background:var(--accent-dim);}
-.ms-dot{width:18px;height:18px;border-radius:50%;border:2px solid var(--border-line);flex-shrink:0;transition:border-color .2s ease,background .2s ease;}
-.ms-dot.on{border-color:var(--accent);background:var(--accent);box-shadow:inset 0 0 0 3px var(--surface-card);}
+.andamento ion-list.andamento-misure ion-radio{width:100%;--color:var(--label-3);--color-checked:var(--accent);}
+.andamento ion-list.andamento-misure ion-radio::part(label){flex:1;min-width:0;margin-inline-end:12px;}
+.andamento .misura-voce{display:flex;flex-direction:column;gap:2px;padding:9px 0;}
+.andamento .misura-nome{font-size:var(--text-lg);font-weight:600;line-height:1.3;color:var(--label);white-space:normal;}
+.andamento .misura-valore{font-size:var(--text-sm);font-variant-numeric:tabular-nums;color:var(--label-2);}
+/* Una misura mai presa non si sceglie, ma si legge: Ionic ne abbassava l'opacita' al 30%, e "Nessun dato" spariva. */
+.andamento ion-list.andamento-misure ion-radio.radio-disabled{opacity:1;}
+.andamento ion-item.senza-dati .misura-nome,.andamento ion-item.senza-dati .misura-valore{color:var(--label-3);}
+.andamento ion-accordion-group.andamento-tabella ion-item[slot=header] ion-label{font-weight:600;font-size:var(--text-lg);color:var(--label);}
+.andamento ion-accordion-group.andamento-tabella ion-list{background:transparent;padding:0;}
 
 /* ===================== AUTH (login / registrazione coach) ===================== */
 /* 100dvh e non 100vh: sul telefono vh conta anche la barra degli indirizzi,

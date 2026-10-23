@@ -1,0 +1,59 @@
+<ion-card class="andamento-card">
+  <ion-card-header>
+    <ion-card-title>{{ nome() }}</ion-card-title>
+    @if (lettura(); as l) {
+      <p class="lettura">
+        <span class="lettura-valore">{{ l.valore }}</span><span class="lettura-unita">{{ unita() }}</span>
+      </p>
+      <p class="lettura-quando">{{ l.quando }} · <span class="delta">{{ l.confronto }}</span></p>
+    }
+  </ion-card-header>
+
+  <ion-card-content>
+    <div #corpo class="andamento-corpo">
+      @if (punti().length >= 2) {
+        <div class="andamento-piano" role="slider" tabindex="0"
+          [attr.aria-label]="'Andamento di ' + nome()"
+          aria-valuemin="1" [attr.aria-valuemax]="punti().length" [attr.aria-valuenow]="(scelto() ?? punti().length - 1) + 1"
+          [attr.aria-valuetext]="testoValore()"
+          (pointerdown)="giu($event)" (pointermove)="muove($event)" (pointerup)="su()" (pointercancel)="su()"
+          (pointerleave)="esce($event)" (keydown)="tasto($event)">
+          @let d = disegno();
+          <svg [attr.width]="d.larghezza" [attr.height]="d.altezza" [attr.viewBox]="'0 0 ' + d.larghezza + ' ' + d.altezza" aria-hidden="true">
+            <defs>
+              <linearGradient [attr.id]="sfumatura" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" class="sfuma-alto" />
+                <stop offset="100%" class="sfuma-basso" />
+              </linearGradient>
+            </defs>
+            @for (t of d.valori; track t.testo) {
+              <line class="griglia" [attr.x1]="d.piano.x0" [attr.x2]="d.piano.x1" [attr.y1]="t.y" [attr.y2]="t.y" />
+              <text class="asse" [attr.x]="d.piano.x1 + 8" [attr.y]="t.y + 4">{{ t.testo }}</text>
+            }
+            @for (t of d.date; track t.testo) {
+              <text class="asse" [attr.x]="t.x" [attr.y]="d.altezza - 6" [attr.text-anchor]="t.ancora">{{ t.testo }}</text>
+            }
+            <path class="area" [attr.d]="d.area" [attr.fill]="'url(#' + sfumatura + ')'" />
+            <path class="linea" [attr.d]="d.linea" />
+            @if (mirino(); as m) {
+              <line class="mirino" [attr.x1]="m.x" [attr.x2]="m.x" [attr.y1]="d.piano.y0" [attr.y2]="d.piano.y1" />
+            }
+            @if (d.conPallini) {
+              @for (p of d.punti; track p.date; let ultimo = $last) {
+                @if (!ultimo) { <circle class="pallino" [attr.cx]="p.x" [attr.cy]="p.y" r="3.5" /> }
+              }
+            }
+            @if (d.punti[d.punti.length - 1]; as u) {
+              <circle class="pallino ultimo" [attr.cx]="u.x" [attr.cy]="u.y" r="5" />
+            }
+            @if (mirino(); as m) {
+              <circle class="pallino scelto" [attr.cx]="m.x" [attr.cy]="m.y" r="6.5" />
+            }
+          </svg>
+        </div>
+      } @else {
+        <p class="andamento-vuoto">Con la prossima misurazione qui comparirà la linea dell'andamento.</p>
+      }
+    </div>
+  </ion-card-content>
+</ion-card>
