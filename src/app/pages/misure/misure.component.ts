@@ -1,82 +1,266 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
-
-import { MeasureCategory, CATEGORY_FIELDS, CATEGORY_LABELS, CATEGORY_UNIT_BADGE, MeasurementEntry } from '../../models/measurement.model';
 import { MeasurementDataService } from '../../services/measurement-data.service';
-import { quandoBreve } from '../../core/utils/date.util';
+import {
+  MeasureCategory,
+  MeasureField,
+  MeasurementEntry,
+  MeasurementKey,
+  CATEGORY_LABELS,
+  PESO_FIELDS,
+  PLICHE_FIELDS,
+  CENTIMETRI_FIELDS
+} from '../../models/measurement.model';
 import { IONIC_PAGE, IONIC_LINKS } from '../../core/ionic-page';
-import { IONIC_LIST } from '../../core/ionic-list';
-import { NavController, IonButton } from '@ionic/angular';
+import { IONIC_REFRESH, completaRefresh } from '../../core/ionic-refresh';
+import {
+  NavController, IonContent, IonSpinner, IonButton, IonSegment, IonSegmentButton, IonList, IonItem, IonLabel, IonNote,
+  IonRadioGroup, IonRadio, IonAccordionGroup, IonAccordion, IonFooter, IonCard, IonCardHeader, IonCardTitle, IonCardContent
+} from '@ionic/angular';
+import { BarraAzioneDirective } from '../../core/directives/barra-azione.directive';
 import { IconaComponent } from '../../components/icona/icona.component';
+import { GraficoAndamentoComponent } from '../../components/grafico-andamento/grafico-andamento.component';
+import { PuntoMisura, dataBreve, dataLunga, numeroIt, uguale, variazioneIt } from '../../core/utils/grafico-andamento.util';
 
-interface CategoryTile {
-  id: MeasureCategory;
-  label: string;
-  badge: string;
+interface FieldOption {
+  field: MeasureField;
+  hasData: boolean;
+  lastValue: string | null;
 }
+
+/** Una riga della tabella sotto il grafico: gli stessi numeri, senza doverli cercare col dito. */
+interface RigaMisurazione {
+  date: string;
+  data: string;
+  valore: string;
+  cambio: string;
+}
+
+/** Nell'ordine della pagina e del segmento in cima. */
+export const CATEGORIE_ANDAMENTO: MeasureCategory[] = ['peso', 'pliche', 'centimetri'];
+
+/** Il tasto in basso: registra una misura del gruppo che si sta guardando. */
+export const ETICHETTA_REGISTRA: Record<MeasureCategory, string> = {
+  peso: 'Registra peso',
+  pliche: 'Registra pliche',
+  centimetri: 'Registra centimetri'
+};
+
+/** Un gruppo senza nessuna misura: cosa manca, e dove si aggiunge. */
+export const INVITO_GRUPPO: Record<MeasureCategory, string> = {
+  peso: 'Ancora nessuna pesata.',
+  pliche: 'Ancora nessuna plica misurata.',
+  centimetri: 'Ancora nessuna circonferenza misurata.'
+};
 
 /**
- * La riga di una categoria: il peso con la sua ultima pesata, le altre con
- * l'ultima volta in cui sono state misurate. Prima ogni riga era solo il nome,
- * e per sapere quando ci si era pesati si doveva entrare.
+ * Misure: l'andamento di una misura alla volta, e da qui se ne registrano di
+ * nuove. In cima il segmento sceglie il gruppo (peso, pliche, centimetri), poi
+ * la card col grafico, la lista delle misure del gruppo e la tabella delle
+ * misurazioni; in basso, dove nelle tab sta la barra, il tasto che apre il
+ * modulo del gruppo. Salvato, si torna qui e il punto nuovo e' sul grafico.
+ *
+ * Prima Misure era un elenco di tre righe (una per gruppo) e il grafico stava
+ * in una pagina a parte, Andamento, raggiunta da un'icona in alto.
  */
-export function riassuntoCategoria(categoria: MeasureCategory, storico: MeasurementEntry[], oggiISO?: string): string {
-  const campi = CATEGORY_FIELDS[categoria];
-  // `storico` e' dal piu' recente.
-  const ultima = storico.find(e => campi.some(f => !!e[f.key]));
-  if (!ultima) return 'Nessuna misura';
-  const quando = quandoBreve(ultima.date, oggiISO);
-  if (categoria === 'peso') return `${ultima.peso} kg · ${quando}`;
-  return `Ultima volta: ${quando}`;
-}
-
 @Component({
   selector: 'app-misure',
   standalone: true,
-  imports: [IonButton, ...IONIC_LIST, ...IONIC_PAGE, ...IONIC_LINKS, IconaComponent, CommonModule],
+  imports: [
+    IonButton, IonSpinner, IonSegment, IonSegmentButton, IonList, IonItem, IonLabel, IonNote, IonRadioGroup, IonRadio,
+    IonAccordionGroup, IonAccordion, IonFooter, IonCard, IonCardHeader, IonCardTitle, IonCardContent, ...IONIC_PAGE, ...IONIC_LINKS, ...IONIC_REFRESH, CommonModule,
+    GraficoAndamentoComponent, BarraAzioneDirective, IconaComponent
+  ],
   templateUrl: './misure.component.html'
 })
 export class MisureComponent implements OnInit {
-  categories: CategoryTile[] = (['peso', 'centimetri', 'pliche'] as MeasureCategory[]).map(id => ({
-    id,
-    label: CATEGORY_LABELS[id],
-    badge: CATEGORY_UNIT_BADGE[id]
-  }));
+  readonly categorie = CATEGORIE_ANDAMENTO;
+  readonly nomiCategorie = CATEGORY_LABELS;
+  readonly etichettaRegistra = ETICHETTA_REGISTRA;
+  readonly invito = INVITO_GRUPPO;
 
-  /**
-   * La riga di riepilogo di ogni categoria. E' un signal perche' arriva da una
-   * lettura asincrona (l'app non usa zone.js). null: non si e' potuto leggere, e
-   * la riga resta senza riepilogo invece di dire "nessuna misura" a torto.
-   */
-  private readonly riepilogo = signal<Partial<Record<MeasureCategory, string>> | null>(null);
+  gruppi: Record<MeasureCategory, FieldOption[]> = { peso: [], pliche: [], centimetri: [] };
+  categoria: MeasureCategory = 'peso';
+  /** L'ultima misura vista in ogni gruppo: tornando al gruppo si ritrova quella. */
+  private sceltaPerGruppo: Partial<Record<MeasureCategory, MeasurementKey>> = {};
 
-  constructor(private nav: NavController, private data: MeasurementDataService) {}
+  selectedKey: MeasurementKey = 'peso';
+  selectedField: MeasureField | null = null;
+
+  punti: PuntoMisura[] = [];
+  righe: RigaMisurazione[] = [];
+  /** Per lo screen reader, a ogni cambio di misura. */
+  annuncio = '';
+
+  @ViewChild(IonContent) content?: IonContent;
+
+  private allEntries: MeasurementEntry[] = [];
+  loading = true;
+  errorMsg = '';
+
+  /** La prima entrata la carica ngOnInit; le altre (tornando dal modulo) rileggono. */
+  private entrata = false;
+
+  constructor(
+    private data: MeasurementDataService,
+    private cdr: ChangeDetectorRef,
+    private nav: NavController
+  ) {}
+
+  /** Tira per aggiornare. */
+  aggiorna(ev: Event): Promise<void> {
+    return completaRefresh(ev, () => this.load(true));
+  }
 
   ngOnInit(): void {
-    void this.carica();
+    this.load();
   }
 
-  /** Pagina viva nella pila: dopo un salvataggio si torna qui e la riga deve dirlo. */
+  /**
+   * La pagina resta viva nella pila: tornando dal modulo dopo un salvataggio
+   * si rilegge, senza spinner, e resta la misura che si guardava.
+   */
   ionViewWillEnter(): void {
-    void this.carica();
+    if (this.entrata) void this.load(true);
+    this.entrata = true;
   }
 
-  private async carica(): Promise<void> {
+  /** Il modulo del gruppo mostrato: una misura nuova e' sempre di oggi. */
+  registra(): void {
+    this.nav.navigateForward(['/account/misure', this.categoria]);
+  }
+
+  /** Le misure del gruppo mostrato. */
+  get opzioni(): FieldOption[] {
+    return this.gruppi[this.categoria];
+  }
+
+  haDati(cat: MeasureCategory): boolean {
+    return this.gruppi[cat].some(o => o.hasData);
+  }
+
+  /** `silenzioso`: il gesto "tira per aggiornare" rilegge senza far sparire l'elenco dietro lo spinner. */
+  async load(silenzioso = false): Promise<void> {
+    if (!silenzioso) this.loading = true;
+    this.errorMsg = '';
+
+    const timeout = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('TIMEOUT')), 12000)
+    );
+
     try {
-      const storico = await this.data.loadHistory();
-      const r: Partial<Record<MeasureCategory, string>> = {};
-      for (const c of this.categories) r[c.id] = riassuntoCategoria(c.id, storico);
-      this.riepilogo.set(r);
-    } catch {
-      this.riepilogo.set(null);
+      const [history, lastValues] = await Promise.race([
+        Promise.all([this.data.loadHistory(), this.data.getLastValues()]),
+        timeout
+      ]);
+      this.allEntries = history;
+
+      const buildGroup = (fields: MeasureField[]): FieldOption[] =>
+        fields.map(field => ({
+          field,
+          hasData: history.some(e => !!e[field.key]),
+          lastValue: lastValues[field.key] ?? null
+        }));
+
+      this.gruppi = { peso: buildGroup(PESO_FIELDS), pliche: buildGroup(PLICHE_FIELDS), centimetri: buildGroup(CENTIMETRI_FIELDS) };
+
+      // La prima volta si parte dalla prima misura che ha dei dati. Ricaricando
+      // (tornando dal modulo, o tirando) si resta nel gruppo: sulla misura che si
+      // guardava, o sulla prima del gruppo che ha dei dati, o sul gruppo vuoto.
+      const tutte = CATEGORIE_ANDAMENTO.flatMap(c => this.gruppi[c]);
+      const gruppo = this.gruppi[this.categoria];
+      const scelta = this.selectedField
+        ? gruppo.find(o => o.field.key === this.selectedKey && o.hasData) || gruppo.find(o => o.hasData) || gruppo[0]
+        : tutte.find(o => o.hasData) || tutte[0];
+      this.selectField(scelta.field);
+    } catch (e: any) {
+      console.error('Errore caricamento analisi misure:', e);
+      this.errorMsg = e?.message === 'TIMEOUT'
+        ? 'La connessione sta impiegando troppo tempo. Controlla la rete e riprova.'
+        : 'Errore nel caricamento dei dati. Riprova.';
+    } finally {
+      this.loading = false;
+      this.cdr.detectChanges();
     }
   }
 
-  riassunto(id: MeasureCategory): string | null {
-    return this.riepilogo()?.[id] ?? null;
+  /**
+   * Il segmento in cima: si torna all'ultima misura vista nel gruppo, o alla
+   * prima che ha dei dati. Anche un gruppo vuoto si sceglie: e' da li' che si
+   * registra la prima misura.
+   */
+  cambiaCategoria(valore: unknown): void {
+    const cat = valore as MeasureCategory;
+    if (!CATEGORIE_ANDAMENTO.includes(cat) || cat === this.categoria) return;
+    const gruppo = this.gruppi[cat];
+    const ricordata = gruppo.find(o => o.field.key === this.sceltaPerGruppo[cat] && o.hasData);
+    const scelta = ricordata || gruppo.find(o => o.hasData) || gruppo[0];
+    this.selectField(scelta.field);
+    this.cdr.detectChanges();
   }
 
-  goTo(id: MeasureCategory): void {
-    this.nav.navigateForward(['/account/misure', id]);
+  /** La scelta dalla lista (ion-radio-group). */
+  sceltaDallaLista(valore: unknown): Promise<void> {
+    const o = this.opzioni.find(x => x.field.key === valore);
+    return o ? this.scegli(o.field) : Promise.resolve();
+  }
+
+  /**
+   * La scelta fatta dall'utente, dalla lista: il grafico sta in cima e la lista
+   * sotto, e scegliendo "Quadricipite Sx" in fondo il grafico cambiava fuori
+   * vista. Se la pagina e' scesa, si torna su dal grafico (piano, o di colpo
+   * per chi ha ridotto le animazioni); se si e' gia' in cima non si muove niente.
+   */
+  async scegli(field: MeasureField): Promise<void> {
+    this.selectField(field);
+    this.cdr.detectChanges();
+    const content = this.content;
+    if (!content) return;
+    const scorsa = (await content.getScrollElement()).scrollTop;
+    if (scorsa <= 24) return;
+    await content.scrollToTop(this.movimentoRidotto() ? 0 : 300);
+  }
+
+  private movimentoRidotto(): boolean {
+    return typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  }
+
+  selectField(field: MeasureField): void {
+    this.selectedKey = field.key;
+    this.selectedField = field;
+    const cat = CATEGORIE_ANDAMENTO.find(c => this.gruppi[c].some(o => o.field.key === field.key));
+    if (cat) {
+      this.categoria = cat;
+      this.sceltaPerGruppo[cat] = field.key;
+    }
+
+    const history = this.allEntries.slice().reverse(); // dal piu' vecchio al piu' recente
+    this.punti = history
+      .map(e => ({ date: e.date, value: this.data.parseMeasureValue(e[field.key] as string | null) }))
+      .filter((p): p is PuntoMisura => p.value !== null);
+
+    const conAnno = this.punti.length > 0 && this.punti[0].date.slice(0, 4) !== this.punti[this.punti.length - 1].date.slice(0, 4);
+    this.righe = this.punti.map((p, i) => ({
+      date: p.date,
+      data: dataLunga(p.date),
+      valore: numeroIt(p.value),
+      cambio: i === 0 ? 'Prima misura'
+        : uguale(p.value - this.punti[i - 1].value) ? 'Uguale alla precedente'
+        : `${variazioneIt(p.value - this.punti[i - 1].value)} ${field.unit} dalla precedente`
+    })).reverse();
+
+    const ultimo = this.punti[this.punti.length - 1];
+    const primo = this.punti[0];
+    this.annuncio = !ultimo
+      ? `${CATEGORY_LABELS[this.categoria]}. ${INVITO_GRUPPO[this.categoria]}`
+      : this.punti.length < 2
+        ? `${field.label}: ${numeroIt(ultimo.value)} ${field.unit}, una sola misurazione`
+        : `${field.label}: ${numeroIt(ultimo.value)} ${field.unit}, ` + (uguale(ultimo.value - primo.value)
+          ? `uguale al ${dataBreve(primo.date, conAnno)}`
+          : `${variazioneIt(ultimo.value - primo.value)} ${field.unit} dal ${dataBreve(primo.date, conAnno)}`);
+  }
+
+  isSelected(field: MeasureField): boolean {
+    return this.selectedKey === field.key;
   }
 }

@@ -1,6 +1,6 @@
 import { InjectionToken } from '@angular/core';
 import {
-  addOutline, addSharp, albumsOutline, albumsSharp, analyticsOutline, analyticsSharp, arrowBackSharp,
+  addOutline, addSharp, albumsOutline, albumsSharp, arrowBackSharp,
   arrowDownOutline, arrowDownSharp, arrowUpOutline, arrowUpSharp,
   barbell, barbellOutline, barbellSharp, caretDownSharp, cartOutline, cartSharp, chatboxEllipsesOutline,
   chatboxEllipsesSharp, checkmarkCircle, checkmarkCircleOutline, checkmarkCircleSharp, checkmarkOutline,
@@ -106,7 +106,6 @@ const SCARPA: Varianti = {
 export const ICONE = {
   'add': { ios: addOutline, md: addSharp },
   'albums': { ios: albumsOutline, md: albumsSharp },
-  'analytics': { ios: analyticsOutline, md: analyticsSharp },
   'arrow-down': { ios: arrowDownOutline, md: arrowDownSharp },
   'arrow-up': { ios: arrowUpOutline, md: arrowUpSharp },
   'barbell': { ios: barbellOutline, md: barbellSharp, piena: barbell },

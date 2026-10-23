@@ -3,6 +3,7 @@ import { TestBed } from '@angular/core/testing';
 import { Route, Router, Routes, provideRouter } from '@angular/router';
 import { describe, expect, it } from 'vitest';
 import { routes } from './app.routes';
+import { MisureComponent } from './pages/misure/misure.component';
 
 @Component({ standalone: true, template: '' })
 class Vuota {}
@@ -13,18 +14,26 @@ const dentroLeTab = (routes.find(r => r.path === '' && r.children)?.children ?? 
 /**
  * Misure non e' piu' una tab: le sue pagine stanno nella pila di Account,
  * sotto /account/misure, e i vecchi indirizzi (/misure/...) portano li'.
+ * L'andamento non e' piu' una pagina a parte: e' Misure stessa.
  */
 describe('rotte — Misure dentro Account', () => {
   const pagine = dentroLeTab.filter(r => r.loadComponent && r.path?.includes('misure'));
 
-  it('le cinque pagine delle misure stanno nella pila di Account', () => {
+  it('le quattro pagine delle misure stanno nella pila di Account', () => {
     expect(pagine.map(r => r.path)).toEqual([
-      'account/misure', 'account/misure/storico', 'account/misure/analytics',
-      'account/misure/:categoria', 'account/misure/storico/:key'
+      'account/misure', 'account/misure/storico', 'account/misure/:categoria', 'account/misure/storico/:key'
     ]);
   });
 
-  it('storico e andamento vengono prima di :categoria, che altrimenti li prenderebbe', () => {
+  it('Misure e\' il grafico dell\'andamento; il vecchio indirizzo dell\'andamento e\' solo un rimando', async () => {
+    const pagina = await (pagine.find(r => r.path === 'account/misure')!.loadComponent!() as Promise<unknown>);
+    expect(pagina).toBe(MisureComponent);
+    const andamento = dentroLeTab.find(r => r.path === 'account/misure/analytics')!;
+    expect(andamento.loadComponent).toBeUndefined();
+    expect(andamento.redirectTo).toBe('account/misure');
+  });
+
+  it('storico e il rimando dell\'andamento vengono prima di :categoria, che altrimenti li prenderebbe', () => {
     const i = (p: string) => dentroLeTab.findIndex(r => r.path === p);
     expect(i('account/misure/storico')).toBeLessThan(i('account/misure/:categoria'));
     expect(i('account/misure/analytics')).toBeLessThan(i('account/misure/:categoria'));
@@ -55,7 +64,8 @@ describe('rotte — Misure dentro Account', () => {
     it.each([
       ['/misure', '/account/misure'],
       ['/misure/storico', '/account/misure/storico'],
-      ['/misure/analytics', '/account/misure/analytics'],
+      ['/misure/analytics', '/account/misure'],
+      ['/account/misure/analytics', '/account/misure'],
       ['/misure/peso', '/account/misure/peso'],
       ['/misure/storico/2026-05-01', '/account/misure/storico/2026-05-01']
     ])('%s porta a %s', async (vecchio, nuovo) => {

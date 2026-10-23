@@ -46,7 +46,7 @@ describe('coerenza delle pagine', () => {
     const conFooter = template().filter(f => f.testo.includes('<ion-footer'));
     expect(conFooter.map(f => f.nome.split('/').pop()).sort()).toEqual([
       'corsa-nuova.component.html', 'dieta-detail.component.html', 'misura-categoria.component.html',
-      'protocollo-import.component.html', 'scheda-detail.component.html'
+      'misure.component.html', 'protocollo-import.component.html', 'scheda-detail.component.html'
     ]);
     for (const f of conFooter) {
       for (const t of f.testo.match(/<ion-footer[^>]*>/g)!) {

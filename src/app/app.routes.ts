@@ -13,8 +13,8 @@ import { uscitaSenzaPerdite } from './core/guards/modifiche-non-salvate.guard';
  * quella "account", sotto /account/misure (non sono piu' una tab).
  *
  * L'ordine conta dove un segmento fisso e uno variabile si somigliano
- * (dieta/lista-spesa prima di dieta/:mode, account/misure/storico prima di
- * account/misure/:categoria).
+ * (dieta/lista-spesa prima di dieta/:mode, account/misure/storico e il rimando
+ * di account/misure/analytics prima di account/misure/:categoria).
  */
 export const routes: Routes = [
   {
@@ -135,6 +135,8 @@ export const routes: Routes = [
       },
 
       // ---- Misure, dentro Account ----
+      // Misure e' il grafico dell'andamento, e da li' si registra (prima l'andamento
+      // era una pagina a parte, /account/misure/analytics: ora rimanda qui).
       {
         path: 'account/misure',
         loadComponent: () => import('./pages/misure/misure.component').then(m => m.MisureComponent)
@@ -143,10 +145,7 @@ export const routes: Routes = [
         path: 'account/misure/storico',
         loadComponent: () => import('./pages/misure-storico/misure-storico.component').then(m => m.MisureStoricoComponent)
       },
-      {
-        path: 'account/misure/analytics',
-        loadComponent: () => import('./pages/misure-analytics/misure-analytics.component').then(m => m.MisureAnalyticsComponent)
-      },
+      { path: 'account/misure/analytics', redirectTo: 'account/misure', pathMatch: 'full' },
       {
         path: 'account/misure/:categoria',
         canDeactivate: [uscitaSenzaPerdite],
@@ -160,7 +159,7 @@ export const routes: Routes = [
       // aperta su una pagina di Misure): portano allo stesso posto dentro Account.
       { path: 'misure', redirectTo: 'account/misure', pathMatch: 'full' },
       { path: 'misure/storico', redirectTo: 'account/misure/storico', pathMatch: 'full' },
-      { path: 'misure/analytics', redirectTo: 'account/misure/analytics', pathMatch: 'full' },
+      { path: 'misure/analytics', redirectTo: 'account/misure', pathMatch: 'full' },
       { path: 'misure/storico/:key', redirectTo: 'account/misure/storico/:key', pathMatch: 'full' },
       { path: 'misure/:categoria', redirectTo: 'account/misure/:categoria', pathMatch: 'full' }
     ]
