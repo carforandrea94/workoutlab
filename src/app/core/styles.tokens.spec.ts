@@ -201,6 +201,9 @@ describe('styles.css — il vetro delle barre', () => {
       // testo, il verde solo alla spunta, che come icona vuole 3:1.
       expect(rapporto(colore(blocco(), 'label'), vetro)).toBeGreaterThanOrEqual(4.5);
       expect(rapporto(colore(blocco(), 'state-success'), vetro)).toBeGreaterThanOrEqual(3);
+      // Gli avvisi d'errore, sulla stessa pillola: la x rossa e' un'icona, 3:1.
+      // Il rosso dei testi, non quello dei fondi (in scuro e' un bordeaux).
+      expect(rapporto(colore(blocco(), 'state-danger-text'), vetro)).toBeGreaterThanOrEqual(3);
     });
   }
 
@@ -208,7 +211,8 @@ describe('styles.css — il vetro delle barre', () => {
     const regole = css.match(/[^{}]*\{[^{}]*backdrop-filter[^{}]*\}/g) ?? [];
     const selettori = regole.map(r => r.slice(0, r.indexOf('{')).trim());
     expect(selettori.sort()).toEqual([
-      '.restbar', '.sessionpill', '.tabbar', 'ion-footer.barra-azione .fine-recupero',
+      // "Recupero finito" e gli avvisi dell'app: la stessa pillola.
+      '.restbar', '.sessionpill', '.tabbar', 'ion-footer.barra-azione .fine-recupero,.apptoast',
       // "Segna come da fare" della Dieta: il tasto della barra in basso, a pasto fatto.
       'ion-footer.barra-azione ion-button.setdone.salva-btn.fatto'
     ]);
@@ -574,8 +578,8 @@ describe('styles.css — la barra in basso dell\'allenamento come la barra delle
     expect(regola('ion-footer.barra-azione.barra-via')).toContain('animation:barra-via .15s ease-out forwards');
     expect(css).toContain('@keyframes barra-via{to{opacity:0;translate:0 8px;}}');
     expect(regola('ion-footer.barra-azione.con-tastiera')).toContain('display:none');
-    expect(regola('ion-footer.barra-azione .fine-recupero')).toContain('color:var(--label)');
-    expect(regola('ion-footer.barra-azione .fine-recupero app-icona')).toContain('color:var(--state-success)');
+    expect(regola('ion-footer.barra-azione .fine-recupero,.apptoast')).toContain('color:var(--label)');
+    expect(regola('ion-footer.barra-azione .fine-recupero app-icona,.apptoast app-icona')).toContain('color:var(--state-success)');
     expect(css).toMatch(/@media \(prefers-reduced-motion:reduce\)\{ion-footer\.barra-azione,ion-footer\.barra-azione\.barra-via\{animation:none;\}/);
   });
 
@@ -684,5 +688,44 @@ describe('styles.css — Andamento', () => {
 
   it('una misura senza dati non sparisce sotto le opacita\' di Ionic', () => {
     expect(regola('.andamento ion-list.andamento-misure ion-radio.radio-disabled')).toContain('opacity:1');
+  });
+});
+
+/**
+ * Gli avvisi dell'app sono la pillola di "Recupero finito": le regole del
+ * vetro sono le stesse (un selettore solo per tutte e due), compaiono con la
+ * stessa dissolvenza, stanno sopra la barra senza prendere i tocchi.
+ */
+describe('styles.css — gli avvisi come "Recupero finito"', () => {
+  let css = '';
+  beforeAll(async () => {
+    const nome = 'node:fs';
+    const fs = await import(/* @vite-ignore */ nome);
+    css = fs.readFileSync('src/styles.css', 'utf8');
+  });
+  const regola = (sel: string) => css.match(new RegExp('(?:^|\\n)' + sel.replace(/[.()[\]>+:]/g, '\\$&') + '\\{[^}]*\\}'))?.[0] ?? '';
+
+  it('stessa pillola: forma, vetro, colori e spunta sono le regole di "Recupero finito"', () => {
+    expect(regola('.fine-recupero,.apptoast')).toContain('font-size:var(--text-sm);font-weight:600;');
+    const vetro = regola('ion-footer.barra-azione .fine-recupero,.apptoast');
+    for (const p of ['border-radius:var(--r-pill)', 'background:var(--glass-bg)', 'backdrop-filter:var(--glass-filter)', 'height:32px', 'padding:0 14px']) {
+      expect(vetro).toContain(p);
+    }
+    expect(regola('.apptoast.errore app-icona')).toContain('color:var(--state-danger-text)');
+  });
+
+  it('alta quanto lei, ma un testo lungo va a capo; compare con la stessa dissolvenza', () => {
+    const r = regola('.apptoast');
+    expect(r).toContain('min-height:32px');
+    expect(r).toContain('height:auto');
+    expect(r).toContain('animation:compare .2s ease-out');
+  });
+
+  it('galleggia sopra tutto senza prendere i tocchi; senza barre sta in fondo, sopra la zona sicura', () => {
+    const r = regola('.apptoast-posto');
+    expect(r).toContain('position:fixed');
+    expect(r).toContain('pointer-events:none');
+    expect(r).toContain('bottom:calc(var(--ion-safe-area-bottom,0px) + 16px)');
+    expect(css).not.toContain('ion-toast.apptoast');
   });
 });

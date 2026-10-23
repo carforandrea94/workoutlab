@@ -1,12 +1,13 @@
-<!-- Il messaggio resta a schermo finche' ToastService non lo azzera (2,5 s): la
-     durata la decide il servizio, ion-toast si limita a mostrarlo. Si ancora
-     alla barra in fondo (tab o recupero) invece di coprirla. -->
-<ion-toast
-  [isOpen]="!!toast.toast()"
-  [message]="toast.toast()?.message ?? ''"
-  [cssClass]="toast.toast()?.kind === 'error' ? 'apptoast error' : 'apptoast'"
-  [duration]="0"
-  position="bottom"
-  [positionAnchor]="anchor()"
-  [swipeGesture]="'vertical'">
-</ion-toast>
+<!-- Per lo screen reader: due regioni sempre presenti, cambia solo il testo. -->
+<div class="sr-only" role="status" aria-live="polite">{{ toast.toast()?.kind === 'success' ? toast.toast()!.message : '' }}</div>
+<div class="sr-only" role="alert">{{ toast.toast()?.kind === 'error' ? toast.toast()!.message : '' }}</div>
+
+<!-- La pillola di "Recupero finito" (vedi styles.css): resta finche' ToastService
+     non la azzera (2,5 s), poi se ne va dissolvendosi. -->
+@if (toast.toast(); as t) {
+  <div class="apptoast-posto" aria-hidden="true" [style.bottom.px]="basso()" animate.leave="svanisce">
+    <p class="apptoast" [class.errore]="t.kind === 'error'">
+      <app-icona [name]="t.kind === 'error' ? 'close' : 'checkmark'" [size]="15"></app-icona>{{ t.message }}
+    </p>
+  </div>
+}

@@ -7,9 +7,6 @@
       <div class="navtitle">Misure</div>
     </ion-title>
     <ion-buttons slot="end">
-      <ion-button class="navicon" routerLink="/account/misure/analytics" routerDirection="forward" aria-label="Andamento" title="Andamento">
-        <app-icona name="analytics" [size]="22"></app-icona>
-      </ion-button>
       <ion-button class="navicon" routerLink="/account/misure/storico" routerDirection="forward" aria-label="Storico" title="Storico">
         <app-icona name="time" [size]="22"></app-icona>
       </ion-button>
@@ -17,19 +14,91 @@
   </ion-toolbar>
 </ion-header>
 
-<ion-content>
-  <div class="wrap">
-    <ion-list class="grouplist">
-      <ion-item class="cardrow press-fx" lines="none" [button]="true"
-        *ngFor="let c of categories" (click)="goTo(c.id)">
-        <div class="cardrow-body">
-          <div class="badge">{{ c.badge }}</div>
-          <div class="info">
-            <div class="lbl">{{ c.label }}</div>
-            <div class="meta" *ngIf="riassunto(c.id) as r">{{ r }}</div>
-          </div>
-        </div>
-      </ion-item>
-    </ion-list>
+<ion-content class="liste-ios" appBarraAzione #barra="barraAzione" [scrollEvents]="true" [class.con-barra]="!loading && !errorMsg">
+  <ion-refresher slot="fixed" (ionRefresh)="aggiorna($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  <div class="wrap andamento">
+    <div *ngIf="loading" class="history-empty"><ion-spinner name="crescent" aria-label="Caricamento"></ion-spinner></div>
+
+    <div *ngIf="!loading && errorMsg" class="history-empty">
+      {{ errorMsg }}<br>
+      <ion-button class="savebtn mt-3" (click)="load()">Riprova</ion-button>
+    </div>
+
+    <ng-container *ngIf="!loading && !errorMsg && selectedField">
+
+      <!-- Il gruppo di misure. Anche un gruppo vuoto si sceglie: si registra da li'. -->
+      <ion-segment class="seg labelseg fullseg andamento-gruppi" [value]="categoria"
+        (ionChange)="cambiaCategoria($event.detail.value)" aria-label="Gruppo di misure">
+        <ion-segment-button *ngFor="let c of categorie" [value]="c">
+          {{ nomiCategorie[c] }}
+        </ion-segment-button>
+      </ion-segment>
+
+      <app-grafico-andamento *ngIf="haDati(categoria)"
+        [punti]="punti" [nome]="selectedField.label" [unita]="selectedField.unit"></app-grafico-andamento>
+
+      <!-- Il gruppo vuoto: cosa manca, e il tasto in basso per cominciare. -->
+      <ion-card class="andamento-card gruppo-vuoto" *ngIf="!haDati(categoria)">
+        <ion-card-header>
+          <ion-card-title>{{ nomiCategorie[categoria] }}</ion-card-title>
+        </ion-card-header>
+        <ion-card-content>
+          <p class="andamento-vuoto">{{ invito[categoria] }}<br>Aggiungi la prima con il tasto qui sotto: qui ne vedrai l'andamento.</p>
+        </ion-card-content>
+      </ion-card>
+      <p class="sr-only" aria-live="polite" aria-atomic="true">{{ annuncio }}</p>
+
+      <!-- Le misure del gruppo: il peso e' una sola, e la lista non serve. -->
+      <ion-list [inset]="true" class="andamento-misure" *ngIf="opzioni.length > 1 && haDati(categoria)">
+        <ion-radio-group [value]="selectedKey" (ionChange)="sceltaDallaLista($event.detail.value)"
+          aria-label="Misura da mostrare nel grafico">
+          <ion-item *ngFor="let o of opzioni" [class.senza-dati]="!o.hasData">
+            <ion-radio [value]="o.field.key" justify="space-between" labelPlacement="start" [disabled]="!o.hasData">
+              <span class="misura-voce">
+                <span class="misura-nome">{{ o.field.label }}</span>
+                <span class="misura-valore" *ngIf="o.lastValue">{{ o.lastValue }} {{ o.field.unit }}</span>
+                <span class="misura-valore" *ngIf="!o.lastValue">Nessun dato</span>
+              </span>
+            </ion-radio>
+          </ion-item>
+        </ion-radio-group>
+      </ion-list>
+
+      <!-- Gli stessi numeri del grafico, in tabella: si leggono senza cercarli col dito. -->
+      <ion-accordion-group expand="inset" class="andamento-tabella" *ngIf="righe.length">
+        <ion-accordion value="misurazioni">
+          <ion-item slot="header">
+            <ion-label>Misurazioni</ion-label>
+            <ion-note slot="end">{{ righe.length }}</ion-note>
+          </ion-item>
+          <ion-list slot="content">
+            <ion-item *ngFor="let r of righe; let ultima = last" [lines]="ultima ? 'none' : 'full'">
+              <ion-label>
+                <h2>{{ r.data }}</h2>
+                <p>{{ r.cambio }}</p>
+              </ion-label>
+              <ion-note slot="end" class="valore">{{ r.valore }}<small>{{ selectedField.unit }}</small></ion-note>
+            </ion-item>
+          </ion-list>
+        </ion-accordion>
+      </ion-accordion-group>
+
+    </ng-container>
   </div>
 </ion-content>
+
+<!-- Il comando principale, dove nelle tab sta la barra: registra una misura del
+     gruppo che si sta guardando. Apre il modulo; salvato, si torna qui e il punto
+     nuovo e' sul grafico. -->
+<ion-footer *ngIf="!loading && !errorMsg" class="salva-footer barra-azione ion-no-border"
+  [class.ridotta]="barra.ridotta()" [class.con-tastiera]="barra.tastiera()">
+  <div class="salva barra-pillola">
+    <ion-button type="button" class="setdone salva-btn registra-btn" (click)="registra()">
+      <app-icona slot="start" name="add" [size]="22"></app-icona>
+      {{ etichettaRegistra[categoria] }}
+    </ion-button>
+  </div>
+</ion-footer>

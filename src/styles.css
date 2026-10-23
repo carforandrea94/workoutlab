@@ -1548,7 +1548,7 @@ ion-button.avvio-btn app-icona{margin-right:8px;}
 .salva-due.doppio ion-button.salva-btn{flex:1;min-width:0;--padding-start:10px;--padding-end:10px;font-size:var(--text-md);}
 /* A recupero finito resta sopra il tasto finche' non si segna la serie: come
    il "Vai" della fascia, non si spegne da solo. */
-.fine-recupero{display:flex;align-items:center;justify-content:center;gap:6px;margin:0 0 10px;font-size:var(--text-sm);font-weight:600;color:var(--state-success);}
+.fine-recupero,.apptoast{display:flex;align-items:center;justify-content:center;gap:6px;margin:0 0 10px;font-size:var(--text-sm);font-weight:600;color:var(--state-success);}
 
 /* ===== Pagine interne: la barra in basso e' la barra delle tab =====
    Il comando principale di una pagina interna ("Inizia allenamento" e il
@@ -1583,14 +1583,22 @@ ion-footer.barra-azione ion-button.setdone{--box-shadow:var(--shadow-float);min-
 ion-footer.barra-azione ion-button.setdone.button-disabled{opacity:1;--background:color-mix(in srgb,var(--accent) 50%,var(--bg));--color:color-mix(in srgb,var(--accent-contrast) 50%,var(--bg));}
 ion-footer.barra-azione.ridotta .barra-pillola{scale:var(--tabbar-ridotta);}
 ion-footer.barra-azione.ridotta .barra-pillola:has(.ion-focused){scale:1;}
-ion-footer.barra-azione .fine-recupero{height:32px;margin:0 0 10px;padding:0 14px;color:var(--label);border-radius:var(--r-pill);background:var(--glass-bg);border:1px solid var(--glass-edge);box-shadow:inset 0 1px 0 var(--glass-hi),var(--shadow-float);-webkit-backdrop-filter:var(--glass-filter);backdrop-filter:var(--glass-filter);transition:transform .38s cubic-bezier(0.32,0.72,0,1);}
+ion-footer.barra-azione .fine-recupero,.apptoast{height:32px;margin:0 0 10px;padding:0 14px;color:var(--label);border-radius:var(--r-pill);background:var(--glass-bg);border:1px solid var(--glass-edge);box-shadow:inset 0 1px 0 var(--glass-hi),var(--shadow-float);-webkit-backdrop-filter:var(--glass-filter);backdrop-filter:var(--glass-filter);transition:transform .38s cubic-bezier(0.32,0.72,0,1);}
 /* Sul vetro il verde, in tema chiaro, non arriva a 4,5:1 come testo piccolo:
    resta alla spunta (che come icona ne vuole 3), e la scritta e' nel colore del testo. */
-ion-footer.barra-azione .fine-recupero app-icona{color:var(--state-success);}
+ion-footer.barra-azione .fine-recupero app-icona,.apptoast app-icona{color:var(--state-success);}
 /* "Recupero finito" compare dissolvendosi sopra la barra e se ne va allo stesso
    modo segnando la serie (svanisce, con animate.leave): prima c'era e non
    c'era in un fotogramma. */
 ion-footer.barra-azione .fine-recupero{animation:compare .2s ease-out;}
+/* Gli avvisi dell'app (ToastComponent) sono la stessa pillola: stesso vetro,
+   stessa spunta, stessa dissolvenza. Galleggiano sopra la barra in fondo (la
+   distanza la calcola il componente) e non prendono i tocchi; un testo lungo
+   va a capo invece di uscire, e un errore ha la x rossa al posto della spunta. */
+.apptoast-posto{position:fixed;left:16px;right:16px;bottom:calc(var(--ion-safe-area-bottom,0px) + 16px);z-index:30000;display:flex;justify-content:center;pointer-events:none;}
+.apptoast{height:auto;min-height:32px;max-width:100%;margin:0;padding:6px 14px;box-sizing:border-box;line-height:1.3;text-align:center;animation:compare .2s ease-out;}
+.apptoast app-icona{flex-shrink:0;}
+.apptoast.errore app-icona{color:var(--state-danger-text);}
 .svanisce{animation:svanisce .15s ease-out forwards;pointer-events:none;}
 ion-footer.barra-azione.ridotta .fine-recupero{transform:translateY(calc(var(--barra-azione-h) * (1 - var(--tabbar-ridotta))));}
 ion-footer.barra-azione.con-tastiera{display:none;}
@@ -1919,10 +1927,6 @@ input.daterow:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
 }
 
 
-/* Il toast e' un ion-toast: qui solo l'aspetto, la posizione la dà positionAnchor. */
-ion-toast.apptoast{--background:var(--accent);--color:var(--accent-contrast);--border-radius:var(--r-pill);--box-shadow:var(--shadow-float);--max-width:calc(100vw - 32px);--button-color:var(--accent-contrast);font-weight:600;font-size:var(--text-md);text-align:center;}
-ion-toast.apptoast.error{--background:var(--state-danger);--color:#fff;}
-ion-toast.apptoast::part(container){justify-content:center;}
 /* Conferme di eliminazione: ion-action-sheet con i colori dell'app. Il rosso
    del tasto lo mette Ionic da --ion-color-danger, gia' mappato sui token. */
 ion-action-sheet.confirm-sheet{--background:var(--surface-card);--backdrop-opacity:.55;--color:var(--label-2);--button-color:var(--accent);--max-width:608px;}
