@@ -175,3 +175,51 @@ describe('azioneInBasso', () => {
     expect(azioneInBasso({ righe: [], attiva: null, cluster: null, ultimo: false })).toEqual({ tipo: 'avanti', chiusura: false });
   });
 });
+
+/**
+ * Due correzioni del peso stimato: dal secondo blocco di un cluster vale il
+ * peso del primo; e se l'ordine degli esercizi porta qui piu' stanchi, i pesi
+ * stimati scendono e la ragione si legge.
+ */
+describe('opzioniCarico — cluster e ordine', () => {
+  const tabella = rmTable(100);
+  const riga = (n: number) => tabella.find(r => r.reps === n)!;
+
+  it('dal secondo blocco la stima e\' il peso del primo: in un 8+6 il blocco da 6 non chiede di piu\'', () => {
+    const primo = opzioniCarico(dati({ blocco: 1, ripetizioni: 8, rmRows: tabella, primoBlocco: null })).find(o => o.chiave === 'rm')!;
+    const secondo = opzioniCarico(dati({ blocco: 2, ripetizioni: 6, rmRows: tabella, primoBlocco: 8 })).find(o => o.chiave === 'rm')!;
+    expect(primo).toMatchObject({ titolo: 'Per 8 ripetizioni', kg: riga(8).load });
+    expect(secondo).toMatchObject({
+      titolo: 'Come il primo blocco', kg: riga(8).load, breve: 'come il primo blocco',
+      dettaglio: `${riga(8).percent}% del massimale, per 8 ripetizioni: in un cluster il peso è della serie`
+    });
+    // Prima: il peso per 6 ripetizioni, piu' alto di quello del primo blocco.
+    expect(secondo.kg).toBeLessThan(riga(6).load);
+  });
+
+  it('sul primo blocco il primo blocco non conta, e fuori dai cluster nemmeno', () => {
+    expect(opzioniCarico(dati({ blocco: 1, ripetizioni: 6, rmRows: tabella, primoBlocco: 8 })).find(o => o.chiave === 'rm')!.kg).toBe(riga(6).load);
+    expect(opzioniCarico(dati({ ripetizioni: 6, rmRows: tabella, primoBlocco: 8 })).find(o => o.chiave === 'rm')!.kg).toBe(riga(6).load);
+  });
+
+  it('con la fatica dell\'ordine stima e programma scendono, e lo dicono', () => {
+    const fatica = { percento: 5, motivo: 'Oggi arrivi qui con un esercizio di Petto in più rispetto al 03/10' };
+    const [ultima, rm, programma] = opzioniCarico(dati({ ripetizioni: 10, rmRows: tabella, fatica }));
+    expect(rm.kg).toBe(Math.round(riga(10).load * 0.95 * 2) / 2);
+    expect(rm.dettaglio).toBe(`${riga(10).percent}% del massimale stimato, −5% per l'ordine`);
+    expect(rm.breve).toBe(`${riga(10).percent}% del massimale, −5% per l'ordine`);
+    expect(programma.kg).toBe(Math.round(40.5 * 0.95 * 2) / 2);
+    expect(programma.dettaglio).toBe('Circa 6 ripetizioni, −5% per l\'ordine');
+    expect(programma.breve).toBe('programma 85%, −5% per l\'ordine');
+    // L'ultima volta e' un fatto: il peso resta, e la ragione si legge.
+    expect(ultima.kg).toBe(33);
+    expect(ultima.avviso).toBe('Oggi arrivi qui con un esercizio di Petto in più rispetto al 03/10: con questo peso potrebbero uscirne meno.');
+  });
+
+  it('senza fatica niente cambia', () => {
+    const senza = opzioniCarico(dati({ fatica: null }));
+    const zero = opzioniCarico(dati({ fatica: { percento: 0, motivo: 'x' } }));
+    expect(senza).toEqual(opzioniCarico(dati()));
+    expect(zero).toEqual(opzioniCarico(dati()));
+  });
+});

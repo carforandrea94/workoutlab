@@ -1,5 +1,6 @@
 import { ProgramLoad } from '../../models/workout.model';
 import { RmRow } from './load-estimate.util';
+import { conSconto } from './fatica.util';
 
 /**
  * Che peso mettere su una serie, e da dove viene il numero nella ruota.
@@ -47,6 +48,19 @@ export interface DatiCarico {
   previste: number | null;
   /** Oltre queste ripetizioni la stima dal massimale si allarga. */
   soglia: number;
+  /**
+   * Su un cluster, dal secondo blocco in poi: le ripetizioni del PRIMO. In un
+   * cluster il peso e' della serie e lo decide il primo blocco; i blocchi dopo
+   * vengono a venti o trenta secondi di pausa, e il peso "per le loro
+   * ripetizioni" sarebbe quello di una serie fresca: su un 8+6 il blocco da 6
+   * chiedeva piu' peso di quello da 8.
+   */
+  primoBlocco?: number | null;
+  /**
+   * Di quanto (in percento) scendono i pesi stimati per l'ordine degli
+   * esercizi (vedi fatica.util), e perche'. Assente o 0: nessuna correzione.
+   */
+  fatica?: { percento: number; motivo: string } | null;
 }
 
 /** Un numero scritto come si scrive qui ("32,5") o null se non e' un peso. */
@@ -73,6 +87,8 @@ function ripetizioni(raw: string | null | undefined): number | null {
  */
 export function opzioniCarico(d: DatiCarico): OpzioneCarico[] {
   const out: OpzioneCarico[] = [];
+  const sconto = d.fatica?.percento ?? 0;
+  const conFatica = (testo: string) => (sconto ? `${testo}, −${sconto}% per l'ordine` : testo);
 
   const fatta = d.ultima?.serie[d.serie];
   const kgUltima = peso(fatta?.load);
@@ -83,24 +99,29 @@ export function opzioniCarico(d: DatiCarico): OpzioneCarico[] {
       titolo: 'Come l\'ultima volta',
       dettaglio: `Serie ${d.serie + 1}` + (d.blocco ? `, blocco ${d.blocco},` : '') + ` del ${d.ultima.data}`
         + (rip ? `, ${rip} ${rip === 1 ? 'ripetizione' : 'ripetizioni'}` : ''),
-      avviso: null,
+      // E' un fatto, e resta com'era; ma se oggi si arriva piu' stanchi lo si dice.
+      avviso: sconto ? `${d.fatica!.motivo}: con questo peso potrebbero uscirne meno.` : null,
       kg: kgUltima,
       breve: `come il ${d.ultima.data}`
     });
   }
 
-  const n = d.ripetizioni;
+  // Dal secondo blocco di un cluster il peso e' quello del primo.
+  const comePrimo = d.primoBlocco != null && (d.blocco ?? 1) > 1;
+  const n = comePrimo ? d.primoBlocco! : d.ripetizioni;
   const riga = n !== null ? d.rmRows?.find(r => r.reps === n) : undefined;
   if (n !== null && riga) {
     out.push({
       chiave: 'rm',
-      titolo: `Per ${n} ${n === 1 ? 'ripetizione' : 'ripetizioni'}`,
-      dettaglio: `${riga.percent}% del massimale stimato`,
+      titolo: comePrimo ? 'Come il primo blocco' : `Per ${n} ${n === 1 ? 'ripetizione' : 'ripetizioni'}`,
+      dettaglio: conFatica(comePrimo
+        ? `${riga.percent}% del massimale, per ${n} ${n === 1 ? 'ripetizione' : 'ripetizioni'}: in un cluster il peso è della serie`
+        : `${riga.percent}% del massimale stimato`),
       avviso: n > d.soglia
         ? `Sopra le ${d.soglia} ripetizioni la stima si allarga: prendila come indicazione.`
         : null,
-      kg: riga.load,
-      breve: `${riga.percent}% del massimale`
+      kg: conSconto(riga.load, sconto),
+      breve: conFatica(comePrimo ? 'come il primo blocco' : `${riga.percent}% del massimale`)
     });
   }
 
@@ -113,10 +134,10 @@ export function opzioniCarico(d: DatiCarico): OpzioneCarico[] {
     out.push({
       chiave: 'programma',
       titolo: `Dal programma, ${p.percent}%`,
-      dettaglio: `Circa ${p.reps} ${p.reps === 1 ? 'ripetizione' : 'ripetizioni'}`,
+      dettaglio: conFatica(`Circa ${p.reps} ${p.reps === 1 ? 'ripetizione' : 'ripetizioni'}`),
       avviso: scarto ? `Oggi il piano ne chiede ${d.previste}: a questo peso ne escono circa ${p.reps}.` : null,
-      kg: p.load,
-      breve: `programma ${p.percent}%`
+      kg: conSconto(p.load, sconto),
+      breve: conFatica(`programma ${p.percent}%`)
     });
   }
 

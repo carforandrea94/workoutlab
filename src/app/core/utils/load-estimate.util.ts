@@ -206,3 +206,44 @@ export function oneRepMaxOf(sets: PerformedSet[]): OneRepMaxEstimate | null {
   const value = Math.round(estimateOneRepMax(from.load, from.reps) * 2) / 2;
   return value > 0 ? { value, from } : null;
 }
+
+/** Un esercizio di una seduta salvata, per quello che serve qui. */
+export interface EsercizioSalvato {
+  sets: {
+    load: string | null;
+    reps: string | null;
+    done?: boolean;
+    blocks?: { load: string | null; reps: string | null; done?: boolean }[];
+  }[];
+}
+
+/** Una serie (o un blocco) conta se e' segnata come fatta; le sedute senza il campo, di prima, contano tutte. */
+const fatto = (x: { done?: boolean }) => x.done !== false;
+
+/**
+ * Se in quella seduta l'esercizio e' stato fatto: almeno una serie, o un
+ * blocco di un cluster, segnati. Un esercizio saltato resta nella seduta
+ * salvata, e un cluster ci finisce coi valori proposti nei blocchi: senza
+ * questo controllo diventava una volta in piu', con numeri mai sollevati.
+ */
+export function esercizioFatto(ex: EsercizioSalvato): boolean {
+  return ex.sets.some(s => (s.blocks?.length ? s.blocks.some(fatto) : fatto(s)));
+}
+
+/**
+ * Il carico piu' alto davvero sollevato: solo serie e blocchi fatti, letti
+ * come numeri veri ("62,5" e' 62,5; parseFloat ne leggeva 62). Su un cluster
+ * si guardano i blocchi: il carico della serie e' un riassunto ("62,5-55").
+ */
+export function caricoMassimo(ex: EsercizioSalvato): number {
+  let max = 0;
+  for (const s of ex.sets) {
+    const pezzi = s.blocks?.length ? s.blocks : [s];
+    for (const p of pezzi) {
+      if (!fatto(p)) continue;
+      const kg = numeroSevero(p.load);
+      if (kg !== null && kg > max) max = kg;
+    }
+  }
+  return max;
+}
