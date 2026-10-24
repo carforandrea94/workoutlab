@@ -1493,3 +1493,237 @@ describe('SchedaDetailComponent — titolo, programma e anteprima', () => {
     expect(makeComponent({ sessionSuQuestoGiorno: true }).component.anteprima).toBe(false);
   });
 });
+
+/**
+ * Le correzioni al massimale e ai pesi suggeriti: il peso dei blocchi di un
+ * cluster, le sedute in cui l'esercizio e' stato saltato, le serie non fatte,
+ * i carichi con la virgola, il riscaldamento e la fatica per l'ordine.
+ */
+describe('SchedaDetailComponent — massimale e pesi, le correzioni', () => {
+  const blocco = (load: string, reps: string, done = true) => ({ load, reps, done });
+  const seduta = (date: string, exercises: any[]) => ({ id: date, session: { date, exercises } });
+
+  describe('cluster: dal secondo blocco il peso e\' quello del primo', () => {
+    function conCluster() {
+      const { component } = makeComponent({ sessionSuQuestoGiorno: true });
+      const vm = makeVm();
+      vm.cluster = { blocks: [8, 6], restSec: 20, end: 'fixed' };
+      vm.rows = [{ reps: '', load: '', done: false, ripPlaceholder: '', loadPlaceholder: '',
+        blocks: [{ reps: '', load: '', ripPlaceholder: '8', loadPlaceholder: '', done: false },
+                 { reps: '', load: '', ripPlaceholder: '6', loadPlaceholder: '', done: false }] }];
+      component.exercises = [vm];
+      (component as any).loadInsights([seduta('2026-10-15', [{ name: 'Panca piana', sets: [
+        { load: '60', reps: '8+6', done: true, blocks: [blocco('60', '8'), blocco('60', '6')] }
+      ] }])]);
+      return { component, vm };
+    }
+
+    it('il primo blocco ha il peso per le sue ripetizioni, il secondo lo stesso, non quello per 6', () => {
+      const { component, vm } = conCluster();
+      const per = (n: number) => vm.insight.rmRows.find((r: any) => r.reps === n).load;
+      expect(component.opzioniCarico(vm, 0).find(o => o.chiave === 'rm')).toMatchObject({ titolo: 'Per 8 ripetizioni', kg: per(8) });
+      vm.rows[0].blocks[0].done = true;
+      vm.rows[0].blocks[0].reps = '8';
+      const secondo = component.opzioniCarico(vm, 0).find(o => o.chiave === 'rm')!;
+      expect(secondo).toMatchObject({ titolo: 'Come il primo blocco', kg: per(8) });
+      expect(secondo.kg).toBeLessThan(per(6));
+    });
+  });
+
+  describe('un esercizio saltato non e\' una volta in cui lo si e\' fatto', () => {
+    // Il 01/10 70 x 6 (le 8 previste non sono uscite); l'08/10 l'esercizio e'
+    // saltato, e il cluster finisce salvato coi valori proposti: 70 x 8.
+    const fatta = [{ load: '70', reps: '6+6', done: true, blocks: [blocco('70', '6'), blocco('70', '6')] }];
+    const saltata = [{ load: '70-70', reps: '8+6', done: false, blocks: [blocco('70', '8', false), blocco('70', '6', false)] }];
+    function conSaltata() {
+      const { component } = makeComponent({ sessionSuQuestoGiorno: true });
+      const vm = makeVm();
+      vm.cluster = { blocks: [8, 6], restSec: 20, end: 'fixed' };
+      component.exercises = [vm];
+      (component as any).loadInsights([
+        seduta('2026-10-01', [{ name: 'Panca piana', sets: fatta }]),
+        seduta('2026-10-08', [{ name: 'Panca piana', sets: saltata }])
+      ]);
+      return { component, vm };
+    }
+
+    it('il massimale resta quello della volta vera, con la sua data, e senza un "progresso" inventato', () => {
+      const { vm } = conSaltata();
+      // 70 x 6: 70 * 36 / 31 = 81,3 -> 81,5. Da 70 x 8 sarebbe stato 86,9.
+      expect(vm.insight.oneRm).toMatchObject({ value: 81.5, load: 70, reps: 6, data: '01/10', delta: null });
+    });
+
+    it('"come l\'ultima volta" e il peso nella ruota vengono dalla volta vera', () => {
+      const { vm } = conSaltata();
+      expect(vm.ultima.data).toBe('01/10');
+      expect(vm.ultima.serie[0].blocchi[0]).toEqual({ load: '70', reps: '6' });
+    });
+
+    it('una serie dritta non segnata come fatta non entra nella stima', () => {
+      const { component } = makeComponent({ sessionSuQuestoGiorno: true });
+      const vm = makeVm();
+      component.exercises = [vm];
+      (component as any).loadInsights([seduta('2026-10-01', [{ name: 'Panca piana', sets: [
+        { load: '100', reps: '5', done: false }, { load: '80', reps: '6', done: true }
+      ] }])]);
+      expect(vm.insight.oneRm).toMatchObject({ load: 80, reps: 6 });
+    });
+
+    it('un primo blocco non fatto, in una seduta in cui altro c\'e\', non entra nella stima', () => {
+      const { component } = makeComponent({ sessionSuQuestoGiorno: true });
+      const vm = makeVm();
+      vm.cluster = { blocks: [8, 6], restSec: 20, end: 'fixed' };
+      component.exercises = [vm];
+      (component as any).loadInsights([seduta('2026-10-01', [{ name: 'Panca piana', sets: [
+        { load: '70', reps: '6+6', done: true, blocks: [blocco('70', '6'), blocco('70', '6')] },
+        { load: '90', reps: '8+6', done: false, blocks: [blocco('90', '8', false), blocco('90', '6', false)] }
+      ] }])]);
+      expect(vm.insight.oneRm).toMatchObject({ load: 70, reps: 6 });
+    });
+  });
+
+  describe('i carichi con la virgola', () => {
+    it('"Ultimo" dice 62,5 kg, non 62', () => {
+      const { component } = makeComponent({ sessionSuQuestoGiorno: true });
+      const vm = makeVm();
+      component.exercises = [vm];
+      // 15 ripetizioni: niente massimale, resta la riga dell'ultima volta.
+      (component as any).loadInsights([seduta('2026-09-21', [{ name: 'Panca piana', sets: [{ load: '62,5', reps: '15', done: true }] }])]);
+      expect(vm.insight.lastText).toBe('Ultimo (21/09): 62,5 kg');
+    });
+
+    it('su un cluster il carico piu\' alto viene dai blocchi fatti, non dal riassunto', () => {
+      const { component } = makeComponent({ sessionSuQuestoGiorno: true });
+      const vm = makeVm();
+      vm.cluster = { blocks: [15], restSec: 20, end: 'open' };
+      component.exercises = [vm];
+      (component as any).loadInsights([seduta('2026-09-21', [{ name: 'Panca piana', sets: [
+        { load: '62,5-55', reps: '15+15', done: true, blocks: [blocco('62,5', '15'), blocco('55', '15')] }
+      ] }])]);
+      expect(vm.insight.lastText).toBe('Ultimo (21/09): 62,5 kg');
+    });
+  });
+
+  describe('il riscaldamento', () => {
+    it('sul primo esercizio, dal carico piu\' alto dell\'ultima volta: il peso sale, le ripetizioni scendono', () => {
+      const { component } = makeComponent({ sessionSuQuestoGiorno: true });
+      const vm = makeVm();
+      component.exercises = [vm];
+      (component as any).loadInsights([seduta('2026-09-21', [{ name: 'Panca piana', sets: [
+        { load: '100', reps: '8', done: true }, { load: '95', reps: '8', done: true }
+      ] }])]);
+      expect(vm.warmup).toBe('Riscaldamento: <b>40 kg</b> x8, <b>60 kg</b> x5, <b>80 kg</b> x3');
+    });
+
+    it('con piu\' sedute vale l\'ultima (la lista arriva dalla piu\' vecchia)', () => {
+      const { component } = makeComponent({ sessionSuQuestoGiorno: true });
+      const vm = makeVm();
+      component.exercises = [vm];
+      (component as any).loadInsights([
+        seduta('2026-09-14', [{ name: 'Panca piana', sets: [{ load: '80', reps: '8', done: true }] }]),
+        seduta('2026-09-21', [{ name: 'Panca piana', sets: [{ load: '100', reps: '8', done: true }] }])
+      ]);
+      expect(vm.warmup).toBe('Riscaldamento: <b>40 kg</b> x8, <b>60 kg</b> x5, <b>80 kg</b> x3');
+    });
+
+    it('i pesi col mezzo chilo si scrivono con la virgola', () => {
+      const { component } = makeComponent({ sessionSuQuestoGiorno: true });
+      const vm = makeVm();
+      component.exercises = [vm];
+      (component as any).loadInsights([seduta('2026-09-21', [{ name: 'Panca piana', sets: [{ load: '62,5', reps: '8', done: true }] }])]);
+      expect(vm.warmup).toBe('Riscaldamento: <b>25 kg</b> x8, <b>37,5 kg</b> x5, <b>50 kg</b> x3');
+    });
+
+    it('sugli esercizi dopo il primo no', () => {
+      const { component } = makeComponent({ sessionSuQuestoGiorno: true });
+      const vm = makeVm();
+      vm.isFirst = false;
+      component.exercises = [vm];
+      (component as any).loadInsights([seduta('2026-09-21', [{ name: 'Panca piana', sets: [{ load: '100', reps: '8', done: true }] }])]);
+      expect(vm.warmup).toBeNull();
+    });
+  });
+
+  describe('la fatica per l\'ordine degli esercizi', () => {
+    const vmDi = (name: string, muscle: string) => ({ ...makeVm(), ex: { name, muscle, scheme: 'plain' }, isFirst: false });
+    const serie = [{ load: '30', reps: '10', done: true }];
+    const saltato = [{ load: null, reps: null, done: false }];
+
+    function oggi(nomi: [string, string][], allora: { name: string; sets: any[] }[]) {
+      const { component } = makeComponent({ sessionSuQuestoGiorno: true });
+      component.exercises = nomi.map(([n, m]) => vmDi(n, m));
+      (component as any).loadInsights([seduta('2026-10-03', allora)]);
+      const di = (n: string) => component.exercises.find(v => v.ex.name === n)!;
+      return { component, di };
+    }
+
+    it('stesso ordine di allora: nessuna correzione, la fatica e\' gia\' nel massimale', () => {
+      const { di } = oggi([['Panca piana', 'Petto'], ['Croci', 'Petto']],
+        [{ name: 'Panca piana', sets: serie }, { name: 'Croci', sets: serie }]);
+      expect(di('Croci').insight!.fatica).toBeNull();
+      expect(di('Panca piana').insight!.fatica).toBeNull();
+    });
+
+    it('un esercizio di Petto in piu\' davanti: −5%, e il motivo', () => {
+      // Allora le croci erano le prime; oggi vengono dopo la panca.
+      const { component, di } = oggi([['Panca piana', 'Petto'], ['Croci', 'Petto']],
+        [{ name: 'Croci', sets: serie }, { name: 'Panca piana', sets: serie }]);
+      const croci = di('Croci');
+      expect(croci.insight!.fatica).toEqual({ percento: 5, motivo: 'Oggi arrivi qui con un esercizio di Petto in più rispetto al 03/10' });
+      const rm = component.opzioniCarico(croci, 0).find(o => o.chiave === 'rm')!;
+      const pieno = croci.insight!.rmRows!.find(r => r.reps === 10)!.load;
+      expect(rm.kg).toBe(Math.round(pieno * 0.95 * 2) / 2);
+      // La panca allora veniva dopo le croci, oggi prima: non sale.
+      expect(di('Panca piana').insight!.fatica).toBeNull();
+    });
+
+    it('un esercizio saltato allora non stancava: oggi conta come uno in piu\'', () => {
+      const { di } = oggi([['Panca piana', 'Petto'], ['Croci', 'Petto']],
+        [{ name: 'Panca piana', sets: saltato }, { name: 'Croci', sets: serie }]);
+      expect(di('Croci').insight!.fatica?.percento).toBe(5);
+    });
+
+    it('altri gruppi davanti non contano, ne\' oggi ne\' allora', () => {
+      const { di } = oggi([['Lento avanti', 'Spalle'], ['Croci', 'Petto']],
+        [{ name: 'Croci', sets: serie }, { name: 'Lento avanti', sets: serie }]);
+      expect(di('Croci').insight!.fatica).toBeNull();
+    });
+
+    it('fino al 10%, anche con tre esercizi in piu\' davanti; e "esercizi" al plurale', () => {
+      const { di } = oggi([['Panca piana', 'Petto'], ['Panca inclinata', 'Petto'], ['Chest press', 'Petto'], ['Croci', 'Petto']],
+        [{ name: 'Croci', sets: serie }]);
+      expect(di('Croci').insight!.fatica).toEqual({ percento: 10, motivo: 'Oggi arrivi qui con 3 esercizi di Petto in più rispetto al 03/10' });
+    });
+
+    it('un esercizio che oggi non c\'e\' piu\' non si sa che gruppo fosse, e non si conta', () => {
+      const { di } = oggi([['Panca piana', 'Petto'], ['Croci', 'Petto']],
+        [{ name: 'Dip', sets: serie }, { name: 'Panca piana', sets: serie }, { name: 'Croci', sets: serie }]);
+      expect(di('Croci').insight!.fatica).toBeNull();
+    });
+
+    it('anche sui blocchi di un cluster la stima scende', () => {
+      const { component } = makeComponent({ sessionSuQuestoGiorno: true });
+      const panca = vmDi('Panca piana', 'Petto');
+      const pushdown = { ...vmDi('Pushdown', 'Petto'), cluster: { blocks: [8, 6], restSec: 20, end: 'fixed' },
+        rows: [{ reps: '', load: '', done: false, ripPlaceholder: '', loadPlaceholder: '',
+          blocks: [{ reps: '', load: '', ripPlaceholder: '8', loadPlaceholder: '', done: false },
+                   { reps: '', load: '', ripPlaceholder: '6', loadPlaceholder: '', done: false }] }] };
+      component.exercises = [panca, pushdown] as any;
+      (component as any).loadInsights([seduta('2026-10-03', [
+        { name: 'Pushdown', sets: [{ load: '30', reps: '8+6', done: true, blocks: [blocco('30', '8'), blocco('30', '6')] }] },
+        { name: 'Panca piana', sets: serie }
+      ])]);
+      expect(pushdown.insight!.fatica?.percento).toBe(5);
+      const rm = component.opzioniCarico(pushdown as any, 0).find(o => o.chiave === 'rm')!;
+      const pieno = pushdown.insight!.rmRows!.find((r: any) => r.reps === 8)!.load;
+      expect(rm.kg).toBe(Math.round(pieno * 0.95 * 2) / 2);
+      expect(rm.dettaglio).toContain('−5% per l\'ordine');
+    });
+
+    it('senza massimale non c\'e\' niente da correggere', () => {
+      const { di } = oggi([['Panca piana', 'Petto'], ['Croci', 'Petto']],
+        [{ name: 'Croci', sets: [{ load: '30', reps: '15', done: true }] }]);
+      expect(di('Croci').insight!.fatica).toBeNull();
+    });
+  });
+});

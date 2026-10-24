@@ -166,4 +166,11 @@ export interface ExInsight {
   /** Il peso alla percentuale scelta per il programma. null se la percentuale
    *  e' spenta, o se di questo esercizio non c'e' un massimale stimato. */
   programLoad: ProgramLoad | null;
+  /**
+   * Quando oggi davanti a questo esercizio ci sono piu' esercizi dello stesso
+   * gruppo di quanti ce n'erano nella seduta da cui viene il massimale: di
+   * quanto scendono i pesi stimati (in percento) e perche'. null: nessuna
+   * correzione (vedi fatica.util).
+   */
+  fatica: { percento: number; motivo: string } | null;
 }

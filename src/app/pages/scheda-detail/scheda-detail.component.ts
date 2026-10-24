@@ -23,12 +23,15 @@ import { MetaSlider, findClosestSlideIndex, scrollToSlide } from '../../core/uti
 import { conDissolvenza } from '../../core/dissolvenza';
 import {
   PerformedSet, oneRepMaxOf, rmTable, MAX_TRUSTED_REPS,
-  loadAtPercent, repsAtPercent, numeroSevero
+  loadAtPercent, repsAtPercent, numeroSevero,
+  esercizioFatto, caricoMassimo
 } from '../../core/utils/load-estimate.util';
 import {
   AzioneInBasso, OpzioneCarico, UltimaVolta, azioneInBasso, fonteDelCarico, opzioneScelta, opzioniCarico
 } from '../../core/utils/carico-serie.util';
 import { ToastService } from '../../services/toast.service';
+import { serieDiRiscaldamento } from '../../core/utils/riscaldamento.util';
+import { primaDelloStessoGruppo, scontoFatica } from '../../core/utils/fatica.util';
 import { RiduciBarra, posizioneDaEvento } from '../../tabs/riduci-barra';
 import {
   SerieRow, BlockRow, canAddSet, buildExtraSet, canRemoveSet, removeSetAt, mergeDraftRows, abbinaBozze
@@ -590,6 +593,31 @@ export class SchedaDetailComponent implements OnInit, AfterViewInit, OnDestroy {
     return { percent: p, load, reps: repsAtPercent(p) };
   }
 
+  /**
+   * La correzione per l'ordine (vedi fatica.util): quanti esercizi dello
+   * stesso gruppo vengono prima di questo oggi, e quanti ne venivano (fatti
+   * davvero) nella seduta da cui viene il massimale. Il gruppo di un esercizio
+   * di allora si legge dalla scheda di oggi, per nome: uno che non c'e' piu'
+   * non si sa che gruppo fosse, e non si conta.
+   */
+  private faticaDellOrdine(vm: ExerciseVM, seduta: WorkoutSession): ExInsight['fatica'] {
+    const gruppo = vm.ex.muscle;
+    if (!gruppo) return null;
+    const gruppoDi = new Map(this.exercises.map(e => [e.ex.name, e.ex.muscle] as const));
+    const oggi = primaDelloStessoGruppo(this.exercises.map(e => e.ex.muscle), this.exercises.indexOf(vm));
+    const ordineAllora = seduta.exercises.filter(e => e.name === vm.ex.name || esercizioFatto(e));
+    const allora = primaDelloStessoGruppo(ordineAllora.map(e => gruppoDi.get(e.name)), ordineAllora.findIndex(e => e.name === vm.ex.name));
+    const percento = scontoFatica(oggi, allora);
+    if (!percento) return null;
+    const inPiu = oggi - allora;
+    const quando = this.giornoMese(seduta.date);
+    return {
+      percento,
+      motivo: `Oggi arrivi qui con ${inPiu === 1 ? 'un esercizio' : `${inPiu} esercizi`} di ${gruppo} in più`
+        + (quando ? ` rispetto al ${quando}` : ' dell\'ultima volta')
+    };
+  }
+
   private loadInsights(daySessions: { id: string; session: WorkoutSession }[]): void {
     if (daySessions.length === 0) return;
     const sessions = daySessions.map(s => s.session);
@@ -597,23 +625,27 @@ export class SchedaDetailComponent implements OnInit, AfterViewInit, OnDestroy {
     this.exercises.forEach((vm) => {
       const exName = vm.ex.name;
 
-      // Collect max loads per session for this exercise
+      // Il carico piu' alto di ogni seduta in cui l'esercizio e' stato fatto.
       const maxLoads: number[] = [];
       let lastSessionData: { load: string | null; reps: string | null; blocks?: { load: string | null; reps: string | null }[] }[] = [];
       let lastSessionDate = '';
       /** Carico e ripetizioni della stessa serie vanno tenuti insieme: e' la
        *  coppia, non il solo carico, a dire quanto e' stato faticoso. Divise
        *  per sessione, perche' il massimale parla dell'ultima volta e non di
-       *  tutta la storia. */
-      const perSessione: { data: string; sets: PerformedSet[] }[] = [];
+       *  tutta la storia. Con la seduta, per sapere in che ordine e' venuto. */
+      const perSessione: { data: string; sets: PerformedSet[]; seduta: WorkoutSession }[] = [];
       /** Le coppie lette dal primo blocco di un cluster: il foglio lo dice. */
       const daBlocco = new WeakSet<PerformedSet>();
 
       sessions.forEach(s => {
         const sexData = s.exercises.find(e => e.name === exName);
-        if (!sexData) return;
-        const loads = sexData.sets.map(sr => parseFloat(sr.load ?? '') || 0);
-        const maxLoad = Math.max(...loads.filter(l => l > 0));
+        // Un esercizio saltato resta nella seduta salvata, e i blocchi di un
+        // cluster ci finiscono coi valori proposti (il peso dell'ultima volta,
+        // le ripetizioni previste): non e' una volta in cui lo si e' fatto, e
+        // da li' non si legge niente. Prima diventava una stima nuova, con la
+        // data di una seduta in cui l'esercizio non c'era stato.
+        if (!sexData || !esercizioFatto(sexData)) return;
+        const maxLoad = caricoMassimo(sexData);
         if (maxLoad > 0) maxLoads.push(maxLoad);
         const diQuesta: PerformedSet[] = [];
         sexData.sets.forEach(sr => {
@@ -625,6 +657,8 @@ export class SchedaDetailComponent implements OnInit, AfterViewInit, OnDestroy {
           // letti ("5+5+3", "62,5-55"), non numeri: quelli restano fuori.
           if (sr.blocks?.length) {
             const primo = sr.blocks[0];
+            // Un primo blocco non fatto porta i valori proposti, non quelli veri.
+            if (primo?.done === false) return;
             const load = numeroSevero(primo?.load);
             const reps = numeroSevero(primo?.reps);
             if (load === null || reps === null) return;
@@ -638,6 +672,8 @@ export class SchedaDetailComponent implements OnInit, AfterViewInit, OnDestroy {
           // rimasto li' diventava "massimale 3,5 kg" sotto un esercizio
           // caricato a 30.
           if (vm.cluster) return;
+          // Una serie non segnata come fatta non e' una serie fatta.
+          if (sr.done === false) return;
           // E si leggono solo i numeri interi e puliti. Non basta fidarsi dei
           // blocchi: una seduta vecchia, o salvata a meta', puo' avere il
           // riassunto senza di loro, e parseFloat da "5+5+3" cava 5 senza
@@ -646,7 +682,7 @@ export class SchedaDetailComponent implements OnInit, AfterViewInit, OnDestroy {
           const reps = numeroSevero(sr.reps);
           if (load !== null && reps !== null) diQuesta.push({ load, reps });
         });
-        if (diQuesta.length > 0) perSessione.push({ data: s.date, sets: diQuesta });
+        if (diQuesta.length > 0) perSessione.push({ data: s.date, sets: diQuesta, seduta: s });
         lastSessionData = sexData.sets.map(sr => ({
           load: sr.load, reps: sr.reps,
           blocks: sr.blocks?.map(b => ({ load: b.load, reps: b.reps }))
@@ -685,13 +721,13 @@ export class SchedaDetailComponent implements OnInit, AfterViewInit, OnDestroy {
         });
       }
 
-      const lastSession = sessions[sessions.length - 1];
-      const lastEx = lastSession?.exercises.find(e => e.name === exName);
+      // L'ultima volta in cui l'esercizio e' stato fatto, col carico piu' alto
+      // letto come numero vero ("62,5" e' 62,5, non 62) e, su un cluster, dai blocchi.
       let lastText = '';
-      if (lastEx && lastSession) {
-        const dd = this.giornoMese(lastSession.date);
-        const maxLoad = Math.max(...lastEx.sets.map(s => parseFloat(s.load ?? '') || 0).filter(l => l > 0));
-        lastText = dd ? `Ultimo (${dd}): ${maxLoad > 0 ? maxLoad + ' kg' : '—'}` : '';
+      if (lastSessionDate) {
+        const dd = this.giornoMese(lastSessionDate);
+        const maxLoad = maxLoads[maxLoads.length - 1] ?? 0;
+        lastText = dd ? `Ultimo (${dd}): ${maxLoad > 0 ? this.kg(maxLoad) + ' kg' : '—'}` : '';
       }
 
       // Il massimale stimato dall'ultima volta che l'esercizio e' stato fatto.
@@ -731,23 +767,16 @@ export class SchedaDetailComponent implements OnInit, AfterViewInit, OnDestroy {
         vm.insight = {
           lastText, oneRmText, oneRm,
           rmRows: stima ? rmTable(stima.value) : null,
-          programLoad: this.caricoDiProgramma(stima?.value ?? 0)
+          programLoad: this.caricoDiProgramma(stima?.value ?? 0),
+          fatica: stima ? this.faticaDellOrdine(vm, ultima.seduta) : null
         };
         vm.insightVisible = true;
       }
 
       if (vm.isFirst && maxLoads.length > 0) {
-        const lastMax = maxLoads[maxLoads.length - 1];
-        const baseReps = parseInt(vm.rows[0]?.ripPlaceholder ?? '', 10);
-        if (!isNaN(baseReps)) {
-          const round5 = (kg: number) => Math.round(kg / 5) * 5;
-          const w1 = round5(lastMax * 0.4);
-          const w2 = round5(lastMax * 0.6);
-          const w3 = round5(lastMax * 0.8);
-          const r1 = Math.round(baseReps * 0.4);
-          const r2 = Math.round(baseReps * 0.6);
-          const r3 = Math.round(baseReps * 0.8);
-          vm.warmup = `Riscaldamento: <b>${w1} kg</b> x${r1}, <b>${w2} kg</b> x${r2}, <b>${w3} kg</b> x${r3}`;
+        const serie = serieDiRiscaldamento(maxLoads[maxLoads.length - 1]);
+        if (serie.length) {
+          vm.warmup = 'Riscaldamento: ' + serie.map(r => `<b>${this.kg(r.kg)} kg</b> x${r.reps}`).join(', ');
         }
       }
     });
@@ -1550,10 +1579,12 @@ export class SchedaDetailComponent implements OnInit, AfterViewInit, OnDestroy {
           serie: vm.ultima.serie.map(s => s.blocchi?.[k] ?? { load: null, reps: null })
         } : null,
         ripetizioni: this.numero(b.reps) ?? this.numero(b.ripPlaceholder),
+        primoBlocco: k > 0 ? (this.numero(row.blocks![0].reps) ?? this.numero(row.blocks![0].ripPlaceholder)) : null,
         rmRows: vm.insight?.rmRows ?? null,
         programma: vm.insight?.programLoad ?? null,
         previste: numeroSevero(b.ripPlaceholder),
-        soglia: this.rmSoftOver
+        soglia: this.rmSoftOver,
+        fatica: vm.insight?.fatica ?? null
       });
     }
     return opzioniCarico({
@@ -1563,7 +1594,8 @@ export class SchedaDetailComponent implements OnInit, AfterViewInit, OnDestroy {
       rmRows: vm.insight?.rmRows ?? null,
       programma: vm.insight?.programLoad ?? null,
       previste: numeroSevero(row.ripPlaceholder),
-      soglia: this.rmSoftOver
+      soglia: this.rmSoftOver,
+      fatica: vm.insight?.fatica ?? null
     });
   }
 

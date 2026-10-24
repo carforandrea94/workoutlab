@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import {
   estimateOneRepMax, loadAtReps, bestSet, oneRepMaxOf, rmTable, RM_TABLE_MAX_REPS,
-  loadAtPercent, repsAtPercent, numeroSevero
+  loadAtPercent, repsAtPercent, numeroSevero,
+  esercizioFatto, caricoMassimo
 } from './load-estimate.util';
 
 describe('load-estimate', () => {
@@ -218,5 +219,34 @@ describe('load-estimate — leggere un numero da una seduta salvata', () => {
     expect(numeroSevero(undefined)).toBeNull();
     expect(numeroSevero('')).toBeNull();
     expect(numeroSevero('0')).toBeNull();
+  });
+});
+
+/** Le sedute salvate: un esercizio saltato non e' una volta in cui lo si e' fatto. */
+describe('esercizioFatto e caricoMassimo', () => {
+  it('fatto se almeno una serie e\' segnata; saltato se nessuna', () => {
+    expect(esercizioFatto({ sets: [{ load: '80', reps: '6', done: true }, { load: null, reps: null, done: false }] })).toBe(true);
+    expect(esercizioFatto({ sets: [{ load: null, reps: null, done: false }, { load: null, reps: null, done: false }] })).toBe(false);
+  });
+
+  it('un cluster saltato porta i valori proposti nei blocchi, ma nessun blocco e\' fatto', () => {
+    const saltato = { load: '70-70', reps: '8+6', done: false, blocks: [{ load: '70', reps: '8', done: false }, { load: '70', reps: '6', done: false }] };
+    expect(esercizioFatto({ sets: [saltato] })).toBe(false);
+    expect(esercizioFatto({ sets: [{ ...saltato, blocks: [{ load: '70', reps: '8', done: true }, saltato.blocks[1]] }] })).toBe(true);
+  });
+
+  it('le sedute di prima del campo "fatta" contano tutte', () => {
+    expect(esercizioFatto({ sets: [{ load: '80', reps: '6' }] })).toBe(true);
+  });
+
+  it('il carico piu\' alto e\' un numero vero, con la virgola, e solo da cio\' che e\' fatto', () => {
+    expect(caricoMassimo({ sets: [{ load: '62,5', reps: '8', done: true }, { load: '60', reps: '8', done: true }] })).toBe(62.5);
+    expect(caricoMassimo({ sets: [{ load: '62,5', reps: '8', done: true }, { load: '100', reps: '1', done: false }] })).toBe(62.5);
+    expect(caricoMassimo({ sets: [{ load: '5+5+3', reps: '13', done: true }] })).toBe(0);
+  });
+
+  it('su un cluster si guardano i blocchi fatti, non il riassunto della serie', () => {
+    const serie = { load: '62,5-55', reps: '8+6', done: true, blocks: [{ load: '62,5', reps: '8', done: true }, { load: '65', reps: '6', done: false }] };
+    expect(caricoMassimo({ sets: [serie] })).toBe(62.5);
   });
 });

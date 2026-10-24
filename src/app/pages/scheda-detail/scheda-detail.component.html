@@ -530,6 +530,10 @@
           <p class="massimale-da">
             Da {{ kg(m.load) }} × {{ m.reps }}<ng-container *ngIf="m.blocco">, primo blocco,</ng-container><ng-container *ngIf="m.data"> del {{ m.data }}</ng-container><ng-container *ngIf="m.delta"> · {{ conSegno(m.delta) }} kg dalla volta prima</ng-container>
           </p>
+          <!-- L'ordine e' cambiato: oggi si arriva qui piu' stanchi di allora (vedi fatica.util). -->
+          <p class="carico-avviso massimale-fatica" *ngIf="f.vm.insight?.fatica as fa">
+            <app-icona name="information-circle" [size]="13"></app-icona>{{ fa.motivo }}: i pesi stimati scendono del {{ fa.percento }}%.
+          </p>
         </div>
         <ng-template #nessunaStima>
           <p class="massimale-vuoto">{{ testoSenzaMassimale(f.vm) }}</p>

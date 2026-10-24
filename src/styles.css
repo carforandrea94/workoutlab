@@ -1701,6 +1701,7 @@ button.setcard-fonte:disabled{color:var(--label-3);cursor:default;}
 .massimale-titolo{font-size:var(--text-sm);font-weight:600;color:var(--label-2);}
 .massimale-kg{font-variant-numeric:tabular-nums;font-size:var(--text-3xl);font-weight:700;letter-spacing:-.01em;line-height:1.1;color:var(--label);white-space:nowrap;}
 .massimale-da{margin:6px 0 0;font-variant-numeric:tabular-nums;font-size:var(--text-sm);line-height:1.45;color:var(--label-3);}
+.massimale-fatica{margin:8px 0 0;}
 .massimale-vuoto{font-size:var(--text-sm);line-height:1.5;color:var(--label-2);}
 /* Prima dell'avvio le stesse righe, senza radio: si leggono e basta. */
 ion-list.carico-lettura{margin:0;padding:0;background:transparent;}

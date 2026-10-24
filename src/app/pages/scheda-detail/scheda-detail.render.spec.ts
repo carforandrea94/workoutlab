@@ -613,6 +613,26 @@ describe('SchedaDetailComponent — accessibilita\' delle testate (disegno vero)
       expect(c.foglioCaricoAperto).toBe(false);
     });
 
+    it('se oggi le croci vengono dopo la panca e allora no, il foglio lo dice e i pesi stimati scendono', async () => {
+      const allora = [{ id: 's1', session: { date: '2026-10-03', exercises: [
+        { name: 'Croci', sets: [{ load: '20', reps: '10', done: true }] },
+        { name: 'Panca piana', sets: [{ load: '80', reps: '6', done: true }] }
+      ] } }];
+      const { tutti, aggiorna } = await monta('slider', true, false, undefined, undefined, allora);
+      const croci = await apri(tutti('.exslide')[1], aggiorna);
+      expect(pulito(croci.querySelector('.massimale-fatica')))
+        .toBe('Oggi arrivi qui con un esercizio di Petto in più rispetto al 03/10: i pesi stimati scendono del 5%.');
+      const voci = Array.from(croci.querySelectorAll('ion-radio-group ion-item.scelta-opt'));
+      expect(pulito(voci[1].querySelector('.carico-dettaglio'))).toMatch(/^\d+% del massimale stimato, −5% per l'ordine$/);
+      expect(pulito(voci[0].querySelector('.carico-avviso'))).toContain('con questo peso potrebbero uscirne meno');
+    });
+
+    it('nello stesso ordine di allora il foglio non dice niente sulla fatica', async () => {
+      const { tutti, aggiorna } = await monta('slider', true, false, undefined, undefined, storia);
+      const f = await apri(tutti('.exslide')[0], aggiorna);
+      expect(f.querySelector('.massimale-fatica')).toBeNull();
+    });
+
     it('nell\'elenco il tocco apre il foglio senza chiudere l\'esercizio', async () => {
       const { c, tutti, aggiorna } = await monta('list', true, false, undefined, undefined, storia);
       await apri(tutti('.ex')[0], aggiorna);
