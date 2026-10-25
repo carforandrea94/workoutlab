@@ -330,7 +330,9 @@ describe('SchedaDetailComponent — la tabella dei massimali per esercizio', () 
   it('senza stima il foglio non la inventa, ma l\'ultima volta resta', () => {
     const { component, vm } = conSessione([{ load: '40', reps: '20' }]);
     expect(stima(component, vm)).toBeUndefined();
-    expect(component.opzioniCarico(vm, 0).map((o: any) => o.chiave)).toEqual(['ultima']);
+    // Niente "Per N ripetizioni"; l'ultima volta resta, e con tutte le
+    // ripetizioni uscite (20 su 10) anche il passo in piu'.
+    expect(component.opzioniCarico(vm, 0).map((o: any) => o.chiave)).toEqual(['ultima', 'piu']);
   });
 
   it('l\'ultima volta e\' la prima scelta: la serie con lo stesso numero, con la data', () => {

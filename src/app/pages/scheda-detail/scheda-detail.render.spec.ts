@@ -14,6 +14,9 @@ import { ConfirmDialogService } from '../../services/confirm-dialog.service';
 import { ToastService } from '../../services/toast.service';
 import { NavController } from '@ionic/angular';
 import { buildSessionSummary } from '../../core/utils/session-summary.util';
+import { WeeklyProgressService } from '../../services/weekly-progress.service';
+import { todayLocalISO } from '../../core/utils/date.util';
+import { addDaysISO } from '../../core/utils/week-history.util';
 
 /**
  * Le testate degli esercizi sono UN template (#exHeader) usato da due viste.
@@ -41,7 +44,8 @@ describe('SchedaDetailComponent — accessibilita\' delle testate (disegno vero)
   });
 
   async function monta(vista: 'list' | 'slider', sessioneAvviata = false, altraSessione = false, bozze?: unknown[],
-    patchField: (...a: any[]) => Promise<void> = async () => {}, storia: unknown[] = [], loadPercent: number | null = null) {
+    patchField: (...a: any[]) => Promise<void> = async () => {}, storia: unknown[] = [], loadPercent: number | null = null,
+    ultimaSeduta: string | null = null) {
     const start = vi.fn();
     const startRestTimer = vi.fn();
     const viewMode = signal<'list' | 'slider'>(vista);
@@ -68,6 +72,8 @@ describe('SchedaDetailComponent — accessibilita\' delle testate (disegno vero)
           patchField
         } },
         { provide: WorkoutSessionsService, useValue: { listForDay: async () => storia } },
+        // L'ultima seduta di qualunque giorno: decide se si riparte da una pausa.
+        { provide: WeeklyProgressService, useValue: { caricato: true, ultimaSeduta: () => ultimaSeduta, refresh: async () => {} } },
         { provide: ConfirmDialogService, useValue: {} },
         { provide: ToastService, useValue: {} },
         { provide: WorkoutSessionStateService, useValue: {
@@ -322,11 +328,42 @@ describe('SchedaDetailComponent — accessibilita\' delle testate (disegno vero)
     });
 
     it('con la storia dice da dove vengono i pesi', async () => {
-      const storia = [{ id: 's1', session: { date: '2026-10-03', exercises: [{ name: 'Panca piana', sets: [{ load: '33', reps: '10' }, { load: '33', reps: '10' }] }] } }];
+      // Una serie rimasta a 9 su 10: si rifa' il peso di quella volta.
+      const storia = [{ id: 's1', session: { date: '2026-10-03', exercises: [{ name: 'Panca piana', sets: [{ load: '33', reps: '10' }, { load: '33', reps: '9' }] }] } }];
       const { tutti, testo } = await monta('slider', false, false, undefined, undefined, storia);
       const card = tutti('.exslide')[0];
       expect(Array.from(card.querySelectorAll('.piano-riga span[role="cell"]')).map(e => e.textContent!.trim())).toEqual(['10 × 33 kg', '10 × 33 kg']);
       expect(testo('.exslide .piano-fonte')[0]).toBe('Pesi dell\'ultima volta, 03/10');
+      expect(tutti('.infocard.ripresa').length).toBe(0);
+    });
+
+    it('uscite tutte le ripetizioni, i pesi salgono di un passo e lo dice', async () => {
+      const storia = [{ id: 's1', session: { date: '2026-10-03', exercises: [{ name: 'Panca piana', sets: [{ load: '33', reps: '10' }, { load: '32,5', reps: '11' }] }] } }];
+      const { tutti, testo } = await monta('slider', false, false, undefined, undefined, storia);
+      const card = tutti('.exslide')[0];
+      expect(Array.from(card.querySelectorAll('.piano-riga span[role="cell"]')).map(e => e.textContent!.trim())).toEqual(['10 × 35,5 kg', '10 × 35 kg']);
+      expect(testo('.exslide .piano-fonte')[0]).toBe('Pesi del 03/10 più 2,5 kg: sono uscite tutte le ripetizioni');
+      // Il riscaldamento porta al peso di oggi: 40-60-80% di 35,5.
+      expect(testo('.exslide .suggestion-chip')[0]).toBe('Riscaldamento: 15 kg x8, 22,5 kg x5, 27,5 kg x3');
+    });
+
+    it('dopo una pausa si riparte piu\' bassi, e lo dice senza contare i giorni', async () => {
+      const storia = [{ id: 's1', session: { date: '2026-10-03', exercises: [{ name: 'Panca piana', sets: [{ load: '40', reps: '10' }, { load: '40', reps: '10' }] }] } }];
+      const { c, tutti, testo } = await monta('slider', false, false, undefined, undefined, storia, null, addDaysISO(todayLocalISO(), -9));
+      expect(c.pausa).toBe(5);
+      const card = tutti('.exslide')[0];
+      // Niente passo in piu': si riparte.
+      expect(Array.from(card.querySelectorAll('.piano-riga span[role="cell"]')).map(e => e.textContent!.trim())).toEqual(['10 × 38 kg', '10 × 38 kg']);
+      expect(testo('.exslide .piano-fonte')[0]).toBe('Pesi del 03/10 meno il 5%, per ripartire');
+      expect(testo('.infocard.ripresa')).toEqual(['Si riparte. Oggi i pesi suggeriti partono il 5% più bassi: si riprende il ritmo, poi si torna a salire.']);
+      expect(testo('.infocard.ripresa')[0]).not.toMatch(/giorn/);
+    });
+
+    it('una settimana di pausa non c\'e\' ancora: sei giorni fa e\' un allenamento normale', async () => {
+      const storia = [{ id: 's1', session: { date: '2026-10-03', exercises: [{ name: 'Panca piana', sets: [{ load: '40', reps: '8' }, { load: '40', reps: '8' }] }] } }];
+      const { c, tutti } = await monta('slider', false, false, undefined, undefined, storia, null, addDaysISO(todayLocalISO(), -6));
+      expect(c.pausa).toBe(0);
+      expect(tutti('.infocard.ripresa').length).toBe(0);
     });
 
     it('avviata la sessione, tornano le serie coi comandi', async () => {

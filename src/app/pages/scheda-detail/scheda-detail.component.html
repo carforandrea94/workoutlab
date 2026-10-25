@@ -97,9 +97,9 @@
             <span role="cell" *ngFor="let c of celleAnteprima(vm, row)">{{ c }}</span>
           </div>
         </div>
-        <p class="piano-fonte" *ngIf="pesiUltimaVolta(vm)">
-          <app-icona name="time" [size]="13"></app-icona>
-          Pesi dell'ultima volta, {{ vm.ultima?.data }}
+        <p class="piano-fonte" *ngIf="pesiUltimaVolta(vm)" [class.passo]="vm.passo">
+          <app-icona [name]="vm.passo === 'piu' ? 'trending-up' : 'time'" [size]="13"></app-icona>
+          {{ testoPesi(vm) }}
         </p>
         <div class="suggestion-chip" *ngIf="vm.isFirst && vm.warmup" [innerHTML]="vm.warmup"></div>
       </ng-container>
@@ -416,6 +416,15 @@
     <!-- Il recupero finito si annuncia da qui: nello slider la fascia, che lo
          annunciava, sparisce in quel momento per lasciare il posto al tasto. -->
     <span class="sr-only" aria-live="polite">{{ annuncioRecupero }}</span>
+
+    <!-- Si riparte dopo una pausa: i pesi suggeriti partono un po' piu' bassi
+         (vedi pausa.util). Si dice prima dell'avvio, una volta, guardando avanti
+         e senza contare i giorni passati. Ad allenamento avviato lo dice la riga
+         di ogni serie ("−5% sul 03/10"). -->
+    <div class="infocard avviso ripresa" *ngIf="day && !loading && !errorMsg && !isStorico && !summary && anteprima && pausa > 0">
+      <app-icona name="barbell" [size]="20"></app-icona>
+      <p><b>Si riparte.</b> Oggi i pesi suggeriti partono il {{ pausa }}% più bassi: si riprende il ritmo, poi si torna a salire.</p>
+    </div>
 
     <!-- Vista elenco (accordion) -->
     <ng-container *ngIf="day && !loading && !errorMsg && serieInVista && state.viewMode() === 'list'">

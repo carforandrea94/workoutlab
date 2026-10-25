@@ -115,4 +115,35 @@ describe('WeeklyProgressService', () => {
 
     expect(service.doneDayIds().size).toBe(0);
   });
+
+  it('sa l\'ultima seduta di qualunque giorno, e da quando le sedute sono arrivate', async () => {
+    oggiE('2026-07-15');
+    const { service } = makeService({
+      sessions: [
+        { dayId: 'day2', date: '2026-07-03' },
+        { dayId: 'day1', date: '2026-07-10' },
+        { dayId: 'day3', date: '2026-06-28' }
+      ]
+    });
+    expect(service.caricato).toBe(false);
+    expect(service.ultimaSeduta()).toBeNull();
+
+    await service.refresh();
+
+    expect(service.caricato).toBe(true);
+    expect(service.ultimaSeduta()).toBe('2026-07-10');
+    expect(service.sedute().map(s => s.date)).toEqual(['2026-07-03', '2026-07-10', '2026-06-28']);
+  });
+
+  it('una lettura fallita non lo da\' per caricato', async () => {
+    oggiE('2026-07-15');
+    const sessions = { listAll: vi.fn(() => Promise.reject(new Error('rete'))) } as any;
+    const service = TestBed.runInInjectionContext(() => new WeeklyProgressService(sessions));
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    await service.refresh();
+
+    expect(service.caricato).toBe(false);
+    expect(service.ultimaSeduta()).toBeNull();
+  });
 });

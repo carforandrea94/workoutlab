@@ -13,7 +13,7 @@ import {
   removeCircle, removeCircleSharp, reorderThreeOutline, reorderTwoSharp, restaurant, restaurantOutline,
   restaurantSharp, saveOutline, saveSharp, searchOutline, searchSharp, settingsOutline, settingsSharp,
   swapHorizontalOutline, swapHorizontalSharp, timeOutline, timerOutline, timerSharp, timeSharp, trashOutline,
-  trashSharp
+  trashSharp, trendingUpOutline, trendingUpSharp
 } from 'ionicons/icons';
 
 /**
@@ -139,7 +139,8 @@ export const ICONE = {
   'swap-horizontal': { ios: swapHorizontalOutline, md: swapHorizontalSharp },
   'time': { ios: timeOutline, md: timeSharp },
   'timer': { ios: timerOutline, md: timerSharp },
-  'trash': { ios: trashOutline, md: trashSharp }
+  'trash': { ios: trashOutline, md: trashSharp },
+  'trending-up': { ios: trendingUpOutline, md: trendingUpSharp }
 } satisfies Record<string, Varianti>;
 
 export type NomeIcona = keyof typeof ICONE;

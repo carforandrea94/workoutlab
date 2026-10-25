@@ -31,7 +31,7 @@
       <!-- La settimana del programma: una riga di lista iOS, con la barra di
            avanzamento al posto dei trattini. -->
       <ion-list [inset]="true" class="scheda-settimana">
-        <ion-item lines="none">
+        <ion-item [lines]="costanza ? 'inset' : 'none'">
           <ion-label>
             <h2>Settimana {{ currentWeek }} di {{ weekPlan.length }}</h2>
             <p *ngIf="sottotitoloSettimana as s">{{ s }}</p>
@@ -39,6 +39,20 @@
               [attr.aria-valuetext]="'Settimana ' + currentWeek + ' di ' + weekPlan.length"></ion-progress-bar>
           </ion-label>
           <ion-note slot="end">{{ todayWeekday }}</ion-note>
+        </ion-item>
+        <!-- Le settimane di fila con la scheda completa, e cosa manca per la
+             prossima. I pallini sono le ultime settimane: pieno se completa,
+             l'anello e' quella in corso. -->
+        <ion-item lines="none" class="costanza" *ngIf="costanza as c">
+          <ion-label>
+            <h2>{{ titoloCostanza(c) }}</h2>
+            <p>{{ fraseCostanza(c) }}</p>
+          </ion-label>
+          <span slot="end" class="settimane" role="img" *ngIf="c.settimane.length > 1"
+            [attr.aria-label]="etichettaSettimane(c)">
+            <span class="settimana" *ngFor="let s of c.settimane; trackBy: perLunedi"
+              [class.completa]="s.completa" [class.in-corso]="s.inCorso"></span>
+          </span>
         </ion-item>
       </ion-list>
 

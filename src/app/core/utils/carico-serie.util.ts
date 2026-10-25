@@ -1,6 +1,8 @@
 import { ProgramLoad } from '../../models/workout.model';
 import { RmRow } from './load-estimate.util';
 import { conSconto } from './fatica.util';
+import { PASSO_PROGRESSIONE } from './progressione.util';
+import { MASSIMO_SCONTO } from './pausa.util';
 
 /**
  * Che peso mettere su una serie, e da dove viene il numero nella ruota.
@@ -13,7 +15,7 @@ import { conSconto } from './fatica.util';
  * ruota. Nella card resta una riga sola che dice da dove viene il numero.
  */
 
-export type FonteCarico = 'ultima' | 'rm' | 'programma';
+export type FonteCarico = 'ultima' | 'piu' | 'ripresa' | 'rm' | 'programma';
 
 /** L'ultima seduta in cui l'esercizio c'era: la data, e serie per serie quello che si e' fatto. */
 export interface UltimaVolta {
@@ -61,6 +63,18 @@ export interface DatiCarico {
    * esercizi (vedi fatica.util), e perche'. Assente o 0: nessuna correzione.
    */
   fatica?: { percento: number; motivo: string } | null;
+  /**
+   * L'ultima volta tutte le serie del piano sono arrivate alle loro
+   * ripetizioni (vedi progressione.util): oggi si prova con un passo in piu'.
+   * Non vale quando i pesi scendono per l'ordine o per la ripresa: li' il
+   * passo in piu' e quello indietro si contraddirebbero.
+   */
+  piu?: boolean;
+  /**
+   * Di quanto (in percento) scendono i pesi perche' si riparte dopo una pausa
+   * (vedi pausa.util). Assente o 0: nessuna pausa.
+   */
+  pausa?: number | null;
 }
 
 /** Un numero scritto come si scrive qui ("32,5") o null se non e' un peso. */
@@ -70,6 +84,9 @@ function peso(raw: string | null | undefined): number | null {
   const n = parseFloat(t);
   return isFinite(n) && n > 0 ? n : null;
 }
+
+/** I chili con la virgola: "2,5". */
+const kgIt = (n: number) => String(n).replace('.', ',');
 
 /** Ripetizioni intere e pulite; un "8+8" di un cluster non e' un numero di ripetizioni. */
 function ripetizioni(raw: string | null | undefined): number | null {
@@ -81,14 +98,19 @@ function ripetizioni(raw: string | null | undefined): number | null {
 
 /**
  * Le fonti di un peso per questa serie, nell'ordine in cui le si guarda: quello
- * che si e' fatto l'ultima volta (un fatto), quello per le ripetizioni nella
- * ruota (una stima), quello del programma (una regola). Manca quella che non
- * ha un numero.
+ * che si e' fatto l'ultima volta (un fatto), il passo che ne viene (avanti se
+ * sono uscite tutte le ripetizioni, indietro se si riparte da una pausa),
+ * quello per le ripetizioni nella ruota (una stima), quello del programma (una
+ * regola). Manca quella che non ha un numero.
  */
 export function opzioniCarico(d: DatiCarico): OpzioneCarico[] {
   const out: OpzioneCarico[] = [];
-  const sconto = d.fatica?.percento ?? 0;
-  const conFatica = (testo: string) => (sconto ? `${testo}, −${sconto}% per l'ordine` : testo);
+  const fatica = d.fatica?.percento ?? 0;
+  const pausa = d.pausa ?? 0;
+  // Le due correzioni si sommano, fino a un tetto (vedi pausa.util).
+  const sconto = Math.min(MASSIMO_SCONTO, fatica + pausa);
+  const perche = fatica && pausa ? 'per ordine e ripresa' : fatica ? 'per l\'ordine' : 'per ripartire';
+  const conCorrezione = (testo: string) => (sconto ? `${testo}, −${sconto}% ${perche}` : testo);
 
   const fatta = d.ultima?.serie[d.serie];
   const kgUltima = peso(fatta?.load);
@@ -100,10 +122,34 @@ export function opzioniCarico(d: DatiCarico): OpzioneCarico[] {
       dettaglio: `Serie ${d.serie + 1}` + (d.blocco ? `, blocco ${d.blocco},` : '') + ` del ${d.ultima.data}`
         + (rip ? `, ${rip} ${rip === 1 ? 'ripetizione' : 'ripetizioni'}` : ''),
       // E' un fatto, e resta com'era; ma se oggi si arriva piu' stanchi lo si dice.
-      avviso: sconto ? `${d.fatica!.motivo}: con questo peso potrebbero uscirne meno.` : null,
+      avviso: fatica ? `${d.fatica!.motivo}: con questo peso potrebbero uscirne meno.`
+        : pausa ? 'Dopo una pausa: con questo peso potrebbero uscirne meno.'
+        : null,
       kg: kgUltima,
       breve: `come il ${d.ultima.data}`
     });
+
+    // Dall'ultima volta, un passo avanti o uno indietro: e' il peso che la
+    // ruota propone (vedi la pagina dell'allenamento).
+    if (pausa) {
+      out.push({
+        chiave: 'ripresa',
+        titolo: 'Per ripartire',
+        dettaglio: `Il peso del ${d.ultima.data} meno il ${pausa}%: si riprende il ritmo`,
+        avviso: null,
+        kg: conSconto(kgUltima, pausa),
+        breve: `−${pausa}% sul ${d.ultima.data}`
+      });
+    } else if (d.piu && !fatica) {
+      out.push({
+        chiave: 'piu',
+        titolo: 'Prova di più',
+        dettaglio: `Il ${d.ultima.data} sono uscite tutte le ripetizioni: un passo in più`,
+        avviso: null,
+        kg: kgUltima + PASSO_PROGRESSIONE,
+        breve: `+${kgIt(PASSO_PROGRESSIONE)} kg sul ${d.ultima.data}`
+      });
+    }
   }
 
   // Dal secondo blocco di un cluster il peso e' quello del primo.
@@ -114,14 +160,14 @@ export function opzioniCarico(d: DatiCarico): OpzioneCarico[] {
     out.push({
       chiave: 'rm',
       titolo: comePrimo ? 'Come il primo blocco' : `Per ${n} ${n === 1 ? 'ripetizione' : 'ripetizioni'}`,
-      dettaglio: conFatica(comePrimo
+      dettaglio: conCorrezione(comePrimo
         ? `${riga.percent}% del massimale, per ${n} ${n === 1 ? 'ripetizione' : 'ripetizioni'}: in un cluster il peso è della serie`
         : `${riga.percent}% del massimale stimato`),
       avviso: n > d.soglia
         ? `Sopra le ${d.soglia} ripetizioni la stima si allarga: prendila come indicazione.`
         : null,
       kg: conSconto(riga.load, sconto),
-      breve: conFatica(comePrimo ? 'come il primo blocco' : `${riga.percent}% del massimale`)
+      breve: conCorrezione(comePrimo ? 'come il primo blocco' : `${riga.percent}% del massimale`)
     });
   }
 
@@ -134,10 +180,10 @@ export function opzioniCarico(d: DatiCarico): OpzioneCarico[] {
     out.push({
       chiave: 'programma',
       titolo: `Dal programma, ${p.percent}%`,
-      dettaglio: conFatica(`Circa ${p.reps} ${p.reps === 1 ? 'ripetizione' : 'ripetizioni'}`),
+      dettaglio: conCorrezione(`Circa ${p.reps} ${p.reps === 1 ? 'ripetizione' : 'ripetizioni'}`),
       avviso: scarto ? `Oggi il piano ne chiede ${d.previste}: a questo peso ne escono circa ${p.reps}.` : null,
       kg: conSconto(p.load, sconto),
-      breve: conFatica(`programma ${p.percent}%`)
+      breve: conCorrezione(`programma ${p.percent}%`)
     });
   }
 

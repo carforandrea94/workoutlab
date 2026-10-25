@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, OnInit, OnDestroy, ChangeDetectorRef, ElementRef, Optional, ViewChild, effect, signal } from '@angular/core';
+import { AfterViewInit, Component, OnInit, OnDestroy, ChangeDetectorRef, ElementRef, Injector, Optional, ViewChild, effect, inject, signal } from '@angular/core';
 import { NumberWheelComponent } from '../../components/number-wheel/number-wheel.component';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -31,7 +31,10 @@ import {
 } from '../../core/utils/carico-serie.util';
 import { ToastService } from '../../services/toast.service';
 import { serieDiRiscaldamento } from '../../core/utils/riscaldamento.util';
-import { primaDelloStessoGruppo, scontoFatica } from '../../core/utils/fatica.util';
+import { conSconto, primaDelloStessoGruppo, scontoFatica } from '../../core/utils/fatica.util';
+import { PASSO_PROGRESSIONE, provaDiPiu, ripetizioniDaRaggiungere } from '../../core/utils/progressione.util';
+import { scontoPausa } from '../../core/utils/pausa.util';
+import { WeeklyProgressService } from '../../services/weekly-progress.service';
 import { RiduciBarra, posizioneDaEvento } from '../../tabs/riduci-barra';
 import {
   SerieRow, BlockRow, canAddSet, buildExtraSet, canRemoveSet, removeSetAt, mergeDraftRows, abbinaBozze
@@ -66,6 +69,12 @@ interface ExerciseVM {
   cluster: ClusterSpec | null;
   /** L'ultima seduta in cui l'esercizio c'era: da li' vengono i pesi suggeriti. */
   ultima: UltimaVolta | null;
+  /**
+   * I pesi suggeriti non sono quelli dell'ultima volta: un passo avanti ('piu',
+   * sono uscite tutte le ripetizioni) o uno indietro ('ripresa', si riparte da
+   * una pausa). null: quelli dell'ultima volta, o nessuno.
+   */
+  passo?: 'piu' | 'ripresa' | null;
 }
 
 /** Il foglio "Che peso metto" aperto: su quale serie di quale esercizio. */
@@ -392,7 +401,7 @@ export class SchedaDetailComponent implements OnInit, AfterViewInit, OnDestroy {
         // dentro il loro "10 x 80 kg", e si apre quella da correggere.
         activeRow: null,
         insightVisible: false, insight: null,
-        restSeconds: 0, isFirst: exIdx === 0, warmup: null, cluster, ultima: null
+        restSeconds: 0, isFirst: exIdx === 0, warmup: null, cluster, ultima: null, passo: null
       };
     });
   }
@@ -415,6 +424,30 @@ export class SchedaDetailComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
+  /**
+   * Di quanto (in percento) scendono oggi i pesi suggeriti perche' si riparte
+   * dopo una pausa (vedi pausa.util). 0: nessuna pausa.
+   */
+  pausa = 0;
+
+  private readonly injector = inject(Injector);
+
+  /**
+   * La data dell'ultima seduta salvata, di qualunque giorno: la sa il servizio
+   * delle spunte della settimana, che arrivando dalla scheda l'ha gia' letta.
+   * Aperta la pagina da sola (un link, l'app riaperta qui) la si legge adesso.
+   * La pausa e' un di piu': se la lettura non va, si parte come sempre.
+   */
+  private async ultimaSeduta(): Promise<string | null> {
+    try {
+      const weekly = this.injector.get(WeeklyProgressService);
+      if (!weekly.caricato) await weekly.refresh();
+      return weekly.ultimaSeduta();
+    } catch {
+      return null;
+    }
+  }
+
   // Aspetta bozze/override/insight da Firestore prima di mostrare le card,
   // cosi' non compaiono prima con dati incompleti (peso pre-compilato,
   // "Ultimo", suggerimento di progressione) e poi si aggiornano di scatto.
@@ -435,14 +468,15 @@ export class SchedaDetailComponent implements OnInit, AfterViewInit, OnDestroy {
     );
 
     try {
-      const [appState, daySessions] = await Promise.race([
-        Promise.all([this.appState.load(), this.sessions.listForDay(dayId)]),
+      const [appState, daySessions, ultimaSeduta] = await Promise.race([
+        Promise.all([this.appState.load(), this.sessions.listForDay(dayId), this.ultimaSeduta()]),
         timeout
       ]);
       // Un caricamento piu' recente e' partito prima che questo si risolvesse:
       // i suoi dati sono superati e non vanno applicati allo stato corrente.
       if (generation !== this.loadGeneration) return;
       this.percentualeProgramma = appState.loadPercent;
+      this.pausa = scontoPausa(ultimaSeduta, todayLocalISO());
       this.buildExercises(appState.restOverrides);
       this.loadDraft(appState.workoutDrafts[dayId]);
       this.daySessions = daySessions.map(d => d.session);
@@ -527,7 +561,7 @@ export class SchedaDetailComponent implements OnInit, AfterViewInit, OnDestroy {
       }));
       const override = restOverrides[this.restKey(ex.name)];
       const restSeconds = override && override > 0 ? override : protocolDefault;
-      return { ex, rows, open: true, activeRow: 0, insightVisible: false, insight: null, restSeconds, isFirst: exIdx === 0, warmup: null, cluster, ultima: null };
+      return { ex, rows, open: true, activeRow: 0, insightVisible: false, insight: null, restSeconds, isFirst: exIdx === 0, warmup: null, cluster, ultima: null, passo: null };
     });
   }
 
@@ -627,7 +661,7 @@ export class SchedaDetailComponent implements OnInit, AfterViewInit, OnDestroy {
 
       // Il carico piu' alto di ogni seduta in cui l'esercizio e' stato fatto.
       const maxLoads: number[] = [];
-      let lastSessionData: { load: string | null; reps: string | null; blocks?: { load: string | null; reps: string | null }[] }[] = [];
+      let lastSessionData: { load: string | null; reps: string | null; done?: boolean; blocks?: { load: string | null; reps: string | null }[] }[] = [];
       let lastSessionDate = '';
       /** Carico e ripetizioni della stessa serie vanno tenuti insieme: e' la
        *  coppia, non il solo carico, a dire quanto e' stato faticoso. Divise
@@ -684,7 +718,7 @@ export class SchedaDetailComponent implements OnInit, AfterViewInit, OnDestroy {
         });
         if (diQuesta.length > 0) perSessione.push({ data: s.date, sets: diQuesta, seduta: s });
         lastSessionData = sexData.sets.map(sr => ({
-          load: sr.load, reps: sr.reps,
+          load: sr.load, reps: sr.reps, done: sr.done,
           blocks: sr.blocks?.map(b => ({ load: b.load, reps: b.reps }))
         }));
         lastSessionDate = s.date;
@@ -703,18 +737,45 @@ export class SchedaDetailComponent implements OnInit, AfterViewInit, OnDestroy {
         };
       }
 
-      // Set load placeholder from last session
+      // L'ultima seduta da cui viene il massimale, e la fatica dell'ordine
+      // rispetto a lei (vedi fatica.util).
+      const ultima = perSessione[perSessione.length - 1];
+      const fatica = ultima ? this.faticaDellOrdine(vm, ultima.seduta) : null;
+
+      // Il passo di oggi rispetto all'ultima volta: indietro se si riparte da
+      // una pausa (vedi pausa.util), avanti se quella volta sono uscite tutte
+      // le ripetizioni del piano (vedi progressione.util). Avanti no se oggi
+      // l'esercizio viene piu' tardi: la fatica dell'ordine dice gia' di non
+      // salire. Sui cluster il peso e' dei blocchi, e la regola delle
+      // ripetizioni non ha una cima da toccare: li' solo la pausa.
+      const piano = vm.rows.filter(r => !r.extra);
+      const piu = vm.ultima && !vm.cluster && !this.pausa && !fatica
+        ? provaDiPiu(lastSessionData, piano.map(r => ripetizioniDaRaggiungere(r.ripPlaceholder)))
+        : null;
+      vm.passo = !vm.ultima ? null : this.pausa ? 'ripresa' : piu ? 'piu' : null;
+      /** Il peso da proporre per la serie j, da quello dell'ultima volta. */
+      const proposto = (raw: string | null, j: number): string | null => {
+        if (!raw) return null;
+        const kg = numeroSevero(raw);
+        if (kg === null) return raw;
+        if (piu && j < piu.length) return this.write(piu[j]);
+        if (this.pausa) return this.write(conSconto(kg, this.pausa));
+        return raw;
+      };
+
+      // Il peso nella ruota: quello dell'ultima volta, col passo di oggi.
       if (lastSessionData.length > 0) {
         lastSessionData.forEach((sr, j) => {
           const row = vm.rows[j];
           if (!row) return;
-          if (sr.load) row.loadPlaceholder = sr.load;
+          const load = proposto(sr.load, j);
+          if (load) row.loadPlaceholder = load;
           // In un cluster il peso e' del blocco: il suggerimento va preso dal
           // blocco corrispondente della volta scorsa, non dal riassunto della
           // serie, che puo' essere un intervallo ("62,5-55").
           if (row.blocks && sr.blocks) {
             row.blocks.forEach((b, k) => {
-              const prima = sr.blocks?.[k]?.load;
+              const prima = proposto(sr.blocks?.[k]?.load ?? null, j);
               if (prima) b.loadPlaceholder = prima;
             });
           }
@@ -737,7 +798,6 @@ export class SchedaDetailComponent implements OnInit, AfterViewInit, OnDestroy {
       // la parte che si guarda davvero: dice se si sta salendo.
       let oneRmText: string | null = null;
       let oneRm: ExInsight['oneRm'] = null;
-      const ultima = perSessione[perSessione.length - 1];
       // Anche sui cluster: la coppia e' quella del primo blocco (vedi sopra).
       const stima = ultima ? oneRepMaxOf(ultima.sets) : null;
       if (stima) {
@@ -768,13 +828,18 @@ export class SchedaDetailComponent implements OnInit, AfterViewInit, OnDestroy {
           lastText, oneRmText, oneRm,
           rmRows: stima ? rmTable(stima.value) : null,
           programLoad: this.caricoDiProgramma(stima?.value ?? 0),
-          fatica: stima ? this.faticaDellOrdine(vm, ultima.seduta) : null
+          fatica: stima ? fatica : null
         };
         vm.insightVisible = true;
       }
 
       if (vm.isFirst && maxLoads.length > 0) {
-        const serie = serieDiRiscaldamento(maxLoads[maxLoads.length - 1]);
+        // Il riscaldamento porta al carico di oggi: col passo, se c'e'.
+        const ultimoMassimo = maxLoads[maxLoads.length - 1];
+        const lavoro = vm.passo === 'ripresa' ? conSconto(ultimoMassimo, this.pausa)
+          : vm.passo === 'piu' ? ultimoMassimo + PASSO_PROGRESSIONE
+          : ultimoMassimo;
+        const serie = serieDiRiscaldamento(lavoro);
         if (serie.length) {
           vm.warmup = 'Riscaldamento: ' + serie.map(r => `<b>${this.kg(r.kg)} kg</b> x${r.reps}`).join(', ');
         }
@@ -1541,6 +1606,17 @@ export class SchedaDetailComponent implements OnInit, AfterViewInit, OnDestroy {
       : `Ogni serie: ${c.blocks.length} ${c.blocks.length === 1 ? 'blocco' : 'blocchi'}, con ${pausa} di pausa fra l'uno e l'altro.`;
   }
 
+  /**
+   * Sotto la tabella, da dove vengono i pesi: dall'ultima seduta, col passo di
+   * oggi se c'e'. Senza ricordare la pausa: si dice che si riparte.
+   */
+  testoPesi(vm: ExerciseVM): string {
+    const data = vm.ultima?.data ?? '';
+    if (vm.passo === 'piu') return `Pesi del ${data} più ${this.kg(PASSO_PROGRESSIONE)} kg: sono uscite tutte le ripetizioni`;
+    if (vm.passo === 'ripresa') return `Pesi del ${data} meno il ${this.pausa}%, per ripartire`;
+    return `Pesi dell'ultima volta, ${data}`;
+  }
+
   /** I pesi della tabella vengono dall'ultima seduta: si dice di quando. Solo
    *  se nella tabella ce n'e' uno: in un cluster i pesi sono quelli dei blocchi. */
   pesiUltimaVolta(vm: ExerciseVM): boolean {
@@ -1584,7 +1660,8 @@ export class SchedaDetailComponent implements OnInit, AfterViewInit, OnDestroy {
         programma: vm.insight?.programLoad ?? null,
         previste: numeroSevero(b.ripPlaceholder),
         soglia: this.rmSoftOver,
-        fatica: vm.insight?.fatica ?? null
+        fatica: vm.insight?.fatica ?? null,
+        pausa: this.pausa
       });
     }
     return opzioniCarico({
@@ -1595,7 +1672,11 @@ export class SchedaDetailComponent implements OnInit, AfterViewInit, OnDestroy {
       programma: vm.insight?.programLoad ?? null,
       previste: numeroSevero(row.ripPlaceholder),
       soglia: this.rmSoftOver,
-      fatica: vm.insight?.fatica ?? null
+      fatica: vm.insight?.fatica ?? null,
+      // Il passo avanti vale per le serie del piano: una aggiunta a mano non
+      // ha ripetizioni da raggiungere.
+      piu: vm.passo === 'piu' && !row.extra,
+      pausa: this.pausa
     });
   }
 

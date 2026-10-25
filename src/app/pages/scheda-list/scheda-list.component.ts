@@ -10,6 +10,8 @@ import { IONIC_PAGE, IONIC_LINKS } from '../../core/ionic-page';
 import { IONIC_LIST } from '../../core/ionic-list';
 import { NavController, IonAvatar, IonBadge, IonButton, IonLabel, IonListHeader, IonNote, IonProgressBar } from '@ionic/angular';
 import { IconaComponent } from '../../components/icona/icona.component';
+import { Costanza, costanza } from '../../core/utils/costanza.util';
+import { todayLocalISO } from '../../core/utils/date.util';
 
 @Component({
   selector: 'app-scheda-list',
@@ -112,6 +114,42 @@ export class SchedaListComponent implements OnInit {
 
   hasDraft(dayId: string): boolean {
     return this.draftDayIds().has(dayId);
+  }
+
+  // ---- Le settimane di fila ----
+  //
+  // Sotto la settimana del programma, la costanza: quante settimane di fila con
+  // la scheda completa (vedi costanza.util). Si dice cosa manca per la prossima,
+  // mai cosa si e' perso: una settimana che non si puo' piu' completare non
+  // conta i giorni che restano, e una fila spezzata riparte senza commenti.
+
+  /** Letta a ogni giro: le sedute arrivano dal servizio, e la settimana cambia da sola il lunedi'. */
+  get costanza(): Costanza | null {
+    return costanza(this.weekly.sedute(), this.days.length, todayLocalISO());
+  }
+
+  titoloCostanza(c: Costanza): string {
+    if (c.fila === 0) return 'Questa settimana';
+    return c.fila === 1 ? '1 settimana completa' : `${c.fila} settimane di fila`;
+  }
+
+  fraseCostanza(c: Costanza): string {
+    if (c.mancano === 0) return c.fila > 1 ? 'Scheda completa anche questa settimana.' : 'Scheda completa questa settimana.';
+    const fatti = `${c.fatti} di ${c.previsti} allenamenti`;
+    // Non c'e' piu' tempo per completarla: si dice dove si e', senza conti.
+    if (c.mancano > c.giorniRimasti) return `${fatti} questa settimana.`;
+    return `${fatti}: ancora ${c.mancano} entro domenica` + (c.fila > 0 ? `, per arrivare a ${c.fila + 1}.` : '.');
+  }
+
+  perLunedi(_: number, s: { lunedi: string }): string {
+    return s.lunedi;
+  }
+
+  /** Per lo screen reader i pallini sono una frase sola. */
+  etichettaSettimane(c: Costanza): string {
+    const complete = c.settimane.filter(s => s.completa).length;
+    const n = c.settimane.length;
+    return `Ultime ${n} settimane: ${complete === 1 ? '1 completa' : `${complete} complete`}`;
   }
 
   /** Quanto del programma e' passato, per la barra: la settimana in corso conta. */
