@@ -664,6 +664,27 @@ describe('SchedaDetailComponent — accessibilita\' delle testate (disegno vero)
       expect(pulito(voci[0].querySelector('.carico-avviso'))).toContain('con questo peso potrebbero uscirne meno');
     });
 
+    it('con la fatica dell\'ordine il passo in piu\' non c\'e\', anche con tutte le ripetizioni uscite', async () => {
+      const allora = [{ id: 's1', session: { date: '2026-10-03', exercises: [
+        { name: 'Croci', sets: [{ load: '20', reps: '10', done: true }, { load: '20', reps: '10', done: true }] },
+        { name: 'Panca piana', sets: [{ load: '80', reps: '6', done: true }] }
+      ] } }];
+      const { c } = await monta('slider', true, false, undefined, undefined, allora);
+      const croci = c.exercises[1];
+      expect(croci.insight?.fatica?.percento).toBe(5);
+      expect(croci.passo).toBeNull();
+      expect(croci.rows.map((r: any) => r.loadPlaceholder)).toEqual(['20', '20']);
+      expect(c.opzioniCarico(croci, 0).map((o: any) => o.chiave)).not.toContain('piu');
+    });
+
+    it('dopo una pausa la riga della serie dice da dove viene il peso piu\' basso', async () => {
+      const { c, tutti } = await monta('slider', true, false, undefined, undefined, storia, null, addDaysISO(todayLocalISO(), -9));
+      const vm = c.exercises[0];
+      expect(vm.rows[0].loadPlaceholder).toBe('76');
+      expect(c.opzioniCarico(vm, 0).map((o: any) => o.chiave)).toEqual(['ultima', 'ripresa', 'rm']);
+      expect(tutti('.exslide')[0].querySelector('button.setcard-fonte')!.textContent!.trim()).toBe('−5% sul 03/10');
+    });
+
     it('nello stesso ordine di allora il foglio non dice niente sulla fatica', async () => {
       const { tutti, aggiorna } = await monta('slider', true, false, undefined, undefined, storia);
       const f = await apri(tutti('.exslide')[0], aggiorna);

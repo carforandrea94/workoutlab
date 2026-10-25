@@ -25,13 +25,11 @@ export const SCONTO_PAUSA_LUNGA = 10;
  */
 export const MASSIMO_SCONTO = 15;
 
-/** Il giorno come numero intero, senza fusi orari. */
+/** Il giorno come numero intero, senza fusi orari. Una data che non si legge da' NaN. */
 function giorno(iso: string): number {
   const [a, m, g] = iso.split('-').map(Number);
   return Math.round(Date.UTC(a, m - 1, g) / 86_400_000);
 }
-
-const DATA = /^\d{4}-\d{2}-\d{2}$/;
 
 /**
  * Di quanto (in percento) scendono i pesi suggeriti oggi, dalla data
@@ -39,7 +37,8 @@ const DATA = /^\d{4}-\d{2}-\d{2}$/;
  * n'e' nessuna: chi comincia non riparte.
  */
 export function scontoPausa(ultimaSeduta: string | null | undefined, oggi: string): number {
-  if (!ultimaSeduta || !DATA.test(ultimaSeduta) || !DATA.test(oggi)) return 0;
+  if (!ultimaSeduta) return 0;
+  // Con una data illeggibile i giorni sono NaN, e NaN non e' mai una pausa.
   const giorni = giorno(oggi) - giorno(ultimaSeduta);
   if (giorni >= GIORNI_PAUSA_LUNGA) return SCONTO_PAUSA_LUNGA;
   if (giorni >= GIORNI_PAUSA) return SCONTO_PAUSA;

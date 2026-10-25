@@ -94,4 +94,10 @@ describe('costanza', () => {
     expect(costanza(settimanaCompleta('2026-10-19'), NaN, oggi)).toBeNull();
     expect(costanza(settimanaCompleta('2026-10-19'), 3, 'oggi')).toBeNull();
   });
+
+  it('piu\' giorni fatti di quelli previsti (il programma e\' cambiato) non fanno mancare niente in negativo', () => {
+    const c = costanza([seduta('day0', '2026-10-19'), seduta('day1', '2026-10-20'), seduta('vecchio', '2026-10-21')], 2, oggi)!;
+    expect(c).toMatchObject({ fatti: 3, mancano: 0 });
+  });
 });
+
