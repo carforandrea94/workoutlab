@@ -1,9 +1,9 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 import { DietDataService } from '../../services/diet-data.service';
 import { AppStateService } from '../../services/app-state.service';
-import { todayLocalISO } from '../../core/utils/date.util';
+import { GiornoService } from '../../core/giorno.service';
 import { DietPlan } from '../../models/diet.model';
 import { IONIC_PAGE, IONIC_LINKS } from '../../core/ionic-page';
 import { IONIC_LIST } from '../../core/ionic-list';
@@ -24,12 +24,21 @@ interface DietPlanCard {
 export class DietaComponent implements OnInit {
   cards: DietPlanCard[] = [];
 
+  private readonly giorno = inject(GiornoService);
   /**
-   * I pasti segnati come fatti oggi (id del pasto -> fatto). E' un signal perche'
+   * I pasti segnati del giorno salvato, col suo giorno. E' un signal perche'
    * arriva da una lettura asincrona: un campo semplice cambiato dopo un await non
    * farebbe ridisegnare la pagina (l'app non usa zone.js).
    */
-  private readonly fattiOggi = signal<Record<string, boolean>>({});
+  private readonly segnati = signal<{ date: string; done: Record<string, boolean> } | null>(null);
+  /**
+   * I pasti segnati come fatti oggi (id del pasto -> fatto): quelli salvati, se
+   * sono di oggi. A mezzanotte tornano vuoti da soli, anche a pagina aperta.
+   */
+  private readonly fattiOggi = computed(() => {
+    const s = this.segnati();
+    return s && s.date === this.giorno.oggi() ? s.done : {};
+  });
 
   constructor(
     public dietData: DietDataService,
@@ -52,10 +61,10 @@ export class DietaComponent implements OnInit {
     try {
       const stato = await this.appState.load();
       const c = stato.mealsCompletion;
-      this.fattiOggi.set(c && c.date === todayLocalISO() ? { ...c.done } : {});
+      this.segnati.set(c ? { date: c.date, done: { ...c.done } } : null);
     } catch {
       // Senza lo stato la card resta senza avanzamento, non senza piani.
-      this.fattiOggi.set({});
+      this.segnati.set(null);
     }
   }
 

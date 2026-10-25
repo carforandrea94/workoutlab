@@ -1,9 +1,10 @@
-import { Component, OnInit, computed, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IonButton, IonItem, IonLabel, IonList, IonListHeader, IonSpinner, IonToggle } from '@ionic/angular';
 import { IONIC_PAGE } from '../../core/ionic-page';
 import { PromemoriaService, Supporto } from '../../services/promemoria.service';
 import { ToastService } from '../../services/toast.service';
+import { GiornoService } from '../../core/giorno.service';
 import {
   ANTICIPO_MINUTI, NOMI_GIORNI, NOMI_GIORNI_LUNGHI, Promemoria, normalizzaPromemoria, prossimoPromemoria, quandoArriva
 } from '../../core/utils/promemoria.util';
@@ -37,6 +38,7 @@ export class PromemoriaComponent implements OnInit {
   readonly promemoria = signal<Promemoria>(normalizzaPromemoria(null));
   readonly supporto: Supporto;
   readonly permesso = signal<NotificationPermission | 'non-supportato'>('default');
+  private readonly giorno = inject(GiornoService);
   /** Mentre si chiede il permesso e si iscrive il telefono. */
   readonly attivazione = signal(false);
 
@@ -60,6 +62,8 @@ export class PromemoriaComponent implements OnInit {
   readonly prossimo = computed(() => {
     const p = this.promemoria();
     if (!p.giorni.length) return 'Scegli almeno un giorno: senza giorni non arriva nessun promemoria.';
+    // Il giorno dal signal: a mezzanotte "domani" diventa "oggi" da solo.
+    this.giorno.oggi();
     const adesso = new Date();
     const r = prossimoPromemoria(p, adesso);
     return r ? `Il prossimo arriva ${quandoArriva(r.invio, adesso)}.` : '';

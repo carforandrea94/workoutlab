@@ -7,6 +7,7 @@ import { iconeIonic, stileDelDispositivo } from './core/icone';
 import { transizionePagina } from './core/page-transition';
 import { provideServiceWorker } from '@angular/service-worker';
 import { PromemoriaService } from './services/promemoria.service';
+import { GiornoService } from './core/giorno.service';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -37,6 +38,9 @@ export const appConfig: ApplicationConfig = {
     }),
     // I promemoria si creano subito: ascoltano la lettura delle sedute e
     // l'uscita dall'account anche se nessuno apre la loro pagina.
-    provideAppInitializer(() => { inject(PromemoriaService); })
+    provideAppInitializer(() => { inject(PromemoriaService); }),
+    // L'orologio del giorno: a mezzanotte, e al ritorno in primo piano, ridisegna
+    // l'app se il giorno e' cambiato (vedi core/giorno.service.ts).
+    provideAppInitializer(() => { inject(GiornoService); })
   ]
 };

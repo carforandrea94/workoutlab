@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 import { WorkoutDataService } from '../../services/workout-data.service';
@@ -11,7 +11,7 @@ import { IONIC_LIST } from '../../core/ionic-list';
 import { NavController, IonAvatar, IonBadge, IonButton, IonLabel, IonListHeader, IonNote, IonProgressBar } from '@ionic/angular';
 import { IconaComponent } from '../../components/icona/icona.component';
 import { Costanza, costanza } from '../../core/utils/costanza.util';
-import { todayLocalISO } from '../../core/utils/date.util';
+import { GiornoService } from '../../core/giorno.service';
 
 @Component({
   selector: 'app-scheda-list',
@@ -28,6 +28,8 @@ export class SchedaListComponent implements OnInit {
   // avvisa nessuno - la lista restava senza "bozza" finche' qualcos'altro non
   // la ridisegnava.
   private draftDayIds = signal<ReadonlySet<string>>(new Set());
+  /** Il giorno di oggi: a mezzanotte cambia, e la pagina con lui (vedi GiornoService). */
+  private readonly giorno = inject(GiornoService);
 
   constructor(
     public workoutData: WorkoutDataService,
@@ -125,7 +127,7 @@ export class SchedaListComponent implements OnInit {
 
   /** Letta a ogni giro: le sedute arrivano dal servizio, e la settimana cambia da sola il lunedi'. */
   get costanza(): Costanza | null {
-    return costanza(this.weekly.sedute(), this.days.length, todayLocalISO());
+    return costanza(this.weekly.sedute(), this.days.length, this.giorno.oggi());
   }
 
   titoloCostanza(c: Costanza): string {
@@ -180,7 +182,7 @@ export class SchedaListComponent implements OnInit {
   }
 
   get todayWeekday(): string {
-    const raw = new Date().toLocaleDateString('it-IT', { weekday: 'long' });
+    const raw = new Date(this.giorno.oggi() + 'T00:00:00').toLocaleDateString('it-IT', { weekday: 'long' });
     return raw.charAt(0).toUpperCase() + raw.slice(1);
   }
 }

@@ -270,3 +270,42 @@ describe('SchedaListComponent — le settimane di fila', () => {
   });
 });
 
+
+/**
+ * A mezzanotte, con la Scheda aperta e senza toccarla: era "Domenica" con la
+ * settimana vecchia finche' non la si toccava (l'app non ha zone.js).
+ */
+describe('SchedaListComponent — a mezzanotte', () => {
+  afterEach(() => vi.useRealTimers());
+
+  it('da domenica a lunedi\' da sola: giorno e settimane di fila', () => {
+    // Domenica 25 ottobre, mezzo minuto prima di mezzanotte, la settimana fatta tutta.
+    vi.useFakeTimers({ toFake: ['Date', 'setTimeout', 'clearTimeout'] });
+    vi.setSystemTime(new Date(2026, 9, 25, 23, 59, 30));
+    const sedute = [{ dayId: 'd1', date: '2026-10-19' }, { dayId: 'd2', date: '2026-10-21' }, { dayId: 'd3', date: '2026-10-23' }];
+    TestBed.configureTestingModule({
+      imports: [SchedaListComponent],
+      providers: [
+        ...providerPagina(),
+        { provide: WorkoutDataService, useValue: { days: [{ id: 'd1', label: 'Petto', rec: '90"', ex: [{}] }, { id: 'd2', label: 'Schiena', rec: '90"', ex: [{}] }, { id: 'd3', label: 'Gambe', rec: '90"', ex: [{}] }], WEEK_PLAN: [{ sets: 3, reps: 10 }], hasCustomProtocol: false, protocolName: '' } },
+        { provide: WorkoutStateService, useValue: { currentWeek: 1 } },
+        { provide: AppStateService, useValue: { load: async () => ({ workoutDrafts: {} }) } },
+        { provide: WeeklyProgressService, useValue: { refresh: vi.fn(), isDone: () => false, sedute: () => sedute } },
+        { provide: WorkoutSessionStateService, useValue: { activeSession: signal<any>(null), isActiveForDay: () => false } }
+      ]
+    });
+    const fixture = TestBed.createComponent(SchedaListComponent);
+    fixture.detectChanges();
+    const root: HTMLElement = fixture.nativeElement;
+    const testo = (sel: string) => root.querySelector(sel)?.textContent!.replace(/\s+/g, ' ').trim() ?? null;
+    const giorno = () => testo('ion-list.scheda-settimana ion-item:not(.costanza) ion-note');
+    const frase = () => testo('ion-list.scheda-settimana ion-item.costanza p');
+    expect(giorno()).toBe('Domenica');
+    expect(frase()).toBe('Scheda completa questa settimana.');
+
+    // Nessun tocco e nessun detectChanges: ci pensa l'orologio del giorno.
+    vi.advanceTimersByTime(31_000);
+    expect(giorno()).toBe('Lunedì');
+    expect(frase()).toBe('0 di 3 allenamenti: ancora 3 entro domenica, per arrivare a 2.');
+  });
+});

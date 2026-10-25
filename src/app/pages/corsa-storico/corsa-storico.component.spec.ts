@@ -1,7 +1,7 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { NavController } from '@ionic/angular';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { providerPagina } from '../../../test-support/pagina';
 import { todayLocalISO } from '../../core/utils/date.util';
 import { RunningStateService } from '../../services/running-state.service';
@@ -124,5 +124,36 @@ describe('CorsaStoricoComponent — le settimane passate', () => {
     expect(monta({ caricate: false }).refresh).toHaveBeenCalledTimes(1);
     TestBed.resetTestingModule();
     expect(monta().refresh).not.toHaveBeenCalled();
+  });
+});
+
+/** A mezzanotte fra domenica e lunedi' la settimana appena finita entra nello storico, da sola. */
+describe('CorsaStoricoComponent — a mezzanotte', () => {
+  afterEach(() => vi.useRealTimers());
+
+  it('la settimana di domenica diventa passata senza toccare niente', () => {
+    vi.useFakeTimers({ toFake: ['Date', 'setTimeout', 'clearTimeout'] });
+    vi.setSystemTime(new Date(2026, 9, 25, 23, 59, 30));
+    TestBed.configureTestingModule({
+      imports: [CorsaStoricoComponent],
+      providers: [
+        ...providerPagina(),
+        { provide: NavController, useValue: { navigateForward: vi.fn() } },
+        { provide: RunningStateService, useValue: {
+          runs: signal([
+            { id: 'r1', run: { date: '2026-10-25', durationMin: 35, type: 'lento', effort: 'facile' } },
+            { id: 'r2', run: { date: '2026-10-14', durationMin: 45, type: 'lento', effort: 'dura' } }
+          ]),
+          goal: signal(null), loaded: signal(true), thisWeek: signal({ minutes: 35, runs: 1 }), refresh: vi.fn(async () => {})
+        } }
+      ]
+    });
+    const fixture = TestBed.createComponent(CorsaStoricoComponent);
+    fixture.detectChanges();
+    const settimane = () => Array.from(fixture.nativeElement.querySelectorAll('ion-accordion.week')).map((a: any) => a.value);
+    expect(settimane()).toEqual(['2026-10-12']);
+
+    vi.advanceTimersByTime(31_000);
+    expect(settimane()).toEqual(['2026-10-19', '2026-10-12']);
   });
 });

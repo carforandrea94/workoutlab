@@ -5,6 +5,7 @@ import { PromemoriaService, Supporto } from '../../services/promemoria.service';
 import { ToastService } from '../../services/toast.service';
 import { Promemoria } from '../../core/utils/promemoria.util';
 import { PromemoriaComponent } from './promemoria.component';
+import { GiornoService } from '../../core/giorno.service';
 
 /**
  * Promemoria: un interruttore, i giorni e l'ora. Si salva mentre si sceglie;
@@ -165,6 +166,14 @@ describe('PromemoriaComponent', () => {
       const { q } = await monta({ supporto: 'installa', promemoria: { attivo: true, giorni: [1], ora: '18:00' } });
       expect(q<HTMLIonToggleElement>('ion-toggle')!.disabled).toBe(false);
     });
+  });
+
+  it('a mezzanotte "domani" diventa "oggi" da solo', async () => {
+    const { testo } = await monta({ promemoria: { attivo: true, giorni: [2], ora: '18:00' } });
+    expect(testo('.promemoria-prossimo')).toBe('Il prossimo arriva domani alle 17:30.');
+    vi.setSystemTime(new Date(2026, 9, 27, 0, 0, 1));
+    TestBed.inject(GiornoService).controlla();
+    expect(testo('.promemoria-prossimo')).toBe('Il prossimo arriva oggi alle 17:30.');
   });
 
   it('se la lettura fallisce lo dice, e si riprova', async () => {

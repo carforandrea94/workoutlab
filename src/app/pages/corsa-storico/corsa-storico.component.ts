@@ -1,9 +1,9 @@
-import { Component, OnInit, computed, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 import { RunningStateService } from '../../services/running-state.service';
 import { goalPct } from '../../core/utils/run-math.util';
-import { todayLocalISO } from '../../core/utils/date.util';
+import { GiornoService } from '../../core/giorno.service';
 import { buildWeekHistory, WeekGroup } from '../../core/utils/week-history.util';
 import { IONIC_PAGE } from '../../core/ionic-page';
 import { IONIC_REFRESH, completaRefresh } from '../../core/ionic-refresh';
@@ -42,10 +42,11 @@ export class CorsaStoricoComponent extends RigaCorsa implements OnInit {
   private readonly opened = signal<ReadonlySet<string>>(new Set());
 
   readonly showAll = signal(false);
+  private readonly giorno = inject(GiornoService);
 
   /** Una settimana in piu' di quelle mostrate: quella in corso, che qui non c'e'. */
   readonly history = computed(() =>
-    buildWeekHistory(this.state.runs(), todayLocalISO(), this.showAll() ? 0 : WEEKS_SHOWN + 1)
+    buildWeekHistory(this.state.runs(), this.giorno.oggi(), this.showAll() ? 0 : WEEKS_SHOWN + 1)
   );
 
   /** Le settimane passate, dalla piu' recente. */

@@ -1,7 +1,7 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { NavController } from '@ionic/angular';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { providerPagina } from '../../../test-support/pagina';
 import { todayLocalISO } from '../../core/utils/date.util';
 import { RunningStateService } from '../../services/running-state.service';
@@ -125,5 +125,41 @@ describe('CorsaComponent — obiettivo e settimane', () => {
     expect(root.querySelectorAll('ion-list.uscite.corrente ion-item').length).toBe(1);
     expect(root.querySelector('ion-list.uscite.corrente ion-item.runadd')).not.toBeNull();
     expect(c.notaSettimana).toBe(c.weekLabel);
+  });
+});
+
+/**
+ * A mezzanotte fra domenica e lunedi', con la Corsa aperta: la settimana in
+ * corso diventa quella nuova, vuota, senza toccare niente.
+ */
+describe('CorsaComponent — a mezzanotte', () => {
+  afterEach(() => vi.useRealTimers());
+
+  it('le corse di domenica passano alla settimana scorsa, e "Questa settimana" riparte', () => {
+    vi.useFakeTimers({ toFake: ['Date', 'setTimeout', 'clearTimeout'] });
+    vi.setSystemTime(new Date(2026, 9, 25, 23, 59, 30));
+    TestBed.configureTestingModule({
+      imports: [CorsaComponent],
+      providers: [
+        ...providerPagina(),
+        { provide: NavController, useValue: { navigateForward: vi.fn() } },
+        { provide: RunningStateService, useValue: {
+          runs: signal([{ id: 'r1', run: { date: '2026-10-25', durationMin: 35, type: 'lento', effort: 'facile' } }]),
+          goal: signal(null), loaded: signal(true), thisWeek: signal({ minutes: 35, runs: 1 }), refresh: vi.fn(async () => {})
+        } }
+      ]
+    });
+    const fixture = TestBed.createComponent(CorsaComponent);
+    fixture.detectChanges();
+    const root: HTMLElement = fixture.nativeElement;
+    const righe = () => root.querySelectorAll('ion-list.uscite.corrente ion-item.runline').length;
+    const nota = () => root.querySelector('ion-list-header.sezione .sezione-nota')!.textContent;
+    expect(righe()).toBe(1);
+    expect(nota()).toBe('19 – 25 ott · 1 uscita · 35 min');
+
+    // Nessun tocco e nessun detectChanges.
+    vi.advanceTimersByTime(31_000);
+    expect(righe()).toBe(0);
+    expect(nota()).toBe('26 ott – 1 nov · nessuna uscita');
   });
 });

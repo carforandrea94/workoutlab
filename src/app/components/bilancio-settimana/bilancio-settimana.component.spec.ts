@@ -8,6 +8,7 @@ import { RunningStateService } from '../../services/running-state.service';
 import { WeeklyProgressService } from '../../services/weekly-progress.service';
 import { WorkoutDataService } from '../../services/workout-data.service';
 import { BilancioSettimanaComponent } from './bilancio-settimana.component';
+import { GiornoService } from '../../core/giorno.service';
 
 /**
  * La card "La settimana scorsa" in Account, disegnata davvero: una casella per
@@ -188,5 +189,25 @@ describe('BilancioSettimanaComponent', () => {
     expect(fixture.nativeElement.querySelector('section.bilancio')).toBeNull();
     expect(errore).toHaveBeenCalled();
     errore.mockRestore();
+  });
+
+  it('Account aperta da domenica a lunedi\': a mezzanotte il bilancio passa alla settimana appena finita', async () => {
+    const { root, fixture, pulito, casella } = await monta({
+      ...settimana,
+      sedute: [...settimana.sedute, { dayId: 'd3', date: '2026-10-28' }]
+    });
+    const letture = vi.spyOn(TestBed.inject(AppStateService), 'load');
+    expect(pulito(root.querySelector('.bilancio-testa p'))).toBe('19 – 25 ott');
+
+    // Lo stesso giorno non rilegge niente.
+    TestBed.inject(GiornoService).controlla();
+    expect(letture).not.toHaveBeenCalled();
+
+    vi.setSystemTime(new Date(2026, 10, 2, 0, 0, 1));
+    TestBed.inject(GiornoService).controlla();
+    await disegna(fixture);
+    expect(letture).toHaveBeenCalledTimes(1);
+    expect(pulito(root.querySelector('.bilancio-testa p'))).toBe('26 ott – 1 nov');
+    expect(pulito(casella('Allenamenti')!.querySelector('.bil-val'))).toBe('1 di 3');
   });
 });
