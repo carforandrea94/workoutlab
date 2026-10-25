@@ -503,6 +503,16 @@ ion-tab-bar.tabbar{touch-action:none;-webkit-touch-callout:none;}
 /* Gia' fatto questa settimana: la spunta piena accanto al chevron, non al
    posto del numero del giorno, che serve sempre. */
 .liste-ios .riga-fatto{display:flex;color:var(--accent);margin-inline-start:8px;}
+/* Le settimane di fila: un pallino per settimana, pieno d'accento se completa,
+   spento se no. Quella in corso, finche' e' aperta, e' un anello: si puo'
+   ancora riempire. Cambia solo il colore, e solo quando una settimana si
+   completa: la riga si vede tutti i giorni, un ingresso animato sarebbe rumore. */
+.liste-ios ion-item.costanza .settimane{display:flex;align-items:center;gap:5px;margin-inline-start:12px;}
+.liste-ios ion-item.costanza .settimana{width:8px;height:8px;border-radius:50%;background:var(--restbar-off);transition:background-color .2s ease,box-shadow .2s ease;}
+.liste-ios ion-item.costanza .settimana.completa{background:var(--accent);}
+.liste-ios ion-item.costanza .settimana.in-corso:not(.completa){background:transparent;box-shadow:inset 0 0 0 1.5px var(--accent);}
+/* Sotto i pesi dell'anteprima: il passo in piu' si nota, nel colore d'accento. */
+.piano-fonte.passo app-icona{color:var(--accent);}
 /* Le intestazioni di sezione delle pagine interne sono quelle delle tab
    (ion-list-header.sezione): un titolo, non un'etichetta in maiuscoletto
    grigio. Piu' aria sopra che sotto, cosi' il titolo sta col gruppo che apre. */
@@ -917,6 +927,12 @@ ion-item-option.elimina{--background:var(--state-danger);--color:#fff;font-weigh
 .liste-ios input.data-riga{background:none;border:none;outline:none;padding:0;margin:0;font:inherit;font-size:var(--text-lg);font-variant-numeric:tabular-nums;color:var(--label-2);text-align:right;min-height:44px;cursor:pointer;}
 .liste-ios input.data-riga:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:var(--r-xs);}
 .liste-ios input.data-riga::-webkit-calendar-picker-indicator{opacity:.5;cursor:pointer;}
+.liste-ios input.data-riga:disabled{opacity:.4;cursor:default;}
+/* Il mio obiettivo: il nome e, sotto, cosa vuol dire, come le misure in Misure. */
+.obiettivo .obiettivo-voce{display:flex;flex-direction:column;gap:2px;padding:9px 0;}
+.obiettivo .obiettivo-nome{font-size:var(--text-lg);font-weight:600;line-height:1.3;color:var(--label);white-space:normal;}
+.obiettivo .obiettivo-spiega{font-size:var(--text-sm);line-height:1.35;color:var(--label-2);white-space:normal;}
+.obiettivo .traguardo-errore{color:var(--state-danger-text);}
 .liste-ios ion-label label{cursor:inherit;}
 /* Il valore di una misura: a destra della riga, stretto quanto un numero. */
 .liste-ios ion-input.misura-valore{flex:0 0 auto;width:118px;min-height:44px;margin-inline-start:8px;}
@@ -989,6 +1005,7 @@ ion-card.andamento-card ion-card-title{font-size:var(--text-lg);font-weight:600;
 .andamento-card .lettura-unita{font-size:var(--text-lg);font-weight:600;color:var(--label-2);}
 .andamento-card .lettura-quando{margin:3px 0 0;font-size:var(--text-sm);line-height:1.4;color:var(--label-2);}
 .andamento-card .lettura-quando .delta{font-size:inherit;font-weight:600;color:var(--label);}
+.andamento-card .lettura-traguardo{margin:2px 0 0;font-size:var(--text-sm);line-height:1.4;color:var(--label-2);}
 ion-card.andamento-card ion-card-content{padding:10px 8px 10px;}
 /* Il riquadro del grafico: si tocca e si trascina in orizzontale (in verticale la pagina scorre ancora). */
 .andamento-piano{border-radius:var(--r-md);outline:none;touch-action:pan-y;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;cursor:crosshair;}
@@ -1000,6 +1017,8 @@ ion-card.andamento-card ion-card-content{padding:10px 8px 10px;}
 .andamento-piano .sfuma-basso{stop-color:var(--accent);stop-opacity:0;}
 .andamento-piano .linea{fill:none;stroke:var(--accent);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
 .andamento-piano .mirino{stroke:var(--label-3);stroke-width:1;shape-rendering:crispEdges;}
+/* Il traguardo: una linea di riferimento, tratteggiata e nel colore del testo secondario, sotto la linea dei dati. */
+.andamento-piano .traguardo{stroke:var(--label-3);stroke-width:1;stroke-dasharray:4 4;shape-rendering:crispEdges;}
 .andamento-piano .pallino{fill:var(--accent);stroke:var(--surface-card);stroke-width:2;}
 .andamento-piano .pallino.scelto{stroke-width:2.5;}
 .andamento-vuoto{margin:0;padding:18px 8px 10px;font-size:var(--text-sm);line-height:1.45;color:var(--label-2);text-align:center;}

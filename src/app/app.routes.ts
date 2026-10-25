@@ -133,6 +133,11 @@ export const routes: Routes = [
         path: 'account/impostazioni',
         loadComponent: () => import('./pages/impostazioni/impostazioni.component').then(m => m.ImpostazioniComponent)
       },
+      {
+        // Dove l'utente vuole arrivare: si salva mentre si sceglie, come le Impostazioni.
+        path: 'account/obiettivo',
+        loadComponent: () => import('./pages/obiettivo/obiettivo.component').then(m => m.ObiettivoComponent)
+      },
 
       // ---- Misure, dentro Account ----
       // Misure e' il grafico dell'andamento, e da li' si registra (prima l'andamento

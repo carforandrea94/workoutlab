@@ -223,3 +223,64 @@ describe('opzioniCarico — cluster e ordine', () => {
     expect(zero).toEqual(opzioniCarico(dati()));
   });
 });
+
+describe('opzioniCarico — un passo avanti o indietro', () => {
+  it('tutte le ripetizioni uscite: dopo l\'ultima volta, "Prova di più" con un passo', () => {
+    const opzioni = opzioniCarico(dati({ piu: true }));
+    expect(opzioni.map(o => o.chiave)).toEqual(['ultima', 'piu', 'rm', 'programma']);
+    expect(opzioni[1]).toEqual({
+      chiave: 'piu', titolo: 'Prova di più',
+      dettaglio: 'Il 03/10 sono uscite tutte le ripetizioni: un passo in più',
+      avviso: null, kg: 35.5, breve: '+2,5 kg sul 03/10'
+    });
+    // La serie 2 era a 32,5: il passo e' sul suo peso.
+    expect(opzioniCarico(dati({ serie: 1, piu: true }))[1].kg).toBe(35);
+  });
+
+  it('senza un peso dell\'ultima volta non c\'e\' un passo da fare', () => {
+    expect(opzioniCarico(dati({ serie: 4, piu: true })).map(o => o.chiave)).toEqual(['rm', 'programma']);
+  });
+
+  it('con la fatica dell\'ordine il passo avanti non c\'e\': si contraddirebbero', () => {
+    const fatica = { percento: 5, motivo: 'Oggi arrivi qui con un esercizio di Petto in più' };
+    expect(opzioniCarico(dati({ piu: true, fatica })).map(o => o.chiave)).toEqual(['ultima', 'rm', 'programma']);
+  });
+
+  it('dopo una pausa "Per ripartire": il peso dell\'ultima volta meno lo sconto, e le stime scendono', () => {
+    const tabella = rmTable(100);
+    const riga10 = tabella.find(r => r.reps === 10)!;
+    const [ultima, ripresa, rm, programma] = opzioniCarico(dati({ pausa: 5, piu: true, rmRows: tabella }));
+    expect(ripresa).toEqual({
+      chiave: 'ripresa', titolo: 'Per ripartire',
+      dettaglio: 'Il peso del 03/10 meno il 5%: si riprende il ritmo',
+      avviso: null, kg: Math.round(33 * 0.95 * 2) / 2, breve: '−5% sul 03/10'
+    });
+    // L'ultima volta resta un fatto, con la ragione per cui oggi potrebbe pesare di piu'.
+    expect(ultima).toMatchObject({ kg: 33, avviso: 'Dopo una pausa: con questo peso potrebbero uscirne meno.' });
+    expect(rm.kg).toBe(Math.round(riga10.load * 0.95 * 2) / 2);
+    expect(rm.dettaglio).toBe(`${riga10.percent}% del massimale stimato, −5% per ripartire`);
+    expect(programma.breve).toBe('programma 85%, −5% per ripartire');
+  });
+
+  it('pausa e ordine insieme si sommano, fino al 15%, e la fatica resta la ragione detta', () => {
+    const fatica = { percento: 10, motivo: 'Oggi arrivi qui con 2 esercizi di Petto in più' };
+    const [ultima, ripresa, , programma] = opzioniCarico(dati({ pausa: 10, fatica }));
+    expect(ultima.avviso).toBe('Oggi arrivi qui con 2 esercizi di Petto in più: con questo peso potrebbero uscirne meno.');
+    // "Per ripartire" e' il passo indietro della pausa, non della fatica.
+    expect(ripresa.kg).toBe(Math.round(33 * 0.9 * 2) / 2);
+    expect(programma.kg).toBe(Math.round(40.5 * 0.85 * 2) / 2);
+    expect(programma.breve).toBe('programma 85%, −15% per ordine e ripresa');
+  });
+
+  it('senza pausa e senza passo niente cambia', () => {
+    expect(opzioniCarico(dati({ pausa: 0, piu: false }))).toEqual(opzioniCarico(dati()));
+    expect(opzioniCarico(dati({ pausa: null }))).toEqual(opzioniCarico(dati()));
+  });
+
+  it('il passo e lo sconto si riconoscono anche dalla riga della serie', () => {
+    const conPasso = opzioniCarico(dati({ piu: true }));
+    expect(fonteDelCarico(conPasso, '', '35,5')).toBe('+2,5 kg sul 03/10');
+    const conPausa = opzioniCarico(dati({ pausa: 10 }));
+    expect(fonteDelCarico(conPausa, '', '29,5')).toBe('−10% sul 03/10');
+  });
+});

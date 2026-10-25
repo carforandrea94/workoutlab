@@ -1,0 +1,62 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/account" aria-label="Indietro"></ion-back-button>
+    </ion-buttons>
+    <ion-title>
+      <div class="navtitle">Il mio obiettivo</div>
+    </ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="liste-ios">
+  <div class="wrap obiettivo">
+    <div *ngIf="caricamento()" class="history-empty"><ion-spinner name="crescent" aria-label="Caricamento"></ion-spinner></div>
+
+    <div *ngIf="!caricamento() && errore()" class="history-empty">
+      {{ errore() }}<br>
+      <ion-button class="savebtn mt-3" (click)="carica()">Riprova</ion-button>
+    </div>
+
+    <ng-container *ngIf="!caricamento() && !errore()">
+      <!-- Una scelta sola, come una voce delle Impostazioni di iOS: si salva col tocco. -->
+      <ion-list [inset]="true" class="obiettivi">
+        <ion-radio-group [value]="obiettivo()?.tipo" (ionChange)="scegli($event.detail.value)" aria-label="Il mio obiettivo">
+          <ion-item *ngFor="let t of tipi">
+            <ion-radio [value]="t" justify="space-between" labelPlacement="start">
+              <span class="obiettivo-voce">
+                <span class="obiettivo-nome">{{ nomi[t] }}</span>
+                <span class="obiettivo-spiega">{{ spiegazioni[t] }}</span>
+              </span>
+            </ion-radio>
+          </ion-item>
+        </ion-radio-group>
+      </ion-list>
+      <p class="nota-sotto">Serve all'app per leggere i tuoi progressi nella direzione giusta. Puoi cambiarlo quando vuoi.</p>
+
+      <!-- Il traguardo: solo per chi lavora sul peso. Si legge nel grafico del peso. -->
+      <ng-container *ngIf="conTraguardo()">
+        <ion-list-header class="sezione">
+          <ion-label>Traguardo</ion-label>
+        </ion-list-header>
+        <ion-list [inset]="true" class="campi traguardo">
+          <ion-item>
+            <ion-label><label for="traguardo-peso">Peso</label></ion-label>
+            <ion-input id="traguardo-peso" slot="end" class="a-destra misura-valore" type="text" inputmode="decimal"
+              aria-label="Peso da raggiungere" placeholder="—" [value]="pesoScritto()"
+              (ionChange)="impostaPeso($event.detail.value)">
+              <span slot="end" class="unita">kg</span>
+            </ion-input>
+          </ion-item>
+          <ion-item>
+            <ion-label><label for="traguardo-data">Entro</label></ion-label>
+            <input id="traguardo-data" slot="end" class="data-riga" type="date" [min]="oggi"
+              [value]="obiettivo()?.entro ?? ''" [disabled]="obiettivo()?.peso == null" (change)="impostaData($event)" />
+          </ion-item>
+        </ion-list>
+        <p class="nota-sotto traguardo-errore" *ngIf="pesoSbagliato()" role="alert">Scrivi un peso fra {{ pesoMinimo }} e {{ pesoMassimo }} kg.</p>
+        <p class="nota-sotto" *ngIf="!pesoSbagliato()">Facoltativo, e la data anche. Il traguardo compare nel grafico del peso, in Misure, con quanto manca.</p>
+      </ng-container>
+    </ng-container>
+  </div>
+</ion-content>

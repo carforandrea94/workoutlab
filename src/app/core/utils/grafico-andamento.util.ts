@@ -33,6 +33,11 @@ export interface DisegnoAndamento {
   date: TaccaData[];
   /** Pochi punti: si disegnano tutti. Tanti: solo l'ultimo, gli altri farebbero un rosario. */
   conPallini: boolean;
+  /**
+   * La linea del traguardo, se c'e': la quota e dove sta la sua scritta, sopra
+   * la linea o, se sopra non c'e' posto, sotto.
+   */
+  traguardo: { y: number; scrittaY: number } | null;
 }
 
 export const MESI = ['gen', 'feb', 'mar', 'apr', 'mag', 'giu', 'lug', 'ago', 'set', 'ott', 'nov', 'dic'];
@@ -133,18 +138,23 @@ export function taccheDate(primo: string, ultimo: string): { date: string; testo
 /**
  * Il grafico: i punti in proporzione al tempo (una misura dopo tre settimane
  * sta piu' lontana di una dopo tre giorni), la scala sulle tacche tonde.
+ *
+ * Col traguardo (il peso da raggiungere, vedi obiettivo.util) la scala lo
+ * contiene: la distanza fra la linea e il traguardo si vede per quella che e'.
  */
-export function disegnaAndamento(punti: PuntoMisura[], larghezza: number, altezza: number): DisegnoAndamento {
+export function disegnaAndamento(punti: PuntoMisura[], larghezza: number, altezza: number, traguardo: number | null = null): DisegnoAndamento {
   const piano = {
     x0: MARGINE.sinistra,
     x1: Math.max(MARGINE.sinistra + 1, larghezza - MARGINE.destra),
     y0: MARGINE.sopra,
     y1: Math.max(MARGINE.sopra + 1, altezza - MARGINE.sotto)
   };
-  const vuoto: DisegnoAndamento = { larghezza, altezza, piano, linea: '', area: '', punti: [], valori: [], date: [], conPallini: false };
+  const vuoto: DisegnoAndamento = { larghezza, altezza, piano, linea: '', area: '', punti: [], valori: [], date: [], conPallini: false, traguardo: null };
   if (!punti.length) return vuoto;
 
   const valori = punti.map(p => p.value);
+  const conTraguardo = traguardo !== null && isFinite(traguardo);
+  if (conTraguardo) valori.push(traguardo!);
   const tacche = taccheValori(Math.min(...valori), Math.max(...valori));
   const vMin = tacche[0];
   const vMax = tacche[tacche.length - 1];
@@ -173,8 +183,14 @@ export function disegnaAndamento(punti: PuntoMisura[], larghezza: number, altezz
     punti: disegnati,
     valori: tacche.map(v => ({ y: yDi(v), testo: numeroIt(v) })),
     date,
-    conPallini: disegnati.length < 2 || (piano.x1 - piano.x0) / (disegnati.length - 1) >= PASSO_PALLINI
+    conPallini: disegnati.length < 2 || (piano.x1 - piano.x0) / (disegnati.length - 1) >= PASSO_PALLINI,
+    traguardo: conTraguardo ? scrittaDelTraguardo(yDi(traguardo!), piano.y0) : null
   };
+}
+
+/** La scritta "traguardo" sta sopra la linea; troppo in alto, sotto. */
+function scrittaDelTraguardo(y: number, y0: number): { y: number; scrittaY: number } {
+  return { y, scrittaY: y - 5 < y0 + 9 ? y + 13 : y - 5 };
 }
 
 /** L'indice del punto piu' vicino in orizzontale: il dito cerca una data, non una linea di due pixel. */

@@ -12,12 +12,13 @@ const PESO: PuntoMisura[] = [
 @Component({
   standalone: true,
   imports: [GraficoAndamentoComponent],
-  template: `<app-grafico-andamento [punti]="punti()" [nome]="nome()" [unita]="unita()"></app-grafico-andamento>`
+  template: `<app-grafico-andamento [punti]="punti()" [nome]="nome()" [unita]="unita()" [traguardo]="traguardo()"></app-grafico-andamento>`
 })
 class Prova {
   readonly punti = signal<PuntoMisura[]>(PESO);
   readonly nome = signal('Peso');
   readonly unita = signal('kg');
+  readonly traguardo = signal<{ valore: number; testo: string } | null>(null);
 }
 
 /**
@@ -192,5 +193,26 @@ describe('GraficoAndamentoComponent', () => {
     expect(pallini.length).toBe(4);
     expect(pallini[3].classList.contains('ultimo')).toBe(true);
     expect(Number(pallini[3].getAttribute('r'))).toBeGreaterThan(Number(pallini[0].getAttribute('r')));
+  });
+
+  it('senza traguardo niente linea e niente riga in testa', () => {
+    const { q } = monta();
+    expect(q('.andamento-piano line.traguardo')).toBeNull();
+    expect(q('.lettura-traguardo')).toBeNull();
+  });
+
+  it('col traguardo: la linea tratteggiata con la sua scritta, e in testa quanto manca', () => {
+    const fixture = TestBed.createComponent(Prova);
+    fixture.componentInstance.traguardo.set({ valore: 105, testo: 'Traguardo 105 kg · mancano 8,1 kg' });
+    fixture.detectChanges();
+    const root: HTMLElement = fixture.nativeElement;
+    const linea = root.querySelector('.andamento-piano line.traguardo')!;
+    expect(linea).not.toBeNull();
+    expect(linea.getAttribute('y1')).toBe(linea.getAttribute('y2'));
+    expect(root.querySelector('.andamento-piano text.traguardo-scritta')!.textContent!.trim()).toBe('traguardo');
+    expect(root.querySelector('.lettura-traguardo')!.textContent!.trim()).toBe('Traguardo 105 kg · mancano 8,1 kg');
+    // Sotto la linea dei dati: la linea del traguardo viene prima nel disegno.
+    const ordine = Array.from(root.querySelectorAll('.andamento-piano svg > *')).map(e => e.getAttribute('class'));
+    expect(ordine.indexOf('traguardo')).toBeLessThan(ordine.indexOf('linea'));
   });
 });

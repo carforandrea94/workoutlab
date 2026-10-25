@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef, ViewChild } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, Injector, ViewChild, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MeasurementDataService } from '../../services/measurement-data.service';
 import {
@@ -21,6 +21,9 @@ import { BarraAzioneDirective } from '../../core/directives/barra-azione.directi
 import { IconaComponent } from '../../components/icona/icona.component';
 import { GraficoAndamentoComponent } from '../../components/grafico-andamento/grafico-andamento.component';
 import { PuntoMisura, dataBreve, dataLunga, numeroIt, uguale, variazioneIt } from '../../core/utils/grafico-andamento.util';
+import { AppStateService } from '../../services/app-state.service';
+import { Obiettivo, normalizzaObiettivo, testoTraguardo } from '../../core/utils/obiettivo.util';
+import { todayLocalISO } from '../../core/utils/date.util';
 
 interface FieldOption {
   field: MeasureField;
@@ -91,6 +94,13 @@ export class MisureComponent implements OnInit {
   righe: RigaMisurazione[] = [];
   /** Per lo screen reader, a ogni cambio di misura. */
   annuncio = '';
+  /**
+   * Il traguardo del peso (vedi obiettivo.util): la linea sul grafico del peso,
+   * e in testa quanto manca dall'ultima pesata. null sulle altre misure.
+   */
+  traguardo: { valore: number; testo: string } | null = null;
+  private obiettivo: Obiettivo | null = null;
+  private readonly injector = inject(Injector);
 
   @ViewChild(IonContent) content?: IonContent;
 
@@ -149,11 +159,12 @@ export class MisureComponent implements OnInit {
     );
 
     try {
-      const [history, lastValues] = await Promise.race([
-        Promise.all([this.data.loadHistory(), this.data.getLastValues()]),
+      const [history, lastValues, obiettivo] = await Promise.race([
+        Promise.all([this.data.loadHistory(), this.data.getLastValues(), this.leggiObiettivo()]),
         timeout
       ]);
       this.allEntries = history;
+      this.obiettivo = obiettivo;
 
       const buildGroup = (fields: MeasureField[]): FieldOption[] =>
         fields.map(field => ({
@@ -181,6 +192,16 @@ export class MisureComponent implements OnInit {
     } finally {
       this.loading = false;
       this.cdr.detectChanges();
+    }
+  }
+
+  /** Il traguardo e' un di piu' della pagina: se la lettura non va, il grafico c'e' lo stesso. */
+  private async leggiObiettivo(): Promise<Obiettivo | null> {
+    try {
+      const stato = await this.injector.get(AppStateService).load();
+      return normalizzaObiettivo(stato.obiettivo);
+    } catch {
+      return null;
     }
   }
 
@@ -251,6 +272,8 @@ export class MisureComponent implements OnInit {
 
     const ultimo = this.punti[this.punti.length - 1];
     const primo = this.punti[0];
+    const testo = field.key === 'peso' && ultimo ? testoTraguardo(this.obiettivo, ultimo.value, todayLocalISO()) : null;
+    this.traguardo = testo && this.obiettivo?.peso != null ? { valore: this.obiettivo.peso, testo } : null;
     this.annuncio = !ultimo
       ? `${CATEGORY_LABELS[this.categoria]}. ${INVITO_GRUPPO[this.categoria]}`
       : this.punti.length < 2

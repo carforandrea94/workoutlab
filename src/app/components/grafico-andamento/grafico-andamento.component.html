@@ -7,6 +7,9 @@
       </p>
       <p class="lettura-quando">{{ l.quando }} · <span class="delta">{{ l.confronto }}</span></p>
     }
+    @if (traguardo(); as tg) {
+      <p class="lettura-traguardo">{{ tg.testo }}</p>
+    }
   </ion-card-header>
 
   <ion-card-content>
@@ -34,6 +37,10 @@
               <text class="asse" [attr.x]="t.x" [attr.y]="d.altezza - 6" [attr.text-anchor]="t.ancora">{{ t.testo }}</text>
             }
             <path class="area" [attr.d]="d.area" [attr.fill]="'url(#' + sfumatura + ')'" />
+            @if (d.traguardo; as t) {
+              <line class="traguardo" [attr.x1]="d.piano.x0" [attr.x2]="d.piano.x1" [attr.y1]="t.y" [attr.y2]="t.y" />
+              <text class="asse traguardo-scritta" [attr.x]="d.piano.x0 + 2" [attr.y]="t.scrittaY">traguardo</text>
+            }
             <path class="linea" [attr.d]="d.linea" />
             @if (mirino(); as m) {
               <line class="mirino" [attr.x1]="m.x" [attr.x2]="m.x" [attr.y1]="d.piano.y0" [attr.y2]="d.piano.y1" />

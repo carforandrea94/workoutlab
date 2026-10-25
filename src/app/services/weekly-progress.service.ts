@@ -3,7 +3,7 @@ import { WorkoutSessionsService } from './workout-sessions.service';
 import { todayLocalISO, mondayISO } from '../core/utils/date.util';
 
 /** Il minimo che serve per decidere se un giorno e' gia' stato fatto. */
-interface SessionMark {
+export interface SessionMark {
   dayId: string;
   date: string;
 }
@@ -36,6 +36,12 @@ export class WeeklyProgressService {
    *  zoneless ed e' lui a garantire il ridisegno quando i dati arrivano. */
   private saved = signal<SessionMark[]>([]);
   private inFlight: Promise<void> | null = null;
+  private letto = false;
+
+  /** Le sedute sono arrivate almeno una volta: da qui in poi si leggono senza aspettare. */
+  get caricato(): boolean {
+    return this.letto;
+  }
 
   constructor(private sessions: WorkoutSessionsService) {}
 
@@ -55,6 +61,7 @@ export class WeeklyProgressService {
           if (session?.dayId && session?.date) marks.push({ dayId: session.dayId, date: session.date });
         }
         this.saved.set(marks);
+        this.letto = true;
       })
       .catch(e => {
         console.error('Lettura delle sedute per le spunte settimanali fallita:', e);
@@ -67,6 +74,18 @@ export class WeeklyProgressService {
   isDone(dayId: string): boolean {
     const week = mondayISO(todayLocalISO());
     return this.saved().some(s => s.dayId === dayId && mondayISO(s.date) === week);
+  }
+
+  /** Le sedute salvate, giorno e data: per le settimane di fila (vedi costanza.util). */
+  sedute(): readonly SessionMark[] {
+    return this.saved();
+  }
+
+  /** La data dell'ultima seduta salvata, di qualunque giorno; null se non ce n'e' nessuna. */
+  ultimaSeduta(): string | null {
+    let ultima: string | null = null;
+    for (const s of this.saved()) if (ultima === null || s.date > ultima) ultima = s.date;
+    return ultima;
   }
 
   /** Tutti i giorni gia' fatti in questa settimana. */
