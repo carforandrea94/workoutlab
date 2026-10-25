@@ -24,6 +24,7 @@ import { PuntoMisura, dataBreve, dataLunga, numeroIt, uguale, variazioneIt } fro
 import { AppStateService } from '../../services/app-state.service';
 import { Obiettivo, normalizzaObiettivo, testoTraguardo } from '../../core/utils/obiettivo.util';
 import { todayLocalISO } from '../../core/utils/date.util';
+import { mediaMobile } from '../../core/utils/settimana.util';
 
 interface FieldOption {
   field: MeasureField;
@@ -91,12 +92,20 @@ export class MisureComponent implements OnInit {
   selectedField: MeasureField | null = null;
 
   punti: PuntoMisura[] = [];
+  /**
+   * Sul peso la linea e' la media dei sette giorni (vedi settimana.util): un
+   * giorno piu' pesante non la sposta. Le pesate vere restano sotto, come
+   * punti, e nella tabella. null sulle altre misure.
+   */
+  pesate: PuntoMisura[] | null = null;
+  /** Il nome sopra il grafico: sul peso dice che la linea e' una media. */
+  nomeGrafico = '';
   righe: RigaMisurazione[] = [];
   /** Per lo screen reader, a ogni cambio di misura. */
   annuncio = '';
   /**
    * Il traguardo del peso (vedi obiettivo.util): la linea sul grafico del peso,
-   * e in testa quanto manca dall'ultima pesata. null sulle altre misure.
+   * e in testa quanto manca dalla media di oggi. null sulle altre misure.
    */
   traguardo: { valore: number; testo: string } | null = null;
   private obiettivo: Obiettivo | null = null;
@@ -256,29 +265,35 @@ export class MisureComponent implements OnInit {
     }
 
     const history = this.allEntries.slice().reverse(); // dal piu' vecchio al piu' recente
-    this.punti = history
+    const misurazioni = history
       .map(e => ({ date: e.date, value: this.data.parseMeasureValue(e[field.key] as string | null) }))
       .filter((p): p is PuntoMisura => p.value !== null);
+    const media = field.key === 'peso';
+    this.punti = media ? mediaMobile(misurazioni) : misurazioni;
+    this.pesate = media ? misurazioni : null;
+    this.nomeGrafico = media ? `${field.label} · media di 7 giorni` : field.label;
 
     const conAnno = this.punti.length > 0 && this.punti[0].date.slice(0, 4) !== this.punti[this.punti.length - 1].date.slice(0, 4);
-    this.righe = this.punti.map((p, i) => ({
+    // La tabella resta delle misurazioni vere: e' li' che si legge la pesata di un giorno.
+    this.righe = misurazioni.map((p, i) => ({
       date: p.date,
       data: dataLunga(p.date),
       valore: numeroIt(p.value),
       cambio: i === 0 ? 'Prima misura'
-        : uguale(p.value - this.punti[i - 1].value) ? 'Uguale alla precedente'
-        : `${variazioneIt(p.value - this.punti[i - 1].value)} ${field.unit} dalla precedente`
+        : uguale(p.value - misurazioni[i - 1].value) ? 'Uguale alla precedente'
+        : `${variazioneIt(p.value - misurazioni[i - 1].value)} ${field.unit} dalla precedente`
     })).reverse();
 
     const ultimo = this.punti[this.punti.length - 1];
     const primo = this.punti[0];
     const testo = field.key === 'peso' && ultimo ? testoTraguardo(this.obiettivo, ultimo.value, todayLocalISO()) : null;
     this.traguardo = testo && this.obiettivo?.peso != null ? { valore: this.obiettivo.peso, testo } : null;
+    const detto = media ? `${field.label}, media di 7 giorni` : field.label;
     this.annuncio = !ultimo
       ? `${CATEGORY_LABELS[this.categoria]}. ${INVITO_GRUPPO[this.categoria]}`
       : this.punti.length < 2
         ? `${field.label}: ${numeroIt(ultimo.value)} ${field.unit}, una sola misurazione`
-        : `${field.label}: ${numeroIt(ultimo.value)} ${field.unit}, ` + (uguale(ultimo.value - primo.value)
+        : `${detto}: ${numeroIt(ultimo.value)} ${field.unit}, ` + (uguale(ultimo.value - primo.value)
           ? `uguale al ${dataBreve(primo.date, conAnno)}`
           : `${variazioneIt(ultimo.value - primo.value)} ${field.unit} dal ${dataBreve(primo.date, conAnno)}`);
   }

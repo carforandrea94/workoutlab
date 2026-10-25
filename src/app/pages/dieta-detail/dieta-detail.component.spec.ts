@@ -144,6 +144,13 @@ describe('DietaDetailComponent', () => {
       expect(patchField).toHaveBeenCalledWith('mealsCompletion', expect.objectContaining({ done: { m1: true, m2: false } }));
     });
 
+    it('il giorno va anche nella storia dei pasti, per il bilancio della settimana', async () => {
+      const { tutti, aggiorna, patchField } = await monta('list');
+      tutti('.meal-check')[0].click();
+      await aggiorna();
+      await vi.waitFor(() => expect(patchField).toHaveBeenCalledWith('pastiGiorni', { [todayLocalISO()]: { fatti: 1, totali: 2 } }));
+    });
+
     it('da tastiera: Spazio e Invio la cambiano, e di nuovo toglie la spunta', async () => {
       const { tutti, tasto, aggiorna } = await monta('list');
       tasto(tutti('.meal-check')[1], ' ');

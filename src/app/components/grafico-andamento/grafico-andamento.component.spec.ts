@@ -12,13 +12,14 @@ const PESO: PuntoMisura[] = [
 @Component({
   standalone: true,
   imports: [GraficoAndamentoComponent],
-  template: `<app-grafico-andamento [punti]="punti()" [nome]="nome()" [unita]="unita()" [traguardo]="traguardo()"></app-grafico-andamento>`
+  template: `<app-grafico-andamento [punti]="punti()" [nome]="nome()" [unita]="unita()" [traguardo]="traguardo()" [pesate]="pesate()"></app-grafico-andamento>`
 })
 class Prova {
   readonly punti = signal<PuntoMisura[]>(PESO);
   readonly nome = signal('Peso');
   readonly unita = signal('kg');
   readonly traguardo = signal<{ valore: number; testo: string } | null>(null);
+  readonly pesate = signal<PuntoMisura[] | null>(null);
 }
 
 /**
@@ -214,5 +215,63 @@ describe('GraficoAndamentoComponent', () => {
     // Sotto la linea dei dati: la linea del traguardo viene prima nel disegno.
     const ordine = Array.from(root.querySelectorAll('.andamento-piano svg > *')).map(e => e.getAttribute('class'));
     expect(ordine.indexOf('traguardo')).toBeLessThan(ordine.indexOf('linea'));
+  });
+
+  describe('con le pesate sotto la media', () => {
+    const PESATE: PuntoMisura[] = [
+      { date: '2026-10-19', value: 114 }, { date: '2026-10-21', value: 113 }, { date: '2026-10-23', value: 112 }
+    ];
+    const MEDIA: PuntoMisura[] = [
+      { date: '2026-10-19', value: 114 }, { date: '2026-10-21', value: 113.5 }, { date: '2026-10-23', value: 113 }
+    ];
+    function conPesate(traguardo: { valore: number; testo: string } | null = null) {
+      const m = monta(MEDIA);
+      m.fixture.componentInstance.pesate.set(PESATE);
+      m.fixture.componentInstance.traguardo.set(traguardo);
+      m.fixture.detectChanges();
+      return m;
+    }
+
+    it('un punto grigio per pesata, e la linea senza i suoi pallini (resta l\'ultimo)', () => {
+      const { fixture } = conPesate();
+      const root: HTMLElement = fixture.nativeElement;
+      expect(root.querySelectorAll('.andamento-piano circle.pesata').length).toBe(3);
+      expect(root.querySelector('.andamento-piano path.area')).toBeNull();
+      expect(Array.from(root.querySelectorAll('.andamento-piano circle.pallino')).map(c => c.getAttribute('class'))).toEqual(['pallino ultimo']);
+    });
+
+    it('in testa il valore della media e la pesata di quel giorno', () => {
+      const { testo, tasto } = conPesate();
+      expect(testo('.lettura')).toBe('113kg');
+      expect(testo('.lettura-quando')).toBe('23 ott · pesata 112 kg · -1 kg dal 19 ott');
+      tasto('ArrowLeft');
+      expect(testo('.lettura')).toBe('113,5kg');
+      expect(testo('.lettura-quando')).toBe('21 ott · pesata 113 kg · -0,5 kg dal 19 ott');
+    });
+
+    it('lo screen reader sente la media e la pesata', () => {
+      const { piano } = conPesate();
+      expect(piano().getAttribute('aria-valuetext')).toBe('23 ottobre 2026: 113 kg, pesata 112 kg');
+    });
+
+    it('la legenda dice le due serie con la forma del segno; col traguardo anche lui', () => {
+      const { q, fixture } = conPesate();
+      const leggenda = () => q('.leggenda');
+      expect(leggenda()!.getAttribute('aria-hidden')).toBe('true');
+      const voci = () => Array.from(leggenda()!.querySelectorAll('span')).map(s => [s.querySelector('i')!.className, s.textContent!.trim()]);
+      expect(voci()).toEqual([['m', 'media di 7 giorni'], ['p', 'pesate']]);
+      fixture.componentInstance.traguardo.set({ valore: 110, testo: 'Traguardo 110 kg · mancano 3 kg' });
+      fixture.detectChanges();
+      expect(voci()).toEqual([['m', 'media di 7 giorni'], ['p', 'pesate'], ['t', 'traguardo']]);
+    });
+
+    it('senza pesate niente legenda e niente pesata in testa', () => {
+      const { q, testo, piano } = monta();
+      expect(q('.leggenda')).toBeNull();
+      expect(q('circle.pesata')).toBeNull();
+      expect(q('.andamento-piano path.area')).not.toBeNull();
+      expect(testo('.lettura-quando')).not.toContain('pesata');
+      expect(piano().getAttribute('aria-valuetext')).not.toContain('pesata');
+    });
   });
 });

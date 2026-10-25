@@ -1,0 +1,25 @@
+<div #corpo class="storia-massimale">
+  @if (testi(); as t) {
+    <p class="storia-cap"><span>{{ t.quante }}</span><span class="storia-cambio">{{ t.cambio }}</span></p>
+    @let d = disegno();
+    <svg role="img" [attr.aria-label]="t.descrizione" [attr.width]="d.larghezza" [attr.height]="d.altezza"
+      [attr.viewBox]="'0 0 ' + d.larghezza + ' ' + d.altezza">
+      @for (v of d.valori; track v.testo) {
+        <line class="griglia" [attr.x1]="d.piano.x0" [attr.x2]="d.piano.x1" [attr.y1]="v.y" [attr.y2]="v.y" />
+        <text class="asse" aria-hidden="true" [attr.x]="d.piano.x1 + 8" [attr.y]="v.y + 4">{{ v.testo }}</text>
+      }
+      @for (g of d.date; track g.testo) {
+        <text class="asse" aria-hidden="true" [attr.x]="g.x" [attr.y]="d.altezza - 6" [attr.text-anchor]="g.ancora">{{ g.testo }}</text>
+      }
+      <path class="linea" [attr.d]="d.linea" />
+      @if (d.conPallini) {
+        @for (p of d.punti; track p.date; let ultimo = $last) {
+          @if (!ultimo) { <circle class="pallino" [attr.cx]="p.x" [attr.cy]="p.y" r="3" /> }
+        }
+      }
+      @if (d.punti[d.punti.length - 1]; as u) {
+        <circle class="pallino ultimo" [attr.cx]="u.x" [attr.cy]="u.y" r="4.5" />
+      }
+    </svg>
+  }
+</div>

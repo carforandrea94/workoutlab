@@ -119,8 +119,9 @@ describe('MisureComponent', () => {
       expect(c.punti).toEqual([
         { date: '2026-07-14', value: 110.9 }, { date: '2026-09-07', value: 107.6 }, { date: '2026-10-21', value: 113.1 }
       ]);
-      expect(testo(q('app-grafico-andamento ion-card-title'))).toBe('Peso');
-      expect(testo(q('app-grafico-andamento .lettura-quando'))).toBe('21 ott · +2,2 kg dal 14 lug');
+      // Pesate lontane piu' di sette giorni: ogni media e' la pesata stessa.
+      expect(testo(q('app-grafico-andamento ion-card-title'))).toBe('Peso · media di 7 giorni');
+      expect(testo(q('app-grafico-andamento .lettura-quando'))).toBe('21 ott · pesata 113,1 kg · +2,2 kg dal 14 lug');
     });
 
     it('le misurazioni senza quel valore non sono punti', async () => {
@@ -133,7 +134,7 @@ describe('MisureComponent', () => {
     it('lo screen reader sente il cambio di misura', async () => {
       const { c, q, fixture } = await monta();
       const voce = q('.andamento .sr-only[aria-live="polite"]')!;
-      expect(voce.textContent).toBe('Peso: 113,1 kg, +2,2 kg dal 14 lug');
+      expect(voce.textContent).toBe('Peso, media di 7 giorni: 113,1 kg, +2,2 kg dal 14 lug');
       c.cambiaCategoria('centimetri');
       fixture.detectChanges();
       expect(voce.textContent).toBe('Vita: 99,5 cm, -4,5 cm dal 14 lug');
@@ -428,8 +429,46 @@ describe('MisureComponent', () => {
     });
   });
 
+  describe('il peso come media di 7 giorni', () => {
+    const vicine = () => [
+      { date: '2026-10-23', peso: '112' }, { date: '2026-10-21', peso: '113' }, { date: '2026-10-19', peso: '114' }
+    ] as any[];
+
+    it('la linea e\' la media, le pesate vere restano sotto e nella tabella', async () => {
+      const { c, q, tutti, testo } = await monta(vicine());
+      expect(c.punti).toEqual([{ date: '2026-10-19', value: 114 }, { date: '2026-10-21', value: 113.5 }, { date: '2026-10-23', value: 113 }]);
+      expect(c.pesate).toEqual([{ date: '2026-10-19', value: 114 }, { date: '2026-10-21', value: 113 }, { date: '2026-10-23', value: 112 }]);
+      expect(tutti('app-grafico-andamento circle.pesata').length).toBe(3);
+      expect(testo(q('app-grafico-andamento .lettura'))).toBe('113kg');
+      expect(testo(q('app-grafico-andamento .lettura-quando'))).toBe('23 ott · pesata 112 kg · -1 kg dal 19 ott');
+      expect(c.righe.map(r => r.valore)).toEqual(['112', '113', '114']);
+      expect(testo(q('p.nota-sotto'))).toBe('La linea è la media degli ultimi 7 giorni: un giorno più pesante non la sposta. I punti sono le pesate del giorno.');
+    });
+
+    it('il traguardo si misura dalla media, non dall\'ultima pesata', async () => {
+      const { c } = await monta(vicine(), { tipo: 'grasso', peso: 110 });
+      expect(c.traguardo).toEqual({ valore: 110, testo: 'Traguardo 110 kg · mancano 3 kg' });
+    });
+
+    it('le altre misure restano com\'erano: niente media, niente pesate, niente nota', async () => {
+      const { c, q, fixture } = await monta();
+      c.cambiaCategoria('centimetri');
+      fixture.detectChanges();
+      expect(c.pesate).toBeNull();
+      expect(c.nomeGrafico).toBe('Vita');
+      expect(q('app-grafico-andamento circle.pesata')).toBeNull();
+      expect(q('app-grafico-andamento .leggenda')).toBeNull();
+      expect(q('p.nota-sotto')).toBeNull();
+    });
+
+    it('con una pesata sola niente nota: non c\'e\' ancora una linea', async () => {
+      const { q } = await monta([{ date: '2026-10-23', peso: '112' }] as any[]);
+      expect(q('p.nota-sotto')).toBeNull();
+    });
+  });
+
   describe('il traguardo del peso', () => {
-    it('con un traguardo, sul grafico del peso: la linea e quanto manca dall\'ultima pesata', async () => {
+    it('con un traguardo, sul grafico del peso: la linea e quanto manca dalla media', async () => {
       const { root, c } = await monta(storicoBase(), { tipo: 'grasso', peso: 105, entro: null }) as any;
       const card = root.querySelector('app-grafico-andamento')!;
       expect(card.querySelector('.lettura-traguardo')!.textContent!.trim()).toBe('Traguardo 105 kg · mancano 8,1 kg');

@@ -13,7 +13,7 @@ import {
   removeCircle, removeCircleSharp, reorderThreeOutline, reorderTwoSharp, restaurant, restaurantOutline,
   restaurantSharp, saveOutline, saveSharp, searchOutline, searchSharp, settingsOutline, settingsSharp,
   swapHorizontalOutline, swapHorizontalSharp, timeOutline, timerOutline, timerSharp, timeSharp, trashOutline,
-  trashSharp, trendingUpOutline, trendingUpSharp
+  trashSharp, trendingUpOutline, trendingUpSharp, scaleOutline, scaleSharp
 } from 'ionicons/icons';
 
 /**
@@ -134,6 +134,7 @@ export const ICONE = {
   'remove-circle': { ios: removeCircle, md: removeCircleSharp },
   'riordina': { ios: reorderThreeOutline, md: reorderTwoSharp },
   'save': { ios: saveOutline, md: saveSharp },
+  'scale': { ios: scaleOutline, md: scaleSharp },
   'scarpa': SCARPA,
   'settings': { ios: settingsOutline, md: settingsSharp },
   'swap-horizontal': { ios: swapHorizontalOutline, md: swapHorizontalSharp },

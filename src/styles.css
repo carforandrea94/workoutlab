@@ -928,6 +928,30 @@ ion-item-option.elimina{--background:var(--state-danger);--color:#fff;font-weigh
 .liste-ios input.data-riga:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:var(--r-xs);}
 .liste-ios input.data-riga::-webkit-calendar-picker-indicator{opacity:.5;cursor:pointer;}
 .liste-ios input.data-riga:disabled{opacity:.4;cursor:default;}
+/* La settimana scorsa, in Account: in testa il titolo e "Ho letto", poi una
+   casella per numero (due per riga; l'ultima dispari si allarga) e la frase.
+   I numeri sono figure proporzionali, come i valori del resoconto. */
+.bilancio-lista{margin-bottom:20px;}
+.bilancio-testa{display:flex;align-items:flex-start;gap:10px;padding:14px 8px 4px 16px;}
+.bilancio-testa .t{flex:1;min-width:0;}
+.bilancio-testa h2{margin:0;font-size:var(--text-lg);font-weight:700;letter-spacing:-.005em;color:var(--label);}
+.bilancio-testa p{margin:2px 0 0;font-size:var(--text-sm);color:var(--label-2);font-variant-numeric:tabular-nums;}
+ion-button.bilancio-letto{--padding-start:8px;--padding-end:8px;--color:var(--accent);margin:-4px 0 0;min-height:44px;font-size:var(--text-sm);font-weight:600;}
+.bilancio-numeri{display:grid;grid-template-columns:1fr 1fr;margin-top:8px;border-top:1px solid var(--separator);}
+.bilancio-numeri .bil{padding:12px 14px 12px 16px;min-width:0;}
+.bilancio-numeri .bil:nth-child(2n){border-left:1px solid var(--separator);}
+.bilancio-numeri .bil:nth-child(n+3){border-top:1px solid var(--separator);}
+.bilancio-numeri .bil:last-child:nth-child(odd){grid-column:1 / -1;}
+.bilancio-numeri .bil-cap{display:flex;align-items:center;gap:6px;font-size:var(--text-xs);font-weight:600;color:var(--label-2);}
+.bilancio-numeri .bil-cap app-icona{color:var(--label-3);}
+.bilancio-numeri .bil-val{display:flex;align-items:baseline;gap:4px;margin-top:6px;}
+.bilancio-numeri .bil-val .n{font-size:var(--text-2xl);font-weight:700;letter-spacing:-.02em;line-height:1;color:var(--label);}
+.bilancio-numeri .bil-val .u{font-size:var(--text-sm);color:var(--label-2);}
+.bilancio-numeri .bil-nota{display:flex;align-items:center;gap:4px;margin-top:6px;font-size:var(--text-xs);font-weight:600;color:var(--label-2);font-variant-numeric:tabular-nums;}
+.bilancio-numeri .bil-nota.ok app-icona{color:var(--state-success);}
+.bilancio-numeri ion-progress-bar{height:4px;margin-top:8px;border-radius:var(--r-pill);--background:var(--border-line);--progress-background:var(--accent);}
+.bilancio-frase{display:flex;gap:10px;align-items:flex-start;margin:0;padding:12px 16px 14px;border-top:1px solid var(--separator);font-size:var(--text-md);line-height:1.45;color:var(--label);}
+.bilancio-frase app-icona{flex-shrink:0;margin-top:2px;color:var(--accent);}
 /* Il mio obiettivo: il nome e, sotto, cosa vuol dire, come le misure in Misure. */
 .obiettivo .obiettivo-voce{display:flex;flex-direction:column;gap:2px;padding:9px 0;}
 .obiettivo .obiettivo-nome{font-size:var(--text-lg);font-weight:600;line-height:1.3;color:var(--label);white-space:normal;}
@@ -1021,6 +1045,15 @@ ion-card.andamento-card ion-card-content{padding:10px 8px 10px;}
 .andamento-piano .traguardo{stroke:var(--label-3);stroke-width:1;stroke-dasharray:4 4;shape-rendering:crispEdges;}
 .andamento-piano .pallino{fill:var(--accent);stroke:var(--surface-card);stroke-width:2;}
 .andamento-piano .pallino.scelto{stroke-width:2.5;}
+/* Le pesate sotto la media: punti grigi e leggeri, la linea resta quella da leggere. */
+.andamento-piano .pesata{fill:var(--label-3);fill-opacity:.55;stroke:var(--surface-card);stroke-width:2;}
+/* La legenda delle due serie: la forma del segno accanto al nome, i nomi nel colore del testo. */
+.andamento-card .leggenda{display:flex;flex-wrap:wrap;gap:4px 16px;margin:6px 8px 2px;font-size:var(--text-xs);font-weight:600;color:var(--label-2);}
+.andamento-card .leggenda span{display:inline-flex;align-items:center;gap:6px;}
+.andamento-card .leggenda i{display:inline-block;flex-shrink:0;}
+.andamento-card .leggenda i.m{width:16px;height:0;border-top:2px solid var(--accent);border-radius:2px;}
+.andamento-card .leggenda i.p{width:8px;height:8px;border-radius:50%;background:var(--label-3);opacity:.55;}
+.andamento-card .leggenda i.t{width:16px;height:0;border-top:1px dashed var(--label-3);}
 .andamento-vuoto{margin:0;padding:18px 8px 10px;font-size:var(--text-sm);line-height:1.45;color:var(--label-2);text-align:center;}
 
 .andamento ion-list.andamento-misure ion-radio{width:100%;--color:var(--label-3);--color-checked:var(--accent);}
@@ -1722,6 +1755,15 @@ button.setcard-fonte:disabled{color:var(--label-3);cursor:default;}
 .massimale-da{margin:6px 0 0;font-variant-numeric:tabular-nums;font-size:var(--text-sm);line-height:1.45;color:var(--label-3);}
 .massimale-fatica{margin:8px 0 0;}
 .massimale-vuoto{font-size:var(--text-sm);line-height:1.5;color:var(--label-2);}
+/* Il massimale nelle ultime sedute: lo stesso disegno di Andamento, piu' piccolo, sul fondo del riquadro. */
+.storia-massimale{margin:12px 0 0;}
+.storia-cap{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:0 0 4px;font-size:var(--text-xs);font-weight:600;line-height:1.4;color:var(--label-2);font-variant-numeric:tabular-nums;}
+.storia-cap .storia-cambio{font-weight:500;text-align:right;}
+.storia-massimale svg{display:block;overflow:visible;}
+.storia-massimale .griglia{stroke:var(--separator);stroke-width:1;shape-rendering:crispEdges;}
+.storia-massimale .asse{font-family:inherit;font-size:11px;font-variant-numeric:tabular-nums;fill:var(--label-3);}
+.storia-massimale .linea{fill:none;stroke:var(--accent);stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+.storia-massimale .pallino{fill:var(--accent);stroke:var(--surface-raise);stroke-width:2;}
 /* Prima dell'avvio le stesse righe, senza radio: si leggono e basta. */
 ion-list.carico-lettura{margin:0;padding:0;background:transparent;}
 .scelta-hint.carico-dopo{margin:10px 0 0;}

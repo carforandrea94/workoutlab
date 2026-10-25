@@ -71,7 +71,7 @@ export function normalizzaObiettivo(raw: unknown): Obiettivo | null {
 }
 
 /** "31 mar", o "31 mar 2027" se l'anno non e' quello di oggi. */
-function dataBreve(iso: string, oggi: string): string {
+export function dataBreve(iso: string, oggi: string): string {
   const [a, m, g] = iso.split('-').map(Number);
   return `${g} ${MESI[m - 1]}` + (iso.slice(0, 4) !== oggi.slice(0, 4) ? ` ${a}` : '');
 }

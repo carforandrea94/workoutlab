@@ -182,3 +182,48 @@ describe('grafico di Andamento — il traguardo', () => {
     expect(d.traguardo!.scrittaY).toBe(d.piano.y0 + 13);
   });
 });
+
+describe('grafico di Andamento — le pesate sotto la media', () => {
+  const pesate = [
+    { date: '2026-10-01', value: 80 }, { date: '2026-10-03', value: 84 }, { date: '2026-10-05', value: 79 }
+  ];
+  const media = [
+    { date: '2026-10-01', value: 80 }, { date: '2026-10-03', value: 82 }, { date: '2026-10-05', value: 81 }
+  ];
+
+  it('senza pesate non ce ne sono, e i pallini restano quelli della linea', () => {
+    const d = disegnaAndamento(media, 320, 200);
+    expect(d.pesate).toEqual([]);
+    expect(d.conPallini).toBe(true);
+    expect(disegnaAndamento([], 320, 200, null, pesate).pesate).toEqual([]);
+  });
+
+  it('con le pesate: un punto per pesata, alla sua data e al suo valore; la linea senza pallini', () => {
+    const d = disegnaAndamento(media, 320, 200, null, pesate);
+    expect(d.conPallini).toBe(false);
+    expect(d.pesate.map(p => p.date)).toEqual(pesate.map(p => p.date));
+    expect(d.pesate.map(p => p.x)).toEqual(d.punti.map(p => p.x));
+    // Il 3 ottobre la pesata (84) sta sopra la media (82); il 5 (79) sotto la media (81).
+    expect(d.pesate[1].y).toBeLessThan(d.punti[1].y);
+    expect(d.pesate[2].y).toBeGreaterThan(d.punti[2].y);
+  });
+
+  it('la scala contiene anche le pesate: la piu\' alta e la piu\' bassa stanno nel riquadro', () => {
+    const senza = disegnaAndamento(media, 320, 200);
+    const con = disegnaAndamento(media, 320, 200, null, pesate);
+    expect(Number(senza.valori[senza.valori.length - 1].testo.replace(',', '.'))).toBeLessThan(84);
+    expect(Number(con.valori[con.valori.length - 1].testo.replace(',', '.'))).toBeGreaterThanOrEqual(84);
+    expect(Number(con.valori[0].testo.replace(',', '.'))).toBeLessThanOrEqual(79);
+    for (const p of con.pesate) {
+      expect(p.y).toBeGreaterThanOrEqual(con.piano.y0);
+      expect(p.y).toBeLessThanOrEqual(con.piano.y1);
+    }
+  });
+
+  it('le date vanno dalla prima all\'ultima di tutte, linea e pesate', () => {
+    const d = disegnaAndamento(media.slice(1), 320, 200, null, pesate);
+    expect(d.date.map(t => t.testo)).toEqual(['1 ott', '5 ott']);
+    expect(d.pesate[0].x).toBe(d.piano.x0);
+    expect(d.punti[d.punti.length - 1].x).toBe(d.piano.x1);
+  });
+});

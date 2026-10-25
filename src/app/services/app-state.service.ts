@@ -7,6 +7,7 @@ import { sanitizeForFirestore } from '../core/utils/sanitize.util';
 import { ToastService } from './toast.service';
 import { SceltaPasto } from '../core/utils/scelta-pasto.util';
 import { Obiettivo } from '../core/utils/obiettivo.util';
+import { PastiGiorno } from '../core/utils/settimana.util';
 
 export interface WorkoutDraftRow {
   reps: string;
@@ -55,13 +56,17 @@ export interface AppState {
   loadPercent: number | null;
   /** Dove l'utente vuole arrivare (vedi obiettivo.util). null: non l'ha ancora detto. */
   obiettivo: Obiettivo | null;
+  /** I pasti segnati come fatti, giorno per giorno (vedi settimana.util): li legge il bilancio della settimana. */
+  pastiGiorni: Record<string, PastiGiorno> | null;
+  /** Il lunedi' della settimana il cui bilancio e' stato letto: fino al lunedi' dopo la card non torna. */
+  bilancioLetto: string | null;
 }
 
 /** Finestra di silenzio fra due segnalazioni di scrittura fallita. */
 const WRITE_ERROR_QUIET_MS = 5000;
 
 function emptyState(): AppState {
-  return { workoutDrafts: {}, restOverrides: {}, measureDraft: null, shoppingChecked: {}, shoppingCustomItems: [], workoutViewMode: 'list', dietViewMode: 'list', mealsCompletion: null, themeMode: null, activeWorkoutSession: null, loadPercent: null, obiettivo: null };
+  return { workoutDrafts: {}, restOverrides: {}, measureDraft: null, shoppingChecked: {}, shoppingCustomItems: [], workoutViewMode: 'list', dietViewMode: 'list', mealsCompletion: null, themeMode: null, activeWorkoutSession: null, loadPercent: null, obiettivo: null, pastiGiorni: null, bilancioLetto: null };
 }
 
 /**

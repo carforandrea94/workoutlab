@@ -41,6 +41,12 @@ export class GraficoAndamentoComponent {
   readonly unita = input.required<string>();
   /** Il traguardo da raggiungere (vedi obiettivo.util): la linea tratteggiata, e in testa quanto manca. */
   readonly traguardo = input<{ valore: number; testo: string } | null>(null);
+  /**
+   * I valori del giorno, quando la linea e' la loro media (il peso, vedi
+   * settimana.util): punti grigi sotto la linea, e nella testata quello del
+   * giorno scelto. Con loro compare la legenda: le serie sono due.
+   */
+  readonly pesate = input<PuntoMisura[] | null>(null);
 
   /** La misurazione scelta col dito o da tastiera; null: l'ultima, senza mirino. Cambiando misura si riparte da null. */
   readonly scelto = linkedSignal<PuntoMisura[], number | null>({ source: this.punti, computation: () => null });
@@ -52,7 +58,8 @@ export class GraficoAndamentoComponent {
   private readonly corpo = viewChild<ElementRef<HTMLElement>>('corpo');
   private premuto = false;
 
-  readonly disegno = computed(() => disegnaAndamento(this.punti(), this.larghezza(), ALTEZZA_GRAFICO, this.traguardo()?.valore ?? null));
+  readonly disegno = computed(() =>
+    disegnaAndamento(this.punti(), this.larghezza(), ALTEZZA_GRAFICO, this.traguardo()?.valore ?? null, this.pesate() ?? []));
 
   /** Il punto che la testata racconta: quello scelto, o l'ultimo. */
   private readonly indice = computed(() => this.scelto() ?? this.punti().length - 1);
@@ -73,14 +80,22 @@ export class GraficoAndamentoComponent {
     const confronto = i === 0 ? 'prima misura'
       : uguale(diff) ? `uguale al ${dal}`
       : `${variazioneIt(diff)} ${this.unita()} dal ${dal}`;
-    return { valore: numeroIt(p[i].value), quando, confronto };
+    return { valore: numeroIt(p[i].value), quando, confronto, pesata: this.pesataDel(p[i].date) };
   });
 
-  /** Per lo screen reader: "21 ottobre 2026: 113,1 kg". */
+  /** Per lo screen reader: "21 ottobre 2026: 113,1 kg", e con le pesate ", pesata 113,4 kg". */
   readonly testoValore = computed(() => {
     const p = this.punti()[this.indice()];
-    return p ? `${dataLunga(p.date)}: ${numeroIt(p.value)} ${this.unita()}` : '';
+    if (!p) return '';
+    const pesata = this.pesataDel(p.date);
+    return `${dataLunga(p.date)}: ${numeroIt(p.value)} ${this.unita()}` + (pesata ? `, pesata ${pesata} ${this.unita()}` : '');
   });
+
+  /** La pesata di quel giorno, scritta; null senza pesate. */
+  private pesataDel(date: string): string | null {
+    const v = this.pesate()?.find(x => x.date === date)?.value;
+    return v === undefined ? null : numeroIt(v);
+  }
 
   constructor() {
     const destroy = inject(DestroyRef);

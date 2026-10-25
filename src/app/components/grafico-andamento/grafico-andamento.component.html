@@ -5,7 +5,7 @@
       <p class="lettura">
         <span class="lettura-valore">{{ l.valore }}</span><span class="lettura-unita">{{ unita() }}</span>
       </p>
-      <p class="lettura-quando">{{ l.quando }} · <span class="delta">{{ l.confronto }}</span></p>
+      <p class="lettura-quando">{{ l.quando }}@if (l.pesata) { · pesata {{ l.pesata }} {{ unita() }}} · <span class="delta">{{ l.confronto }}</span></p>
     }
     @if (traguardo(); as tg) {
       <p class="lettura-traguardo">{{ tg.testo }}</p>
@@ -15,13 +15,13 @@
   <ion-card-content>
     <div #corpo class="andamento-corpo">
       @if (punti().length >= 2) {
+        @let d = disegno();
         <div class="andamento-piano" role="slider" tabindex="0"
           [attr.aria-label]="'Andamento di ' + nome()"
           aria-valuemin="1" [attr.aria-valuemax]="punti().length" [attr.aria-valuenow]="(scelto() ?? punti().length - 1) + 1"
           [attr.aria-valuetext]="testoValore()"
           (pointerdown)="giu($event)" (pointermove)="muove($event)" (pointerup)="su()" (pointercancel)="su()"
           (pointerleave)="esce($event)" (keydown)="tasto($event)">
-          @let d = disegno();
           <svg [attr.width]="d.larghezza" [attr.height]="d.altezza" [attr.viewBox]="'0 0 ' + d.larghezza + ' ' + d.altezza" aria-hidden="true">
             <defs>
               <linearGradient [attr.id]="sfumatura" x1="0" y1="0" x2="0" y2="1">
@@ -36,7 +36,13 @@
             @for (t of d.date; track t.testo) {
               <text class="asse" [attr.x]="t.x" [attr.y]="d.altezza - 6" [attr.text-anchor]="t.ancora">{{ t.testo }}</text>
             }
-            <path class="area" [attr.d]="d.area" [attr.fill]="'url(#' + sfumatura + ')'" />
+            <!-- Con le pesate niente sfumatura: sotto la linea i punti sembrerebbero di un altro tipo. -->
+            @if (!d.pesate.length) {
+              <path class="area" [attr.d]="d.area" [attr.fill]="'url(#' + sfumatura + ')'" />
+            }
+            @for (p of d.pesate; track p.date) {
+              <circle class="pesata" [attr.cx]="p.x" [attr.cy]="p.y" r="3.5" />
+            }
             @if (d.traguardo; as t) {
               <line class="traguardo" [attr.x1]="d.piano.x0" [attr.x2]="d.piano.x1" [attr.y1]="t.y" [attr.y2]="t.y" />
               <text class="asse traguardo-scritta" [attr.x]="d.piano.x0 + 2" [attr.y]="t.scrittaY">traguardo</text>
@@ -58,6 +64,14 @@
             }
           </svg>
         </div>
+        <!-- Due serie: la legenda. Le dice con la forma (linea, punto, tratteggio), non solo col colore. -->
+        @if (d.pesate.length) {
+          <p class="leggenda" aria-hidden="true">
+            <span><i class="m"></i>media di 7 giorni</span>
+            <span><i class="p"></i>pesate</span>
+            @if (d.traguardo) { <span><i class="t"></i>traguardo</span> }
+          </p>
+        }
       } @else {
         <p class="andamento-vuoto">Con la prossima misurazione qui comparirà la linea dell'andamento.</p>
       }

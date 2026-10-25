@@ -31,8 +31,13 @@ export interface DisegnoAndamento {
   punti: PuntoDisegnato[];
   valori: TaccaValore[];
   date: TaccaData[];
-  /** Pochi punti: si disegnano tutti. Tanti: solo l'ultimo, gli altri farebbero un rosario. */
+  /**
+   * Pochi punti: si disegnano tutti. Tanti: solo l'ultimo, gli altri farebbero
+   * un rosario. Con le pesate sotto la linea, mai: i punti sono loro.
+   */
   conPallini: boolean;
+  /** I valori del giorno sotto una linea che e' una media (vedi settimana.util): i punti grigi. */
+  pesate: PuntoDisegnato[];
   /**
    * La linea del traguardo, se c'e': la quota e dove sta la sua scritta, sopra
    * la linea o, se sopra non c'e' posto, sotto.
@@ -71,6 +76,11 @@ export function uguale(n: number): boolean {
 export function giornoDi(iso: string): number {
   const [a, m, g] = iso.split('-').map(Number);
   return Math.round(Date.UTC(a, m - 1, g) / 86_400_000);
+}
+
+/** Il contrario di giornoDi. */
+function isoDi(giorno: number): string {
+  return new Date(giorno * 86_400_000).toISOString().slice(0, 10);
 }
 
 /** "14 lug", o "14 lug 2025" con l'anno. */
@@ -141,25 +151,30 @@ export function taccheDate(primo: string, ultimo: string): { date: string; testo
  *
  * Col traguardo (il peso da raggiungere, vedi obiettivo.util) la scala lo
  * contiene: la distanza fra la linea e il traguardo si vede per quella che e'.
+ * Con le pesate (la linea e' la loro media) la scala contiene anche loro: la
+ * pesata piu' alta non esce dal grafico.
  */
-export function disegnaAndamento(punti: PuntoMisura[], larghezza: number, altezza: number, traguardo: number | null = null): DisegnoAndamento {
+export function disegnaAndamento(
+  punti: PuntoMisura[], larghezza: number, altezza: number, traguardo: number | null = null, pesate: readonly PuntoMisura[] = []
+): DisegnoAndamento {
   const piano = {
     x0: MARGINE.sinistra,
     x1: Math.max(MARGINE.sinistra + 1, larghezza - MARGINE.destra),
     y0: MARGINE.sopra,
     y1: Math.max(MARGINE.sopra + 1, altezza - MARGINE.sotto)
   };
-  const vuoto: DisegnoAndamento = { larghezza, altezza, piano, linea: '', area: '', punti: [], valori: [], date: [], conPallini: false, traguardo: null };
+  const vuoto: DisegnoAndamento = { larghezza, altezza, piano, linea: '', area: '', punti: [], valori: [], date: [], conPallini: false, pesate: [], traguardo: null };
   if (!punti.length) return vuoto;
 
-  const valori = punti.map(p => p.value);
+  const valori = [...punti, ...pesate].map(p => p.value);
   const conTraguardo = traguardo !== null && isFinite(traguardo);
   if (conTraguardo) valori.push(traguardo!);
   const tacche = taccheValori(Math.min(...valori), Math.max(...valori));
   const vMin = tacche[0];
   const vMax = tacche[tacche.length - 1];
-  const g0 = giornoDi(punti[0].date);
-  const g1 = giornoDi(punti[punti.length - 1].date);
+  const giorni = [...punti, ...pesate].map(p => giornoDi(p.date));
+  const g0 = Math.min(...giorni);
+  const g1 = Math.max(...giorni);
   const xDi = (iso: string) => g1 === g0
     ? (piano.x0 + piano.x1) / 2
     : piano.x0 + (piano.x1 - piano.x0) * (giornoDi(iso) - g0) / (g1 - g0);
@@ -171,7 +186,7 @@ export function disegnaAndamento(punti: PuntoMisura[], larghezza: number, altezz
   const ultimo = disegnati[disegnati.length - 1];
   const area = `${linea}L${f(ultimo.x)} ${f(piano.y1)}L${f(primo.x)} ${f(piano.y1)}Z`;
 
-  const date = taccheDate(punti[0].date, punti[punti.length - 1].date).map(t => {
+  const date = taccheDate(isoDi(g0), isoDi(g1)).map(t => {
     const x = xDi(t.date);
     // Vicino ai bordi la scritta si appoggia dentro invece di uscire dalla card.
     const ancora: TaccaData['ancora'] = x - piano.x0 < 16 ? 'start' : piano.x1 - x < 16 ? 'end' : 'middle';
@@ -183,7 +198,8 @@ export function disegnaAndamento(punti: PuntoMisura[], larghezza: number, altezz
     punti: disegnati,
     valori: tacche.map(v => ({ y: yDi(v), testo: numeroIt(v) })),
     date,
-    conPallini: disegnati.length < 2 || (piano.x1 - piano.x0) / (disegnati.length - 1) >= PASSO_PALLINI,
+    conPallini: !pesate.length && (disegnati.length < 2 || (piano.x1 - piano.x0) / (disegnati.length - 1) >= PASSO_PALLINI),
+    pesate: pesate.map(p => ({ ...p, x: xDi(p.date), y: yDi(p.value) })),
     traguardo: conTraguardo ? scrittaDelTraguardo(yDi(traguardo!), piano.y0) : null
   };
 }
