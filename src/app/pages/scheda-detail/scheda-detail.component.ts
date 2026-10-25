@@ -34,6 +34,7 @@ import { serieDiRiscaldamento } from '../../core/utils/riscaldamento.util';
 import { conSconto, primaDelloStessoGruppo, scontoFatica } from '../../core/utils/fatica.util';
 import { PASSO_PROGRESSIONE, provaDiPiu, ripetizioniDaRaggiungere } from '../../core/utils/progressione.util';
 import { scontoPausa } from '../../core/utils/pausa.util';
+import { PUNTI_STORIA, storiaDelMassimale } from '../../core/utils/storia-massimale.util';
 import { WeeklyProgressService } from '../../services/weekly-progress.service';
 import { RiduciBarra, posizioneDaEvento } from '../../tabs/riduci-barra';
 import {
@@ -48,6 +49,7 @@ import {
   IonFooter, IonModal, NavController, IonSegment, IonSegmentButton, IonSpinner, IonButton, IonRadioGroup, IonRadio, IonItem, IonList, IonLabel
 } from '@ionic/angular';
 import { IconaComponent } from '../../components/icona/icona.component';
+import { StoriaMassimaleComponent } from '../../components/storia-massimale/storia-massimale.component';
 
 interface ExerciseVM {
   ex: Exercise;
@@ -90,7 +92,7 @@ interface FoglioCarico {
   imports: [
     IonButton, IonFooter, TastoDirective, IonSegment, IonSegmentButton, IonSpinner, ...IONIC_PAGE, IonModal,
     IonRadioGroup, IonRadio, IonItem, IonList, IonLabel, CommonModule, FormsModule, IconaComponent, NumberWheelComponent,
-    ResocontoComponent
+    ResocontoComponent, StoriaMassimaleComponent
   ],
   templateUrl: './scheda-detail.component.html'
 })
@@ -591,6 +593,8 @@ export class SchedaDetailComponent implements OnInit, AfterViewInit, OnDestroy {
 
   /** Oltre queste ripetizioni il numero va preso con le pinze. */
   readonly rmSoftOver = MAX_TRUSTED_REPS;
+  /** Da quanti punti la linea del massimale si disegna nel foglio. */
+  readonly puntiStoria = PUNTI_STORIA;
 
   /** La percentuale del massimale scelta per tutto il programma, o null se
    *  spenta. Arriva dall'account, quindi vale su ogni giorno e ogni esercizio. */
@@ -828,7 +832,8 @@ export class SchedaDetailComponent implements OnInit, AfterViewInit, OnDestroy {
           lastText, oneRmText, oneRm,
           rmRows: stima ? rmTable(stima.value) : null,
           programLoad: this.caricoDiProgramma(stima?.value ?? 0),
-          fatica: stima ? fatica : null
+          fatica: stima ? fatica : null,
+          storiaMassimale: storiaDelMassimale(perSessione)
         };
         vm.insightVisible = true;
       }

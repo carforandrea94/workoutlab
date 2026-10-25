@@ -66,12 +66,12 @@
           </ion-item>
         </ng-container>
       </ion-list>
-      <p class="nota-sotto" *ngIf="!loadingHistory && totalWorkouts > 0">Nella scheda dettaglio puoi vedere, per ogni esercizio: l'ultimo carico usato, il grafico della progressione e un suggerimento di carico per gli esercizi wave.</p>
+      <p class="nota-sotto" *ngIf="!loadingHistory && totalWorkouts > 0">Nell'allenamento, il bilanciere di ogni esercizio apre il massimale stimato, con la sua linea nelle ultime sedute, e i pesi fra cui scegliere. La ruota propone il peso dell'ultima volta, e 2,5 kg in più quando in tutte le serie sono uscite tutte le ripetizioni.</p>
 
       <ion-list-header class="sezione"><ion-label>Consigli generali</ion-label></ion-list-header>
       <ion-list [inset]="true" class="info-consigli">
         <ion-item><ion-label class="ion-text-wrap"><p>Recupero tra le serie: segui i tempi indicati (timer automatico)</p></ion-label></ion-item>
-        <ion-item><ion-label class="ion-text-wrap"><p>Progressione: aumenta il carico quando completi tutte le serie con buona tecnica</p></ion-label></ion-item>
+        <ion-item><ion-label class="ion-text-wrap"><p>Progressione: quando in tutte le serie arrivi in cima alle ripetizioni con buona tecnica, la volta dopo l'app ti propone 2,5 kg in più</p></ion-label></ion-item>
         <ion-item *ngIf="hasWaveExercises"><ion-label class="ion-text-wrap"><p>Per gli esercizi wave: aumenta di 2,5–5 kg quando completi tutte le serie</p></ion-label></ion-item>
         <ion-item><ion-label class="ion-text-wrap"><p>Bevi almeno 2L di acqua al giorno, di più nei giorni di allenamento</p></ion-label></ion-item>
         <ion-item lines="none"><ion-label class="ion-text-wrap"><p>Assicurati di dormire almeno 7–8 ore per ottimizzare il recupero</p></ion-label></ion-item>

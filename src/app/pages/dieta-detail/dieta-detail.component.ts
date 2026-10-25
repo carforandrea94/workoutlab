@@ -21,6 +21,7 @@ import {
 } from '@ionic/angular';
 import { IconaComponent } from '../../components/icona/icona.component';
 import { BarraAzioneDirective } from '../../core/directives/barra-azione.directive';
+import { registraPasti } from '../../core/utils/settimana.util';
 
 interface MealVM {
   meal: NamedMeal;
@@ -144,6 +145,20 @@ export class DietaDetailComponent implements OnInit {
     });
     const giorno = { date: todayLocalISO(), done, ...(Object.keys(choices).length ? { choices } : {}) };
     this.appState.patchField('mealsCompletion', giorno).catch(() => { /* gia' segnalato da AppStateService */ });
+    void this.registraGiorno();
+  }
+
+  /**
+   * I pasti di oggi nella storia giorno per giorno (vedi settimana.util): la
+   * legge il bilancio della settimana in Account. I pasti fatti di questo
+   * piano, su quanti ne ha.
+   */
+  private async registraGiorno(): Promise<void> {
+    try {
+      const stato = await this.appState.load();
+      const storia = registraPasti(stato.pastiGiorni, todayLocalISO(), this.fatti, this.meals.length);
+      await this.appState.patchField('pastiGiorni', storia);
+    } catch { /* gia' segnalato da AppStateService */ }
   }
 
   // --- Cosa si mangia ---

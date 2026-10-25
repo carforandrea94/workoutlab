@@ -173,4 +173,9 @@ export interface ExInsight {
    * correzione (vedi fatica.util).
    */
   fatica: { percento: number; motivo: string } | null;
+  /**
+   * Il massimale stimato nelle ultime sedute, dalla piu' vecchia (vedi
+   * storia-massimale.util): la linea sotto quello di oggi, nel foglio.
+   */
+  storiaMassimale: { date: string; value: number }[];
 }

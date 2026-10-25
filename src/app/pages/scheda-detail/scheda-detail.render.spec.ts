@@ -632,6 +632,27 @@ describe('SchedaDetailComponent — accessibilita\' delle testate (disegno vero)
       expect(pulito(f.querySelector('.massimale-da'))).toBe('Da 80 × 6 del 03/10 · +6 kg dalla volta prima');
     });
 
+    it('con due sedute niente linea: la riga sopra dice gia\' la differenza', async () => {
+      const { tutti, aggiorna } = await monta('slider', true, false, undefined, undefined, storia);
+      const f = await apri(tutti('.exslide')[0], aggiorna);
+      expect(f.querySelector('app-storia-massimale')).toBeNull();
+    });
+
+    it('da tre sedute, sotto il massimale la sua linea nelle ultime sedute', async () => {
+      const lunga = [
+        { id: 'sa', session: { date: '2026-09-19', exercises: [{ name: 'Panca piana', sets: [{ load: '70', reps: '6' }] }] } },
+        ...storia
+      ];
+      const { c, tutti, aggiorna } = await monta('slider', true, false, undefined, undefined, lunga);
+      expect(c.exercises[0].insight!.storiaMassimale).toEqual([
+        { date: '2026-09-19', value: 81.5 }, { date: '2026-09-26', value: 87 }, { date: '2026-10-03', value: 93 }
+      ]);
+      const f = await apri(tutti('.exslide')[0], aggiorna);
+      const storiaEl = f.querySelector('.massimale app-storia-massimale')!;
+      expect(Array.from(storiaEl.querySelectorAll('.storia-cap span')).map(pulito)).toEqual(['Nelle ultime 3 sedute', '+11,5 kg dal 19 set']);
+      expect(storiaEl.querySelector('svg')!.getAttribute('aria-label')).toBe('Massimale stimato nelle ultime 3 sedute: da 81,5 kg il 19 settembre 2026 a 93 kg il 3 ottobre 2026');
+    });
+
     it('sotto, i pesi della serie in corso, con la percentuale; la spunta e\' sul peso nella ruota', async () => {
       const { c, tutti, aggiorna } = await monta('slider', true, false, undefined, undefined, storia, 85);
       c.exercises[0].activeRow = 1;

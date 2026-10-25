@@ -2,6 +2,7 @@ import { Component, OnInit, ViewChild, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 import { FormaCardComponent } from '../../components/forma-card/forma-card.component';
+import { BilancioSettimanaComponent } from '../../components/bilancio-settimana/bilancio-settimana.component';
 import { AuthService } from '../../core/services/auth.service';
 import { IONIC_PAGE } from '../../core/ionic-page';
 import { IonAvatar, IonItem, IonLabel, IonList, NavController } from '@ionic/angular';
@@ -13,7 +14,7 @@ import { todayLocalISO } from '../../core/utils/date.util';
 @Component({
   selector: 'app-account',
   standalone: true,
-  imports: [IonAvatar, IonItem, IonLabel, IonList, ...IONIC_PAGE, CommonModule, IconaComponent, FormaCardComponent],
+  imports: [IonAvatar, IonItem, IonLabel, IonList, ...IONIC_PAGE, CommonModule, IconaComponent, FormaCardComponent, BilancioSettimanaComponent],
   templateUrl: './account.component.html',
   // La riga del profilo: l'iniziale in un riquadro piu' grande delle icone
   // delle righe, come la riga dell'ID Apple in cima alle Impostazioni di iOS.
@@ -30,6 +31,7 @@ import { todayLocalISO } from '../../core/utils/date.util';
 })
 export class AccountComponent implements OnInit {
   @ViewChild(FormaCardComponent) forma?: FormaCardComponent;
+  @ViewChild(BilancioSettimanaComponent) bilancio?: BilancioSettimanaComponent;
   private primoIngresso = true;
 
   /** Dove l'utente vuole arrivare, letto dallo stato dell'account. */
@@ -64,7 +66,7 @@ export class AccountComponent implements OnInit {
    */
   ionViewWillEnter(): void {
     // E l'obiettivo, che si sceglie in una pagina sotto questa.
-    if (!this.primoIngresso) { this.forma?.refresh(); this.leggiObiettivo(); }
+    if (!this.primoIngresso) { this.forma?.refresh(); this.leggiObiettivo(); void this.bilancio?.refresh(); }
     this.primoIngresso = false;
   }
 

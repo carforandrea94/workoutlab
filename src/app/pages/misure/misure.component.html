@@ -38,7 +38,10 @@
       </ion-segment>
 
       <app-grafico-andamento *ngIf="haDati(categoria)"
-        [punti]="punti" [nome]="selectedField.label" [unita]="selectedField.unit" [traguardo]="traguardo"></app-grafico-andamento>
+        [punti]="punti" [pesate]="pesate" [nome]="nomeGrafico" [unita]="selectedField.unit" [traguardo]="traguardo"></app-grafico-andamento>
+      <p class="nota-sotto" *ngIf="haDati(categoria) && pesate && pesate.length >= 2">
+        La linea è la media degli ultimi 7 giorni: un giorno più pesante non la sposta. I punti sono le pesate del giorno.
+      </p>
 
       <!-- Il gruppo vuoto: cosa manca, e il tasto in basso per cominciare. -->
       <ion-card class="andamento-card gruppo-vuoto" *ngIf="!haDati(categoria)">

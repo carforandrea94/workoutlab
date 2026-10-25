@@ -4,6 +4,7 @@ import { NavController } from '@ionic/angular';
 import { describe, expect, it, vi } from 'vitest';
 import { providerPagina } from '../../../test-support/pagina';
 import { FormaCardComponent } from '../../components/forma-card/forma-card.component';
+import { BilancioSettimanaComponent } from '../../components/bilancio-settimana/bilancio-settimana.component';
 import { AuthService } from '../../core/services/auth.service';
 import { AccountComponent } from './account.component';
 import { AppStateService } from '../../services/app-state.service';
@@ -25,7 +26,7 @@ describe('AccountComponent — le voci', () => {
       ]
     });
     // Il riassunto del corpo legge mezza app: qui conta solo cosa c'e' sotto.
-    TestBed.overrideComponent(AccountComponent, { remove: { imports: [FormaCardComponent] }, add: { schemas: [CUSTOM_ELEMENTS_SCHEMA] } });
+    TestBed.overrideComponent(AccountComponent, { remove: { imports: [FormaCardComponent, BilancioSettimanaComponent] }, add: { schemas: [CUSTOM_ELEMENTS_SCHEMA] } });
     const fixture = TestBed.createComponent(AccountComponent);
     fixture.detectChanges();
     const root: HTMLElement = fixture.nativeElement;

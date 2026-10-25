@@ -543,6 +543,9 @@
           <p class="carico-avviso massimale-fatica" *ngIf="f.vm.insight?.fatica as fa">
             <app-icona name="information-circle" [size]="13"></app-icona>{{ fa.motivo }}: i pesi stimati scendono del {{ fa.percento }}%.
           </p>
+          <!-- Le ultime sedute in fila: dicono se si sta salendo, piu' della differenza con la volta prima. -->
+          <app-storia-massimale *ngIf="(f.vm.insight?.storiaMassimale?.length ?? 0) >= puntiStoria"
+            [storia]="f.vm.insight!.storiaMassimale"></app-storia-massimale>
         </div>
         <ng-template #nessunaStima>
           <p class="massimale-vuoto">{{ testoSenzaMassimale(f.vm) }}</p>

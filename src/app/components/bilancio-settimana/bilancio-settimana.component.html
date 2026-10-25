@@ -1,0 +1,63 @@
+@if (visibile() && bilancio(); as b) {
+  <section class="bilancio" aria-labelledby="bilancio-titolo">
+    <ion-list [inset]="true" class="bilancio-lista">
+      <div class="bilancio-testa">
+        <div class="t">
+          <h2 id="bilancio-titolo">La settimana scorsa</h2>
+          <p>{{ intervallo(b) }}</p>
+        </div>
+        <ion-button fill="clear" size="small" class="bilancio-letto" (click)="segnaLetto()"
+          aria-label="Ho letto il bilancio della settimana">Ho letto</ion-button>
+      </div>
+
+      <!-- Una casella per numero; quella senza dati non c'e', e l'ultima dispari si allarga. -->
+      <div class="bilancio-numeri">
+        @if (b.allenamenti; as a) {
+          <div class="bil">
+            <div class="bil-cap"><app-icona name="barbell" [size]="15"></app-icona>Allenamenti</div>
+            <div class="bil-val"><span class="n">{{ a.fatti }}</span><span class="u"> di {{ a.previsti }}</span></div>
+            @if (a.fatti >= a.previsti) {
+              <div class="bil-nota ok"><app-icona name="checkmark-circle" [size]="14" [piena]="true"></app-icona>scheda completa</div>
+            } @else {
+              <ion-progress-bar [value]="quota(a.fatti, a.previsti)" aria-label="Allenamenti fatti su quelli previsti"></ion-progress-bar>
+            }
+          </div>
+        }
+        @if (conCorsa(b)) {
+          <div class="bil">
+            <div class="bil-cap"><app-icona name="scarpa" [size]="15"></app-icona>Corsa</div>
+            @if (b.corsa.obiettivo; as obiettivo) {
+              <div class="bil-val"><span class="n">{{ b.corsa.minuti }}</span><span class="u"> di {{ obiettivo }} min</span></div>
+              <ion-progress-bar [value]="quota(b.corsa.minuti, obiettivo)" aria-label="Minuti di corsa sull'obiettivo"></ion-progress-bar>
+            } @else {
+              <div class="bil-val"><span class="n">{{ b.corsa.minuti }}</span><span class="u"> min</span></div>
+            }
+          </div>
+        }
+        @if (b.pasti; as p) {
+          <div class="bil">
+            <div class="bil-cap"><app-icona name="restaurant" [size]="15"></app-icona>Pasti seguiti</div>
+            <div class="bil-val"><span class="n">{{ p.fatti }}</span><span class="u"> di {{ p.totali }}</span></div>
+            <ion-progress-bar [value]="quota(p.fatti, p.totali)" aria-label="Pasti seguiti sul piano"></ion-progress-bar>
+          </div>
+        }
+        @if (b.peso; as peso) {
+          <div class="bil">
+            <div class="bil-cap"><app-icona name="scale" [size]="15"></app-icona>Peso medio</div>
+            <div class="bil-val"><span class="n">{{ kg(peso.media) }}</span><span class="u"> kg</span></div>
+            @if (differenzaPeso(b); as d) {
+              <div class="bil-nota">
+                @if (d.verso !== 'pari') { <app-icona [name]="d.verso === 'giu' ? 'arrow-down' : 'arrow-up'" [size]="13"></app-icona> }
+                {{ d.testo }}
+              </div>
+            }
+          </div>
+        }
+      </div>
+
+      @if (b.frase) {
+        <p class="bilancio-frase"><app-icona name="flag" [size]="17"></app-icona><span>{{ b.frase }}</span></p>
+      }
+    </ion-list>
+  </section>
+}
