@@ -38,7 +38,7 @@
       </ion-segment>
 
       <app-grafico-andamento *ngIf="haDati(categoria)"
-        [punti]="punti" [nome]="selectedField.label" [unita]="selectedField.unit"></app-grafico-andamento>
+        [punti]="punti" [nome]="selectedField.label" [unita]="selectedField.unit" [traguardo]="traguardo"></app-grafico-andamento>
 
       <!-- Il gruppo vuoto: cosa manca, e il tasto in basso per cominciare. -->
       <ion-card class="andamento-card gruppo-vuoto" *ngIf="!haDati(categoria)">

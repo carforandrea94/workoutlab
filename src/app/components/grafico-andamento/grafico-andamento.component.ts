@@ -39,6 +39,8 @@ export class GraficoAndamentoComponent {
   readonly punti = input.required<PuntoMisura[]>();
   readonly nome = input.required<string>();
   readonly unita = input.required<string>();
+  /** Il traguardo da raggiungere (vedi obiettivo.util): la linea tratteggiata, e in testa quanto manca. */
+  readonly traguardo = input<{ valore: number; testo: string } | null>(null);
 
   /** La misurazione scelta col dito o da tastiera; null: l'ultima, senza mirino. Cambiando misura si riparte da null. */
   readonly scelto = linkedSignal<PuntoMisura[], number | null>({ source: this.punti, computation: () => null });
@@ -50,7 +52,7 @@ export class GraficoAndamentoComponent {
   private readonly corpo = viewChild<ElementRef<HTMLElement>>('corpo');
   private premuto = false;
 
-  readonly disegno = computed(() => disegnaAndamento(this.punti(), this.larghezza(), ALTEZZA_GRAFICO));
+  readonly disegno = computed(() => disegnaAndamento(this.punti(), this.larghezza(), ALTEZZA_GRAFICO, this.traguardo()?.valore ?? null));
 
   /** Il punto che la testata racconta: quello scelto, o l'ultimo. */
   private readonly indice = computed(() => this.scelto() ?? this.punti().length - 1);

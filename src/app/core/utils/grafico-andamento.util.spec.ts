@@ -152,3 +152,33 @@ describe('grafico di Andamento — il disegno', () => {
     expect(puntoPiuVicino([], 10)).toBe(-1);
   });
 });
+
+describe('grafico di Andamento — il traguardo', () => {
+  const punti = [
+    { date: '2026-07-14', value: 110.9 }, { date: '2026-08-05', value: 109.2 }, { date: '2026-10-21', value: 113.1 }
+  ];
+
+  it('senza traguardo non c\'e\' linea', () => {
+    expect(disegnaAndamento(punti, 320, 200).traguardo).toBeNull();
+    expect(disegnaAndamento(punti, 320, 200, NaN).traguardo).toBeNull();
+    expect(disegnaAndamento([], 320, 200, 100).traguardo).toBeNull();
+  });
+
+  it('la scala contiene il traguardo: la distanza si vede per quella che e\'', () => {
+    const senza = disegnaAndamento(punti, 320, 200);
+    const con = disegnaAndamento(punti, 320, 200, 100);
+    expect(Number(senza.valori[0].testo.replace(',', '.'))).toBeGreaterThan(100);
+    expect(Number(con.valori[0].testo.replace(',', '.'))).toBeLessThanOrEqual(100);
+    // La linea sta sotto tutti i punti, alla quota del 100.
+    expect(con.traguardo!.y).toBeGreaterThan(Math.max(...con.punti.map(p => p.y)));
+    expect(con.traguardo!.y).toBeLessThanOrEqual(con.piano.y1);
+    // La scritta sopra la linea.
+    expect(con.traguardo!.scrittaY).toBe(con.traguardo!.y - 5);
+  });
+
+  it('un traguardo in cima alla scala ha la scritta sotto la linea, dentro il riquadro', () => {
+    const d = disegnaAndamento(punti, 320, 200, 120);
+    expect(d.traguardo!.y).toBe(d.piano.y0);
+    expect(d.traguardo!.scrittaY).toBe(d.piano.y0 + 13);
+  });
+});

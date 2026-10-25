@@ -4,6 +4,7 @@ import { Route, Router, Routes, provideRouter } from '@angular/router';
 import { describe, expect, it } from 'vitest';
 import { routes } from './app.routes';
 import { MisureComponent } from './pages/misure/misure.component';
+import { ObiettivoComponent } from './pages/obiettivo/obiettivo.component';
 
 @Component({ standalone: true, template: '' })
 class Vuota {}
@@ -75,5 +76,14 @@ describe('rotte — Misure dentro Account', () => {
     it('anche coi parametri: si modifica la stessa misurazione', async () => {
       expect(await vaiA('/misure/pliche?date=2026-05-01')).toBe('/account/misure/pliche?date=2026-05-01');
     });
+  });
+});
+
+/** Il mio obiettivo sta nella pila di Account, come le Impostazioni: si apre dalla sua riga. */
+describe('rotte — Il mio obiettivo', () => {
+  it('/account/obiettivo apre la pagina dell\'obiettivo, senza guardia: si salva mentre si sceglie', async () => {
+    const r = dentroLeTab.find(x => x.path === 'account/obiettivo')!;
+    expect(await (r.loadComponent!() as Promise<unknown>)).toBe(ObiettivoComponent);
+    expect(r.canDeactivate).toBeUndefined();
   });
 });

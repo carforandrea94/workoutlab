@@ -1,4 +1,4 @@
-import { Component, ViewChild } from '@angular/core';
+import { Component, OnInit, ViewChild, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 import { FormaCardComponent } from '../../components/forma-card/forma-card.component';
@@ -6,6 +6,9 @@ import { AuthService } from '../../core/services/auth.service';
 import { IONIC_PAGE } from '../../core/ionic-page';
 import { IonAvatar, IonItem, IonLabel, IonList, NavController } from '@ionic/angular';
 import { IconaComponent } from '../../components/icona/icona.component';
+import { AppStateService } from '../../services/app-state.service';
+import { Obiettivo, normalizzaObiettivo, rigaObiettivo } from '../../core/utils/obiettivo.util';
+import { todayLocalISO } from '../../core/utils/date.util';
 
 @Component({
   selector: 'app-account',
@@ -25,11 +28,30 @@ import { IconaComponent } from '../../components/icona/icona.component';
     .profilo ion-label h2 { font-weight: 700; font-size: var(--text-xl); }
   `]
 })
-export class AccountComponent {
+export class AccountComponent implements OnInit {
   @ViewChild(FormaCardComponent) forma?: FormaCardComponent;
   private primoIngresso = true;
 
-  constructor(public auth: AuthService, private nav: NavController) {}
+  /** Dove l'utente vuole arrivare, letto dallo stato dell'account. */
+  private readonly obiettivo = signal<Obiettivo | null>(null);
+
+  constructor(public auth: AuthService, private nav: NavController, private appState: AppStateService) {}
+
+  ngOnInit(): void {
+    this.leggiObiettivo();
+  }
+
+  /** La riga sotto "Il mio obiettivo": l'obiettivo col traguardo, o l'invito a sceglierlo. */
+  rigaObiettivo(): string {
+    return rigaObiettivo(this.obiettivo(), todayLocalISO());
+  }
+
+  /** L'obiettivo e' un di piu' della pagina: se la lettura non va, resta l'invito. */
+  private leggiObiettivo(): void {
+    this.appState.load()
+      .then(s => this.obiettivo.set(normalizzaObiettivo(s.obiettivo)))
+      .catch(e => console.error('Lettura dell\'obiettivo fallita:', e));
+  }
 
   get initial(): string {
     return (this.auth.currentUser()?.displayName ?? '?').charAt(0).toUpperCase();
@@ -41,8 +63,13 @@ export class AccountComponent {
    * rileggono al rientro.
    */
   ionViewWillEnter(): void {
-    if (!this.primoIngresso) this.forma?.refresh();
+    // E l'obiettivo, che si sceglie in una pagina sotto questa.
+    if (!this.primoIngresso) { this.forma?.refresh(); this.leggiObiettivo(); }
     this.primoIngresso = false;
+  }
+
+  goToObiettivo(): void {
+    this.nav.navigateForward(['/account/obiettivo']);
   }
 
   goToImpostazioni(): void {

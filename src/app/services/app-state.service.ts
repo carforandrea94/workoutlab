@@ -6,6 +6,7 @@ import { ZoneFixService } from '../core/utils/zone.util';
 import { sanitizeForFirestore } from '../core/utils/sanitize.util';
 import { ToastService } from './toast.service';
 import { SceltaPasto } from '../core/utils/scelta-pasto.util';
+import { Obiettivo } from '../core/utils/obiettivo.util';
 
 export interface WorkoutDraftRow {
   reps: string;
@@ -52,13 +53,15 @@ export interface AppState {
    * a suggerire il peso dell'ultima volta e basta.
    */
   loadPercent: number | null;
+  /** Dove l'utente vuole arrivare (vedi obiettivo.util). null: non l'ha ancora detto. */
+  obiettivo: Obiettivo | null;
 }
 
 /** Finestra di silenzio fra due segnalazioni di scrittura fallita. */
 const WRITE_ERROR_QUIET_MS = 5000;
 
 function emptyState(): AppState {
-  return { workoutDrafts: {}, restOverrides: {}, measureDraft: null, shoppingChecked: {}, shoppingCustomItems: [], workoutViewMode: 'list', dietViewMode: 'list', mealsCompletion: null, themeMode: null, activeWorkoutSession: null, loadPercent: null };
+  return { workoutDrafts: {}, restOverrides: {}, measureDraft: null, shoppingChecked: {}, shoppingCustomItems: [], workoutViewMode: 'list', dietViewMode: 'list', mealsCompletion: null, themeMode: null, activeWorkoutSession: null, loadPercent: null, obiettivo: null };
 }
 
 /**

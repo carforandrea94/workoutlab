@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { NavController } from '@ionic/angular';
 import { providerPagina } from '../../../test-support/pagina';
 import { controllaBarraInBasso } from '../../../test-support/barra-azione';
+import { AppStateService } from '../../services/app-state.service';
 import { MisureComponent } from './misure.component';
 import { MeasurementDataService } from '../../services/measurement-data.service';
 
@@ -20,7 +21,7 @@ describe('MisureComponent', () => {
     { date: '2026-07-14', peso: '110,9', plicaAddominale: '23', plicaIliaca: null, cmVita: '104' }
   ] as any[];
 
-  async function monta(storico: any[] = storicoBase()) {
+  async function monta(storico: any[] = storicoBase(), obiettivo: unknown = null) {
     const data: Partial<MeasurementDataService> = {
       loadHistory: vi.fn(async () => storico),
       getLastValues: vi.fn(async () => ({ peso: '113,1', plicaAddominale: '21', plicaIliaca: '16', cmVita: '99,5' }) as any),
@@ -28,7 +29,10 @@ describe('MisureComponent', () => {
     };
     TestBed.configureTestingModule({
       imports: [MisureComponent],
-      providers: [...providerPagina(), { provide: MeasurementDataService, useValue: data }]
+      providers: [
+        ...providerPagina(), { provide: MeasurementDataService, useValue: data },
+        { provide: AppStateService, useValue: { load: async () => ({ obiettivo }) } }
+      ]
     });
     const fixture = TestBed.createComponent(MisureComponent);
     fixture.detectChanges();
@@ -421,6 +425,54 @@ describe('MisureComponent', () => {
       expect(data.loadHistory).toHaveBeenCalledTimes(2);
       expect(c.categoria).toBe('pliche');
       expect(c.punti[3]).toEqual({ date: '2026-10-23', value: 20 });
+    });
+  });
+
+  describe('il traguardo del peso', () => {
+    it('con un traguardo, sul grafico del peso: la linea e quanto manca dall\'ultima pesata', async () => {
+      const { root, c } = await monta(storicoBase(), { tipo: 'grasso', peso: 105, entro: null }) as any;
+      const card = root.querySelector('app-grafico-andamento')!;
+      expect(card.querySelector('.lettura-traguardo')!.textContent!.trim()).toBe('Traguardo 105 kg · mancano 8,1 kg');
+      expect(card.querySelector('line.traguardo')).not.toBeNull();
+      expect(c.traguardo).toEqual({ valore: 105, testo: 'Traguardo 105 kg · mancano 8,1 kg' });
+    });
+
+    it('sulle altre misure il traguardo del peso non c\'e\'', async () => {
+      const { c } = await monta(storicoBase(), { tipo: 'grasso', peso: 105, entro: null }) as any;
+      c.cambiaCategoria('pliche');
+      expect(c.traguardo).toBeNull();
+      c.cambiaCategoria('peso');
+      expect(c.traguardo?.valore).toBe(105);
+    });
+
+    it('senza traguardo, o con un obiettivo che non e\' sul peso, niente linea', async () => {
+      for (const obiettivo of [null, { tipo: 'forza' }, { tipo: 'grasso', peso: null }]) {
+        TestBed.resetTestingModule();
+        const { root, c } = await monta(storicoBase(), obiettivo) as any;
+        expect(c.traguardo).toBeNull();
+        expect(root.querySelector('line.traguardo')).toBeNull();
+      }
+    });
+
+    it('se lo stato non si legge, il grafico c\'e\' lo stesso, senza traguardo', async () => {
+      TestBed.configureTestingModule({
+        imports: [MisureComponent],
+        providers: [
+          ...providerPagina(),
+          { provide: MeasurementDataService, useValue: {
+            loadHistory: async () => storicoBase(), getLastValues: async () => ({ peso: '113,1' }),
+            parseMeasureValue: (v: string | null) => (v == null ? null : parseFloat(String(v).replace(',', '.')))
+          } },
+          { provide: AppStateService, useValue: { load: async () => { throw new Error('rete'); } } }
+        ]
+      });
+      const fixture = TestBed.createComponent(MisureComponent);
+      fixture.detectChanges();
+      await vi.waitFor(() => expect(fixture.componentInstance.loading).toBe(false));
+      fixture.detectChanges();
+      expect(fixture.componentInstance.errorMsg).toBe('');
+      expect(fixture.componentInstance.traguardo).toBeNull();
+      expect((fixture.nativeElement as HTMLElement).querySelector('app-grafico-andamento')).not.toBeNull();
     });
   });
 });

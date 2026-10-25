@@ -26,6 +26,19 @@
       </ion-item>
     </ion-list>
 
+    <!-- Dove si vuole arrivare: in cima, perche' il resto si legge rispetto a lui. -->
+    <ion-list [inset]="true" class="voci">
+      <ion-item class="voce obiettivo-voce" [button]="true" [detail]="true" (click)="goToObiettivo()">
+        <ion-avatar slot="start" class="riga-segno icona">
+          <app-icona name="flag" [size]="20" [piena]="true"></app-icona>
+        </ion-avatar>
+        <ion-label class="ion-text-wrap">
+          <h2>Il mio obiettivo</h2>
+          <p>{{ rigaObiettivo() }}</p>
+        </ion-label>
+      </ion-item>
+    </ion-list>
+
     <app-forma-card></app-forma-card>
 
     <!-- Le misure si aprono dal gruppo "Il corpo", nel riassunto qui sopra. -->
