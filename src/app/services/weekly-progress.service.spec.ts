@@ -135,6 +135,22 @@ describe('WeeklyProgressService', () => {
     expect(service.sedute().map(s => s.date)).toEqual(['2026-07-03', '2026-07-10', '2026-06-28']);
   });
 
+  it('dopo ogni lettura riuscita avvisa chi glielo ha chiesto; dopo una fallita no', async () => {
+    oggiE('2026-07-15');
+    const { service, listAll } = makeService({ sessions: [{ dayId: 'day1', date: '2026-07-13' }] });
+    const visto: boolean[] = [];
+    service.dopoOgniLettura(() => visto.push(service.isDone('day1')));
+    // Uno che sbaglia non ferma gli altri.
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    service.dopoOgniLettura(() => { throw new Error('rotto'); });
+    service.dopoOgniLettura(() => visto.push(true));
+    await service.refresh();
+    expect(visto).toEqual([true, true]);
+    listAll.mockRejectedValueOnce(new Error('offline'));
+    await service.refresh();
+    expect(visto).toEqual([true, true]);
+  });
+
   it('una lettura fallita non lo da\' per caricato', async () => {
     oggiE('2026-07-15');
     const sessions = { listAll: vi.fn(() => Promise.reject(new Error('rete'))) } as any;

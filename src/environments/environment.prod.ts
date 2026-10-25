@@ -22,5 +22,12 @@ export const environment = {
     messagingSenderId: '798891367022',
     appId: '1:798891367022:web:437a7c195dcf79eb56247f',
     measurementId: 'G-ZQNTSS5SEM'
-  }
+  },
+  /**
+   * La chiave pubblica VAPID dei promemoria (vedi docs/promemoria.md). Non e'
+   * un segreto: la privata sta fra i segreti di Firebase e la usa solo la
+   * funzione che manda le notifiche. Vuota, l'app dice che i promemoria non
+   * sono ancora disponibili.
+   */
+  vapidPublicKey: ''
 };

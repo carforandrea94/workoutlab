@@ -84,7 +84,9 @@ service cloud.firestore {
 
       // Dati personali: allenamenti salvati, uscite di corsa, misurazioni,
       // bozze e stato dell'app, protocolli (scheda + dieta + obiettivo di
-      // corsa). Li legge e li scrive solo il proprietario.
+      // corsa), promemoria. Li legge e li scrive solo il proprietario.
+      // La funzione che manda i promemoria (functions/) li legge col proprio
+      // accesso di server, che le regole non riguardano.
       match /sessions/{id} {
         allow read, write: if isOwner(uid);
       }
@@ -98,6 +100,9 @@ service cloud.firestore {
         allow read, write: if isOwner(uid);
       }
       match /protocols/{id} {
+        allow read, write: if isOwner(uid);
+      }
+      match /promemoria/{id} {
         allow read, write: if isOwner(uid);
       }
     }

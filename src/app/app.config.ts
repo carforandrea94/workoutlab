@@ -1,4 +1,4 @@
-import { ApplicationConfig, provideBrowserGlobalErrorListeners, isDevMode } from '@angular/core';
+import { ApplicationConfig, inject, provideAppInitializer, provideBrowserGlobalErrorListeners, isDevMode } from '@angular/core';
 import { provideRouter, withComponentInputBinding, RouteReuseStrategy } from '@angular/router';
 import { provideIonicAngular, IonicRouteStrategy } from '@ionic/angular';
 
@@ -6,6 +6,7 @@ import { routes } from './app.routes';
 import { iconeIonic, stileDelDispositivo } from './core/icone';
 import { transizionePagina } from './core/page-transition';
 import { provideServiceWorker } from '@angular/service-worker';
+import { PromemoriaService } from './services/promemoria.service';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -33,6 +34,9 @@ export const appConfig: ApplicationConfig = {
     provideServiceWorker('ngsw-worker.js', {
       enabled: !isDevMode(),
       registrationStrategy: 'registerWhenStable:30000'
-    })
+    }),
+    // I promemoria si creano subito: ascoltano la lettura delle sedute e
+    // l'uscita dall'account anche se nessuno apre la loro pagina.
+    provideAppInitializer(() => { inject(PromemoriaService); })
   ]
 };

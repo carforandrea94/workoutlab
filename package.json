@@ -10,7 +10,9 @@
     "test:rules": "npx --yes firebase-tools@13 emulators:exec --only firestore --project prova-regole \"node test/firestore-rules.mjs\"",
     "deploy:rules": "npx --yes firebase-tools@13 deploy --only firestore:rules,firestore:indexes",
     "deploy:hosting": "npm run build -- --configuration production && npx --yes firebase-tools@13 deploy --only hosting",
-    "cap:sync": "npm run build -- --configuration production && npx cap sync"
+    "cap:sync": "npm run build -- --configuration production && npx cap sync",
+    "deploy:functions": "npm --prefix functions install && npx --yes firebase-tools@13 deploy --only functions,firestore:indexes,firestore:rules",
+    "test:functions": "npm --prefix functions test"
   },
   "private": true,
   "packageManager": "npm@10.9.7",

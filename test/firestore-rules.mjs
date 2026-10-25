@@ -25,7 +25,7 @@ const env = await initializeTestEnvironment({
 });
 
 const IO = 'utente-1', ALTRO = 'utente-2';
-const RACCOLTE = ['measurements', 'sessions', 'runs', 'state', 'protocols'];
+const RACCOLTE = ['measurements', 'sessions', 'runs', 'state', 'protocols', 'promemoria'];
 
 await env.withSecurityRulesDisabled(async (ctx) => {
   const db = ctx.firestore();
