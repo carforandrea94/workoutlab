@@ -53,7 +53,7 @@ export function ageOn(birthISO: string | null | undefined, onISO: string): numbe
 }
 
 /** Giorni di calendario fra due date ISO (b - a), senza farsi ingannare dall'ora legale. */
-function giorniTra(aISO: string, bISO: string): number {
+export function giorniTra(aISO: string, bISO: string): number {
   const t = (iso: string) => { const [y, m, d] = iso.split('-').map(Number); return Date.UTC(y, m - 1, d); };
   return Math.round((t(bISO) - t(aISO)) / 86400000);
 }

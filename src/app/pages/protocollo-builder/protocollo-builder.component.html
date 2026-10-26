@@ -368,18 +368,39 @@
              ogni riga ripeteva lo scorrimento. -->
         <ng-container *ngIf="!editingPlan">
           <div class="liste-ios">
+            <!-- Il tipo: ON/OFF (i piani sono alternative, il giorno lo sceglie
+                 chi mangia) o ciclica (i piani vanno in fila col calendario dal
+                 primo giorno, e dopo l'ultimo si riparte). Vedi dieta-ciclo.util. -->
+            <ion-list-header class="sezione"><ion-label>Tipo di dieta</ion-label></ion-list-header>
+            <ion-segment class="seg labelseg fullseg modulo-seg tipo-dieta" [value]="tipoDieta" (ionChange)="cambiaTipoDieta($event)" aria-label="Tipo di dieta">
+              <ion-segment-button value="onoff">Giorni ON/OFF</ion-segment-button>
+              <ion-segment-button value="ciclica">Ciclica</ion-segment-button>
+            </ion-segment>
+            <ion-list [inset]="true" class="campi ciclo-inizio" *ngIf="tipoDieta === 'ciclica'">
+              <ion-item lines="none">
+                <ion-label><label for="ciclo-inizio">Primo giorno del ciclo</label></ion-label>
+                <input id="ciclo-inizio" slot="end" class="data-riga" type="date" [(ngModel)]="protocol.dietCycleStart" />
+              </ion-item>
+            </ion-list>
+            <p class="nota-sotto tipo-dieta-nota" *ngIf="tipoDieta === 'onoff'">
+              I piani sono alternative: ogni giorno si sceglie quale seguire, di solito in base all'allenamento.
+            </p>
+            <p class="nota-sotto tipo-dieta-nota" *ngIf="tipoDieta === 'ciclica'">
+              Ogni giorno il piano dopo, nell'ordine qui sotto, e dopo l'ultimo si riparte dal primo. Si va avanti col calendario, anche nei giorni senza pasti segnati.
+            </p>
+
             <ion-list-header class="sezione"><ion-label>Piani alimentari</ion-label></ion-list-header>
 
             <div *ngIf="protocol.diet.length === 0" class="history-empty">
-              Nessun piano ancora.<br>Aggiungine uno (es. "Giorno ON", "Giorno OFF", "Rifeed"...).
+              Nessun piano ancora.<br>{{ tipoDieta === 'ciclica' ? 'Aggiungi i giorni del ciclo, nell\'ordine in cui si seguono.' : 'Aggiungine uno (es. "Giorno ON", "Giorno OFF", "Rifeed"...).' }}
             </div>
 
             <ion-list [inset]="true" class="piani">
-              <ion-item-sliding *ngFor="let plan of protocol.diet" #riga>
+              <ion-item-sliding *ngFor="let plan of protocol.diet; let i = index" #riga>
                 <ion-item class="piano-dieta" [button]="true" [detail]="true" (click)="openPlan(plan)">
                   <ion-label>
                     <h2>{{ plan.name || 'Piano senza nome' }}</h2>
-                    <p>{{ riassuntoPiano(plan) }}</p>
+                    <p>{{ tipoDieta === 'ciclica' ? 'Giorno ' + (i + 1) + ' del ciclo · ' : '' }}{{ riassuntoPiano(plan) }}</p>
                   </ion-label>
                 </ion-item>
                 <ion-item-options side="end">

@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap } from '@angular/router';
 import { Subject, of } from 'rxjs';
-import { beforeAll, vi } from 'vitest';
+import { afterEach, beforeAll, vi } from 'vitest';
 
 // Stesso mock di protocollo-builder.component.spec.ts: pdfjs-dist tocca API
 // del browser che l'ambiente di test non ha.
@@ -67,10 +67,10 @@ describe('ProtocolloBuilderComponent — disegno vero', () => {
     HTMLElement.prototype.scrollIntoView = function () {} as any;
   });
 
-  async function monta() {
+  async function monta(extra: Partial<Protocol> = {}) {
     const protocolSvc = {
       changed$: new Subject<void>(),
-      get: vi.fn(async () => structuredClone(protocollo())),
+      get: vi.fn(async () => structuredClone({ ...protocollo(), ...extra })),
       update: vi.fn(async () => {}),
       activate: vi.fn(async () => {}),
       delete: vi.fn(async () => {})
@@ -154,6 +154,98 @@ describe('ProtocolloBuilderComponent — disegno vero', () => {
       const azione = Array.from(root.querySelectorAll<HTMLElement>('ion-item.riga-azione')).find(i => i.textContent!.trim() === 'Aggiungi pasto');
       expect(azione).toBeTruthy();
       expect(root.querySelector('.savebar ion-button.savebtn')).toBeNull();
+    });
+  });
+
+  describe('il tipo di dieta', () => {
+    afterEach(() => vi.useRealTimers());
+    const testo = (el: Element | null) => el?.textContent?.replace(/\s+/g, ' ').trim() ?? null;
+    async function inDieta(extra: Partial<Protocol> = {}) {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(new Date(2026, 9, 26, 9, 0));
+      const m = await monta(extra);
+      m.c.vaAScheda('dieta');
+      m.aggiorna();
+      const segmento = () => m.root.querySelector<HTMLElement & { value?: string }>('ion-segment.tipo-dieta');
+      const data = () => m.root.querySelector<HTMLInputElement>('ion-list.ciclo-inizio input#ciclo-inizio');
+      const nota = () => testo(m.root.querySelector('.tipo-dieta-nota'));
+      const righe = () => Array.from(m.root.querySelectorAll('ion-item.piano-dieta ion-label p')).map(testo);
+      // Come il tocco: l'evento parte dal segmento vero, e passa dal template.
+      const scegli = (value: string) => {
+        segmento()!.dispatchEvent(new CustomEvent('ionChange', { detail: { value }, bubbles: true }));
+        m.aggiorna();
+      };
+      const salvato = () => (m.protocolSvc.update.mock.calls.at(-1) as any[])[1];
+      return { ...m, segmento, data, nota, righe, scegli, salvato };
+    }
+
+    it('un protocollo senza tipo e\' ON/OFF: segmento, la spiegazione, nessun primo giorno', async () => {
+      const { segmento, data, nota, righe, c } = await inDieta();
+      expect(segmento()!.value).toBe('onoff');
+      expect(Array.from(segmento()!.querySelectorAll('ion-segment-button')).map(b => [b.getAttribute('value'), testo(b)]))
+        .toEqual([['onoff', 'Giorni ON/OFF'], ['ciclica', 'Ciclica']]);
+      expect(segmento()!.getAttribute('aria-label')).toBe('Tipo di dieta');
+      expect(data()).toBeNull();
+      expect(nota()).toBe('I piani sono alternative: ogni giorno si sceglie quale seguire, di solito in base all\'allenamento.');
+      expect(righe()).toEqual(['1 pasto · 2 alimenti']);
+      expect(c.haModificheNonSalvate()).toBe(false);
+    });
+
+    it('ciclica: il primo giorno parte da oggi, i piani hanno il loro posto nel ciclo, e si salva', async () => {
+      const { scegli, segmento, data, nota, righe, c, salvato } = await inDieta();
+      scegli('ciclica');
+      expect(segmento()!.value).toBe('ciclica');
+      expect(c.protocol!.dietCycleStart).toBe('2026-10-26');
+      expect(data()).not.toBeNull();
+      expect(nota()).toBe('Ogni giorno il piano dopo, nell\'ordine qui sotto, e dopo l\'ultimo si riparte dal primo. Si va avanti col calendario, anche nei giorni senza pasti segnati.');
+      expect(righe()).toEqual(['Giorno 1 del ciclo · 1 pasto · 2 alimenti']);
+      expect(c.haModificheNonSalvate()).toBe(true);
+      await c.save(false);
+      expect(salvato()).toMatchObject({ dietType: 'ciclica', dietCycleStart: '2026-10-26' });
+    });
+
+    it('il primo giorno scelto resta, anche passando da ON/OFF e tornando', async () => {
+      const { scegli, c, salvato } = await inDieta({ dietType: 'ciclica', dietCycleStart: '2026-10-20' });
+      scegli('onoff');
+      scegli('ciclica');
+      expect(c.protocol!.dietCycleStart).toBe('2026-10-20');
+      expect(c.haModificheNonSalvate()).toBe(false);
+      await c.save(false);
+      expect(salvato()).toMatchObject({ dietType: 'ciclica', dietCycleStart: '2026-10-20' });
+    });
+
+    it('scelta ciclica e poi di nuovo ON/OFF non e\' una modifica; ON/OFF si salva senza primo giorno', async () => {
+      const { scegli, c, salvato } = await inDieta();
+      scegli('ciclica');
+      scegli('onoff');
+      expect(c.haModificheNonSalvate()).toBe(false);
+      await c.save(false);
+      expect(salvato()).toMatchObject({ dietType: 'onoff', dietCycleStart: null });
+    });
+
+    it('un protocollo gia\' ciclico si apre ciclico, col suo primo giorno, senza modifiche', async () => {
+      const { segmento, c, righe } = await inDieta({ dietType: 'ciclica', dietCycleStart: '2026-10-20' });
+      expect(segmento()!.value).toBe('ciclica');
+      expect(c.protocol!.dietCycleStart).toBe('2026-10-20');
+      expect(righe()).toEqual(['Giorno 1 del ciclo · 1 pasto · 2 alimenti']);
+      expect(c.haModificheNonSalvate()).toBe(false);
+    });
+
+    it('un valore che non e\' un tipo non cambia niente', async () => {
+      const { scegli, c } = await inDieta();
+      scegli('settimanale');
+      expect(c.protocol!.dietType).toBeUndefined();
+      expect(c.haModificheNonSalvate()).toBe(false);
+    });
+
+    it('ciclica senza piani: l\'invito parla dei giorni del ciclo', async () => {
+      const { c, scegli, root, aggiorna } = await inDieta();
+      c.protocol!.diet = [];
+      scegli('ciclica');
+      aggiorna();
+      const vuoto = root.querySelector('.history-empty')!;
+      expect(vuoto.querySelector('br')).not.toBeNull();
+      expect(testo(vuoto)).toBe('Nessun piano ancora.Aggiungi i giorni del ciclo, nell\'ordine in cui si seguono.');
     });
   });
 

@@ -5,6 +5,7 @@ import { WorkoutDataService } from './workout-data.service';
 import { DietDataService } from './diet-data.service';
 import { WorkoutStateService } from './workout-state.service';
 import { RunningStateService } from './running-state.service';
+import { normalizzaCiclo } from '../core/utils/dieta-ciclo.util';
 
 @Injectable({ providedIn: 'root' })
 export class ProtocolBootstrapService {
@@ -59,7 +60,7 @@ export class ProtocolBootstrapService {
         this.workoutData.applyProtocol(active.workout);
         this.workoutData.infoNote = active.infoNote ?? '';
         this.workoutData.protocolName = active.name ?? '';
-        this.dietData.applyDiet(active.diet);
+        this.dietData.applyDiet(active.diet, normalizzaCiclo(active.dietType, active.dietCycleStart));
         this.workoutState.recomputeWeek(active.workout.programStart, active.workout.weekPlan.length);
         this.runningState.applyGoal(active.running);
       } else {
