@@ -51,7 +51,9 @@ progetto vecchio non vengono migrati: si parte da un progetto pulito.
    npm run deploy:rules
    ```
 
-   Carica `firestore.rules` e `firestore.indexes.json` (senza indici: non ne servono). Prima del deploy puoi provare le regole con `npm run test:rules`.
+   Carica `firestore.rules` e `firestore.indexes.json` (un indice solo, per i promemoria). Serve a
+   mano solo la prima volta: poi le pubblica la pipeline a ogni merge (vedi sotto). Prima del
+   deploy puoi provare le regole con `npm run test:rules`.
 8. **Primo avvio.** `npm start`, poi *Crea un account* per registrarti. Dalla sezione Scheda,
    con il pulsante in alto a destra, si apre l'elenco dei **Protocolli**: da lì si crea il
    primo (a mano o importando i PDF) e lo si attiva.
@@ -75,21 +77,28 @@ autorizzati del client OAuth (Google Cloud › API e servizi › Credenziali).
 **Pipeline GitHub** (`.github/workflows/firebase-deploy.yml`):
 
 - su ogni **pull request** verso `main`: installa, lancia i test e compila. Non pubblica niente;
-- quando la PR viene **mergiata su `main`** (cioè a ogni push su `main`): test, build e deploy di
-  **solo Firebase Hosting** sul canale `live`. La build che ha passato i test è quella pubblicata;
+- quando la PR viene **mergiata su `main`** (cioè a ogni push su `main`): test, build e deploy.
+  Prima le **regole e gli indici di Firestore**, poi **Firebase Hosting** sul canale `live`: una
+  versione nuova dell'app che legge una raccolta nuova trova già le regole che la aprono. Se le
+  regole non si pubblicano l'app non parte, e online resta quella di prima. La build che ha
+  passato i test è quella pubblicata;
 - da *Actions → Run workflow*, per ripubblicare senza un nuovo commit.
 
-Le regole e gli indici di Firestore **non** partono dalla pipeline: quando cambiano si lancia
-`npm run deploy:rules`.
+Prima le regole andavano pubblicate a mano, e due volte (Promemoria e Storico della dieta) l'app
+è andata online senza le regole delle sue raccolte nuove: Firestore rifiutava ogni lettura.
+`npm run deploy:rules` resta per il primo avvio e per le emergenze.
 
 **Per attivarla serve un solo secret**, `FIREBASE_SERVICE_ACCOUNT`. Finché manca, build e test
 girano e il deploy viene saltato con un avviso giallo.
 
 1. In [Google Cloud › IAM › Account di servizio](https://console.cloud.google.com/iam-admin/serviceaccounts?project=workout-lab-8c567)
    crea un account di servizio, per esempio `github-hosting-deploy`.
-2. Dagli i ruoli **Firebase Hosting Admin** e **Service Usage Consumer**. Se il primo deploy
+2. Dagli i ruoli **Firebase Hosting Admin**, **Service Usage Consumer**, **Firebase Rules Admin**
+   (per le regole) e **Cloud Datastore Index Admin** (per gli indici). Se il primo deploy
    protesta per un permesso mancante, il messaggio dice quale aggiungere (di solito **API Keys
-   Viewer** o **Cloud Run Viewer**).
+   Viewer** o **Cloud Run Viewer**). A un account di servizio che c'è già i ruoli si aggiungono
+   da [Google Cloud › IAM](https://console.cloud.google.com/iam-admin/iam?project=workout-lab-8c567):
+   la matita sulla sua riga, *Aggiungi un altro ruolo*.
 3. Dal suo menu *Gestisci chiavi → Aggiungi chiave → Crea nuova chiave → JSON*: scarica il file.
 4. Su GitHub: *Settings → Secrets and variables → Actions → New repository secret*, nome
    `FIREBASE_SERVICE_ACCOUNT`, valore **l'intero contenuto** del file JSON. Poi cancella il file
