@@ -14,14 +14,17 @@ import {
   Diet, DietPlan, NamedMeal, MealCombination, FoodItem, FoodCategory, SupplementItem,
   DEFAULT_MEAL_NAMES, newDietPlan, newNamedMeal, newCombination
 } from '../models/diet.model';
-// Worker servito dallo stesso dominio dell'app (file in public/, copiato in root
-// dal build - vedi angular.json "assets"). Un worker caricato da un CDN esterno e'
+// Worker servito dallo stesso dominio dell'app. Un worker caricato da un CDN esterno e'
 // cross-origin e su Safari/iOS spesso fallisce in silenzio (nessun errore, nessuna
 // risposta), lasciando l'estrazione bloccata a tempo indeterminato senza alcun feedback.
-// NB: il file public/pdf.worker.min.mjs va tenuto allineato alla versione di pdfjs-dist
-// installata (copiato da node_modules/pdfjs-dist/legacy/build/pdf.worker.min.mjs -
-// build "legacy" corrispondente all'import sopra, NON node_modules/pdfjs-dist/build/).
-pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
+// Il file lo copia il build dal pacchetto installato (angular.json, "assets":
+// node_modules/pdfjs-dist/legacy/build, la build "legacy" come l'import sopra), cosi'
+// worker e libreria hanno sempre la stessa versione. Prima era una copia a mano in
+// public/, rimasta alla 6.1.200 mentre la libreria era alla 6.4.299: pdf.js rifiuta
+// la coppia ("The API version ... does not match the Worker version ...") e
+// l'import da PDF non partiva. La versione nell'indirizzo fa il resto: dopo un
+// aggiornamento il telefono non puo' tenersi in cache il worker vecchio.
+pdfjsLib.GlobalWorkerOptions.workerSrc = `/pdf.worker.min.mjs?v=${pdfjsLib.version}`;
 
 const MEAL_KEYWORDS: Record<string, string> = {
   'colazione': 'Colazione',
