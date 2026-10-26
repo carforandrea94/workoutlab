@@ -335,7 +335,8 @@
                 <span class="unit">serie</span>
               </div>
               <div class="measure-input-wrap weekplan-input">
-                <ion-input type="number" [(ngModel)]="wp.reps" placeholder="rip"></ion-input>
+                <!-- Testo e non numero: un intervallo come "6-8" non entra in un campo numerico. -->
+                <ion-input type="text" [(ngModel)]="wp.reps" placeholder="rip"></ion-input>
                 <span class="unit">rip</span>
               </div>
               <ion-button class="delete-btn tap44" (click)="removeExWeek(ee.ex, i)" title="Rimuovi settimana" [attr.aria-label]="'Rimuovi la settimana ' + (i + 1)"><app-icona name="close" [size]="14"></app-icona></ion-button>

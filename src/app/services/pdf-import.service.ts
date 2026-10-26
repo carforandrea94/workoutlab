@@ -134,8 +134,13 @@ const DURATA_RE = /DURATA\s+(\d+)\s+SETTIMANE/i;
  * scrive una volta per tutto il giorno e chi lo scrive su ogni esercizio
  * ("REC 1’", "REC 50”"). Nel secondo caso lo si ricava dagli esercizi, piu'
  * sotto: senza, il giorno resterebbe senza un recupero da proporre.
+ *
+ * Un altro coach scrive "GIORNO 1: PUSH", "GIORNO 2:PULL" (i due punti senza
+ * spazio) e "GIORNO 3" da solo, senza nome: stessa intestazione, in italiano.
+ * Prima non si riconosceva, e tutta la scheda finiva nel parser generico, che
+ * non sa leggere "EX.N/Nome" con lo schema sulla riga sotto.
  */
-const DAY_HEADER_RE = /^DAY\s*(\d+)\s*:\s*(.+?)(?:\s+REC\s+TRA\s+([\d\-]+)[”"″'’]*)?\s*$/i;
+const DAY_HEADER_RE = /^(?:DAY|GIORNO)\s*(\d+)\s*(?:[:\-–]\s*)?(.*?)(?:\s+REC\s+TRA\s+([\d\-]+)[”"″'’]*)?\s*$/i;
 /** Il riscaldamento finisce in coda ai muscoli del giorno: non e' un muscolo. */
 const RISCALDAMENTO_RE = /\s+RISCALDAMENTO\b.*$/i;
 /**
@@ -156,6 +161,15 @@ const PAIR_RE = /(\d+)\s*[xX×]\s*(\d+)/g;
 // il carico", ma anche "...ricomincia dal ciclo 1", "ripeti dal ciclo", "torna al ciclo"):
 // accettiamo tutte queste varianti (additivo, le frasi gia' riconosciute restano valide).
 const WAVE_MARKER_RE = /riprendi|aumentando|ricomincia|ripeti\s+dal\s+ciclo|torna\s+al\s+ciclo/i;
+/**
+ * "3 4 4 5 3X 6-8": la progressione compatta di un esercizio a onda. Le serie
+ * cambiano di settimana in settimana (3, 4, 4, 5) e le ripetizioni restano le
+ * stesse (6-8); l'ultimo "3X" e' il punto da cui si riparte, cioe' il primo
+ * valore ripetuto, come "RIPRENDI DA 4X10" nelle schede con le coppie scritte
+ * per esteso. Le serie sono numeri separati da spazi, poi la X e le ripetizioni
+ * (un numero o un intervallo), poi eventualmente una nota.
+ */
+const SERIE_PER_SETTIMANA_RE = /^(\d+(?:\s+\d+)+)\s*[xX×]\s*(\d+(?:\s*[-–\/]\s*\d+)?)(?:\s+(.*))?$/;
 /** "4X10+ ULTIMA IN STRIP..." / "3X12/15 con fermo in basso di 2”": sets + descrittore reps + nota libera. */
 const SINGLE_SCHEME_RE = /^(\d+)\s*[xX×]\s*(\S+)(?:\s+(.*))?$/;
 
@@ -183,11 +197,11 @@ const SUPPLEMENT_SECTION_MEAL: Record<'pre' | 'intra' | 'post', string> = {
  *  piu' specifiche (Core, Gambe, Bicipiti) vanno prima di quelle che si sovrappongono a nomi
  *  di macchinari/esercizi di altri gruppi (es. "LAT MACHINE" usata anche per esercizi di core). */
 const MUSCLE_KEYWORDS: { muscle: string; keywords: string[] }[] = [
-  { muscle: 'Core', keywords: ['CRUNCH', 'GINOCCHIA', 'FLESSIONI', 'BUSTO', 'ADDOMINALI', 'PLANK', 'FITBALL', 'INVERSI', 'CORE'] },
+  { muscle: 'Core', keywords: ['CRUNCH', 'GINOCCHIA', 'GAMBE AL PETTO', 'FLESSIONI', 'BUSTO', 'ADDOMINALI', 'PLANK', 'FITBALL', 'INVERSI', 'CORE'] },
   { muscle: 'Gambe', keywords: ['SQUAT', 'LEG', 'AFFONDI', 'HIP THRUST', 'STACCO', 'CALF', 'GAMBE'] },
   { muscle: 'Bicipiti', keywords: ['CURL', 'BICIP'] },
-  { muscle: 'Dorso', keywords: ['LAT MACHINE', 'LAT INVERSA', 'REMATORE', 'T BAR', 'PULLEY', 'PULLOVER', 'DORSO'] },
-  { muscle: 'Spalle', keywords: ['ALZATE', 'SPALLE', 'DELT', 'MILITARY'] },
+  { muscle: 'Dorso', keywords: ['LAT MACHINE', 'LAT INVERSA', 'REMATORE', 'T BAR', 'PULLEY', 'PULLOVER', 'PULL DOWN', 'PULLDOWN', 'TRAZION', 'ROW', 'DORSO'] },
+  { muscle: 'Spalle', keywords: ['ALZATE', 'SPALLE', 'DELT', 'MILITARY', 'TIRATE AL MENTO', 'LENTO AVANTI'] },
   { muscle: 'Tricipiti', keywords: ['FRENCH PRESS', 'PUSH DOWN', 'PUSHDOWN', 'TRICIP', 'DIPS', 'PARALLELE'] },
   { muscle: 'Petto', keywords: ['PANCA', 'SPINTE', 'CHEST', 'PETTO', 'PECTORAL', 'CROCI'] }
 ];
@@ -479,7 +493,8 @@ export class PdfImportService {
       const dayMatch = line.match(DAY_HEADER_RE);
       if (dayMatch) {
         const label = dayMatch[2].replace(RISCALDAMENTO_RE, '').trim();
-        const dayLabel = toTitleCase(label);
+        // "GIORNO 3" senza nome: il giorno si chiama come e' scritto.
+        const dayLabel = label ? toTitleCase(label) : `Giorno ${dayMatch[1]}`;
         // Stesso fix del parser dieta: "DAY N: ..." e' anche l'intestazione ripetuta a
         // inizio di OGNI pagina, non solo a inizio sezione. Se e' lo stesso giorno gia' in
         // corso, e' un semplice ri-attraversamento di pagina: non va creato un secondo
@@ -526,7 +541,10 @@ export class PdfImportService {
       if (!day.rec) day.rec = this.recDagliEsercizi(day);
     }
 
-    return days.length > 0 ? days : null;
+    // Delle intestazioni senza nemmeno un "EX.N/Nome" sotto non sono una scheda a
+    // template: "Giorno 1" e' anche l'intestazione di un testo con nome e schema
+    // sulla stessa riga ("Panca piana 4x10"), che sa leggere il parser generico.
+    return days.some(d => d.ex.length > 0) ? days : null;
   }
 
   /**
@@ -570,6 +588,20 @@ export class PdfImportService {
         cluster: cluster.spec,
         note: cluster.nota,
         text: line
+      };
+    }
+
+    const perSettimana = line.match(SERIE_PER_SETTIMANA_RE);
+    if (perSettimana) {
+      const numeri = perSettimana[1].split(/\s+/).map(n => parseInt(n, 10));
+      // L'ultimo numero uguale al primo e' il punto di ripresa, non una settimana in piu'.
+      const ciclo = numeri.length >= 3 && numeri[numeri.length - 1] === numeri[0] ? numeri.slice(0, -1) : numeri;
+      const repsScritte = perSettimana[2].replace(/\s+/g, '').replace('–', '-');
+      const reps: number | string = /^\d+$/.test(repsScritte) ? parseInt(repsScritte, 10) : repsScritte;
+      const weekPlan: WeekPlan[] = Array.from({ length: totalWeeks }, (_, i) => ({ sets: ciclo[i % ciclo.length], reps }));
+      return {
+        name, scheme: 'wave', sets: weekPlan[0].sets, muscle,
+        reps: [String(reps)], weekPlan, note: perSettimana[3]?.trim() || undefined, text: line
       };
     }
 

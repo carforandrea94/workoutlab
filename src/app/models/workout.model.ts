@@ -46,7 +46,8 @@ export interface Day {
 
 export interface WeekPlan {
   sets: number;
-  reps: number;
+  /** Un numero, o un intervallo come "6-8" quando il coach lo scrive cosi'. */
+  reps: number | string;
 }
 
 export interface ExerciseState {
