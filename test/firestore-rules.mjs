@@ -25,7 +25,7 @@ const env = await initializeTestEnvironment({
 });
 
 const IO = 'utente-1', ALTRO = 'utente-2';
-const RACCOLTE = ['measurements', 'sessions', 'runs', 'state', 'protocols', 'promemoria'];
+const RACCOLTE = ['measurements', 'sessions', 'runs', 'state', 'protocols', 'promemoria', 'giorniDieta'];
 
 await env.withSecurityRulesDisabled(async (ctx) => {
   const db = ctx.firestore();
@@ -64,6 +64,18 @@ for (const raccolta of RACCOLTE) {
 }
 await prova('modifica un protocollo',
   assertSucceeds(updateDoc(doc(io, 'users', IO, 'protocols', 'x1'), { status: 'active' })));
+// Lo storico della dieta scrive un piano per volta con merge: l'altro piano
+// dello stesso giorno deve restare, e quello riscritto cambia intero.
+await prova('storico della dieta: due piani nello stesso giorno restano tutti e due', (async () => {
+  const giorno = doc(io, 'users', IO, 'giorniDieta', '2026-10-26');
+  const piano = (nome, pasti) => ({ nome, pasti: pasti.map(n => ({ id: n, nome: n, fatto: true, alimenti: [], integratori: [] })) });
+  await setDoc(giorno, { date: '2026-10-26', piani: { on: piano('Giorno ON', ['Colazione', 'Pranzo']) } }, { merge: true });
+  await setDoc(giorno, { date: '2026-10-26', piani: { off: piano('Giorno OFF', ['Cena']) } }, { merge: true });
+  await setDoc(giorno, { date: '2026-10-26', piani: { on: piano('Giorno ON', ['Colazione']) } }, { merge: true });
+  const letto = (await getDoc(giorno)).data();
+  if (Object.keys(letto.piani).sort().join() !== 'off,on') throw new Error('piani: ' + Object.keys(letto.piani));
+  if (letto.piani.on.pasti.length !== 1 || letto.piani.off.pasti[0].nome !== 'Cena') throw new Error(JSON.stringify(letto.piani));
+})());
 
 console.log('\n— i dati degli altri —');
 await prova('non legge il profilo di un altro', assertFails(getDoc(doc(io, 'users', ALTRO))));

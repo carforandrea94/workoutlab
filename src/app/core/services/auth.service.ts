@@ -47,7 +47,7 @@ export const PROFILE_MISSING = 'app/profile-missing';
  * account: allenamenti salvati, uscite, misurazioni, bozze, protocolli e
  * promemoria (con i telefoni iscritti).
  */
-const SOTTORACCOLTE = ['sessions', 'runs', 'measurements', 'state', 'protocols', 'promemoria'] as const;
+const SOTTORACCOLTE = ['sessions', 'runs', 'measurements', 'state', 'protocols', 'promemoria', 'giorniDieta'] as const;
 
 /**
  * L'accettazione dell'informativa, come finisce sul profilo.

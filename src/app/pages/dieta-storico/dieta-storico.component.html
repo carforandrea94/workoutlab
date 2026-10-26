@@ -1,0 +1,61 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/dieta" aria-label="Indietro"></ion-back-button>
+    </ion-buttons>
+    <ion-title>
+      <div class="navtitle">Storico</div>
+    </ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="liste-ios">
+  <ion-refresher slot="fixed" (ionRefresh)="aggiorna($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  <div class="wrap">
+    <ng-container *ngFor="let s of storico().settimane">
+      <ion-list-header class="sezione">
+        <ion-label *ngIf="s.corrente">Questa settimana<span class="sezione-nota">{{ s.label }}</span></ion-label>
+        <ion-label *ngIf="!s.corrente">{{ s.label }}</ion-label>
+      </ion-list-header>
+      <ion-accordion-group class="giorni-dieta" expand="inset" [multiple]="true" [value]="aperto(s)">
+        <ion-accordion *ngFor="let g of s.giorni" class="giorno-dieta" [value]="g.date">
+          <ion-item slot="header">
+            <ion-label>
+              <h2>{{ g.titolo }}</h2>
+              <p>{{ g.piani }}</p>
+            </ion-label>
+            <ion-note slot="end" class="valore">{{ g.fatti }} <small>di {{ g.totali }}</small></ion-note>
+          </ion-item>
+          <ion-list slot="content" class="pasti-mangiati">
+            <ng-container *ngFor="let p of g.dettaglio">
+              <ion-list-header class="piano-giorno" *ngIf="g.dettaglio.length > 1">
+                <ion-label>{{ p.nome }}</ion-label>
+              </ion-list-header>
+              <ion-item *ngFor="let m of p.pasti" class="pasto-mangiato">
+                <ion-label class="ion-text-wrap">
+                  <h3>{{ m.nome }}<span class="combo" *ngIf="m.combinazione"> · {{ m.combinazione }}</span></h3>
+                  <p *ngFor="let a of m.alimenti" class="alimento">{{ testo(a) }}<span class="al-posto" *ngIf="a.alPostoDi">, al posto di {{ a.alPostoDi }}</span></p>
+                  <p *ngIf="m.integratori.length" class="integratori">Integratori: {{ m.integratori.join(' · ') }}</p>
+                </ion-label>
+              </ion-item>
+            </ng-container>
+          </ion-list>
+        </ion-accordion>
+      </ion-accordion-group>
+    </ng-container>
+
+    <ion-button class="week-more" fill="clear" expand="block" *ngIf="storico().nascoste && !tutte()" (click)="tutte.set(true)">
+      Mostra le altre {{ storico().nascoste }} settimane
+    </ion-button>
+
+    <div class="history-empty" *ngIf="caricato() && errore()">
+      Non riesco a leggere lo storico. Controlla la connessione e tira giù la pagina per riprovare.
+    </div>
+    <div class="history-empty" *ngIf="caricato() && !errore() && !storico().settimane.length">
+      Ancora niente qui. Segna i pasti nella Dieta: giorno per giorno, qui resta cosa hai mangiato.
+    </div>
+  </div>
+</ion-content>

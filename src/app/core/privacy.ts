@@ -7,4 +7,4 @@
  * dell'informativa cambia davvero - e chi ha accettato la versione prima va
  * riavvicinato, cosa che l'app oggi non fa (vedi il commento in privacy.component).
  */
-export const PRIVACY_VERSION = '2026-10-25.3';
+export const PRIVACY_VERSION = '2026-10-26.1';

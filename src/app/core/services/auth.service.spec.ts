@@ -186,13 +186,13 @@ describe("AuthService — iscrizioni che si rompono a meta'", () => {
       await expect(service.deleteAccount('giusta')).rejects.toThrow(/Sessione scaduta/);
     });
 
-    it('svuota anche i promemoria, coi telefoni iscritti', async () => {
+    it('svuota anche i promemoria, coi telefoni iscritti, e lo storico della dieta', async () => {
       await entra();
       const firestore: any = await import('firebase/firestore');
       const raccolte = vi.spyOn(firestore, 'collection');
       await service.deleteAccount('giusta');
       expect(raccolte.mock.calls.map((c: any[]) => c.slice(1).join('/'))).toEqual(
-        ['sessions', 'runs', 'measurements', 'state', 'protocols', 'promemoria'].map(r => `users/uid-via@e.com/${r}`)
+        ['sessions', 'runs', 'measurements', 'state', 'protocols', 'promemoria', 'giorniDieta'].map(r => `users/uid-via@e.com/${r}`)
       );
     });
   });

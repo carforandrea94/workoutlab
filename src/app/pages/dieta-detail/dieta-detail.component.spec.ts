@@ -10,6 +10,7 @@ import { DietStateService } from '../../services/diet-state.service';
 import { AppStateService } from '../../services/app-state.service';
 import { todayLocalISO } from '../../core/utils/date.util';
 import { GiornoService } from '../../core/giorno.service';
+import { StoricoDietaService } from '../../services/storico-dieta.service';
 
 /**
  * Il piano alimentare, disegnato davvero. Le intestazioni cliccabili sono
@@ -54,6 +55,7 @@ describe('DietaDetailComponent', () => {
 
   async function monta(modo: 'list' | 'slider', mealsCompletion: any = null) {
     const patchField = vi.fn(async (_k: string, _v: any) => {});
+    const storico = { salva: vi.fn(async (_d: string, _p: string, _piano: any) => {}) };
     const viewMode = signal<'list' | 'slider'>(modo);
     TestBed.configureTestingModule({
       imports: [DietaDetailComponent],
@@ -62,7 +64,8 @@ describe('DietaDetailComponent', () => {
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ mode: 'p1' }) } } },
         { provide: DietDataService, useValue: { getPlan: () => piano() } },
         { provide: DietStateService, useValue: { viewMode, setViewMode: vi.fn() } },
-        { provide: AppStateService, useValue: { load: async () => ({ mealsCompletion }), patchField } }
+        { provide: AppStateService, useValue: { load: async () => ({ mealsCompletion }), patchField } },
+        { provide: StoricoDietaService, useValue: storico }
       ]
     });
     const fixture = TestBed.createComponent(DietaDetailComponent);
@@ -85,7 +88,7 @@ describe('DietaDetailComponent', () => {
       const chiamate = patchField.mock.calls.filter(k => k[0] === 'mealsCompletion');
       return chiamate.length ? chiamate[chiamate.length - 1][1] : null;
     };
-    return { fixture, c, root, tutti, testo, tasto, aggiorna, ridisegna, etichetta, patchField, salvato };
+    return { fixture, c, root, tutti, testo, tasto, aggiorna, ridisegna, etichetta, patchField, salvato, storico };
   }
 
   describe('vista elenco', () => {
@@ -429,6 +432,51 @@ describe('DietaDetailComponent', () => {
       } finally {
         vi.useRealTimers();
       }
+    });
+  });
+
+  describe('lo storico', () => {
+    it('a ogni spunta scrive il piano di oggi: tutti i pasti, coi nomi e gli alimenti', async () => {
+      const { c, storico } = await monta('list');
+      c.toggleMealCompleted(c.meals[1]);
+      expect(storico.salva).toHaveBeenCalledTimes(1);
+      const [data, pianoId, piano] = storico.salva.mock.calls[0];
+      expect([data, pianoId]).toEqual([todayLocalISO(), 'p1']);
+      expect(piano).toEqual({
+        nome: 'Giorno ON',
+        pasti: [
+          {
+            id: 'm1', nome: 'Colazione', fatto: false, combinazione: 'Base',
+            alimenti: [{ macro: 'carb', nome: 'Avena', qty: '80 g' }, { macro: 'protein', nome: 'Uova', qty: '3' }],
+            integratori: []
+          },
+          { id: 'm2', nome: 'Pranzo', fatto: true, alimenti: [{ macro: 'protein', nome: 'Pollo', qty: '150 g' }], integratori: [] }
+        ]
+      });
+    });
+
+    it('anche le scelte: la combinazione, l\'alimento cambiato e quello che il piano diceva', async () => {
+      const { c, storico } = await monta('list');
+      c.apriCombo(c.meals[0]);
+      c.scegliNelFoglio(c.foglio!, 'c1b');
+      c.apriMacro(c.meals[0], 'carb');
+      c.scegliNelFoglio(c.foglio!, 'pasto:Pane');
+      const colazione = storico.salva.mock.calls.at(-1)![2].pasti[0];
+      expect(colazione.combinazione).toBe('Dolce');
+      expect(colazione.alimenti).toEqual([
+        { macro: 'carb', nome: 'Pane', qty: '60 g', alPostoDi: 'Pancake' },
+        { macro: 'protein', nome: 'Whey', qty: '30 g' }
+      ]);
+    });
+
+    it('se lo storico non si salva, la giornata resta salvata', async () => {
+      const errore = vi.spyOn(console, 'error').mockImplementation(() => {});
+      const { c, storico, salvato } = await monta('list');
+      storico.salva.mockRejectedValueOnce(new Error('offline'));
+      c.toggleMealCompleted(c.meals[0]);
+      await vi.waitFor(() => expect(errore).toHaveBeenCalledWith('Storico della dieta non salvato:', expect.any(Error)));
+      expect(salvato()?.done).toEqual({ m1: true, m2: false });
+      errore.mockRestore();
     });
   });
 

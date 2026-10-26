@@ -60,6 +60,16 @@ describe('DietaComponent — le card dei piani', () => {
     expect(metaDi()).toEqual(['0/4 pasti oggi · 4 alimenti', '0/2 pasti oggi · 2 alimenti']);
   });
 
+  it('in alto a destra lo Storico, poi la lista della spesa', async () => {
+    const { root } = await monta();
+    const tasti = Array.from(root.querySelectorAll<HTMLElement>('ion-header:not([collapse]) ion-buttons[slot=end] ion-button.navicon'));
+    expect(tasti.map(t => [t.getAttribute('routerLink'), t.getAttribute('aria-label'), t.querySelector('app-icona')!.getAttribute('name')])).toEqual([
+      ['/dieta/storico', 'Storico', 'time'],
+      ['/dieta/lista-spesa', 'Lista della spesa', 'cart']
+    ]);
+    expect(tasti.every(t => t.getAttribute('routerDirection') === 'forward')).toBe(true);
+  });
+
   it('l\'icona dice "piano alimentare", non "aggiungi"', async () => {
     const { root } = await monta();
     const icone = Array.from(root.querySelectorAll('.diet-card ion-avatar app-icona')).map(i => i.getAttribute('name'));
