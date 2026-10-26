@@ -44,9 +44,10 @@ export const PROFILE_MISSING = 'app/profile-missing';
 
 /**
  * Le raccolte personali di un utente, quelle che si cancellano insieme al suo
- * account: allenamenti salvati, uscite, misurazioni, bozze e protocolli.
+ * account: allenamenti salvati, uscite, misurazioni, bozze, protocolli e
+ * promemoria (con i telefoni iscritti).
  */
-const SOTTORACCOLTE = ['sessions', 'runs', 'measurements', 'state', 'protocols'] as const;
+const SOTTORACCOLTE = ['sessions', 'runs', 'measurements', 'state', 'protocols', 'promemoria'] as const;
 
 /**
  * L'accettazione dell'informativa, come finisce sul profilo.
@@ -82,6 +83,8 @@ function conTempoMassimo<T>(promessa: Promise<T>, ms: number): Promise<T> {
 export class AuthService {
   currentUser = signal<UserProfile | null>(null);
   authReady = signal(false);
+  /** Da fare prima di uscire, finche' si puo' ancora scrivere sui propri dati (vedi primaDiUscire). */
+  private allUscita: (() => Promise<void>)[] = [];
 
   /**
    * "Più tardi" sulla schermata dei dati mancanti: vale per questa sessione.
@@ -315,8 +318,21 @@ export class AuthService {
     })());
   }
 
+  /**
+   * Qualcosa da fare prima di uscire dall'account, quando le regole lasciano
+   * ancora scrivere: i promemoria tolgono questo telefono. Non blocca
+   * l'uscita: un errore o un'attesa oltre i tre secondi la lasciano passare.
+   */
+  primaDiUscire(f: () => Promise<void>): void {
+    this.allUscita.push(f);
+  }
+
   logout(): Promise<void> {
     return this.zoneFix.run((async () => {
+      if (this.allUscita.length) {
+        const fatti = Promise.allSettled(this.allUscita.map(f => f()));
+        await Promise.race([fatti, new Promise(r => setTimeout(r, 3000))]);
+      }
       await signOut(this.fb.auth);
       this.currentUser.set(null);
     })());

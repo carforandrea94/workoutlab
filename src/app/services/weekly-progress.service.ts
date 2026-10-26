@@ -37,6 +37,8 @@ export class WeeklyProgressService {
   private saved = signal<SessionMark[]>([]);
   private inFlight: Promise<void> | null = null;
   private letto = false;
+  /** Chi vuole sapere quando le sedute sono state rilette (i promemoria). */
+  private ascoltatori: (() => void)[] = [];
 
   /** Le sedute sono arrivate almeno una volta: da qui in poi si leggono senza aspettare. */
   get caricato(): boolean {
@@ -62,12 +64,20 @@ export class WeeklyProgressService {
         }
         this.saved.set(marks);
         this.letto = true;
+        for (const f of this.ascoltatori) {
+          try { f(); } catch (e) { console.error('Dopo la lettura delle sedute:', e); }
+        }
       })
       .catch(e => {
         console.error('Lettura delle sedute per le spunte settimanali fallita:', e);
       })
       .finally(() => { this.inFlight = null; });
     return this.inFlight;
+  }
+
+  /** Da chiamare dopo ogni lettura riuscita delle sedute. */
+  dopoOgniLettura(f: () => void): void {
+    this.ascoltatori.push(f);
   }
 
   /** true se il giorno ha almeno una seduta salvata nella settimana corrente. */

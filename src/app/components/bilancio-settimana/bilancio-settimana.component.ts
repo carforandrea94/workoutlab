@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, signal } from '@angular/core';
+import { Component, OnInit, computed, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IonButton, IonList, IonProgressBar } from '@ionic/angular';
 import { IconaComponent } from '../icona/icona.component';
@@ -10,8 +10,8 @@ import { WorkoutDataService } from '../../services/workout-data.service';
 import { Bilancio, PesoDatato, bilancio } from '../../core/utils/settimana.util';
 import { normalizzaObiettivo } from '../../core/utils/obiettivo.util';
 import { weekRangeLabel } from '../../core/utils/week-history.util';
-import { todayLocalISO } from '../../core/utils/date.util';
 import { conDissolvenza } from '../../core/dissolvenza';
+import { GiornoService } from '../../core/giorno.service';
 
 /**
  * La settimana scorsa, in Account sotto "Il mio obiettivo": allenamenti,
@@ -34,6 +34,7 @@ export class BilancioSettimanaComponent implements OnInit {
   readonly bilancio = signal<Bilancio | null>(null);
   /** Il lunedi' del bilancio gia' letto. */
   readonly letto = signal<string | null>(null);
+  private readonly giorno = inject(GiornoService);
   readonly visibile = computed(() => {
     const b = this.bilancio();
     return !!b && b.lunedi !== this.letto();
@@ -45,7 +46,17 @@ export class BilancioSettimanaComponent implements OnInit {
     private weekly: WeeklyProgressService,
     private running: RunningStateService,
     private workoutData: WorkoutDataService
-  ) {}
+  ) {
+    // Account resta viva: a mezzanotte fra domenica e lunedi' la settimana
+    // scorsa diventa un'altra, e si rilegge.
+    let visto = this.giorno.oggi();
+    effect(() => {
+      const oggi = this.giorno.oggi();
+      if (oggi === visto) return;
+      visto = oggi;
+      void this.refresh();
+    });
+  }
 
   ngOnInit(): void {
     void this.refresh();
@@ -64,7 +75,7 @@ export class BilancioSettimanaComponent implements OnInit {
         .reverse();
       this.letto.set(stato.bilancioLetto ?? null);
       this.bilancio.set(bilancio({
-        oggi: todayLocalISO(),
+        oggi: this.giorno.oggi(),
         sedute: this.weekly.sedute(),
         previsti: this.workoutData.days.length,
         corse: this.running.runs().map(r => r.run),

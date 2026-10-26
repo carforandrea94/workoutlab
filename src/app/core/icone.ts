@@ -13,7 +13,8 @@ import {
   removeCircle, removeCircleSharp, reorderThreeOutline, reorderTwoSharp, restaurant, restaurantOutline,
   restaurantSharp, saveOutline, saveSharp, searchOutline, searchSharp, settingsOutline, settingsSharp,
   swapHorizontalOutline, swapHorizontalSharp, timeOutline, timerOutline, timerSharp, timeSharp, trashOutline,
-  trashSharp, trendingUpOutline, trendingUpSharp, scaleOutline, scaleSharp
+  trashSharp, trendingUpOutline, trendingUpSharp, scaleOutline, scaleSharp, notifications, notificationsOutline,
+  notificationsSharp
 } from 'ionicons/icons';
 
 /**
@@ -127,6 +128,7 @@ export const ICONE = {
   'information-circle': { ios: informationCircleOutline, md: informationCircleSharp },
   'list': { ios: listOutline, md: listSharp },
   'pause': { ios: pauseOutline, md: pauseSharp, piena: pause },
+  'notifications': { ios: notificationsOutline, md: notificationsSharp, piena: notifications },
   'pencil': { ios: pencilOutline, md: pencilSharp },
   'person': { ios: personOutline, md: personSharp, piena: person },
   'play': { ios: playOutline, md: playSharp, piena: play },

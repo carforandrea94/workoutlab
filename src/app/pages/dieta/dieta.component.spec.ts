@@ -1,10 +1,11 @@
 import { TestBed } from '@angular/core/testing';
-import { vi } from 'vitest';
+import { afterEach, vi } from 'vitest';
 import { providerPagina } from '../../../test-support/pagina';
 import { DietaComponent } from './dieta.component';
 import { DietDataService } from '../../services/diet-data.service';
 import { AppStateService } from '../../services/app-state.service';
 import { todayLocalISO } from '../../core/utils/date.util';
+import { GiornoService } from '../../core/giorno.service';
 
 /**
  * La radice della Dieta e' un elenco di piani. Prima ogni card diceva solo
@@ -78,5 +79,22 @@ describe('DietaComponent — le card dei piani', () => {
     fixture.detectChanges();
 
     expect(metaDi()[0]).toBe('1/4 pasti oggi · 4 alimenti');
+  });
+
+  describe('a mezzanotte', () => {
+    afterEach(() => vi.useRealTimers());
+
+    it('con la pagina aperta i pasti di ieri tornano a zero da soli', async () => {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(new Date(2026, 9, 25, 23, 59));
+      const { metaDi } = await monta({ mealsCompletion: { date: '2026-10-25', done: { m1: true, m2: true, m5: true } } });
+      expect(metaDi()).toEqual(['2/4 pasti oggi · 4 alimenti', '1/2 pasti oggi · 2 alimenti']);
+
+      // Il giorno cambia; nessun tocco, nessuna rilettura, nessun detectChanges.
+      vi.setSystemTime(new Date(2026, 9, 26, 0, 0, 1));
+      TestBed.inject(GiornoService).controlla();
+      expect(metaDi()).toEqual(['0/4 pasti oggi · 4 alimenti', '0/2 pasti oggi · 2 alimenti']);
+      expect((TestBed.inject(AppStateService) as any).load).toHaveBeenCalledTimes(1);
+    });
   });
 });

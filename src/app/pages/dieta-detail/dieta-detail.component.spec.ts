@@ -9,6 +9,7 @@ import { DietDataService } from '../../services/diet-data.service';
 import { DietStateService } from '../../services/diet-state.service';
 import { AppStateService } from '../../services/app-state.service';
 import { todayLocalISO } from '../../core/utils/date.util';
+import { GiornoService } from '../../core/giorno.service';
 
 /**
  * Il piano alimentare, disegnato davvero. Le intestazioni cliccabili sono
@@ -403,6 +404,31 @@ describe('DietaDetailComponent', () => {
         done: { off1: true, m1: true, m2: true },
         choices: { off1: { combo: 'x' } }
       });
+    });
+
+    it('a mezzanotte, a pagina aperta, la giornata riparte: niente spunte ne\' scelte di ieri salvate come di oggi', async () => {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(new Date(2026, 9, 25, 23, 59));
+      try {
+        const { c, testo, salvato } = await monta('slider', { date: '2026-10-25', done: { m1: true, off1: true }, choices: { m1: { combo: 'c1b' }, off1: { combo: 'x' } } });
+        expect(c.meals[0].completed).toBe(true);
+        expect(c.sliderIndex).toBe(1);
+        const scorri = vi.spyOn(c, 'scrollToIndex');
+
+        vi.setSystemTime(new Date(2026, 9, 26, 0, 0, 1));
+        TestBed.inject(GiornoService).controlla();
+        expect(c.meals.map(vm => vm.completed)).toEqual([false, false]);
+        expect(c.meals[0].scelta).toBeUndefined();
+        expect(c.sliderIndex).toBe(0);
+        // Lo slider torna sul primo pasto, non resta sulla card di ieri.
+        expect(scorri).toHaveBeenLastCalledWith(0, false);
+        expect(testo('button.comborow')[0]).toContain('Base · 1 di 2');
+
+        c.toggleMealCompleted(c.meals[1]);
+        expect(salvato()).toEqual({ date: '2026-10-26', done: { m1: false, m2: true } });
+      } finally {
+        vi.useRealTimers();
+      }
     });
   });
 

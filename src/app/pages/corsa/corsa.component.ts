@@ -1,9 +1,10 @@
-import { Component, OnInit, computed } from '@angular/core';
+import { Component, OnInit, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 import { RunningStateService } from '../../services/running-state.service';
 import { hasRunGoal } from '../../models/run.model';
 import { goalPct } from '../../core/utils/run-math.util';
+import { GiornoService } from '../../core/giorno.service';
 import { todayLocalISO } from '../../core/utils/date.util';
 import { buildWeekHistory } from '../../core/utils/week-history.util';
 import { IONIC_LINKS, IONIC_PAGE } from '../../core/ionic-page';
@@ -30,10 +31,11 @@ import { RigaCorsa } from './riga-corsa';
 export class CorsaComponent extends RigaCorsa implements OnInit {
 
   readonly hasGoal = computed(() => hasRunGoal(this.state.goal()));
+  private readonly giorno = inject(GiornoService);
 
   /** La settimana in corso: qui serve solo lei (la piu' recente, se non ci sono corse datate nel futuro). */
   readonly corrente = computed(() =>
-    buildWeekHistory(this.state.runs(), todayLocalISO(), 0).weeks.find(w => w.isCurrent) ?? null
+    buildWeekHistory(this.state.runs(), this.giorno.oggi(), 0).weeks.find(w => w.isCurrent) ?? null
   );
 
   constructor(

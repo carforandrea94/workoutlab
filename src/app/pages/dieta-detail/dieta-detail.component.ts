@@ -1,4 +1,4 @@
-import { Component, OnInit, ChangeDetectorRef, ElementRef, ViewChild, effect } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, ElementRef, ViewChild, effect, inject, untracked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { DietDataService } from '../../services/diet-data.service';
@@ -22,6 +22,7 @@ import {
 import { IconaComponent } from '../../components/icona/icona.component';
 import { BarraAzioneDirective } from '../../core/directives/barra-azione.directive';
 import { registraPasti } from '../../core/utils/settimana.util';
+import { GiornoService } from '../../core/giorno.service';
 
 interface MealVM {
   meal: NamedMeal;
@@ -69,6 +70,7 @@ export class DietaDetailComponent implements OnInit {
    */
   private altriFatti: Record<string, boolean> = {};
   private altreScelte: Record<string, SceltaPasto> = {};
+  private readonly giorno = inject(GiornoService);
 
   @ViewChild('sliderEl') sliderEl?: ElementRef<HTMLDivElement>;
 
@@ -89,6 +91,16 @@ export class DietaDetailComponent implements OnInit {
         this.sliderIndex = firstUncompletedIndex(this.meals);
         setTimeout(() => this.scrollToIndex(this.sliderIndex, false), 0);
       }
+    });
+
+    // A mezzanotte, con la pagina aperta, la giornata riparte: le spunte e le
+    // scelte erano di ieri, e al primo tocco si sarebbero salvate come di oggi.
+    let giornoVisto = this.giorno.oggi();
+    effect(() => {
+      const oggi = this.giorno.oggi();
+      if (oggi === giornoVisto) return;
+      giornoVisto = oggi;
+      untracked(() => this.nuovaGiornata());
     });
   }
 
@@ -117,6 +129,19 @@ export class DietaDetailComponent implements OnInit {
   }
 
   // --- La giornata ---
+
+  /** Un giorno nuovo: nessun pasto fatto, le scelte di partenza, il primo pasto. */
+  private nuovaGiornata(): void {
+    this.altriFatti = {};
+    this.altreScelte = {};
+    this.meals.forEach(vm => {
+      vm.completed = false;
+      vm.scelta = undefined;
+    });
+    this.sliderIndex = firstUncompletedIndex(this.meals);
+    this.cdr.detectChanges();
+    this.scrollToIndex(this.sliderIndex, false);
+  }
 
   get fatti(): number {
     return this.meals.filter(vm => vm.completed).length;

@@ -138,6 +138,11 @@ export const routes: Routes = [
         path: 'account/obiettivo',
         loadComponent: () => import('./pages/obiettivo/obiettivo.component').then(m => m.ObiettivoComponent)
       },
+      {
+        // Giorni e ora degli allenamenti: mezz'ora prima arriva la notifica (vedi functions/).
+        path: 'account/promemoria',
+        loadComponent: () => import('./pages/promemoria/promemoria.component').then(m => m.PromemoriaComponent)
+      },
 
       // ---- Misure, dentro Account ----
       // Misure e' il grafico dell'andamento, e da li' si registra (prima l'andamento

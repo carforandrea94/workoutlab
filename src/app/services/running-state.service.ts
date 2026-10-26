@@ -1,8 +1,9 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, signal, computed, inject } from '@angular/core';
 import { RunsService } from './runs.service';
 import { Run, RunGoal, normalizeRunGoal } from '../models/run.model';
 import { weekTotals, WeekTotals } from '../core/utils/run-math.util';
-import { todayLocalISO, mondayISO } from '../core/utils/date.util';
+import { mondayISO } from '../core/utils/date.util';
+import { GiornoService } from '../core/giorno.service';
 
 /**
  * Stato della sezione Corsa: le uscite registrate e l'obiettivo settimanale
@@ -25,8 +26,15 @@ export class RunningStateService {
 
   readonly loaded = signal(false);
 
-  /** Lunedi' della settimana in corso: cambia da solo al passare dei giorni. */
-  readonly weekStart = computed(() => mondayISO(todayLocalISO()));
+  private readonly giorno = inject(GiornoService);
+
+  /**
+   * Lunedi' della settimana in corso: cambia da solo al passare dei giorni.
+   * Legge il giorno dal signal di GiornoService: col giorno chiesto all'orologio
+   * il computed lo calcolava una volta sola e restava fermo alla settimana in
+   * cui si era aperta l'app.
+   */
+  readonly weekStart = computed(() => mondayISO(this.giorno.oggi()));
 
   readonly thisWeek = computed<WeekTotals>(() =>
     weekTotals(this.runs().map(r => r.run), this.weekStart())

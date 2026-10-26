@@ -1,0 +1,56 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/account" aria-label="Indietro"></ion-back-button>
+    </ion-buttons>
+    <ion-title>
+      <div class="navtitle">Promemoria</div>
+    </ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="liste-ios">
+  <div class="wrap promemoria">
+    <div *ngIf="caricamento()" class="history-empty"><ion-spinner name="crescent" aria-label="Caricamento"></ion-spinner></div>
+
+    <div *ngIf="!caricamento() && errore()" class="history-empty">
+      {{ errore() }}<br>
+      <ion-button class="savebtn mt-3" (click)="carica()">Riprova</ion-button>
+    </div>
+
+    <ng-container *ngIf="!caricamento() && !errore()">
+      <!-- Un interruttore, come nelle Impostazioni di iOS. Spegnere si puo' sempre, anche da un telefono che non li riceve. -->
+      <ion-list [inset]="true" class="voci">
+        <ion-item lines="none">
+          <ion-toggle class="settingtoggle promemoria-interruttore" labelPlacement="start" justify="space-between"
+            [checked]="promemoria().attivo" [disabled]="attivazione() || (!promemoria().attivo && !accendibile())"
+            (ionChange)="interruttore($event)">
+            Ricordami gli allenamenti
+          </ion-toggle>
+        </ion-item>
+      </ion-list>
+      <p class="nota-sotto promemoria-spiega" [class.avviso]="supporto !== 'ok' || permesso() === 'denied'">{{ spiegazione() }}</p>
+
+      <!-- Giorni e ora: compaiono acceso l'interruttore. Un'ora sola per tutti i giorni. -->
+      <ng-container *ngIf="promemoria().attivo">
+        <ion-list-header class="sezione">
+          <ion-label>Quando ti alleni</ion-label>
+        </ion-list-header>
+        <ion-list [inset]="true" class="campi promemoria-quando">
+          <ion-item>
+            <div class="giorni" role="group" aria-label="Giorni dell'allenamento">
+              <button type="button" class="giorno" *ngFor="let g of settimana"
+                [attr.aria-pressed]="scelto(g)" [attr.aria-label]="nomiLunghi[g - 1]" (click)="cambiaGiorno(g)">{{ nomi[g - 1] }}</button>
+            </div>
+          </ion-item>
+          <ion-item>
+            <ion-label><label for="promemoria-ora">Ora</label></ion-label>
+            <input id="promemoria-ora" slot="end" class="data-riga" type="time" step="300"
+              [value]="promemoria().ora" (change)="cambiaOra($event)" />
+          </ion-item>
+        </ion-list>
+        <p class="nota-sotto promemoria-prossimo" aria-live="polite">{{ prossimo() }}</p>
+      </ng-container>
+    </ng-container>
+  </div>
+</ion-content>

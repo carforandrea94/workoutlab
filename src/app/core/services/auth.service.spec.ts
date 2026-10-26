@@ -185,6 +185,46 @@ describe("AuthService — iscrizioni che si rompono a meta'", () => {
     it("senza sessione non c'e' niente da chiudere", async () => {
       await expect(service.deleteAccount('giusta')).rejects.toThrow(/Sessione scaduta/);
     });
+
+    it('svuota anche i promemoria, coi telefoni iscritti', async () => {
+      await entra();
+      const firestore: any = await import('firebase/firestore');
+      const raccolte = vi.spyOn(firestore, 'collection');
+      await service.deleteAccount('giusta');
+      expect(raccolte.mock.calls.map((c: any[]) => c.slice(1).join('/'))).toEqual(
+        ['sessions', 'runs', 'measurements', 'state', 'protocols', 'promemoria'].map(r => `users/uid-via@e.com/${r}`)
+      );
+    });
+  });
+
+  describe("uscire dall'account", () => {
+    it('prima di uscire fa quello che gli si e\' chiesto, poi esce', async () => {
+      const ordine: string[] = [];
+      // Il gancio aspetta prima di finire: l'uscita deve aspettare lui.
+      service.primaDiUscire(async () => { await new Promise(r => setTimeout(r, 20)); ordine.push('promemoria'); });
+      const firebaseAuth: any = await import('firebase/auth');
+      const esci = vi.spyOn(firebaseAuth, 'signOut').mockImplementation(async () => { ordine.push('uscita'); });
+      await service.logout();
+      expect(ordine).toEqual(['promemoria', 'uscita']);
+      expect(service.currentUser()).toBeNull();
+      esci.mockRestore();
+    });
+
+    it('un errore, o un\'attesa troppo lunga, non bloccano l\'uscita', async () => {
+      vi.useFakeTimers();
+      service.primaDiUscire(async () => { throw new Error('rete'); });
+      service.primaDiUscire(() => new Promise<void>(() => {}));
+      const uscita = service.logout();
+      await vi.advanceTimersByTimeAsync(3000);
+      await uscita;
+      expect(stato.usciteEffettuate).toBe(1);
+      vi.useRealTimers();
+    });
+
+    it('senza niente da fare esce subito', async () => {
+      await service.logout();
+      expect(stato.usciteEffettuate).toBe(1);
+    });
   });
 
   describe('accesso con Google', () => {

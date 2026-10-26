@@ -37,6 +37,16 @@
           <p>{{ rigaObiettivo() }}</p>
         </ion-label>
       </ion-item>
+      <!-- Accanto all'obiettivo: e' il modo di arrivarci, una seduta alla volta. -->
+      <ion-item class="voce promemoria-voce" [button]="true" [detail]="true" (click)="goToPromemoria()">
+        <ion-avatar slot="start" class="riga-segno icona">
+          <app-icona name="notifications" [size]="20" [piena]="true"></app-icona>
+        </ion-avatar>
+        <ion-label class="ion-text-wrap">
+          <h2>Promemoria</h2>
+          <p>{{ rigaPromemoria() }}</p>
+        </ion-label>
+      </ion-item>
     </ion-list>
 
     <!-- La settimana scorsa, letta rispetto all'obiettivo: da lunedi' finche' non si tocca "Ho letto". -->

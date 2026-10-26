@@ -957,6 +957,20 @@ ion-button.bilancio-letto{--padding-start:8px;--padding-end:8px;--color:var(--ac
 .obiettivo .obiettivo-nome{font-size:var(--text-lg);font-weight:600;line-height:1.3;color:var(--label);white-space:normal;}
 .obiettivo .obiettivo-spiega{font-size:var(--text-sm);line-height:1.35;color:var(--label-2);white-space:normal;}
 .obiettivo .traguardo-errore{color:var(--state-danger-text);}
+
+/* Promemoria: i giorni come cerchi, alla maniera della sveglia di Salute
+   sull'iPhone. Un tocco li accende; acceso e' il colore dell'app, spento il
+   fondo rialzato con l'inchiostro secondario. */
+.promemoria .giorni{display:flex;justify-content:space-between;gap:4px;width:100%;padding:10px 0;}
+.promemoria .giorno{flex:1 1 0;max-width:44px;aspect-ratio:1/1;min-width:0;display:flex;align-items:center;justify-content:center;
+  border:none;border-radius:50%;padding:0;background:var(--surface-raise);color:var(--label-2);
+  font:inherit;font-size:var(--text-sm);font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent;
+  transition:background-color .15s ease,color .15s ease,transform .12s ease-out;}
+.promemoria .giorno[aria-pressed="true"]{background:var(--accent);color:var(--accent-contrast);}
+.promemoria .giorno:active{transform:scale(.94);}
+.promemoria .giorno:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+.promemoria .promemoria-spiega.avviso{color:var(--label);}
+@media (prefers-reduced-motion: reduce){.promemoria .giorno{transition:none;}.promemoria .giorno:active{transform:none;}}
 .liste-ios ion-label label{cursor:inherit;}
 /* Il valore di una misura: a destra della riga, stretto quanto un numero. */
 .liste-ios ion-input.misura-valore{flex:0 0 auto;width:118px;min-height:44px;margin-inline-start:8px;}
