@@ -1,6 +1,7 @@
 import { Day, WeekPlan } from './workout.model';
 import { Diet } from './diet.model';
 import { RunGoal, emptyRunGoal } from './run.model';
+import { TipoDieta } from '../core/utils/dieta-ciclo.util';
 import { todayLocalISO } from '../core/utils/date.util';
 
 export type ProtocolStatus = 'draft' | 'active' | 'archived';
@@ -21,6 +22,10 @@ export interface Protocol {
   source: ProtocolSource;
   workout: WorkoutProtocol;
   diet: Diet;
+  /** Come si seguono i piani della dieta (vedi dieta-ciclo.util). Assente = ON/OFF. */
+  dietType?: TipoDieta;
+  /** yyyy-mm-dd: il giorno del primo piano, per la dieta ciclica. */
+  dietCycleStart?: string | null;
   /** Obiettivo di corsa settimanale. Facoltativo: i protocolli creati prima
    *  che la sezione Corsa esistesse non ce l'hanno, e non tutti corrono. Assente = sezione Corsa senza obiettivi, solo registro. */
   running?: RunGoal;

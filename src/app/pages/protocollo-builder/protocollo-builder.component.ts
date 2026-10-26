@@ -18,6 +18,8 @@ import {
 import { MAX_BLOCKS_PER_SET } from '../../core/utils/extra-sets.util';
 import { RunGoal, normalizeRunGoal } from '../../models/run.model';
 import { senzaCaselleVuote } from '../../core/utils/diet-empty.util';
+import { TipoDieta } from '../../core/utils/dieta-ciclo.util';
+import { todayLocalISO } from '../../core/utils/date.util';
 import { FoodItem, DietPlan, NamedMeal, MealCombination, SupplementItem, newDietPlan, newNamedMeal, newCombination, FoodCategory, FOOD_CATEGORIES, FOOD_CATEGORY_LABELS } from '../../models/diet.model';
 import { ProtocolBuilderStateService } from '../../services/protocol-builder-state.service';
 import { ToastService } from '../../services/toast.service';
@@ -312,7 +314,9 @@ export class ProtocolloBuilderComponent implements OnInit, OnDestroy, DoCheck {
     if (!p) return '';
     // Le caselle vuote che l'editor tiene pronte (vedi preparaCaselle) non sono una
     // modifica: chi ha solo guardato un pasto non deve sentirsi chiedere se scartare.
-    return JSON.stringify({ name: p.name, workout: p.workout, diet: senzaCaselleVuote(p.diet), running: p.running, infoNote: p.infoNote });
+    return JSON.stringify({
+      name: p.name, workout: p.workout, diet: senzaCaselleVuote(p.diet), ...this.cicloDaSalvare(), running: p.running, infoNote: p.infoNote
+    });
   }
 
   /** Il protocollo in memoria non e' piu' quello salvato: vedi uscitaSenzaPerdite. */
@@ -694,6 +698,31 @@ export class ProtocolloBuilderComponent implements OnInit, OnDestroy, DoCheck {
     this.editingPlan = null;
     this.editingMeal = null;
     this.cdr.detectChanges();
+  }
+
+  // --- Il tipo di dieta (vedi dieta-ciclo.util) ---
+
+  /** ON/OFF o ciclica. Un protocollo senza tipo e' ON/OFF, come tutti quelli di prima. */
+  get tipoDieta(): TipoDieta {
+    return this.protocol?.dietType === 'ciclica' ? 'ciclica' : 'onoff';
+  }
+
+  /** Passando a ciclica il primo giorno parte da oggi, se non ce n'era gia' uno. */
+  cambiaTipoDieta(ev: Event): void {
+    const v = (ev as CustomEvent<{ value?: string | number | null }>).detail?.value;
+    if (!this.protocol || (v !== 'onoff' && v !== 'ciclica') || v === this.tipoDieta) return;
+    this.protocol.dietType = v;
+    if (v === 'ciclica' && !this.protocol.dietCycleStart) this.protocol.dietCycleStart = todayLocalISO();
+  }
+
+  /**
+   * Cosa si salva del tipo. Il primo giorno vale solo per la ciclica: tornando
+   * a ON/OFF non si scrive, e un ON/OFF scelto e poi lasciato com'era non e'
+   * una modifica da salvare.
+   */
+  private cicloDaSalvare(): { dietType: TipoDieta; dietCycleStart: string | null } {
+    const tipo = this.tipoDieta;
+    return { dietType: tipo, dietCycleStart: tipo === 'ciclica' ? this.protocol?.dietCycleStart || null : null };
   }
 
   /** La seconda riga di un piano nell'elenco: quanti pasti e quanti alimenti. */
@@ -1102,6 +1131,7 @@ export class ProtocolloBuilderComponent implements OnInit, OnDestroy, DoCheck {
         workout: this.protocol.workout,
         // Le caselle vuote restano all'editor: nel protocollo salvato non ci sono.
         diet: senzaCaselleVuote(this.protocol.diet),
+        ...this.cicloDaSalvare(),
         running: this.protocol.running,
         infoNote: this.protocol.infoNote
       };

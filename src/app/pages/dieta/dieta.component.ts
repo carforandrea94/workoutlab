@@ -5,9 +5,11 @@ import { DietDataService } from '../../services/diet-data.service';
 import { AppStateService } from '../../services/app-state.service';
 import { GiornoService } from '../../core/giorno.service';
 import { DietPlan } from '../../models/diet.model';
+import { PosizioneCiclo, posizioneNelCiclo } from '../../core/utils/dieta-ciclo.util';
+import { dataEstesa } from '../../core/utils/date.util';
 import { IONIC_PAGE, IONIC_LINKS } from '../../core/ionic-page';
 import { IONIC_LIST } from '../../core/ionic-list';
-import { NavController, IonAvatar, IonButton, IonLabel, IonListHeader } from '@ionic/angular';
+import { NavController, IonAvatar, IonBadge, IonButton, IonLabel, IonListHeader } from '@ionic/angular';
 import { IconaComponent } from '../../components/icona/icona.component';
 
 interface DietPlanCard {
@@ -18,7 +20,7 @@ interface DietPlanCard {
 @Component({
   selector: 'app-dieta',
   standalone: true,
-  imports: [IonButton, IonAvatar, IonLabel, IonListHeader, ...IONIC_LIST, ...IONIC_PAGE, ...IONIC_LINKS, CommonModule, IconaComponent],
+  imports: [IonButton, IonAvatar, IonBadge, IonLabel, IonListHeader, ...IONIC_LIST, ...IONIC_PAGE, ...IONIC_LINKS, CommonModule, IconaComponent],
   templateUrl: './dieta.component.html'
 })
 export class DietaComponent implements OnInit {
@@ -87,6 +89,42 @@ export class DietaComponent implements OnInit {
 
   private buildCards(): void {
     this.cards = this.dietData.diet.map(plan => ({ plan, itemCount: this.countItems(plan) }));
+  }
+
+  // --- La dieta ciclica (vedi dieta-ciclo.util) ---
+
+  /** I piani vanno in fila col calendario. Con ON/OFF la pagina resta com'era: nessun piano "di oggi". */
+  get ciclica(): boolean {
+    return this.dietData.ciclo().tipo === 'ciclica';
+  }
+
+  /** Dove si e' nel ciclo oggi. Legge il giorno dal signal: a mezzanotte passa da solo al piano dopo. */
+  posizione(): PosizioneCiclo | null {
+    return posizioneNelCiclo(this.dietData.ciclo(), this.cards.length, this.giorno.oggi());
+  }
+
+  /** Il piano in posizione i e' quello di oggi. */
+  diOggi(i: number): boolean {
+    const p = this.posizione();
+    return p?.stato === 'oggi' && p.indice === i;
+  }
+
+  /** "ciclo di 3 giorni", accanto all'intestazione. */
+  get durataCiclo(): string {
+    return `ciclo di ${this.cards.length} ${this.cards.length === 1 ? 'giorno' : 'giorni'}`;
+  }
+
+  /** La riga sotto i piani: cosa tocca domani, quando comincia il ciclo, o cosa manca. */
+  notaCiclo(): string | null {
+    if (!this.ciclica || !this.cards.length) return null;
+    const p = this.posizione();
+    if (!p) return 'Manca il primo giorno del ciclo: si sceglie nel protocollo, nella Dieta del builder.';
+    if (p.stato === 'non-iniziato') return `Il ciclo comincia ${dataEstesa(p.inizio)}, col primo piano.`;
+    if (this.cards.length === 1) return null;
+    const domani = this.cards[p.domani].plan.name;
+    return p.domani === 0
+      ? `Domani si riparte dal primo: ${domani}.`
+      : `Domani tocca ${domani}.`;
   }
 
   get hasAnyDietData(): boolean {

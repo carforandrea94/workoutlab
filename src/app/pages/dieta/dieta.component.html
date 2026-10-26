@@ -34,19 +34,25 @@
 
     <ng-container *ngIf="hasAnyDietData">
       <ion-list-header class="sezione">
-        <ion-label>Piani alimentari</ion-label>
+        <ion-label>Piani alimentari<span class="sezione-nota" *ngIf="ciclica">{{ durataCiclo }}</span></ion-label>
       </ion-list-header>
+      <!-- ON/OFF: i piani sono alternative, ognuno col suo segno. Ciclica: il
+           numero dice il posto nel ciclo, e il piano di oggi e' pieno, col
+           badge, come il giorno che tocca nella Scheda. -->
       <ion-list [inset]="true" class="piani">
-        <ion-item class="diet-card" *ngFor="let card of cards" [button]="true" [detail]="true" (click)="openCard(card)">
-          <ion-avatar slot="start" class="riga-segno icona">
-            <app-icona name="restaurant" [size]="20" [piena]="true"></app-icona>
+        <ion-item class="diet-card" *ngFor="let card of cards; let i = index" [button]="true" [detail]="true" (click)="openCard(card)">
+          <ion-avatar slot="start" class="riga-segno" [class.icona]="!ciclica" [class.giorno-num]="ciclica" [class.prossimo]="diOggi(i)">
+            <app-icona *ngIf="!ciclica" name="restaurant" [size]="20" [piena]="true"></app-icona>
+            <ng-container *ngIf="ciclica">{{ i + 1 }}</ng-container>
           </ion-avatar>
           <ion-label>
             <h2>{{ card.plan.name }}</h2>
             <p class="meta">{{ pasti(card) }} · {{ card.itemCount }} alimenti</p>
           </ion-label>
+          <ion-badge slot="end" class="stato" *ngIf="diOggi(i)">Oggi</ion-badge>
         </ion-item>
       </ion-list>
+      <p class="nota-sotto ciclo-nota" *ngIf="notaCiclo() as nota">{{ nota }}</p>
     </ng-container>
   </div>
 </ion-content>
