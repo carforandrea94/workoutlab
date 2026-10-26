@@ -455,7 +455,7 @@ describe('DietaDetailComponent', () => {
       });
     });
 
-    it('anche le scelte: la combinazione, l\'alimento cambiato e quello che il piano diceva', async () => {
+    it('anche le scelte: la combinazione e l\'alimento cambiato, non quello del piano', async () => {
       const { c, storico } = await monta('list');
       c.apriCombo(c.meals[0]);
       c.scegliNelFoglio(c.foglio!, 'c1b');
@@ -464,7 +464,7 @@ describe('DietaDetailComponent', () => {
       const colazione = storico.salva.mock.calls.at(-1)![2].pasti[0];
       expect(colazione.combinazione).toBe('Dolce');
       expect(colazione.alimenti).toEqual([
-        { macro: 'carb', nome: 'Pane', qty: '60 g', alPostoDi: 'Pancake' },
+        { macro: 'carb', nome: 'Pane', qty: '60 g' },
         { macro: 'protein', nome: 'Whey', qty: '30 g' }
       ]);
     });
