@@ -16,7 +16,7 @@ const SETTIMANE_MOSTRATE = 12;
  * Lo storico della dieta, una pagina dentro la tab: giorno per giorno, cosa si
  * e' mangiato. Le settimane sono gruppi, i giorni una fisarmonica di Ionic:
  * chiusi dicono il piano e quanti pasti; aperti, i pasti fatti con gli
- * alimenti (e quelli cambiati rispetto al piano). Il giorno piu' recente parte
+ * alimenti che si sono segnati. Il giorno piu' recente parte
  * aperto. I giorni li scrive la Dieta mentre si segnano i pasti (vedi
  * storico-dieta.util): lo storico comincia da quando c'e' questa pagina.
  */
