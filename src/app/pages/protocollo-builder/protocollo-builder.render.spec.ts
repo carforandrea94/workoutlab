@@ -676,6 +676,25 @@ describe('ProtocolloBuilderComponent — disegno vero', () => {
       expect(spia).toHaveBeenCalled();
     });
 
+    it('l\'esercizio a onda: le ripetizioni di una settimana sono un testo, cosi\' "6-8" si legge e si scrive', async () => {
+      const { c, fixture, root } = await monta();
+      const giorno = c.protocol!.workout.days[0];
+      giorno.ex[0].weekPlan = [{ sets: 3, reps: '6-8' }, { sets: 4, reps: 10 }];
+      c.openDay(giorno, 0);
+      c.editExercise(giorno, giorno.ex[0]);
+      fixture.detectChanges();
+      // ngModel scrive il valore nel campo in un secondo momento.
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      const righe = Array.from(root.querySelectorAll<HTMLElement>('.weekplan-row'));
+      expect(righe.length).toBe(2);
+      const campi = (r: HTMLElement) => Array.from(r.querySelectorAll<HTMLElement & { value?: unknown; type?: string }>('ion-input'));
+      expect(campi(righe[0]).map(i => i.type)).toEqual(['number', 'text']);
+      expect(campi(righe[0])[1].value).toBe('6-8');
+      expect(campi(righe[1])[1].value).toBe(10);
+    });
+
     it('l\'esercizio fisso: Serie, Tipo di serie, Testo e Ripetizioni come righe', async () => {
       const { c, fixture, root } = await monta();
       const giorno = c.protocol!.workout.days[0];

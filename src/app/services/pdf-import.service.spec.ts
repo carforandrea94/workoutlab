@@ -844,3 +844,218 @@ describe('parseWorkoutText — il template senza "REC TRA"', () => {
     expect(ex.reps).toEqual(['20', '20', '20', '20', '20', '15', '15', '15', '15', '15']);
   });
 });
+
+
+/**
+ * Il template "GIORNO N", con la progressione compatta ("3 4 4 5 3X 6-8").
+ *
+ * Il testo e' quello vero, estratto con lo stesso pdfjs dell'app dal PDF
+ * "NOV-DIC" di un coach: nessuna riga "REC", le intestazioni in italiano
+ * ("GIORNO 1: PUSH", "GIORNO 2:PULL", "GIORNO 3" senza nome), lo schema sulla
+ * riga sotto "EX.N/Nome". Prima nessun giorno si riconosceva, tutto finiva nel
+ * parser generico, e della scheda restavano due righe per giorno chiamate
+ * "3 4 4 5".
+ */
+const SCHEDA_GIORNO = `GIORNO 1: PUSH 
+EX.1/SPINTE MANUBRI PANCA DECLINATA 
+4X6 
+EX.2/SPINTE PANCA A 45° 
+3 4 4 5 3X 6-8 
+EX.3/CROCI MANUBRI PANCA PIANA 
+3 4 4 5 3X 10-12 
+EX.4/CROCI AI CAVI ALTI 
+3X12 
+EX.5/TIRATE AL MENTO CON BILANCIERE 
+4X7-9 
+EX.6/ALZATE LATERALI IN PIEDI 
+4X8-12 
+EX.7/PUSH DOWN FUNE 
+3X12 
+EX.8/CRUNCH AL CAVO 
+4X12 
+GIORNO 2:PULL 
+EX.1/TRAZIONI PRESA NEUTRA 
+4X6 
+EX.2/REMATORE BILANCIERE 
+3 4 4 5 3X 6-8 
+EX.3/ROW UNILATERALE 
+3 4 4 5 3X 8-12 
+EX.4/PULLOVER MANUBRIO 
+3X12 
+EX.5/STACCO RUMENO MONOPODALICO 
+4X7-9 
+EX.6/LEG CURL IN PIEDI 
+4X8-12 
+EX.7/CURL MANUBRI SEDUTO 
+3X12 
+EX.8/HIP THRUST+CRUNCH 
+3X20+20 
+GIORNO 3 
+EX.1/SQUAT LIBERO 
+4X6 
+EX.2/LEG PRESS A 45 
+3 4 4 5 3X 7-9 
+EX.3/BULGARIAN SQUAT 
+3 4 4 5 3X 8-12 
+EX.4/LEG EXTENSION 
+3X12 
+EX.5/LEG CURL SDRAIATO 
+3X15-20 
+EX.6/LENTO AVANTI AL M.POWER 
+4X9-12 
+EX.7/ALZATE MONOLATERALI SUL FIANCO SU PANCA A 60 
+4X15-20 
+EX.8/CALF IN PIEDI 
+3X20 
+GIORNO 4 
+EX.1/TRAZIONI ALLA SBARRA 
+4X5 
+EX.2/LAT MACHINE TRIANGOLO 
+3 4 4 5 3X 6-8 
+EX.3/PULL DOWN FUNE 
+3X12-15 
+EX.4/PULLEY MONOLATERALE 
+3X8-12 
+EX.5/CHEST PRESS+CROCI AI CAVI MEDI 
+3X12+12 
+EX.6/ALZATE A 90 CON MANUBRI 
+3X12 
+EX.7/CURL AL CAVO+PUSH DOWN CON TRIANGOLO 
+3X12+12 
+EX.8/GAMBE AL PETTO ADDOME 
+3X20 `;
+
+describe('parseWorkoutText — il template "GIORNO N" con la progressione compatta', () => {
+  const servizio = () => new PdfImportService();
+  const giorni = () => servizio().parseWorkoutText(SCHEDA_GIORNO);
+
+  it('quattro giorni, col nome scritto nell\'intestazione e "Giorno N" dove non c\'e\'', () => {
+    // "GIORNO 1: PUSH", "GIORNO 2:PULL" (senza spazio) e "GIORNO 3" da solo.
+    expect(giorni().map(d => [d.id, d.label])).toEqual([
+      ['day1', 'Push'], ['day2', 'Pull'], ['day3', 'Giorno 3'], ['day4', 'Giorno 4']
+    ]);
+  });
+
+  it('otto esercizi per giorno, coi loro nomi e nell\'ordine del PDF', () => {
+    const d = giorni();
+    expect(d.map(g => g.ex.length)).toEqual([8, 8, 8, 8]);
+    expect(d[0].ex.map(e => e.name)).toEqual([
+      'SPINTE MANUBRI PANCA DECLINATA', 'SPINTE PANCA A 45°', 'CROCI MANUBRI PANCA PIANA', 'CROCI AI CAVI ALTI',
+      'TIRATE AL MENTO CON BILANCIERE', 'ALZATE LATERALI IN PIEDI', 'PUSH DOWN FUNE', 'CRUNCH AL CAVO'
+    ]);
+    expect(d[2].ex[6].name).toBe('ALZATE MONOLATERALI SUL FIANCO SU PANCA A 60');
+    // Il nome di un esercizio non e' mai una riga di numeri.
+    expect(d.flatMap(g => g.ex).some(e => /^[\d\s]+$/.test(e.name))).toBe(false);
+  });
+
+  it('nessun esercizio resta senza schema', () => {
+    const tutti = giorni().flatMap(d => d.ex);
+    expect(tutti.length).toBe(32);
+    expect(tutti.some(e => /non riconosciuto|non trovato/.test(e.note ?? ''))).toBe(false);
+  });
+
+  it('gli schemi fissi: "4X6", un intervallo "4X7-9", un abbinato "3X20+20"', () => {
+    const [push, pull] = giorni();
+    expect(push.ex[0]).toMatchObject({ scheme: 'plain', sets: 4, reps: ['6', '6', '6', '6'] });
+    expect(push.ex[4]).toMatchObject({ scheme: 'plain', sets: 4, reps: ['7-9', '7-9', '7-9', '7-9'] });
+    expect(pull.ex[7]).toMatchObject({ name: 'HIP THRUST+CRUNCH', sets: 3, reps: ['20+20', '20+20', '20+20'] });
+  });
+
+  it('"3 4 4 5 3X 6-8" e\' un esercizio a onda: serie 3, 4, 4, 5 e poi si riparte, ripetizioni 6-8', () => {
+    const ex = giorni()[0].ex[1];
+    expect(ex).toMatchObject({ name: 'SPINTE PANCA A 45°', scheme: 'wave', sets: 3, reps: ['6-8'], text: '3 4 4 5 3X 6-8' });
+    // Otto settimane, il ciclo di quattro che si ripete.
+    expect(ex.weekPlan!.map(w => w.sets)).toEqual([3, 4, 4, 5, 3, 4, 4, 5]);
+    expect(ex.weekPlan!.every(w => w.reps === '6-8')).toBe(true);
+  });
+
+  it('le ripetizioni di ogni onda sono le sue: 6-8, 10-12, 8-12, 7-9', () => {
+    const onde = giorni().flatMap(d => d.ex).filter(e => e.scheme === 'wave');
+    expect(onde.map(e => [e.name, e.weekPlan![0].reps])).toEqual([
+      ['SPINTE PANCA A 45°', '6-8'], ['CROCI MANUBRI PANCA PIANA', '10-12'],
+      ['REMATORE BILANCIERE', '6-8'], ['ROW UNILATERALE', '8-12'],
+      ['LEG PRESS A 45', '7-9'], ['BULGARIAN SQUAT', '8-12'],
+      ['LAT MACHINE TRIANGOLO', '6-8']
+    ]);
+  });
+
+  it('l\'onda del protocollo e\' quella piu\' frequente fra gli esercizi', () => {
+    const piano = servizio().detectProtocolWeekPlan(giorni(), 8);
+    expect(piano.map(w => `${w.sets}x${w.reps}`)).toEqual(
+      ['3x6-8', '4x6-8', '4x6-8', '5x6-8', '3x6-8', '4x6-8', '4x6-8', '5x6-8']
+    );
+  });
+
+  it('il gruppo muscolare viene dal nome, anche con "PUSH" e "PULL" come titoli del giorno', () => {
+    const muscolo = Object.fromEntries(giorni().flatMap(d => d.ex).map(e => [e.name, e.muscle]));
+    expect(muscolo['SPINTE PANCA A 45°']).toBe('Petto');
+    expect(muscolo['TIRATE AL MENTO CON BILANCIERE']).toBe('Spalle');
+    expect(muscolo['TRAZIONI PRESA NEUTRA']).toBe('Dorso');
+    expect(muscolo['ROW UNILATERALE']).toBe('Dorso');
+    expect(muscolo['PULL DOWN FUNE']).toBe('Dorso');
+    expect(muscolo['LENTO AVANTI AL M.POWER']).toBe('Spalle');
+    expect(muscolo['PUSH DOWN FUNE']).toBe('Tricipiti');
+    expect(muscolo['LEG CURL IN PIEDI']).toBe('Gambe');
+    // "GAMBE AL PETTO" e' un esercizio di addome, non di gambe ne' di petto.
+    expect(muscolo['GAMBE AL PETTO ADDOME']).toBe('Core');
+  });
+
+  describe('l\'intestazione del giorno', () => {
+    const una = (testata: string) => servizio().parseWorkoutText(`${testata}\nEX.1/PANCA\n4X10`);
+
+    it('"GIORNO 1: PUSH", "GIORNO 2:PULL", "GIORNO 3" e anche "DAY 1 : PETTO" sono giorni', () => {
+      expect(una('GIORNO 1: PUSH ')[0].label).toBe('Push');
+      expect(una('GIORNO 2:PULL')[0].label).toBe('Pull');
+      expect(una('GIORNO 3')[0].label).toBe('Giorno 3');
+      expect(una('DAY 1 : PETTO-SPALLE REC TRA 60-90”')[0]).toMatchObject({ label: 'Petto-Spalle', rec: '60-90"' });
+    });
+
+    it('con un trattino come separatore, e con le maiuscole che capitano', () => {
+      expect(una('Giorno 4 - Gambe')[0].label).toBe('Gambe');
+      // Il trattino lungo, che Word mette da solo: non deve entrare nel nome.
+      expect(una('Giorno 4 – Gambe')[0].label).toBe('Gambe');
+    });
+
+    it('l\'intestazione ripetuta a inizio pagina non crea un secondo giorno', () => {
+      const d = servizio().parseWorkoutText('GIORNO 1: PUSH\nEX.1/PANCA\n4X10\nGIORNO 1: PUSH\nEX.2/CROCI\n3X12');
+      expect(d.length).toBe(1);
+      expect(d[0].ex.map(e => e.name)).toEqual(['PANCA', 'CROCI']);
+    });
+  });
+
+  describe('la progressione per settimana', () => {
+    const onda = (riga: string, extra = '') => {
+      const d = servizio().parseWorkoutText(`${extra}GIORNO 1: PUSH\nEX.1/PANCA\n${riga}`);
+      return d[0].ex[0];
+    };
+
+    it('l\'ultimo numero uguale al primo e\' il punto di ripresa, non una settimana in piu\'', () => {
+      expect(onda('3 4 4 5 3X 6-8').weekPlan!.map(w => w.sets)).toEqual([3, 4, 4, 5, 3, 4, 4, 5]);
+    });
+
+    it('se l\'ultimo numero e\' diverso dal primo fa parte della progressione', () => {
+      // 3, 4, 5, 6 e poi si riparte da 3.
+      expect(onda('3 4 5 6X 8').weekPlan!.map(w => w.sets)).toEqual([3, 4, 5, 6, 3, 4, 5, 6]);
+    });
+
+    it('ripetizioni fisse sono un numero, un intervallo e\' un testo', () => {
+      expect(onda('3 4 4 5 3X 10').weekPlan![0].reps).toBe(10);
+      expect(onda('3 4 4 5 3X 8/10').weekPlan![0].reps).toBe('8/10');
+      expect(onda('3 4 4 5 3X 6–8').weekPlan![0].reps).toBe('6-8');
+    });
+
+    it('le settimane sono quelle che il PDF dichiara', () => {
+      const ex = onda('3 4 4 5 3X 6-8', 'DURATA 6 SETTIMANE\n');
+      expect(ex.weekPlan!.map(w => w.sets)).toEqual([3, 4, 4, 5, 3, 4]);
+    });
+
+    it('quello che segue le ripetizioni resta come nota', () => {
+      expect(onda('3 4 4 5 3X 6-8 REC 90”').note).toBe('REC 90”');
+    });
+
+    it('uno schema normale o a coppie non diventa un\'onda', () => {
+      expect(onda('4X10').scheme).toBe('plain');
+      expect(onda('2x8 1x20')).toMatchObject({ scheme: 'plain', sets: 3 });
+    });
+  });
+});
