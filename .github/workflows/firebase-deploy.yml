@@ -1,20 +1,27 @@
-name: Build, test e deploy su Firebase Hosting
+name: Build, test e deploy su Firebase
 
 # Cosa fa:
 #   - su ogni pull request verso main: compila e lancia i test (non pubblica)
 #   - quando la PR viene mergiata su main (cioe' a ogni push su main):
-#     compila, testa e pubblica SOLO Firebase Hosting, sul canale "live"
+#     compila, testa e pubblica le regole e gli indici di Firestore, poi
+#     Firebase Hosting sul canale "live"
 #   - a mano da Actions → "Run workflow", per ripubblicare senza un nuovo commit
 #
 # Prima di attivare il deploy serve, nelle impostazioni della repo
 # (Settings → Secrets and variables → Actions → New repository secret):
 #   FIREBASE_SERVICE_ACCOUNT   il JSON della chiave di un service account del
-#                              progetto Firebase (vedi README, "Deploy automatico")
+#                              progetto Firebase (vedi README, "Deploy automatico"),
+#                              coi ruoli Firebase Hosting Admin, Service Usage
+#                              Consumer, Firebase Rules Admin e Cloud Datastore
+#                              Index Admin
 # Finche' manca, build e test girano lo stesso e il deploy viene saltato con un
 # avviso giallo invece di fallire.
 #
-# Le regole e gli indici di Firestore NON si pubblicano da qui: quando cambiano
-# si lancia a mano `npm run deploy:rules`.
+# Le regole e gli indici di Firestore partono da qui a ogni deploy, prima
+# dell'app. Prima andavano lanciati a mano (`npm run deploy:rules`, che resta
+# per il primo avvio di un progetto nuovo): Storico della dieta e Promemoria
+# sono andati online senza le loro regole, e Firestore rifiutava ogni lettura.
+# Ripubblicare regole uguali non cambia niente.
 
 on:
   push:
@@ -67,7 +74,7 @@ jobs:
           retention-days: 1
 
   deploy:
-    name: Deploy su Firebase Hosting
+    name: Deploy su Firebase (regole, indici, Hosting)
     needs: build_and_test
     # Solo dopo il merge (push su main) o a mano: mai sulle pull request.
     if: github.event_name != 'pull_request'
@@ -105,6 +112,31 @@ jobs:
         with:
           name: hosting-build
           path: dist/workoutlab/browser
+
+      - name: Setup Node
+        if: steps.credenziali.outputs.pronte == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # Prima le regole, poi l'app: una versione nuova che legge una raccolta
+      # nuova trova gia' le regole che la aprono. Se questo passo fallisce
+      # (di solito un ruolo mancante sul service account, vedi l'intestazione)
+      # l'app non si pubblica e online resta quella di prima, che con le regole
+      # di prima funziona.
+      # La chiave si scrive fuori dalla cartella del progetto (RUNNER_TEMP), la
+      # legge solo questo passo e si cancella alla fine, anche se fallisce.
+      - name: Deploy di regole e indici di Firestore
+        if: steps.credenziali.outputs.pronte == 'true'
+        env:
+          SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          credenziali="$RUNNER_TEMP/firebase-deploy.json"
+          trap 'rm -f "$credenziali"' EXIT
+          (umask 077 && printf '%s' "$SERVICE_ACCOUNT" > "$credenziali")
+          GOOGLE_APPLICATION_CREDENTIALS="$credenziali" npx --yes firebase-tools@13 deploy \
+            --only firestore:rules,firestore:indexes \
+            --project "$FIREBASE_PROJECT_ID" --non-interactive
 
       - name: Deploy su Firebase Hosting
         if: steps.credenziali.outputs.pronte == 'true'
