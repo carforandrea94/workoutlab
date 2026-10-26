@@ -23,6 +23,8 @@ import { IconaComponent } from '../../components/icona/icona.component';
 import { BarraAzioneDirective } from '../../core/directives/barra-azione.directive';
 import { registraPasti } from '../../core/utils/settimana.util';
 import { GiornoService } from '../../core/giorno.service';
+import { StoricoDietaService } from '../../services/storico-dieta.service';
+import { fotografiaPiano } from '../../core/utils/storico-dieta.util';
 
 interface MealVM {
   meal: NamedMeal;
@@ -71,6 +73,7 @@ export class DietaDetailComponent implements OnInit {
   private altriFatti: Record<string, boolean> = {};
   private altreScelte: Record<string, SceltaPasto> = {};
   private readonly giorno = inject(GiornoService);
+  private readonly storico = inject(StoricoDietaService);
 
   @ViewChild('sliderEl') sliderEl?: ElementRef<HTMLDivElement>;
 
@@ -168,9 +171,16 @@ export class DietaDetailComponent implements OnInit {
       done[vm.meal.id] = vm.completed;
       if (vm.scelta) choices[vm.meal.id] = vm.scelta;
     });
-    const giorno = { date: todayLocalISO(), done, ...(Object.keys(choices).length ? { choices } : {}) };
+    const oggi = todayLocalISO();
+    const giorno = { date: oggi, done, ...(Object.keys(choices).length ? { choices } : {}) };
     this.appState.patchField('mealsCompletion', giorno).catch(() => { /* gia' segnalato da AppStateService */ });
     void this.registraGiorno();
+    // Lo storico: cosa si e' mangiato oggi con questo piano, con i nomi gia'
+    // scritti (vedi storico-dieta.util). Se non va, la giornata resta salvata.
+    if (this.plan) {
+      this.storico.salva(oggi, this.plan.id, fotografiaPiano(this.plan, this.meals))
+        .catch(e => console.error('Storico della dieta non salvato:', e));
+    }
   }
 
   /**

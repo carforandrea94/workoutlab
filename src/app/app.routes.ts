@@ -13,7 +13,7 @@ import { uscitaSenzaPerdite } from './core/guards/modifiche-non-salvate.guard';
  * quella "account", sotto /account/misure (non sono piu' una tab).
  *
  * L'ordine conta dove un segmento fisso e uno variabile si somigliano
- * (dieta/lista-spesa prima di dieta/:mode, account/misure/storico e il rimando
+ * (dieta/lista-spesa e dieta/storico prima di dieta/:mode, account/misure/storico e il rimando
  * di account/misure/analytics prima di account/misure/:categoria).
  */
 export const routes: Routes = [
@@ -102,6 +102,10 @@ export const routes: Routes = [
       {
         path: 'dieta/lista-spesa',
         loadComponent: () => import('./pages/lista-spesa/lista-spesa.component').then(m => m.ListaSpesaComponent)
+      },
+      {
+        path: 'dieta/storico',
+        loadComponent: () => import('./pages/dieta-storico/dieta-storico.component').then(m => m.DietaStoricoComponent)
       },
       {
         path: 'dieta/:mode',

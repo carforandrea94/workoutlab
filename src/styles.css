@@ -896,6 +896,15 @@ ion-segment.seg.vista-seduta{margin:0 0 16px;}
 .liste-ios ion-accordion{background:var(--surface-card);}
 .liste-ios ion-accordion ion-list.uscite{background:transparent;padding:0;}
 .liste-ios ion-item.runline{--padding-start:16px;--min-height:52px;}
+/* Lo storico della dieta: dentro un giorno aperto, i pasti fatti. Il nome del
+   pasto in grassetto, la combinazione accanto, sotto un alimento per riga; se
+   nello stesso giorno ci sono due piani, il nome del piano sopra i suoi pasti. */
+.liste-ios ion-accordion ion-list.pasti-mangiati{background:transparent;padding:0;}
+.liste-ios ion-item.pasto-mangiato{--padding-start:16px;--min-height:0;}
+.liste-ios ion-item.pasto-mangiato ion-label h3{font-weight:600;font-size:var(--text-md);line-height:1.3;color:var(--label);margin:0 0 2px;}
+.liste-ios ion-item.pasto-mangiato ion-label h3 .combo{font-weight:500;color:var(--label-2);}
+.liste-ios ion-list-header.piano-giorno{--color:var(--label-2);--background:transparent;padding-inline:16px;min-height:0;margin:12px 0 0;font-size:var(--text-sm);font-weight:600;}
+.liste-ios ion-list-header.piano-giorno ion-label{margin:0;}
 .liste-ios ion-accordion ion-progress-bar.piena{--progress-background:var(--state-success);}
 /* La fatica di un'uscita: colore e misura (vedi EFFORT_STYLE in corsa.component.ts),
    centrata in uno spazio fisso perche' i testi delle righe restino allineati. */
