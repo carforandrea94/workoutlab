@@ -40,13 +40,13 @@
           </ion-label>
           <ion-note slot="end">{{ todayWeekday }}</ion-note>
         </ion-item>
-        <!-- Le settimane di fila con la scheda completa, e cosa manca per la
-             prossima. I pallini sono le ultime settimane: pieno se completa,
-             l'anello e' quella in corso. -->
+        <!-- Le settimane di fila con la scheda completa. I pallini sono le
+             ultime settimane: pieno se completa, l'anello e' quella in corso.
+             Sotto il titolo, solo quanti allenamenti mancano, se si fa in tempo. -->
         <ion-item lines="none" class="costanza" *ngIf="costanza as c">
           <ion-label>
             <h2>{{ titoloCostanza(c) }}</h2>
-            <p>{{ fraseCostanza(c) }}</p>
+            <p *ngIf="fraseCostanza(c) as f">{{ f }}</p>
           </ion-label>
           <span slot="end" class="settimane" role="img" *ngIf="c.settimane.length > 1"
             [attr.aria-label]="etichettaSettimane(c)">
