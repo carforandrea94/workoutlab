@@ -121,13 +121,18 @@ export class SchedaListComponent implements OnInit {
   // ---- Le settimane di fila ----
   //
   // Sotto la settimana del programma, la costanza: quante settimane di fila con
-  // la scheda completa (vedi costanza.util). Si dice cosa manca per la prossima,
-  // mai cosa si e' perso: una settimana che non si puo' piu' completare non
-  // conta i giorni che restano, e una fila spezzata riparte senza commenti.
+  // la scheda completa (vedi costanza.util). Il titolo dice la fila e i pallini
+  // dicono come sta andando; la riga non ripete i conti (quanti allenamenti su
+  // quanti): resta solo quanti ne mancano per completare questa settimana, e
+  // solo se si fa ancora in tempo. Mai cosa si e' perso: una fila spezzata
+  // riparte senza commenti.
 
   /** Letta a ogni giro: le sedute arrivano dal servizio, e la settimana cambia da sola il lunedi'. */
   get costanza(): Costanza | null {
-    return costanza(this.weekly.sedute(), this.days.length, this.giorno.oggi());
+    const c = costanza(this.weekly.sedute(), this.days.length, this.giorno.oggi());
+    // Senza una fila e con una settimana sola non c'e' niente da dire: la riga
+    // sarebbe un titolo e basta.
+    return c && (c.fila > 0 || c.settimane.length > 1) ? c : null;
   }
 
   titoloCostanza(c: Costanza): string {
@@ -135,12 +140,14 @@ export class SchedaListComponent implements OnInit {
     return c.fila === 1 ? '1 settimana completa' : `${c.fila} settimane di fila`;
   }
 
+  /**
+   * Quanti allenamenti mancano per allungare la fila, o '' se non c'e' niente da
+   * aggiungere al titolo e ai pallini. Breve di proposito: piu' lunga va a capo e
+   * la riga raddoppia.
+   */
   fraseCostanza(c: Costanza): string {
-    if (c.mancano === 0) return c.fila > 1 ? 'Scheda completa anche questa settimana.' : 'Scheda completa questa settimana.';
-    const fatti = `${c.fatti} di ${c.previsti} allenamenti`;
-    // Non c'e' piu' tempo per completarla: si dice dove si e', senza conti.
-    if (c.mancano > c.giorniRimasti) return `${fatti} questa settimana.`;
-    return `${fatti}: ancora ${c.mancano} entro domenica` + (c.fila > 0 ? `, per arrivare a ${c.fila + 1}.` : '.');
+    if (c.fila === 0 || c.mancano === 0 || c.mancano > c.giorniRimasti) return '';
+    return `Ancora ${c.mancano} ${c.mancano === 1 ? 'allenamento' : 'allenamenti'}`;
   }
 
   perLunedi(_: number, s: { lunedi: string }): string {
