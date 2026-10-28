@@ -1,4 +1,5 @@
 import { WorkoutSession } from '../../models/workout.model';
+import { mondayISO } from './date.util';
 
 /**
  * Tonnellaggio: i chili davvero sollevati, carico per ripetizioni.
@@ -67,14 +68,24 @@ export interface RotationTonnage {
  *
  * L'ordine e' quello del programma, non quello delle date: un giro si legge
  * come la scheda, dal Giorno 1 in poi.
+ *
+ * Le sedute non dicono a che programma appartengono, solo il giorno ("d1"), e
+ * un programma nuovo riparte da "d1": senza un limite, il Giorno 2 del
+ * programma appena iniziato si prenderebbe la seduta del Giorno 2 di quello
+ * vecchio. Con `programStart` contano solo le sedute dalla settimana in cui il
+ * programma e' iniziato (le settimane del programma partono dal lunedi', come
+ * il numero della settimana).
  */
 export function rotationTonnage(
   sessions: readonly { session: WorkoutSession }[],
-  days: readonly { id: string; label: string }[]
+  days: readonly { id: string; label: string }[],
+  programStart?: string
 ): RotationTonnage {
+  const da = programStart && /^\d{4}-\d{2}-\d{2}$/.test(programStart) ? mondayISO(programStart) : '';
   const latest = new Map<string, WorkoutSession>();
   for (const { session } of sessions) {
     if (!session?.dayId || !session?.date) continue;
+    if (session.date < da) continue;
     const prev = latest.get(session.dayId);
     if (!prev || session.date > prev.date) latest.set(session.dayId, session);
   }

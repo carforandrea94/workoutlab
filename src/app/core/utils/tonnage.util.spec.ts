@@ -92,6 +92,44 @@ describe('rotationTonnage', () => {
   });
 });
 
+describe('rotationTonnage — un programma nuovo', () => {
+  // Le sedute dicono solo il giorno ("day1"), e un programma nuovo riparte da
+  // "day1": senza il limite, il giorno 2 nuovo prendeva la seduta del giorno 2 vecchio.
+  it('non eredita le sedute del programma vecchio con gli stessi giorni', () => {
+    const r = rotationTonnage([
+      { session: session('day1', '2026-10-26', [['80', '10', true]]) },
+      { session: session('day2', '2026-10-21', [['60', '10', true]]) }
+    ], DAYS, '2026-10-26');
+    expect(r.days.map(d => d.kg)).toEqual([800, null]);
+    expect(r.totalKg).toBe(800);
+    expect(r.missing).toBe(1);
+  });
+
+  it('di un giorno rifatto nel programma vecchio e poi nel nuovo conta il nuovo', () => {
+    const r = rotationTonnage([
+      { session: session('day1', '2026-10-19', [['100', '10', true]]) },
+      { session: session('day1', '2026-10-27', [['80', '10', true]]) }
+    ], DAYS, '2026-10-26');
+    expect(r.days[0]).toMatchObject({ kg: 800, date: '2026-10-27' });
+  });
+
+  it('conta dal lunedi\' della settimana d\'inizio: iniziare di mercoledi\' non perde il lunedi\'', () => {
+    const r = rotationTonnage([
+      { session: session('day1', '2026-10-26', [['80', '10', true]]) },
+      { session: session('day2', '2026-10-25', [['60', '10', true]]) }
+    ], DAYS, '2026-10-28');
+    // Lunedi' 26 si', domenica 25 (la settimana prima) no.
+    expect(r.days.map(d => d.kg)).toEqual([800, null]);
+  });
+
+  it('senza una data d\'inizio valida conta tutto, come prima', () => {
+    const sedute = [{ session: session('day1', '2026-01-05', [['80', '10', true]]) }];
+    expect(rotationTonnage(sedute, DAYS).totalKg).toBe(800);
+    expect(rotationTonnage(sedute, DAYS, '').totalKg).toBe(800);
+    expect(rotationTonnage(sedute, DAYS, 'boh').totalKg).toBe(800);
+  });
+});
+
 describe('formatKg', () => {
   it('separa le migliaia come si scrive in italiano', () => {
     expect(formatKg(38500)).toBe('38.500');
