@@ -21,7 +21,7 @@ class Vuota {}
  * rimedia.
  */
 describe('FormaCardComponent — le righe', () => {
-  async function monta(opz: { profilo?: any; storico?: any[] } = {}) {
+  async function monta(opz: { profilo?: any; storico?: any[]; sedute?: any[]; inizio?: string } = {}) {
     const rotte = ['account/misure', 'account/misure/peso', 'account/misure/pliche', 'account/impostazioni'].map(path => ({ path, component: Vuota }));
     TestBed.configureTestingModule({
       imports: [FormaCardComponent],
@@ -33,8 +33,8 @@ describe('FormaCardComponent — le righe', () => {
           parseMeasureValue: (raw: string | null | undefined) => raw ? parseFloat(raw.replace(',', '.')) : null,
           formatMeasureNumber: (n: number) => (Math.round(n * 10) / 10).toString().replace('.', ',')
         } },
-        { provide: WorkoutSessionsService, useValue: { listAll: async () => [] } },
-        { provide: WorkoutDataService, useValue: { days: [{ id: 'd1', label: 'Petto' }, { id: 'd2', label: 'Schiena' }, { id: 'd3', label: 'Gambe' }] } },
+        { provide: WorkoutSessionsService, useValue: { listAll: async () => opz.sedute ?? [] } },
+        { provide: WorkoutDataService, useValue: { days: [{ id: 'd1', label: 'Petto' }, { id: 'd2', label: 'Schiena' }, { id: 'd3', label: 'Gambe' }], DEFAULT_PROGRAM_START: opz.inizio } },
         { provide: WeeklyProgressService, useValue: { refresh: async () => {}, doneDayIds: signal(new Set(['d1'])) } },
         { provide: RunningStateService, useValue: { refresh: async () => {}, thisWeek: signal({ minutes: 75, runs: 2 }), goal: signal({ weeklyMinutes: 120 }) } }
       ]
@@ -122,6 +122,24 @@ describe('FormaCardComponent — le righe', () => {
     riga('Massa grassa').click();
     await fixture.whenStable();
     expect(router.url).toBe('/account/misure/pliche');
+  });
+
+  it('il tonnellaggio parte dal programma in corso: le sedute del vecchio, con gli stessi giorni, non contano', async () => {
+    const seduta = (dayId: string, date: string, load: string) => ({
+      id: `${dayId}_${date}`,
+      session: { dayId, dayLabel: dayId, date, exercises: [{ name: 'Panca', sets: [{ load, reps: '10', done: true }] }] }
+    });
+    // Programma iniziato mercoledi' 28; il primo giorno fatto lunedi' 26 (stessa settimana).
+    const { valore, sotto } = await monta({
+      inizio: '2026-10-28',
+      sedute: [seduta('d1', '2026-10-26', '80'), seduta('d2', '2026-10-21', '60'), seduta('d3', '2026-10-22', '50')]
+    });
+    expect(valore('Totale')).toBe(formatKg(800) + 'kg');
+    expect(valore('Petto')).toBe(formatKg(800) + 'kg');
+    expect(sotto('Petto')).toBe('ultima seduta 26.10');
+    expect(valore('Schiena')).toBe('—');
+    expect(valore('Gambe')).toBe('—');
+    expect(sotto('Schiena')).toBeNull();
   });
 
   it('il tonnellaggio: il totale, poi un giorno per riga col suo peso o un trattino', async () => {

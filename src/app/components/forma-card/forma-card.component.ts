@@ -95,7 +95,7 @@ export class FormaCardComponent implements OnInit {
     this.sessions.listAll()
       .then(rows => {
         this.sessionCount.set(rows.length);
-        this.rotation.set(rotationTonnage(rows, this.workoutData.days));
+        this.rotation.set(rotationTonnage(rows, this.workoutData.days, this.workoutData.DEFAULT_PROGRAM_START));
       })
       .catch(e => console.error('Lettura delle sedute per la scheda fallita:', e));
 
