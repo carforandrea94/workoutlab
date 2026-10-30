@@ -185,14 +185,18 @@ describe('SchedaListComponent — le settimane di fila', () => {
 
   afterEach(() => vi.useRealTimers());
 
-  function monta(oggi: string, sedute: { dayId: string; date: string }[], days = giorni) {
+  function monta(oggi: string, sedute: { dayId: string; date: string }[], days = giorni, programma?: { inizio: string; settimane: number }) {
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(new Date(oggi + 'T10:00:00'));
     TestBed.configureTestingModule({
       imports: [SchedaListComponent],
       providers: [
         ...providerPagina(),
-        { provide: WorkoutDataService, useValue: { days, WEEK_PLAN: [{ sets: 3, reps: 10 }], hasCustomProtocol: false, protocolName: '' } },
+        { provide: WorkoutDataService, useValue: {
+          days, hasCustomProtocol: false, protocolName: '',
+          WEEK_PLAN: Array.from({ length: programma?.settimane ?? 1 }, () => ({ sets: 3, reps: 10 })),
+          DEFAULT_PROGRAM_START: programma?.inizio
+        } },
         { provide: WorkoutStateService, useValue: { currentWeek: 1 } },
         { provide: AppStateService, useValue: { load: async () => ({ workoutDrafts: {} }) } },
         { provide: WeeklyProgressService, useValue: { refresh: vi.fn(), isDone: () => false, sedute: () => sedute } },
@@ -205,8 +209,11 @@ describe('SchedaListComponent — le settimane di fila', () => {
     const riga = root.querySelector<HTMLElement>('ion-list.scheda-settimana ion-item.costanza');
     const testo = (sel: string) => riga?.querySelector(sel)?.textContent!.replace(/\s+/g, ' ').trim() ?? null;
     const pallini = () => Array.from(riga?.querySelectorAll<HTMLElement>('.settimane .settimana') ?? [])
-      .map(p => p.classList.contains('completa') ? 'piena' : p.classList.contains('in-corso') ? 'anello' : 'spenta');
-    return { root, riga, titolo: testo('h2'), frase: testo('p'), pallini, striscia: riga?.querySelector<HTMLElement>('.settimane') ?? null };
+      .map(p => p.classList.contains('completa') ? 'piena' : p.classList.contains('in-corso') ? 'anello' : p.classList.contains('futura') ? 'futura' : 'spenta');
+    // Quanto di ogni casella e' riempito (--pieno), arrotondato al centesimo.
+    const pieni = () => Array.from(riga?.querySelectorAll<HTMLElement>('.settimane .settimana') ?? [])
+      .map(p => Math.round(parseFloat(p.style.getPropertyValue('--pieno')) * 100) / 100);
+    return { root, riga, titolo: testo('h2'), frase: testo('p'), pallini, pieni, striscia: riga?.querySelector<HTMLElement>('.settimane') ?? null };
   }
 
   it('settimane complete di fila, e cosa manca per la prossima', () => {
@@ -220,7 +227,7 @@ describe('SchedaListComponent — le settimane di fila', () => {
     expect(frase).toBe('Ancora 2 allenamenti');
     expect(pallini()).toEqual(['piena', 'piena', 'anello']);
     expect(striscia!.getAttribute('role')).toBe('img');
-    expect(striscia!.getAttribute('aria-label')).toBe('Ultime 3 settimane: 2 complete');
+    expect(striscia!.getAttribute('aria-label')).toBe('Costanza: 2 su 3 settimane complete, questa settimana 1 su 3 allenamenti');
   });
 
   it('con un allenamento solo da fare, il singolare', () => {
@@ -262,7 +269,7 @@ describe('SchedaListComponent — le settimane di fila', () => {
       ...completa('2026-09-28', '2026-09-30', '2026-10-02'),
       seduta('d1', '2026-10-05')
     ]);
-    expect(titolo).toBe('Questa settimana');
+    expect(titolo).toBe('Costanza');
     expect(frase).toBeNull();
     expect(riga!.textContent).not.toMatch(/pers|salt|spezz/);
     expect(pallini()).toEqual(['piena', 'spenta', 'spenta', 'anello']);
@@ -279,6 +286,73 @@ describe('SchedaListComponent — le settimane di fila', () => {
     expect(frase).toBeNull();
   });
 
+  describe('nel programma attuale', () => {
+    it('un programma nuovo non eredita le settimane del vecchio: una casella in corso e le altre da venire', () => {
+      // Programma iniziato mercoledi' 28 (la sua settimana parte lunedi' 26): il primo
+      // giorno fatto lunedi'. Le settimane del programma vecchio, con gli stessi
+      // giorni, erano complete: non devono comparire.
+      const { riga, titolo, frase, pallini, pieni, striscia } = monta('2026-10-28', [
+        ...completa('2026-10-12', '2026-10-14', '2026-10-16'),
+        ...completa('2026-10-19', '2026-10-21', '2026-10-23'),
+        seduta('d1', '2026-10-26')
+      ], giorni, { inizio: '2026-10-28', settimane: 4 });
+      expect(riga).not.toBeNull();
+      expect(titolo).toBe('Costanza');
+      expect(frase).toBeNull();
+      expect(pallini()).toEqual(['anello', 'futura', 'futura', 'futura']);
+      expect(pieni()).toEqual([0.33, 0, 0, 0]);
+      expect(striscia!.getAttribute('aria-label')).toBe('Costanza: 0 su 4 settimane complete, questa settimana 1 su 3 allenamenti');
+    });
+
+    it('le settimane passate: piena se completa, riempita in proporzione se no, spenta se vuota', () => {
+      // Lunedi' 9 novembre, terza settimana: la prima completa, la seconda a due giorni su tre.
+      const { titolo, frase, pallini, pieni } = monta('2026-11-09', [
+        ...completa('2026-10-26', '2026-10-28', '2026-10-30'),
+        seduta('d1', '2026-11-02'), seduta('d2', '2026-11-04')
+      ], giorni, { inizio: '2026-10-26', settimane: 5 });
+      expect(pallini()).toEqual(['piena', 'spenta', 'anello', 'futura', 'futura']);
+      expect(pieni()).toEqual([1, 0.67, 0, 0, 0]);
+      // La seconda non e' completa e la fila riparte: niente da dire.
+      expect(titolo).toBe('Costanza');
+      expect(frase).toBeNull();
+    });
+
+    it('con la fila: il titolo la dice e la frase dice cosa manca', () => {
+      const { titolo, frase, pallini } = monta('2026-11-04', [
+        ...completa('2026-10-26', '2026-10-28', '2026-10-30'),
+        seduta('d1', '2026-11-02')
+      ], giorni, { inizio: '2026-10-26', settimane: 4 });
+      expect(titolo).toBe('1 settimana completa');
+      expect(frase).toBe('Ancora 2 allenamenti');
+      expect(pallini()).toEqual(['piena', 'anello', 'futura', 'futura']);
+    });
+
+    it('una casella non si riempie oltre il pieno, nemmeno con un giorno che il programma non ha piu\'', () => {
+      // Quattro giorni diversi in una settimana da tre: completa, e piena e basta.
+      const { pallini, pieni } = monta('2026-10-30', [
+        ...completa('2026-10-26', '2026-10-27', '2026-10-28'), seduta('d9', '2026-10-29')
+      ], giorni, { inizio: '2026-10-26', settimane: 2 });
+      expect(pallini()).toEqual(['piena', 'futura']);
+      expect(pieni()[0]).toBe(1);
+    });
+
+    it('le caselle sono torte sul fondo spento, l\'anello e\' vuoto e le settimane da venire solo contorno (CSS)', async () => {
+      const nome = 'node:fs';
+      const fs = await import(/* @vite-ignore */ nome);
+      const css: string = fs.readFileSync('src/styles.css', 'utf8');
+      expect(css).toContain('.liste-ios ion-item.costanza .settimana{width:10px;height:10px;border-radius:50%;flex:none;background:conic-gradient(var(--accent) calc(var(--pieno,0) * 1turn), var(--restbar-off) 0);}');
+      expect(css).toContain('.liste-ios ion-item.costanza .settimana.in-corso:not(.completa){background:conic-gradient(var(--accent) calc(var(--pieno,0) * 1turn), transparent 0);box-shadow:inset 0 0 0 1.5px var(--accent);}');
+      expect(css).toContain('.liste-ios ion-item.costanza .settimana.futura{background:transparent;box-shadow:inset 0 0 0 1.5px var(--restbar-off);}');
+    });
+
+    it('la riga c\'e\' dal primo giorno, anche senza nessuna seduta', () => {
+      const { riga, pallini, pieni } = monta('2026-10-26', [], giorni, { inizio: '2026-10-26', settimane: 3 });
+      expect(riga).not.toBeNull();
+      expect(pallini()).toEqual(['anello', 'futura', 'futura']);
+      expect(pieni()).toEqual([0, 0, 0]);
+    });
+  });
+
   it('se il tempo basta giusto, la frase c\'e\': domenica, con un allenamento ancora da fare', () => {
     const { frase } = monta('2026-10-25', [
       ...completa('2026-10-12', '2026-10-14', '2026-10-16'),
@@ -290,7 +364,7 @@ describe('SchedaListComponent — le settimane di fila', () => {
   it('senza una fila ma con due settimane da mostrare, la riga c\'e\' coi suoi pallini', () => {
     const { riga, titolo, frase, pallini } = monta('2026-10-21', [seduta('d1', '2026-10-13'), seduta('d1', '2026-10-19')]);
     expect(riga).not.toBeNull();
-    expect(titolo).toBe('Questa settimana');
+    expect(titolo).toBe('Costanza');
     expect(frase).toBeNull();
     expect(pallini()).toEqual(['spenta', 'anello']);
   });

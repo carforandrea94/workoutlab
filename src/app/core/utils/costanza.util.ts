@@ -14,6 +14,12 @@ import { addDaysISO } from './week-history.util';
  * almeno una volta (lo stesso giorno due volte conta una). Quella in corso
  * entra nel conto solo quando e' completa: fino a domenica e' ancora aperta, e
  * non spezza niente.
+ *
+ * Le sedute dicono solo il giorno ("d1"), non il programma, e un programma
+ * nuovo riparte da "d1": senza un limite le sue prime settimane sembrerebbero
+ * gia' fatte, con le settimane del programma vecchio. Col `programma` si conta
+ * dal lunedi' della settimana d'inizio e le caselle sono le settimane del
+ * programma, anche quelle che devono ancora venire.
  */
 
 export interface SettimanaCostanza {
@@ -24,6 +30,15 @@ export interface SettimanaCostanza {
   completa: boolean;
   /** E' la settimana di oggi. */
   inCorso: boolean;
+  /** Deve ancora cominciare (solo con un programma: la casella c'e' gia'). */
+  futura: boolean;
+}
+
+/** Il programma attuale: da quando e per quante settimane. */
+export interface ProgrammaCostanza {
+  /** Un giorno qualsiasi della prima settimana, yyyy-mm-dd. */
+  inizio: string;
+  settimane: number;
 }
 
 export interface Costanza {
@@ -49,6 +64,9 @@ const DATA = /^\d{4}-\d{2}-\d{2}$/;
 /** Quante settimane si mostrano. */
 export const SETTIMANE_IN_VISTA = 8;
 
+/** Quante caselle al massimo con un programma: piu' di cosi' non stanno accanto al titolo. */
+export const SETTIMANE_PROGRAMMA_IN_VISTA = 12;
+
 /**
  * La costanza a oggi, dalle sedute salvate (giorno e data) e dal numero di
  * giorni del programma. Con un programma senza giorni non c'e' niente da
@@ -58,13 +76,16 @@ export function costanza(
   sedute: readonly { dayId: string; date: string }[],
   previsti: number,
   oggi: string,
-  quante = SETTIMANE_IN_VISTA
+  quante = SETTIMANE_IN_VISTA,
+  programma?: ProgrammaCostanza
 ): Costanza | null {
   if (!(previsti > 0) || !DATA.test(oggi)) return null;
+  const da = programma && DATA.test(programma.inizio) && programma.settimane >= 1 ? mondayISO(programma.inizio) : '';
   const perSettimana = new Map<string, Set<string>>();
   for (const s of sedute) {
     if (!s?.dayId || !DATA.test(s?.date ?? '')) continue;
     const lunedi = mondayISO(s.date);
+    if (lunedi < da) continue;
     let giorni = perSettimana.get(lunedi);
     if (!giorni) perSettimana.set(lunedi, giorni = new Set());
     giorni.add(s.dayId);
@@ -82,15 +103,29 @@ export function costanza(
     lunedi = addDaysISO(lunedi, -7);
   }
 
-  // Le settimane prima della prima seduta non sono settimane mancate: chi si e'
-  // iscritto da tre settimane non ne vede cinque vuote.
-  let prima = questo;
-  for (const l of perSettimana.keys()) if (l < prima) prima = l;
   const settimane: SettimanaCostanza[] = [];
-  for (let k = quante - 1; k >= 0; k--) {
-    const l = addDaysISO(questo, -7 * k);
-    if (l < prima) continue;
-    settimane.push({ lunedi: l, fatti: fattiIn(l), completa: completa(l), inCorso: k === 0 });
+  const casella = (l: string): SettimanaCostanza =>
+    ({ lunedi: l, fatti: fattiIn(l), completa: completa(l), inCorso: l === questo, futura: l > questo });
+  if (da) {
+    // Le caselle sono le settimane del programma, tutte: chi comincia ne vede
+    // una in corso e le altre ancora da venire. Se sono piu' di `quante` si
+    // tiene la finestra che contiene questa settimana, con due caselle davanti.
+    const n = Math.floor(programma!.settimane);
+    const tutte = Array.from({ length: n }, (_, k) => addDaysISO(da, 7 * k));
+    const ora = tutte.indexOf(questo);
+    const posizione = ora >= 0 ? ora : questo < da ? 0 : n - 1;
+    const inizio = n > quante ? Math.max(0, Math.min(posizione - (quante - 3), n - quante)) : 0;
+    for (const l of tutte.slice(inizio, inizio + quante)) settimane.push(casella(l));
+  } else {
+    // Le settimane prima della prima seduta non sono settimane mancate: chi si e'
+    // iscritto da tre settimane non ne vede cinque vuote.
+    let prima = questo;
+    for (const l of perSettimana.keys()) if (l < prima) prima = l;
+    for (let k = quante - 1; k >= 0; k--) {
+      const l = addDaysISO(questo, -7 * k);
+      if (l < prima) continue;
+      settimane.push(casella(l));
+    }
   }
 
   const fatti = fattiIn(questo);

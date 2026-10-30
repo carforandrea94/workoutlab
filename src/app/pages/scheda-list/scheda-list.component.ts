@@ -10,7 +10,7 @@ import { IONIC_PAGE, IONIC_LINKS } from '../../core/ionic-page';
 import { IONIC_LIST } from '../../core/ionic-list';
 import { NavController, IonAvatar, IonBadge, IonButton, IonLabel, IonListHeader, IonNote, IonProgressBar } from '@ionic/angular';
 import { IconaComponent } from '../../components/icona/icona.component';
-import { Costanza, costanza } from '../../core/utils/costanza.util';
+import { Costanza, ProgrammaCostanza, SETTIMANE_IN_VISTA, SETTIMANE_PROGRAMMA_IN_VISTA, costanza } from '../../core/utils/costanza.util';
 import { GiornoService } from '../../core/giorno.service';
 
 @Component({
@@ -120,45 +120,59 @@ export class SchedaListComponent implements OnInit {
 
   // ---- Le settimane di fila ----
   //
-  // Sotto la settimana del programma, la costanza: quante settimane di fila con
-  // la scheda completa (vedi costanza.util). Il titolo dice la fila e i pallini
-  // dicono come sta andando; la riga non ripete i conti (quanti allenamenti su
-  // quanti): resta solo quanti ne mancano per completare questa settimana, e
-  // solo se si fa ancora in tempo. Mai cosa si e' perso: una fila spezzata
-  // riparte senza commenti.
+  // Sotto la settimana del programma, la costanza: una casella per ogni
+  // settimana del programma attuale, riempita in proporzione agli allenamenti
+  // fatti, e quante settimane complete di fila (vedi costanza.util). Conta solo
+  // dal via del programma: i giorni di un programma nuovo hanno gli stessi id
+  // di quello vecchio, e le sue settimane non sono le sue. La riga non ripete i
+  // conti (quanti allenamenti su quanti): resta solo quanti ne mancano per
+  // completare questa settimana, e solo se si fa ancora in tempo. Mai cosa si
+  // e' perso: una fila spezzata riparte senza commenti.
 
   /** Letta a ogni giro: le sedute arrivano dal servizio, e la settimana cambia da sola il lunedi'. */
   get costanza(): Costanza | null {
-    const c = costanza(this.weekly.sedute(), this.days.length, this.giorno.oggi());
-    // Senza una fila e con una settimana sola non c'e' niente da dire: la riga
+    const inizio = this.workoutData.DEFAULT_PROGRAM_START;
+    const settimane = this.weekPlan.length;
+    const programma: ProgrammaCostanza | undefined = /^\d{4}-\d{2}-\d{2}$/.test(inizio ?? '') && settimane > 0 ? { inizio, settimane } : undefined;
+    const c = costanza(
+      this.weekly.sedute(), this.days.length, this.giorno.oggi(),
+      programma ? SETTIMANE_PROGRAMMA_IN_VISTA : SETTIMANE_IN_VISTA, programma
+    );
+    // Senza una fila e con una casella sola non c'e' niente da dire: la riga
     // sarebbe un titolo e basta.
     return c && (c.fila > 0 || c.settimane.length > 1) ? c : null;
   }
 
   titoloCostanza(c: Costanza): string {
-    if (c.fila === 0) return 'Questa settimana';
+    if (c.fila === 0) return 'Costanza';
     return c.fila === 1 ? '1 settimana completa' : `${c.fila} settimane di fila`;
   }
 
   /**
    * Quanti allenamenti mancano per allungare la fila, o '' se non c'e' niente da
-   * aggiungere al titolo e ai pallini. Breve di proposito: piu' lunga va a capo e
-   * la riga raddoppia.
+   * aggiungere al titolo e alle caselle. Breve di proposito: piu' lunga va a
+   * capo e la riga raddoppia.
    */
   fraseCostanza(c: Costanza): string {
     if (c.fila === 0 || c.mancano === 0 || c.mancano > c.giorniRimasti) return '';
     return `Ancora ${c.mancano} ${c.mancano === 1 ? 'allenamento' : 'allenamenti'}`;
   }
 
+  /** Quanto della casella si riempie: gli allenamenti fatti sui previsti, da 0 a 1. */
+  pieno(s: { fatti: number }, c: Costanza): number {
+    return Math.min(1, s.fatti / c.previsti);
+  }
+
   perLunedi(_: number, s: { lunedi: string }): string {
     return s.lunedi;
   }
 
-  /** Per lo screen reader i pallini sono una frase sola. */
+  /** Per lo screen reader le caselle sono una frase sola. */
   etichettaSettimane(c: Costanza): string {
     const complete = c.settimane.filter(s => s.completa).length;
-    const n = c.settimane.length;
-    return `Ultime ${n} settimane: ${complete === 1 ? '1 completa' : `${complete} complete`}`;
+    const questa = c.settimane.find(s => s.inCorso);
+    return `Costanza: ${complete} su ${c.settimane.length} settimane complete`
+      + (questa ? `, questa settimana ${questa.fatti} su ${c.previsti} allenamenti` : '');
   }
 
   /** Quanto del programma e' passato, per la barra: la settimana in corso conta. */

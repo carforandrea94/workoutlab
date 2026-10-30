@@ -40,8 +40,9 @@
           </ion-label>
           <ion-note slot="end">{{ todayWeekday }}</ion-note>
         </ion-item>
-        <!-- Le settimane di fila con la scheda completa. I pallini sono le
-             ultime settimane: pieno se completa, l'anello e' quella in corso.
+        <!-- La costanza: una casella per settimana del programma, riempita in
+             proporzione agli allenamenti fatti (piena se completa), con
+             l'anello quella in corso e il solo contorno quelle da venire.
              Sotto il titolo, solo quanti allenamenti mancano, se si fa in tempo. -->
         <ion-item lines="none" class="costanza" *ngIf="costanza as c">
           <ion-label>
@@ -51,7 +52,8 @@
           <span slot="end" class="settimane" role="img" *ngIf="c.settimane.length > 1"
             [attr.aria-label]="etichettaSettimane(c)">
             <span class="settimana" *ngFor="let s of c.settimane; trackBy: perLunedi"
-              [class.completa]="s.completa" [class.in-corso]="s.inCorso"></span>
+              [class.completa]="s.completa" [class.in-corso]="s.inCorso" [class.futura]="s.futura"
+              [style.--pieno]="pieno(s, c)"></span>
           </span>
         </ion-item>
       </ion-list>
