@@ -162,6 +162,32 @@ describe('sbloccaAudio', () => {
   });
 });
 
+/**
+ * Rifa a mano quello che farebbe il Web Audio: somma le onde di tutti gli
+ * oscillatori, ognuna col suo inviluppo, e dice il picco. Serve ad accorgersi
+ * se i colpi che si sovrappongono sommandosi superano il pieno e distorcono.
+ */
+function picco(f: Finto): number {
+  const SR = 44100;
+  const t0 = 10;                                   // il contesto finto parte da 10
+  const somma = new Float32Array(SR * 3);
+  f.oscillatori.forEach((o, i) => {
+    const [hz, inizio] = o.frequency.setValueAtTime.mock.calls[0];
+    const g = f.guadagni[i].gain;
+    const [silenzio] = g.setValueAtTime.mock.calls[0];
+    const [volume, fineAttacco] = g.linearRampToValueAtTime.mock.calls[0];
+    const [, fine] = g.exponentialRampToValueAtTime.mock.calls[0];
+    for (let k = Math.floor((inizio - t0) * SR); k < Math.min(somma.length, Math.ceil((fine - t0) * SR)); k++) {
+      const t = t0 + k / SR;
+      const inviluppo = t < fineAttacco
+        ? silenzio + (volume - silenzio) * (t - inizio) / (fineAttacco - inizio)
+        : volume * Math.pow(silenzio / volume, (t - fineAttacco) / (fine - fineAttacco));
+      somma[k] += Math.sin(2 * Math.PI * hz * (t - inizio)) * inviluppo;
+    }
+  });
+  return somma.reduce((m, v) => Math.max(m, Math.abs(v)), 0);
+}
+
 describe('suona', () => {
   function pronto(stato = 'running') {
     const f = contestoFinto(stato);
@@ -170,26 +196,32 @@ describe('suona', () => {
     return { f, amb };
   }
 
-  it('a fine recupero fa tre note che salgono, e poi si ripete', () => {
+  it('a fine recupero e\' una scampanellata: sette colpi ravvicinati, ognuno una campana di quattro parziali', () => {
     const { f, amb } = pronto();
     suona('fine-recupero', amb);
-    expect(f.oscillatori).toHaveLength(6);
+    expect(f.oscillatori).toHaveLength(28);
     const chiamate = f.oscillatori.map(o => o.frequency.setValueAtTime.mock.calls[0]);
-    expect(chiamate.map(([hz]) => hz)).toEqual([1047, 1319, 1568, 1047, 1319, 1568]);
-    // Dentro la figura ogni nota viene dopo la precedente e piu' in alto; la figura si ripete un secondo dopo.
-    expect(chiamate.map(([, t]) => Math.round((t - 10) * 100) / 100)).toEqual([0, 0.2, 0.4, 1, 1.2, 1.4]);
+    // Ogni colpo: la nota di base e i parziali non armonici (2,76, 5,4 e 8,93 volte).
+    const rapporti = [1, 2.76, 5.4, 8.93];
+    for (let colpo = 0; colpo < 7; colpo++) {
+      rapporti.forEach((r, p) => {
+        const [hz, t] = chiamate[colpo * 4 + p];
+        expect(hz).toBeCloseTo(880 * r, 5);
+        expect(t).toBeCloseTo(10 + colpo * 0.11, 5);
+      });
+    }
     expect(f.oscillatori[0].start).toHaveBeenCalledWith(10);
-    // Ogni nota si ferma da sola, subito dopo la coda.
-    expect(f.oscillatori[0].stop.mock.calls[0][0]).toBeGreaterThan(10.16);
-    expect(f.oscillatori[5].stop.mock.calls[0][0]).toBeGreaterThan(11.4 + 0.34);
+    // Ogni componente si ferma da sola, subito dopo la coda.
+    expect(f.oscillatori[0].stop.mock.calls[0][0]).toBeGreaterThan(10.9);
+    expect(f.oscillatori[24].stop.mock.calls[0][0]).toBeGreaterThan(10.66 + 0.9);
   });
 
-  it('a fine pausa fa una nota sola, piu\' bassa e piu\' lunga di quelle del recupero', () => {
+  it('a fine pausa e\' un colpo solo, della stessa campana', () => {
     const { f, amb } = pronto();
     suona('fine-pausa', amb);
-    expect(f.oscillatori).toHaveLength(1);
+    expect(f.oscillatori).toHaveLength(4);
     expect(f.oscillatori[0].frequency.setValueAtTime).toHaveBeenCalledWith(880, 10);
-    expect(f.oscillatori[0].stop.mock.calls[0][0]).toBeGreaterThan(10.4);
+    expect(f.oscillatori.every(o => o.frequency.setValueAtTime.mock.calls[0][1] === 10)).toBe(true);
   });
 
   it('la serie confermata non suona: succede venti volte a seduta', () => {
@@ -198,22 +230,47 @@ describe('suona', () => {
     expect(f.oscillatori).toHaveLength(0);
   });
 
-  it('ogni nota ha attacco e coda, senza i clic di un\'onda tagliata di netto', () => {
+  it('ogni componente ha attacco e coda, senza i clic di un\'onda tagliata di netto', () => {
     const { f, amb } = pronto();
     suona('fine-recupero', amb);
     const g = f.guadagni[0].gain;
     expect(g.setValueAtTime.mock.calls[0][0]).toBeGreaterThan(0);          // mai zero: la rampa esponenziale non lo regge
-    // Si sente con la musica e il rumore della palestra, ma senza superare il pieno (distorcerebbe).
-    expect(g.linearRampToValueAtTime.mock.calls[0][0]).toBeGreaterThanOrEqual(0.7);
-    expect(g.linearRampToValueAtTime.mock.calls[0][0]).toBeLessThanOrEqual(1);
+    // L'attacco e' una percossa: brevissimo.
+    expect(g.linearRampToValueAtTime.mock.calls[0][1] - g.setValueAtTime.mock.calls[0][1]).toBeLessThanOrEqual(0.01);
     expect(g.exponentialRampToValueAtTime.mock.calls[0][0]).toBeLessThan(0.001);
     expect(g.exponentialRampToValueAtTime.mock.calls[0][1]).toBeGreaterThan(g.linearRampToValueAtTime.mock.calls[0][1]);
   });
 
-  it('l\'onda e\' triangolare: le armoniche in piu\' bucano il rumore e la cassa del telefono le rende', () => {
+  it('i parziali sono piu\' piano e piu\' brevi della nota di base: e\' cosi\' che suona di metallo', () => {
+    const { f, amb } = pronto();
+    suona('fine-pausa', amb);
+    const volumi = f.guadagni.map(g => g.gain.linearRampToValueAtTime.mock.calls[0][0]);
+    const fini = f.guadagni.map(g => g.gain.exponentialRampToValueAtTime.mock.calls[0][1]);
+    expect(volumi.map(v => Math.round(v * 1000) / 1000)).toEqual([0.42, 0.252, 0.147, 0.084]);
+    // Ogni parziale dura una frazione del colpo: 0,9 s la base, poi 0,54, 0,36 e 0,225.
+    expect(fini.map(fine => Math.round((fine - 10) * 1000) / 1000)).toEqual([0.9, 0.54, 0.36, 0.225]);
+  });
+
+  it('e\' fatto di onde sinusoidali, una per parziale', () => {
     const { f, amb } = pronto();
     suona('fine-recupero', amb);
-    expect(f.oscillatori.every(o => o.type === 'triangle')).toBe(true);
+    expect(f.oscillatori.every(o => o.type === 'sine')).toBe(true);
+  });
+
+  // I colpi si sovrappongono e le onde si sommano: oltre il pieno il suono distorce,
+  // e molto sotto non si sente. Si rifa il Web Audio a mano e si guarda il picco.
+  it('la somma dei colpi che si sovrappongono resta sotto il pieno ma lo sfrutta quasi tutto', () => {
+    const { f, amb } = pronto();
+    suona('fine-recupero', amb);
+    expect(picco(f)).toBeGreaterThan(0.8);
+    expect(picco(f)).toBeLessThanOrEqual(1);
+  });
+
+  it('anche un colpo solo (fine pausa) non distorce e si sente', () => {
+    const { f, amb } = pronto();
+    suona('fine-pausa', amb);
+    expect(picco(f)).toBeGreaterThan(0.6);
+    expect(picco(f)).toBeLessThanOrEqual(1);
   });
 
   it('oscillatore, guadagno e uscita sono collegati in fila', () => {
@@ -236,7 +293,7 @@ describe('suona', () => {
     expect(f.oscillatori).toHaveLength(0);     // non suona su un contesto fermo: partirebbe dopo, a caso
     await Promise.resolve(); await Promise.resolve();
     expect(f.contesto.resume).toHaveBeenCalled();
-    expect(f.oscillatori).toHaveLength(1);
+    expect(f.oscillatori).toHaveLength(4);
   });
 
   it('se il sistema non lo lascia riprendere resta zitto senza errori', async () => {
@@ -303,7 +360,7 @@ describe('suona — la sessione audio di iOS', () => {
     // Prima che la sessione sia pronta non si e' ancora creato niente: l'ordine conta.
     expect(f.oscillatori.length).toBeGreaterThan(0);
     vi.advanceTimersByTime(1000);
-    expect(tipi).toEqual(['playback']);            // il suono dura circa 1,75 secondi
+    expect(tipi).toEqual(['playback']);            // la scampanellata dura circa 1,6 secondi
     vi.advanceTimersByTime(1000);
     expect(tipi).toEqual(['playback', 'auto']);
   });
@@ -326,9 +383,9 @@ describe('suona — la sessione audio di iOS', () => {
     suona('fine-pausa', amb);
     vi.advanceTimersByTime(300);
     suona('fine-pausa', amb);
-    vi.advanceTimersByTime(300);                   // il primo e' finito (0,55 s), il secondo no
+    vi.advanceTimersByTime(800);                   // t = 1,1 s: il primo e' finito (1,05 s), il secondo no (1,35 s)
     expect(tipi).not.toContain('auto');
-    vi.advanceTimersByTime(1000);
+    vi.advanceTimersByTime(400);
     expect(tipi.at(-1)).toBe('auto');
     expect(tipi.filter(x => x === 'auto')).toHaveLength(1);
   });
@@ -336,7 +393,7 @@ describe('suona — la sessione audio di iOS', () => {
   it('dove la sessione non c\'e\' (Chrome, iOS vecchi) suona lo stesso', () => {
     const { f, amb } = pronto();
     suona('fine-recupero', amb);
-    expect(f.oscillatori).toHaveLength(6);
+    expect(f.oscillatori).toHaveLength(28);
     expect(() => vi.advanceTimersByTime(5000)).not.toThrow();
   });
 
@@ -347,7 +404,7 @@ describe('suona — la sessione audio di iOS', () => {
     });
     const { f, amb } = pronto();
     expect(() => suona('fine-recupero', amb)).not.toThrow();
-    expect(f.oscillatori).toHaveLength(6);
+    expect(f.oscillatori).toHaveLength(28);
     expect(() => vi.advanceTimersByTime(5000)).not.toThrow();
   });
 
@@ -381,7 +438,7 @@ describe('segnala', () => {
     const { f, amb } = pronto();
     segnala('fine-recupero', { preferenze: { suono: true, vibrazione: true }, suono: amb });
     expect(vibrate).toHaveBeenCalledWith([200, 100, 200]);
-    expect(f.oscillatori).toHaveLength(6);
+    expect(f.oscillatori).toHaveLength(28);
   });
 
   it('col suono spento vibra soltanto', () => {
@@ -395,7 +452,7 @@ describe('segnala', () => {
     const { f, amb } = pronto();
     segnala('fine-recupero', { preferenze: { suono: true, vibrazione: false }, suono: amb });
     expect(vibrate).not.toHaveBeenCalled();
-    expect(f.oscillatori).toHaveLength(6);
+    expect(f.oscillatori).toHaveLength(28);
   });
 
   it('con tutto spento non fa niente', () => {
