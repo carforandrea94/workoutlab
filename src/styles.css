@@ -503,14 +503,17 @@ ion-tab-bar.tabbar{touch-action:none;-webkit-touch-callout:none;}
 /* Gia' fatto questa settimana: la spunta piena accanto al chevron, non al
    posto del numero del giorno, che serve sempre. */
 .liste-ios .riga-fatto{display:flex;color:var(--accent);margin-inline-start:8px;}
-/* Le settimane di fila: un pallino per settimana, pieno d'accento se completa,
-   spento se no. Quella in corso, finche' e' aperta, e' un anello: si puo'
-   ancora riempire. Cambia solo il colore, e solo quando una settimana si
-   completa: la riga si vede tutti i giorni, un ingresso animato sarebbe rumore. */
+/* La costanza: una casella per settimana del programma, riempita come una torta
+   in proporzione agli allenamenti fatti (--pieno, da 0 a 1) sul fondo spento;
+   piena d'accento se la settimana e' completa. Quella in corso ha l'anello e il
+   fondo vuoto, perche' si puo' ancora riempire; quelle da venire hanno solo il
+   contorno. Niente transizioni: la riga si vede tutti i giorni, un ingresso
+   animato sarebbe rumore. */
 .liste-ios ion-item.costanza .settimane{display:flex;align-items:center;gap:5px;margin-inline-start:12px;}
-.liste-ios ion-item.costanza .settimana{width:8px;height:8px;border-radius:50%;background:var(--restbar-off);transition:background-color .2s ease,box-shadow .2s ease;}
+.liste-ios ion-item.costanza .settimana{width:10px;height:10px;border-radius:50%;flex:none;background:conic-gradient(var(--accent) calc(var(--pieno,0) * 1turn), var(--restbar-off) 0);}
 .liste-ios ion-item.costanza .settimana.completa{background:var(--accent);}
-.liste-ios ion-item.costanza .settimana.in-corso:not(.completa){background:transparent;box-shadow:inset 0 0 0 1.5px var(--accent);}
+.liste-ios ion-item.costanza .settimana.in-corso:not(.completa){background:conic-gradient(var(--accent) calc(var(--pieno,0) * 1turn), transparent 0);box-shadow:inset 0 0 0 1.5px var(--accent);}
+.liste-ios ion-item.costanza .settimana.futura{background:transparent;box-shadow:inset 0 0 0 1.5px var(--restbar-off);}
 /* Sotto i pesi dell'anteprima: il passo in piu' si nota, nel colore d'accento. */
 .piano-fonte.passo app-icona{color:var(--accent);}
 /* Le intestazioni di sezione delle pagine interne sono quelle delle tab
