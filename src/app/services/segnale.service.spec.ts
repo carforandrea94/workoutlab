@@ -131,7 +131,7 @@ describe('SegnaleService', () => {
       expect(s.suono()).toBe(true);
       expect(JSON.parse(localStorage.getItem(PREFERENZE_SEGNALE_KEY)!)).toEqual({ suono: true, vibrazione: true });
       expect(crea).toHaveBeenCalledTimes(1);
-      expect(oscillatori.length).toBe(2);
+      expect(oscillatori.length).toBe(6);
     });
 
     it('spegnerlo lo salva e non suona', async () => {

@@ -5,8 +5,14 @@ import { vibra, Vibrazione } from './vibrazione.util';
  * Il segnale di fine recupero: il telefono e' sulla panca o in tasca, e quello
  * che serve e' sentirlo. Su iPhone installato dalla Home la vibrazione del
  * browser non esiste (vedi vibrazione.util), e il suono e' l'unico canale che
- * resta: un tono breve, fatto col Web Audio invece di un file, cosi' non c'e'
+ * resta: un suono fatto col Web Audio invece di un file, cosi' non c'e'
  * niente da scaricare ne' da tenere in cache.
+ *
+ * Deve sentirsi: in palestra c'e' musica e rumore, e il telefono sta sulla
+ * panca o in tasca. Per questo il suono e' forte e lungo, e su iPhone si
+ * chiede la sessione audio "playback": di suo il Web Audio e' muto con
+ * l'interruttore del silenzioso, e chi si allena col telefono in silenzioso
+ * non sentirebbe niente.
  *
  * Due preferenze, per dispositivo e non per account: il suono serve sul
  * telefono in palestra e magari non sul portatile a casa.
@@ -126,29 +132,67 @@ export function sbloccaAudio(ambiente: AmbienteSuono = ambienteSuonoReale()): vo
 interface Nota { hz: number; dopo: number; durata: number }
 
 /**
- * Fine recupero: due note che salgono (sol, do), riconoscibili tra la musica
- * della palestra e diverse da un avviso qualunque. Fine pausa: una nota sola,
+ * Fine recupero: tre note che salgono (do, mi, sol), due volte. Le note stanno
+ * sopra i mille hertz perche' e' li' che la cassa di un telefono rende di piu',
+ * e la ripetizione si nota anche con la musica addosso; la figura che sale e'
+ * riconoscibile e diversa da un avviso qualunque. Fine pausa: una nota sola,
  * perche' e' un avviso meno importante. La serie confermata non suona: succede
  * venti volte a seduta, e per quello basta il tocco.
  */
+const FIGURA_RECUPERO: Nota[] = [
+  { hz: 1047, dopo: 0, durata: 0.16 },
+  { hz: 1319, dopo: 0.2, durata: 0.16 },
+  { hz: 1568, dopo: 0.4, durata: 0.34 }
+];
 const NOTE: Partial<Record<Vibrazione, Nota[]>> = {
-  'fine-recupero': [{ hz: 784, dopo: 0, durata: 0.14 }, { hz: 1047, dopo: 0.2, durata: 0.24 }],
-  'fine-pausa': [{ hz: 659, dopo: 0, durata: 0.2 }]
+  'fine-recupero': [...FIGURA_RECUPERO, ...FIGURA_RECUPERO.map(n => ({ ...n, dopo: n.dopo + 1 }))],
+  'fine-pausa': [{ hz: 880, dopo: 0, durata: 0.4 }]
 };
 
-/** Abbastanza per sentirsi sopra la musica, non abbastanza da far sobbalzare. */
-const VOLUME = 0.3;
+/** Forte: il telefono sta in tasca o sulla panca, con la musica della palestra. */
+const VOLUME = 0.8;
 /** Il piu' basso che l'inviluppo esponenziale accetta: a zero la rampa non si puo' calcolare. */
 const SILENZIO = 0.0001;
 
+/** La sessione audio di Safari/iOS (17 e successivi); non c'e' altrove. */
+interface SessioneAudioLike { type: string }
+
+function sessioneAudio(): SessioneAudioLike | null {
+  const s = (globalThis as any).navigator?.audioSession;
+  return s && typeof s === 'object' ? s : null;
+}
+
+/** Quanti suoni stanno ancora suonando: la sessione si rilascia solo quando finiscono tutti. */
+let inRiproduzione = 0;
+
+/**
+ * Per la durata del suono la sessione e' "playback", che suona anche con il
+ * silenzioso; finito, torna "auto". Solo mentre suona e non al primo tocco:
+ * un contesto audio che resta acceso con "playback" terrebbe occupato l'audio
+ * del telefono per tutto l'allenamento, e la musica si fermerebbe.
+ */
+function sessionePerSuonare(durata: number): void {
+  const sessione = sessioneAudio();
+  if (!sessione) return;
+  try { sessione.type = 'playback'; } catch { return; }
+  inRiproduzione++;
+  setTimeout(() => {
+    if (--inRiproduzione > 0) return;
+    try { sessione.type = 'auto'; } catch { /* resta com'e': non e' un errore */ }
+  }, (durata + 0.15) * 1000);
+}
+
 function suonaOra(c: ContestoSuonoLike, note: Nota[]): void {
   if (c.state !== 'running') return;
+  sessionePerSuonare(Math.max(...note.map(n => n.dopo + n.durata)));
   const t0 = c.currentTime;
   for (const n of note) {
     const inizio = t0 + n.dopo;
     const osc = c.createOscillator();
     const guadagno = c.createGain();
-    osc.type = 'sine';
+    // Triangolare e non sinusoidale: le armoniche in piu' la fanno "bucare"
+    // il rumore e la cassa del telefono le rende meglio di un tono puro.
+    osc.type = 'triangle';
     osc.frequency.setValueAtTime(n.hz, inizio);
     // Attacco rapido e coda che si spegne: senza, l'inizio e la fine della
     // nota fanno "clic".

@@ -170,26 +170,26 @@ describe('suona', () => {
     return { f, amb };
   }
 
-  it('a fine recupero fa due note che salgono, la seconda dopo la prima', () => {
+  it('a fine recupero fa tre note che salgono, e poi si ripete', () => {
     const { f, amb } = pronto();
     suona('fine-recupero', amb);
-    expect(f.oscillatori).toHaveLength(2);
-    const [a, b] = f.oscillatori;
-    expect(a.frequency.setValueAtTime).toHaveBeenCalledWith(784, 10);
-    expect(b.frequency.setValueAtTime.mock.calls[0][0]).toBe(1047);
-    expect(b.frequency.setValueAtTime.mock.calls[0][1]).toBeCloseTo(10.2, 5);
-    expect(b.frequency.setValueAtTime.mock.calls[0][0]).toBeGreaterThan(a.frequency.setValueAtTime.mock.calls[0][0]);
-    expect(a.start).toHaveBeenCalledWith(10);
+    expect(f.oscillatori).toHaveLength(6);
+    const chiamate = f.oscillatori.map(o => o.frequency.setValueAtTime.mock.calls[0]);
+    expect(chiamate.map(([hz]) => hz)).toEqual([1047, 1319, 1568, 1047, 1319, 1568]);
+    // Dentro la figura ogni nota viene dopo la precedente e piu' in alto; la figura si ripete un secondo dopo.
+    expect(chiamate.map(([, t]) => Math.round((t - 10) * 100) / 100)).toEqual([0, 0.2, 0.4, 1, 1.2, 1.4]);
+    expect(f.oscillatori[0].start).toHaveBeenCalledWith(10);
     // Ogni nota si ferma da sola, subito dopo la coda.
-    expect(a.stop.mock.calls[0][0]).toBeGreaterThan(10.14);
-    expect(b.stop.mock.calls[0][0]).toBeGreaterThan(10.2 + 0.24);
+    expect(f.oscillatori[0].stop.mock.calls[0][0]).toBeGreaterThan(10.16);
+    expect(f.oscillatori[5].stop.mock.calls[0][0]).toBeGreaterThan(11.4 + 0.34);
   });
 
-  it('a fine pausa fa una nota sola, piu\' bassa', () => {
+  it('a fine pausa fa una nota sola, piu\' bassa e piu\' lunga di quelle del recupero', () => {
     const { f, amb } = pronto();
     suona('fine-pausa', amb);
     expect(f.oscillatori).toHaveLength(1);
-    expect(f.oscillatori[0].frequency.setValueAtTime).toHaveBeenCalledWith(659, 10);
+    expect(f.oscillatori[0].frequency.setValueAtTime).toHaveBeenCalledWith(880, 10);
+    expect(f.oscillatori[0].stop.mock.calls[0][0]).toBeGreaterThan(10.4);
   });
 
   it('la serie confermata non suona: succede venti volte a seduta', () => {
@@ -203,10 +203,17 @@ describe('suona', () => {
     suona('fine-recupero', amb);
     const g = f.guadagni[0].gain;
     expect(g.setValueAtTime.mock.calls[0][0]).toBeGreaterThan(0);          // mai zero: la rampa esponenziale non lo regge
-    expect(g.linearRampToValueAtTime.mock.calls[0][0]).toBeGreaterThan(0.1);
-    expect(g.linearRampToValueAtTime.mock.calls[0][0]).toBeLessThanOrEqual(0.5); // non fa sobbalzare
+    // Si sente con la musica e il rumore della palestra, ma senza superare il pieno (distorcerebbe).
+    expect(g.linearRampToValueAtTime.mock.calls[0][0]).toBeGreaterThanOrEqual(0.7);
+    expect(g.linearRampToValueAtTime.mock.calls[0][0]).toBeLessThanOrEqual(1);
     expect(g.exponentialRampToValueAtTime.mock.calls[0][0]).toBeLessThan(0.001);
     expect(g.exponentialRampToValueAtTime.mock.calls[0][1]).toBeGreaterThan(g.linearRampToValueAtTime.mock.calls[0][1]);
+  });
+
+  it('l\'onda e\' triangolare: le armoniche in piu\' bucano il rumore e la cassa del telefono le rende', () => {
+    const { f, amb } = pronto();
+    suona('fine-recupero', amb);
+    expect(f.oscillatori.every(o => o.type === 'triangle')).toBe(true);
   });
 
   it('oscillatore, guadagno e uscita sono collegati in fila', () => {
@@ -256,6 +263,105 @@ describe('suona', () => {
   });
 });
 
+/**
+ * Su iPhone il Web Audio e' muto con l'interruttore del silenzioso: durante il
+ * suono la sessione audio di Safari (17+) diventa "playback", che suona
+ * comunque, e poi torna "auto" perche' un contesto sempre acceso con "playback"
+ * terrebbe occupato l'audio del telefono (la musica si fermerebbe).
+ */
+describe('suona — la sessione audio di iOS', () => {
+  function conSessione() {
+    const sessione = { type: 'auto' };
+    const tipi: string[] = [];
+    Object.defineProperty(sessione, 'type', {
+      get: () => tipi.at(-1) ?? 'auto',
+      set: (v: string) => { tipi.push(v); },
+      configurable: true
+    });
+    Object.defineProperty(globalThis.navigator, 'audioSession', { value: sessione, configurable: true });
+    return tipi;
+  }
+  function pronto() {
+    const f = contestoFinto();
+    const amb = ambiente(f);
+    amb.contesto = f.contesto;
+    return { f, amb };
+  }
+
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => {
+    vi.runAllTimers();
+    vi.useRealTimers();
+    delete (globalThis.navigator as any).audioSession;
+  });
+
+  it('mentre suona e\' "playback", finito torna "auto"', () => {
+    const tipi = conSessione();
+    const { f, amb } = pronto();
+    suona('fine-recupero', amb);
+    expect(tipi).toEqual(['playback']);
+    // Prima che la sessione sia pronta non si e' ancora creato niente: l'ordine conta.
+    expect(f.oscillatori.length).toBeGreaterThan(0);
+    vi.advanceTimersByTime(1000);
+    expect(tipi).toEqual(['playback']);            // il suono dura circa 1,75 secondi
+    vi.advanceTimersByTime(1000);
+    expect(tipi).toEqual(['playback', 'auto']);
+  });
+
+  it('la sessione e\' pronta prima che parta la prima nota', () => {
+    const tipi = conSessione();
+    const { f, amb } = pronto();
+    // Si registra lo stato e si controlla dopo: un'asserzione dentro il Web Audio
+    // finto la inghiottirebbe il try/catch che protegge il timer.
+    let allaPrimaNota: string[] | null = null;
+    const crea = f.contesto.createOscillator;
+    f.contesto.createOscillator = () => { allaPrimaNota ??= [...tipi]; return crea(); };
+    suona('fine-pausa', amb);
+    expect(allaPrimaNota).toEqual(['playback']);
+  });
+
+  it('due suoni ravvicinati: si rilascia solo quando finiscono tutti e due', () => {
+    const tipi = conSessione();
+    const { amb } = pronto();
+    suona('fine-pausa', amb);
+    vi.advanceTimersByTime(300);
+    suona('fine-pausa', amb);
+    vi.advanceTimersByTime(300);                   // il primo e' finito (0,55 s), il secondo no
+    expect(tipi).not.toContain('auto');
+    vi.advanceTimersByTime(1000);
+    expect(tipi.at(-1)).toBe('auto');
+    expect(tipi.filter(x => x === 'auto')).toHaveLength(1);
+  });
+
+  it('dove la sessione non c\'e\' (Chrome, iOS vecchi) suona lo stesso', () => {
+    const { f, amb } = pronto();
+    suona('fine-recupero', amb);
+    expect(f.oscillatori).toHaveLength(6);
+    expect(() => vi.advanceTimersByTime(5000)).not.toThrow();
+  });
+
+  it('se la sessione rifiuta il cambio, suona lo stesso e non lancia', () => {
+    Object.defineProperty(globalThis.navigator, 'audioSession', {
+      value: { set type(_v: string) { throw new Error('non permesso'); } },
+      configurable: true
+    });
+    const { f, amb } = pronto();
+    expect(() => suona('fine-recupero', amb)).not.toThrow();
+    expect(f.oscillatori).toHaveLength(6);
+    expect(() => vi.advanceTimersByTime(5000)).not.toThrow();
+  });
+
+  it('un contesto che non gira non tocca la sessione', () => {
+    const tipi = conSessione();
+    const f = contestoFinto('suspended');
+    f.contesto.resume = vi.fn(async () => { /* resta fermo */ });
+    const amb = ambiente(f);
+    amb.contesto = f.contesto;
+    suona('fine-recupero', amb);
+    expect(tipi).toEqual([]);
+  });
+});
+
 describe('segnala', () => {
   let vibrate: ReturnType<typeof vi.fn>;
   beforeEach(() => {
@@ -275,7 +381,7 @@ describe('segnala', () => {
     const { f, amb } = pronto();
     segnala('fine-recupero', { preferenze: { suono: true, vibrazione: true }, suono: amb });
     expect(vibrate).toHaveBeenCalledWith([200, 100, 200]);
-    expect(f.oscillatori).toHaveLength(2);
+    expect(f.oscillatori).toHaveLength(6);
   });
 
   it('col suono spento vibra soltanto', () => {
@@ -289,7 +395,7 @@ describe('segnala', () => {
     const { f, amb } = pronto();
     segnala('fine-recupero', { preferenze: { suono: true, vibrazione: false }, suono: amb });
     expect(vibrate).not.toHaveBeenCalled();
-    expect(f.oscillatori).toHaveLength(2);
+    expect(f.oscillatori).toHaveLength(6);
   });
 
   it('con tutto spento non fa niente', () => {

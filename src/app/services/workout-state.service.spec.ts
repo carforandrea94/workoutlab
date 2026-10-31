@@ -175,12 +175,12 @@ describe('WorkoutStateService — il segnale allo scadere del recupero', () => {
     new WorkoutStateService({} as any, { authReady: () => false, currentUser: () => null } as any)
   );
 
-  it('allo scadere suona le due note e vibra', () => {
+  it('allo scadere suona il segnale (tre note, due volte) e vibra', () => {
     const s = crea();
     s.startRestTimer(5, 'Panca piana', 'd1');
     vi.advanceTimersByTime(5000);
 
-    expect(oscillatori).toHaveLength(2);
+    expect(oscillatori).toHaveLength(6);
     expect(vibrate).toHaveBeenCalledWith([200, 100, 200]);
   });
 
@@ -189,7 +189,7 @@ describe('WorkoutStateService — il segnale allo scadere del recupero', () => {
     s.startRestTimer(5, 'Panca piana', 'd1');
     vi.advanceTimersByTime(60_000);
 
-    expect(oscillatori).toHaveLength(2);
+    expect(oscillatori).toHaveLength(6);
     expect(vibrate).toHaveBeenCalledTimes(1);
   });
 
