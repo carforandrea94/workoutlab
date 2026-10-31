@@ -5,8 +5,14 @@ import { vibra, Vibrazione } from './vibrazione.util';
  * Il segnale di fine recupero: il telefono e' sulla panca o in tasca, e quello
  * che serve e' sentirlo. Su iPhone installato dalla Home la vibrazione del
  * browser non esiste (vedi vibrazione.util), e il suono e' l'unico canale che
- * resta: un tono breve, fatto col Web Audio invece di un file, cosi' non c'e'
+ * resta: un suono fatto col Web Audio invece di un file, cosi' non c'e'
  * niente da scaricare ne' da tenere in cache.
+ *
+ * Deve sentirsi: in palestra c'e' musica e rumore, e il telefono sta sulla
+ * panca o in tasca. Per questo e' una scampanellata da fine ripresa, forte e
+ * che si fa notare, e su iPhone si chiede la sessione audio "playback": di
+ * suo il Web Audio e' muto con l'interruttore del silenzioso, e chi si
+ * allena col telefono in silenzioso non sentirebbe niente.
  *
  * Due preferenze, per dispositivo e non per account: il suono serve sul
  * telefono in palestra e magari non sul portatile a casa.
@@ -123,26 +129,80 @@ export function sbloccaAudio(ambiente: AmbienteSuono = ambienteSuonoReale()): vo
   }
 }
 
-interface Nota { hz: number; dopo: number; durata: number }
+/** Una componente del suono: `volume` e' il peso rispetto al volume massimo. */
+interface Nota { hz: number; dopo: number; durata: number; volume: number }
 
 /**
- * Fine recupero: due note che salgono (sol, do), riconoscibili tra la musica
- * della palestra e diverse da un avviso qualunque. Fine pausa: una nota sola,
- * perche' e' un avviso meno importante. La serie confermata non suona: succede
- * venti volte a seduta, e per quello basta il tocco.
+ * Una campana non e' una nota sola: ha parziali che non sono multipli della
+ * base (2,76 volte, 5,4, 8,93), ognuno piu' piano e piu' breve del precedente.
+ * E' quello che la fa suonare "di metallo" e non come un tono di sintesi.
+ */
+const PARZIALI = [
+  { rapporto: 1, peso: 1, coda: 1 },
+  { rapporto: 2.76, peso: 0.6, coda: 0.6 },
+  { rapporto: 5.4, peso: 0.35, coda: 0.4 },
+  { rapporto: 8.93, peso: 0.2, coda: 0.25 }
+];
+
+/** Un colpo di campana sulla nota `base`, che risuona per circa `decadimento` secondi. */
+function colpo(base: number, dopo: number, decadimento: number): Nota[] {
+  return PARZIALI.map(p => ({ hz: base * p.rapporto, dopo, durata: decadimento * p.coda, volume: p.peso }));
+}
+
+/**
+ * Fine recupero: la scampanellata che chiude la ripresa di un incontro di
+ * boxe, sette colpi ravvicinati che si sovrappongono. Si fa notare sopra la
+ * musica della palestra e non si confonde con un avviso qualunque. Fine pausa:
+ * un colpo solo, perche' e' un avviso meno importante. La serie confermata non
+ * suona: succede venti volte a seduta, e per quello basta il tocco.
  */
 const NOTE: Partial<Record<Vibrazione, Nota[]>> = {
-  'fine-recupero': [{ hz: 784, dopo: 0, durata: 0.14 }, { hz: 1047, dopo: 0.2, durata: 0.24 }],
-  'fine-pausa': [{ hz: 659, dopo: 0, durata: 0.2 }]
+  'fine-recupero': Array.from({ length: 7 }, (_, k) => colpo(880, k * 0.11, 0.9)).flat(),
+  'fine-pausa': colpo(880, 0, 0.9)
 };
 
-/** Abbastanza per sentirsi sopra la musica, non abbastanza da far sobbalzare. */
-const VOLUME = 0.3;
+/**
+ * Il volume di ogni componente al massimo. Non e' "piu' alto e' meglio": i
+ * colpi si sovrappongono e le loro onde si sommano, e oltre il pieno il suono
+ * distorce. Con questo il picco della scampanellata arriva a circa 0,9.
+ */
+const VOLUME = 0.42;
+/** L'attacco di un colpo: breve, e' una percossa. */
+const ATTACCO = 0.003;
 /** Il piu' basso che l'inviluppo esponenziale accetta: a zero la rampa non si puo' calcolare. */
 const SILENZIO = 0.0001;
 
+/** La sessione audio di Safari/iOS (17 e successivi); non c'e' altrove. */
+interface SessioneAudioLike { type: string }
+
+function sessioneAudio(): SessioneAudioLike | null {
+  const s = (globalThis as any).navigator?.audioSession;
+  return s && typeof s === 'object' ? s : null;
+}
+
+/** Quanti suoni stanno ancora suonando: la sessione si rilascia solo quando finiscono tutti. */
+let inRiproduzione = 0;
+
+/**
+ * Per la durata del suono la sessione e' "playback", che suona anche con il
+ * silenzioso; finito, torna "auto". Solo mentre suona e non al primo tocco:
+ * un contesto audio che resta acceso con "playback" terrebbe occupato l'audio
+ * del telefono per tutto l'allenamento, e la musica si fermerebbe.
+ */
+function sessionePerSuonare(durata: number): void {
+  const sessione = sessioneAudio();
+  if (!sessione) return;
+  try { sessione.type = 'playback'; } catch { return; }
+  inRiproduzione++;
+  setTimeout(() => {
+    if (--inRiproduzione > 0) return;
+    try { sessione.type = 'auto'; } catch { /* resta com'e': non e' un errore */ }
+  }, (durata + 0.15) * 1000);
+}
+
 function suonaOra(c: ContestoSuonoLike, note: Nota[]): void {
   if (c.state !== 'running') return;
+  sessionePerSuonare(Math.max(...note.map(n => n.dopo + n.durata)));
   const t0 = c.currentTime;
   for (const n of note) {
     const inizio = t0 + n.dopo;
@@ -153,7 +213,7 @@ function suonaOra(c: ContestoSuonoLike, note: Nota[]): void {
     // Attacco rapido e coda che si spegne: senza, l'inizio e la fine della
     // nota fanno "clic".
     guadagno.gain.setValueAtTime(SILENZIO, inizio);
-    guadagno.gain.linearRampToValueAtTime(VOLUME, inizio + 0.015);
+    guadagno.gain.linearRampToValueAtTime(VOLUME * n.volume, inizio + ATTACCO);
     guadagno.gain.exponentialRampToValueAtTime(SILENZIO, inizio + n.durata);
     osc.connect(guadagno);
     guadagno.connect(c.destination);
