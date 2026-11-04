@@ -16,6 +16,11 @@ import {
   CLUSTER_MIN_REST
 } from '../../core/utils/cluster.util';
 import { MAX_BLOCKS_PER_SET } from '../../core/utils/extra-sets.util';
+import { GRUPPI_MUSCOLARI, muscoloDaNome } from '../../core/utils/muscolo.util';
+import {
+  RIPETIZIONI_PREDEFINITE, SERIE_MAX, impostaRipetizioniUguali, impostaSerie, nuovoEsercizio, passoRipetizioni, ripetizioniComuni,
+  ripetizioniUguali, riepilogoSerie, settimaneDaProgramma
+} from '../../core/utils/esercizio.util';
 import { RunGoal, normalizeRunGoal } from '../../models/run.model';
 import { senzaCaselleVuote } from '../../core/utils/diet-empty.util';
 import { TipoDieta } from '../../core/utils/dieta-ciclo.util';
@@ -27,7 +32,7 @@ import { PdfImportService } from '../../services/pdf-import.service';
 import { ConfirmDialogService } from '../../services/confirm-dialog.service';
 import { IONIC_PAGE, IONIC_LINKS } from '../../core/ionic-page';
 import { IONIC_LIST } from '../../core/ionic-list';
-import { NavController, IonContent, IonInput, IonTextarea, IonSelect, IonSelectOption, IonSpinner, IonSegment, IonSegmentButton, IonButton, IonRouterOutlet, IonLabel, IonListHeader, IonNote, IonItemDivider } from '@ionic/angular';
+import { NavController, IonContent, IonInput, IonTextarea, IonSelect, IonSelectOption, IonSpinner, IonSegment, IonSegmentButton, IonToggle, IonButton, IonRouterOutlet, IonLabel, IonListHeader, IonNote, IonItemDivider } from '@ionic/angular';
 import {
   LivelloBuilder, PosizioneBuilder, SchedaBuilder, chiaveBuilder, direzioneBuilder, etichettaFattoBuilder, etichettaSuBuilder,
   livelloBuilder, titoloBuilder
@@ -55,7 +60,7 @@ export type ZonaDrop =
 @Component({
   selector: 'app-protocollo-builder',
   standalone: true,
-  imports: [NomeCampoDirective, IonButton, IonLabel, IonListHeader, IonNote, IonItemDivider, ...IONIC_SLIDING, ...IONIC_LIST, IonInput, IonTextarea, IonSelect, IonSelectOption, IonSpinner, IonSegment, IonSegmentButton, ...IONIC_PAGE, ...IONIC_LINKS,
+  imports: [NomeCampoDirective, IonButton, IonLabel, IonListHeader, IonNote, IonItemDivider, ...IONIC_SLIDING, ...IONIC_LIST, IonInput, IonTextarea, IonSelect, IonSelectOption, IonSpinner, IonSegment, IonSegmentButton, IonToggle, ...IONIC_PAGE, ...IONIC_LINKS,
     CommonModule, FormsModule, IconaComponent,
     CdkDropListGroup, CdkDropList, CdkDrag, CdkDragHandle, CdkDragPlaceholder
   ],
@@ -93,7 +98,12 @@ export class ProtocolloBuilderComponent implements OnInit, OnDestroy, DoCheck {
   editingDay: { day: Day; index: number } | null = null;
   editingPlan: DietPlan | null = null;
   editingMeal: NamedMeal | null = null;
-  editingExercise: { day: Day; ex: Exercise; isNew: boolean } | null = null;
+  /**
+   * `diverse`: le ripetizioni si scrivono serie per serie (12-10-8) invece che
+   * una volta sola. `muscoloManuale`: il gruppo l'ha scelto chi scrive, e il nome
+   * non lo cambia piu' da solo.
+   */
+  editingExercise: { day: Day; ex: Exercise; isNew: boolean; diverse: boolean; muscoloManuale: boolean } | null = null;
 
   /**
    * Gli esercizi di un giorno si riordinano in un modo a parte, come "Modifica"
@@ -105,7 +115,8 @@ export class ProtocolloBuilderComponent implements OnInit, OnDestroy, DoCheck {
   /** Cosa dire a chi non vede lo schermo dopo uno spostamento: "Panca piana: posizione 2 di 8". */
   annuncioRiordino = '';
 
-  readonly muscles = ['Petto', 'Spalle', 'Tricipiti', 'Dorso', 'Bicipiti', 'Gambe', 'Core'];
+  readonly muscles: readonly string[] = GRUPPI_MUSCOLARI;
+  readonly serieMax = SERIE_MAX;
 
   /** L'obiettivo di corsa esiste sempre dopo load(): il template puo' legarsi senza guardie. */
   get runGoal(): RunGoal { return this.protocol!.running!; }
@@ -261,7 +272,8 @@ export class ProtocolloBuilderComponent implements OnInit, OnDestroy, DoCheck {
   }
 
   private esercizioScritto(ex: Exercise): boolean {
-    return !!(ex.name?.trim() || ex.note?.trim() || ex.text?.trim() || ex.reps?.some(r => String(r ?? '').trim()));
+    // Serie e ripetizioni partono gia' compilate: scritto e' quello che ha aggiunto chi lo inserisce.
+    return !!(ex.name?.trim() || ex.note?.trim());
   }
 
   /** Il dito parte dal bordo sinistro: potrebbe essere lo swipe per salire di un livello. */
@@ -469,19 +481,43 @@ export class ProtocolloBuilderComponent implements OnInit, OnDestroy, DoCheck {
     this.annuncioRiordino = `${nome}: posizione ${posizione + 1} di ${day.ex.length}`;
   }
 
-  // --- Editor esercizio (nome, muscolo, schema, progressione settimanale se wave) ---
+  // --- Editor esercizio (nome, muscolo, serie e ripetizioni, progressione settimanale se wave) ---
 
+  /** Apre l'editor su un esercizio, nuovo o gia' nel giorno. */
+  private apriEditor(day: Day, ex: Exercise, isNew: boolean): void {
+    this.editingExercise = {
+      day, ex, isNew,
+      // Le ripetizioni gia' diverse da serie a serie si vedono subito per serie.
+      diverse: !ex.cluster && !ripetizioniUguali(ex.reps),
+      // Un esercizio gia' scritto ha il suo gruppo: il nome non lo tocca.
+      muscoloManuale: !isNew
+    };
+  }
+
+  /** Il nuovo esercizio parte come quello che lo precede nel giorno: serie, ripetizioni, gruppo. */
   addExercise(day: Day): void {
-    const ex: Exercise = { name: '', scheme: 'plain', sets: 3, muscle: this.muscles[0], text: '', reps: ['', '', ''] };
-    this.editingExercise = { day, ex, isNew: true };
+    this.apriEditor(day, nuovoEsercizio(day.ex[day.ex.length - 1]), true);
     this.cdr.detectChanges();
   }
 
   editExercise(day: Day, ex: Exercise): void {
     // Nel modo Riordina le righe non si aprono.
     if (this.riordinando) return;
-    this.editingExercise = { day, ex, isNew: false };
+    this.apriEditor(day, ex, false);
     this.cdr.detectChanges();
+  }
+
+  /** Il nome dice gia' il gruppo: finche' chi scrive non lo sceglie a mano, lo segue. */
+  onNomeChange(ee: NonNullable<ProtocolloBuilderComponent['editingExercise']>, nome: string): void {
+    ee.ex.name = nome;
+    if (ee.muscoloManuale) return;
+    const gruppo = muscoloDaNome(nome);
+    if (gruppo) ee.ex.muscle = gruppo;
+  }
+
+  scegliMuscolo(ee: NonNullable<ProtocolloBuilderComponent['editingExercise']>, gruppo: string): void {
+    ee.ex.muscle = gruppo;
+    ee.muscoloManuale = true;
   }
 
   saveExercise(): void {
@@ -490,6 +526,24 @@ export class ProtocolloBuilderComponent implements OnInit, OnDestroy, DoCheck {
     if (isNew) day.ex.push(ex);
     this.editingExercise = null;
     this.cdr.detectChanges();
+  }
+
+  /** Un esercizio senza nome non si aggiunge: e' una riga vuota nel giorno. */
+  haNome(ex: Exercise): boolean {
+    return !!ex.name?.trim();
+  }
+
+  /** Salva l'esercizio e ne apre subito un altro, gia' mezzo scritto: per riempire un giorno di seguito. */
+  saveExerciseAndAddAnother(): void {
+    const ee = this.editingExercise;
+    if (!ee || !ee.isNew || !this.haNome(ee.ex)) return;
+    ee.day.ex.push(ee.ex);
+    this.toast.success(`${ee.ex.name.trim()} aggiunto ✓`);
+    this.apriEditor(ee.day, nuovoEsercizio(ee.ex), true);
+    this.cdr.detectChanges();
+    // La pagina e' la stessa: si torna in cima e si rimette il cursore sul nome.
+    (this.contenuto?.nativeElement as { scrollToTop?: (ms?: number) => unknown } | undefined)?.scrollToTop?.(0);
+    queueMicrotask(() => (document.querySelector('app-protocollo-builder ion-input[label="Nome"]') as { setFocus?: () => unknown } | null)?.setFocus?.());
   }
 
   cancelExercise(): void {
@@ -506,25 +560,90 @@ export class ProtocolloBuilderComponent implements OnInit, OnDestroy, DoCheck {
     this.cdr.detectChanges();
   }
 
+  /** Il segmento "Sempre uguali / Wave". */
+  cambiaSchema(ex: Exercise, ev: Event): void {
+    const v = (ev as CustomEvent<{ value?: string | number | null }>).detail?.value;
+    if ((v !== 'plain' && v !== 'wave') || v === ex.scheme) return;
+    ex.scheme = v;
+    this.onSchemeChange(ex);
+  }
+
   onSchemeChange(ex: Exercise): void {
-    if (ex.scheme === 'plain' && (!ex.reps || ex.reps.length !== ex.sets)) {
-      ex.reps = Array.from({ length: ex.sets }, () => '');
+    if (ex.scheme === 'plain') {
+      // Serie e ripetizioni tornano come erano: restano scritte anche mentre l'esercizio e' a onda.
+      if (!ex.reps || ex.reps.length !== ex.sets) impostaSerie(ex, ex.sets);
     }
-    if (ex.scheme === 'wave') delete ex.cluster;
-    if (ex.scheme === 'wave' && (!ex.weekPlan || ex.weekPlan.length === 0)) {
-      ex.weekPlan = Array.from({ length: 8 }, () => ({ sets: 4, reps: 10 }));
+    if (ex.scheme === 'wave') {
+      delete ex.cluster;
+      if (!ex.weekPlan || ex.weekPlan.length === 0) ex.weekPlan = settimaneDaProgramma(this.protocol?.workout.weekPlan);
     }
     this.cdr.detectChanges();
   }
 
-  onSetsChange(ex: Exercise): void {
-    const sets = Math.max(1, ex.sets || 1);
-    ex.sets = sets;
-    if (ex.cluster) { this.syncClusterReps(ex); return; }
-    const reps = ex.reps ? [...ex.reps] : [];
-    while (reps.length < sets) reps.push('');
-    reps.length = sets;
-    ex.reps = reps;
+  // --- Serie e ripetizioni --------------------------------------------------
+  //
+  // Un'informazione sola in un posto solo: il numero di serie e quello delle
+  // ripetizioni (uguali per tutte, o una per serie se si apre "diverse per serie").
+
+  /** Un passo sul numero di serie dai pulsanti − e +. */
+  cambiaSerie(ee: NonNullable<ProtocolloBuilderComponent['editingExercise']>, delta: number): void {
+    this.onSerie(ee, (ee.ex.sets || 1) + delta);
+  }
+
+  onSerie(ee: NonNullable<ProtocolloBuilderComponent['editingExercise']>, valore: unknown): void {
+    impostaSerie(ee.ex, valore);
+    if (ee.ex.cluster) this.syncClusterReps(ee.ex);
+  }
+
+  /**
+   * Il numero scritto nel campo, a campo confermato. Un campo vuoto o fuori misura
+   * torna a un valore valido, anche quando e' lo stesso di prima (e il campo,
+   * che non lo sa, resterebbe vuoto).
+   */
+  onSerieScritte(ee: NonNullable<ProtocolloBuilderComponent['editingExercise']>, ev: Event): void {
+    this.onSerie(ee, (ev as CustomEvent<{ value?: unknown }>).detail?.value);
+    const campo = ev.target as { value?: unknown } | null;
+    if (campo) campo.value = ee.ex.sets;
+  }
+
+  /** Le ripetizioni uguali per tutte le serie, come testo: "10" o "8-10". */
+  repsComuni(ex: Exercise): string {
+    return ripetizioniComuni(ex.reps);
+  }
+
+  cambiaRipetizioni(ex: Exercise, delta: number): void {
+    const nuovo = passoRipetizioni(ripetizioniComuni(ex.reps), delta);
+    if (nuovo !== null) impostaRipetizioniUguali(ex, nuovo);
+  }
+
+  /** Un intervallo come "8-10" non ha un passo: i pulsanti − e + si spengono. */
+  repsHannoPasso(ex: Exercise): boolean {
+    return passoRipetizioni(ripetizioniComuni(ex.reps), 1) !== null;
+  }
+
+  onRipetizioniUguali(ex: Exercise, valore: unknown): void {
+    impostaRipetizioniUguali(ex, String(valore ?? '').trim());
+  }
+
+  /**
+   * Accende e spegne "diverse per serie". Spegnere vuol dire dare a tutte le
+   * serie le ripetizioni della prima: le altre si perdono, ed e' quello che chi
+   * lo spegne sta chiedendo.
+   */
+  impostaRipetizioniDiverse(ee: NonNullable<ProtocolloBuilderComponent['editingExercise']>, acceso: boolean): void {
+    if (acceso === ee.diverse) return;
+    ee.diverse = acceso;
+    if (!acceso) impostaRipetizioniUguali(ee.ex, ripetizioniComuni(ee.ex.reps));
+  }
+
+  /** Le ripetizioni di una serie sola. Le righe si seguono per posizione (perIndice): scrivendo, il campo non perde il cursore. */
+  onRepSerie(ex: Exercise, indice: number, valore: unknown): void {
+    if (!ex.reps) return;
+    ex.reps[indice] = String(valore ?? '').trim();
+  }
+
+  perIndice(indice: number): number {
+    return indice;
   }
 
   // --- Serie a cluster -------------------------------------------------------
@@ -551,9 +670,9 @@ export class ProtocolloBuilderComponent implements OnInit, OnDestroy, DoCheck {
       this.syncClusterReps(ex);
     } else {
       delete ex.cluster;
-      // Le ripetizioni tornano a essere una per serie, come se il cluster non
-      // ci fosse mai stato: lasciare "8+8" in ogni cella direbbe il contrario.
-      ex.reps = Array.from({ length: Math.max(1, ex.sets || 1) }, () => '');
+      // Le ripetizioni tornano normali, come se il cluster non ci fosse mai
+      // stato: lasciare "8+8" in ogni cella direbbe il contrario.
+      impostaRipetizioniUguali(ex, String(RIPETIZIONI_PREDEFINITE));
     }
     this.cdr.detectChanges();
   }
@@ -626,14 +745,6 @@ export class ProtocolloBuilderComponent implements OnInit, OnDestroy, DoCheck {
     ex.reps = Array.from({ length: Math.max(1, ex.sets || 1) }, () => label);
   }
 
-  repsAsString(ex: Exercise): string {
-    return (ex.reps ?? []).join(', ');
-  }
-
-  setRepsFromString(ex: Exercise, value: string): void {
-    ex.reps = value.split(',').map(s => s.trim());
-  }
-
   addExWeek(ex: Exercise): void {
     if (!ex.weekPlan) ex.weekPlan = [];
     ex.weekPlan.push({ sets: 4, reps: 10 });
@@ -651,7 +762,7 @@ export class ProtocolloBuilderComponent implements OnInit, OnDestroy, DoCheck {
       return n > 0 ? `Wave · ${n} settimane` : 'Wave · da configurare';
     }
     if (ex.cluster) return this.clusterScheme(ex);
-    return `${ex.sets}×${(ex.reps ?? []).join('-') || '?'}`;
+    return riepilogoSerie(ex);
   }
 
   // ===== Dieta =====

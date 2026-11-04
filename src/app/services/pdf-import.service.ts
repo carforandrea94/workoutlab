@@ -10,6 +10,7 @@ import { Injectable } from '@angular/core';
 import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs';
 import { Day, Exercise, WeekPlan, ClusterSpec } from '../models/workout.model';
 import { normalizeCluster } from '../core/utils/cluster.util';
+import { MUSCLE_KEYWORDS, muscoloDaNome } from '../core/utils/muscolo.util';
 import {
   Diet, DietPlan, NamedMeal, MealCombination, FoodItem, FoodCategory, SupplementItem,
   DEFAULT_MEAL_NAMES, newDietPlan, newNamedMeal, newCombination
@@ -193,27 +194,12 @@ const SUPPLEMENT_SECTION_MEAL: Record<'pre' | 'intra' | 'post', string> = {
   post: 'Cena'
 };
 
-/** Ordine di priorita' per assegnare il gruppo muscolare da nome esercizio: le parole chiave
- *  piu' specifiche (Core, Gambe, Bicipiti) vanno prima di quelle che si sovrappongono a nomi
- *  di macchinari/esercizi di altri gruppi (es. "LAT MACHINE" usata anche per esercizi di core). */
-const MUSCLE_KEYWORDS: { muscle: string; keywords: string[] }[] = [
-  { muscle: 'Core', keywords: ['CRUNCH', 'GINOCCHIA', 'GAMBE AL PETTO', 'FLESSIONI', 'BUSTO', 'ADDOMINALI', 'PLANK', 'FITBALL', 'INVERSI', 'CORE'] },
-  { muscle: 'Gambe', keywords: ['SQUAT', 'LEG', 'AFFONDI', 'HIP THRUST', 'STACCO', 'CALF', 'GAMBE'] },
-  { muscle: 'Bicipiti', keywords: ['CURL', 'BICIP'] },
-  { muscle: 'Dorso', keywords: ['LAT MACHINE', 'LAT INVERSA', 'REMATORE', 'T BAR', 'PULLEY', 'PULLOVER', 'PULL DOWN', 'PULLDOWN', 'TRAZION', 'ROW', 'DORSO'] },
-  { muscle: 'Spalle', keywords: ['ALZATE', 'SPALLE', 'DELT', 'MILITARY', 'TIRATE AL MENTO', 'LENTO AVANTI'] },
-  { muscle: 'Tricipiti', keywords: ['FRENCH PRESS', 'PUSH DOWN', 'PUSHDOWN', 'TRICIP', 'DIPS', 'PARALLELE'] },
-  { muscle: 'Petto', keywords: ['PANCA', 'SPINTE', 'CHEST', 'PETTO', 'PECTORAL', 'CROCI'] }
-];
-
 /** Categorizza l'esercizio per gruppo muscolare dal nome; se non trova nulla, prova con i
  *  gruppi muscolari del giorno (dal titolo "DAY N: Petto-Spalle-Tricipiti"). Best-effort:
  *  il coach corregge nel builder se necessario. */
 function categorizeExerciseMuscle(name: string, dayMuscles: string[]): string {
-  const n = name.toUpperCase();
-  for (const { muscle, keywords } of MUSCLE_KEYWORDS) {
-    if (keywords.some(k => n.includes(k))) return muscle;
-  }
+  const dalNome = muscoloDaNome(name);
+  if (dalNome) return dalNome;
   for (const raw of dayMuscles) {
     const u = raw.toUpperCase();
     for (const { muscle, keywords } of MUSCLE_KEYWORDS) {

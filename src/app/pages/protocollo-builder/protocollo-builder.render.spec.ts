@@ -665,7 +665,9 @@ describe('ProtocolloBuilderComponent — disegno vero', () => {
       c.editExercise(giorno, giorno.ex[0]);
       fixture.detectChanges();
 
-      expect(etichette(root, 'ion-list.campi ion-select')).toEqual(['Gruppo muscolare', 'Schema']);
+      // Il primo esercizio e' a onda: il gruppo e' la sola scelta a menu, il resto e' il segmento e la progressione.
+      expect(etichette(root, 'ion-list.campi ion-select')).toEqual(['Gruppo muscolare']);
+      expect(root.querySelector('ion-segment[aria-label="Come cambiano serie e ripetizioni"]')).toBeTruthy();
       expect(etichette(root, 'ion-list.campi ion-input')).toContain('Nome');
       expect(etichette(root, 'ion-list.campi ion-input')).toContain('Nota');
       expect(Array.from(root.querySelectorAll('ion-button')).map(b => testo(b))).not.toContain('Salva esercizio');
@@ -695,7 +697,7 @@ describe('ProtocolloBuilderComponent — disegno vero', () => {
       expect(campi(righe[1])[1].value).toBe(10);
     });
 
-    it('l\'esercizio fisso: Serie, Tipo di serie, Testo e Ripetizioni come righe', async () => {
+    it('l\'esercizio fisso: Serie e Ripetizioni con i contatori, Tipo di serie, e niente Testo', async () => {
       const { c, fixture, root } = await monta();
       const giorno = c.protocol!.workout.days[0];
       giorno.ex[0].scheme = 'plain';
@@ -703,9 +705,11 @@ describe('ProtocolloBuilderComponent — disegno vero', () => {
       c.editExercise(giorno, giorno.ex[0]);
       fixture.detectChanges();
 
-      expect(etichette(root, 'ion-list.campi ion-select')).toEqual(['Gruppo muscolare', 'Schema', 'Tipo di serie']);
-      expect(etichette(root, 'ion-list.campi ion-input')).toEqual(['Nome', 'Serie', 'Testo', 'Ripetizioni', 'Nota']);
-      expect(root.querySelector('ion-input.a-destra[label="Serie"]')).toBeTruthy();
+      expect(etichette(root, 'ion-list.campi ion-select')).toEqual(['Gruppo muscolare', 'Tipo di serie']);
+      // Serie e Ripetizioni non hanno etichetta sul campo: l'etichetta e' la riga, il campo sta nel contatore.
+      expect(etichette(root, 'ion-list.campi ion-input').filter(Boolean)).toEqual(['Nome', 'Nota']);
+      expect(root.querySelectorAll('.contatore ion-input.contatore-valore')).toHaveLength(2);
+      expect(root.querySelector('ion-input[label="Testo"]')).toBeNull();
     });
 
     it('la corsa: Minuti (con l\'unita\') e Uscite come righe con il numero a destra', async () => {
