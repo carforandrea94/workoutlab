@@ -218,35 +218,78 @@
       <!-- ===================== EDITOR ESERCIZIO ===================== -->
       <ng-container *ngIf="tab === 'scheda' && editingExercise as ee">
 
-        <!-- L'esercizio e' un modulo di iOS: una riga per campo, le scelte con il
-             valore a destra (si aprono in un menu), la spunta in alto per salvare. -->
+        <!-- L'esercizio e' un modulo di iOS: una riga per campo, la spunta in alto per
+             salvare. Ogni informazione sta in un posto solo: il nome dice il gruppo
+             muscolare (lo si sceglie da solo), il numero di serie e' il contatore e non
+             anche la lunghezza di un elenco, e non c'e' un "testo" che le ripete. -->
         <div class="liste-ios">
           <ion-list [inset]="true" class="campi">
             <ion-item>
-              <ion-input label="Nome" [(ngModel)]="ee.ex.name" placeholder="Es. Panca piana"></ion-input>
+              <ion-input label="Nome" [ngModel]="ee.ex.name" (ngModelChange)="onNomeChange(ee, $event)" placeholder="Es. Panca piana"></ion-input>
             </ion-item>
             <ion-item>
-              <ion-select label="Gruppo muscolare" interface="popover" [(ngModel)]="ee.ex.muscle">
+              <ion-select label="Gruppo muscolare" interface="popover" [ngModel]="ee.ex.muscle" (ngModelChange)="scegliMuscolo(ee, $event)">
                 <ion-select-option *ngFor="let m of muscles" [value]="m">{{ m }}</ion-select-option>
               </ion-select>
             </ion-item>
-            <ion-item>
-              <ion-select label="Schema" interface="popover" [(ngModel)]="ee.ex.scheme" (ngModelChange)="onSchemeChange(ee.ex)">
-                <ion-select-option value="wave">Wave (progressione settimanale)</ion-select-option>
-                <ion-select-option value="plain">Fisso (serie/rip. manuali)</ion-select-option>
-              </ion-select>
-            </ion-item>
           </ion-list>
+
+          <ion-segment class="seg labelseg fullseg modulo-seg" [value]="ee.ex.scheme" (ionChange)="cambiaSchema(ee.ex, $event)" aria-label="Come cambiano serie e ripetizioni">
+            <ion-segment-button value="plain">Sempre uguali</ion-segment-button>
+            <ion-segment-button value="wave">Wave</ion-segment-button>
+          </ion-segment>
+          <p class="nota-sotto">
+            <ng-container *ngIf="ee.ex.scheme === 'plain'">Serie e ripetizioni sono le stesse ogni settimana.</ng-container>
+            <ng-container *ngIf="ee.ex.scheme === 'wave'">Serie e ripetizioni cambiano di settimana in settimana.</ng-container>
+          </p>
         </div>
 
         <ng-container *ngIf="ee.ex.scheme === 'plain'">
           <div class="liste-ios">
             <ion-list [inset]="true" class="campi">
               <ion-item>
-                <ion-input label="Serie" class="a-destra" type="number" inputmode="numeric" [ngModel]="ee.ex.sets" (ngModelChange)="ee.ex.sets = $event; onSetsChange(ee.ex)"></ion-input>
+                <ion-label>Serie</ion-label>
+                <div slot="end" class="contatore" role="group" aria-label="Serie">
+                  <ion-button type="button" fill="clear" class="contatore-btn tap44" (click)="cambiaSerie(ee, -1)"
+                    [disabled]="(ee.ex.sets || 1) <= 1" aria-label="Una serie in meno"><app-icona name="remove" [size]="20"></app-icona></ion-button>
+                  <!-- Si conferma uscendo dal campo: cancellare il numero per scriverne un altro
+                       non deve farlo tornare a 1 a ogni tasto. -->
+                  <ion-input class="contatore-valore" type="number" inputmode="numeric" aria-label="Numero di serie"
+                    [value]="ee.ex.sets" (ionChange)="onSerieScritte(ee, $event)"></ion-input>
+                  <ion-button type="button" fill="clear" class="contatore-btn tap44" (click)="cambiaSerie(ee, 1)"
+                    [disabled]="(ee.ex.sets || 1) >= serieMax" aria-label="Una serie in più"><app-icona name="add" [size]="20"></app-icona></ion-button>
+                </div>
               </ion-item>
+
+              <!-- Tutte le serie con le stesse ripetizioni: un numero solo. -->
+              <ion-item *ngIf="!ee.ex.cluster && !ee.diverse">
+                <ion-label>Ripetizioni</ion-label>
+                <div slot="end" class="contatore" role="group" aria-label="Ripetizioni">
+                  <ion-button type="button" fill="clear" class="contatore-btn tap44" (click)="cambiaRipetizioni(ee.ex, -1)"
+                    [disabled]="!repsHannoPasso(ee.ex)" aria-label="Una ripetizione in meno"><app-icona name="remove" [size]="20"></app-icona></ion-button>
+                  <!-- Testo e non numero: un intervallo come "8-10" non entra in un campo numerico. -->
+                  <ion-input class="contatore-valore" type="text" aria-label="Ripetizioni per serie" placeholder="10"
+                    [ngModel]="repsComuni(ee.ex)" (ngModelChange)="onRipetizioniUguali(ee.ex, $event)"></ion-input>
+                  <ion-button type="button" fill="clear" class="contatore-btn tap44" (click)="cambiaRipetizioni(ee.ex, 1)"
+                    [disabled]="!repsHannoPasso(ee.ex)" aria-label="Una ripetizione in più"><app-icona name="add" [size]="20"></app-icona></ion-button>
+                </div>
+              </ion-item>
+
+              <ion-item *ngIf="!ee.ex.cluster">
+                <ion-toggle labelPlacement="start" justify="space-between" [checked]="ee.diverse"
+                  (ionChange)="impostaRipetizioniDiverse(ee, $event.detail.checked)">Ripetizioni diverse per serie</ion-toggle>
+              </ion-item>
+
+              <!-- Una riga per serie (12, 10, 8): il numero di righe e' il contatore qui sopra. -->
+              <ng-container *ngIf="!ee.ex.cluster && ee.diverse">
+                <ion-item *ngFor="let r of ee.ex.reps; let i = index; trackBy: perIndice">
+                  <ion-input class="a-destra" type="text" [label]="'Serie ' + (i + 1)" placeholder="rip."
+                    [ngModel]="r" (ngModelChange)="onRepSerie(ee.ex, i, $event)"></ion-input>
+                </ion-item>
+              </ng-container>
+
               <ion-item>
-                <ion-select label="Tipo di serie" interface="popover" [ngModel]="serieType(ee.ex)" (ngModelChange)="setSerieType(ee.ex, $event)">
+                <ion-select label="Tipo di serie" interface="popover" [ngModel]="serieType(ee.ex)" (ngModelChange)="setSerieType(ee.ex, $event); ee.diverse = false">
                   <ion-select-option value="normale">Normale</ion-select-option>
                   <ion-select-option value="cluster">Cluster (blocchi dentro la serie)</ion-select-option>
                 </ion-select>
@@ -310,19 +353,6 @@
             </p>
           </div>
 
-          <div class="liste-ios">
-            <ion-list [inset]="true" class="campi">
-              <ion-item>
-                <ion-input label="Testo" [(ngModel)]="ee.ex.text" [placeholder]="'Es. ' + (ee.ex.cluster ? clusterScheme(ee.ex) : '3x12-10-8')"></ion-input>
-              </ion-item>
-              <ion-item *ngIf="!ee.ex.cluster">
-                <ion-input label="Ripetizioni" [ngModel]="repsAsString(ee.ex)" (ngModelChange)="setRepsFromString(ee.ex, $event)" placeholder="Es. 12, 10, 8"></ion-input>
-              </ion-item>
-            </ion-list>
-            <p class="nota-sotto">
-              Il testo si mostra così com'è scritto.<ng-container *ngIf="!ee.ex.cluster"> Le ripetizioni sono quelle di ogni serie, separate da virgola.</ng-container>
-            </p>
-          </div>
         </ng-container>
 
         <ng-container *ngIf="ee.ex.scheme === 'wave'">
@@ -345,7 +375,9 @@
           </div>
         </ng-container>
 
-        <!-- Salvare e' la spunta in alto: "Salva esercizio" in fondo la ripeteva. -->
+        <!-- Salvare e' la spunta in alto: "Salva esercizio" in fondo la ripeteva.
+             "Salva e aggiungi un altro" no: porta da un'altra parte, a un esercizio nuovo
+             gia' mezzo scritto. -->
         <div class="liste-ios">
           <ion-list [inset]="true" class="campi">
             <ion-item>
@@ -353,6 +385,11 @@
             </ion-item>
           </ion-list>
           <ion-list [inset]="true" class="azioni-esercizio">
+            <ion-item class="riga-azione" lines="inset" *ngIf="ee.isNew" [button]="true" [detail]="false"
+              [disabled]="!haNome(ee.ex)" (click)="saveExerciseAndAddAnother()">
+              <app-icona slot="start" name="add" [size]="22"></app-icona>
+              <ion-label>Salva e aggiungi un altro</ion-label>
+            </ion-item>
             <ion-item class="riga-distruttiva" [button]="true" [detail]="false" (click)="removeExerciseFromEditor()">
               <ion-label>Rimuovi esercizio</ion-label>
             </ion-item>
