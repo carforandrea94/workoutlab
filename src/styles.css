@@ -937,6 +937,10 @@ ion-item-option.elimina{--background:var(--state-danger);--color:#fff;font-weigh
 /* Il contatore di una riga (serie, ripetizioni): meno, il valore, piu'. Il
    valore si scrive anche a mano (un intervallo come "8-10" non ha un passo);
    i due pulsanti sono quelli di tutti i giorni, un tocco per volta. */
+/* La riga che apre la progressione: la freccia si gira, senza movimento per chi lo toglie. */
+.liste-ios ion-item.riga-progressione app-icona{color:var(--label-3);transition:transform .2s cubic-bezier(.23,1,.32,1);}
+.liste-ios ion-item.riga-progressione.aperta app-icona{transform:rotate(180deg);}
+@media (prefers-reduced-motion: reduce){.liste-ios ion-item.riga-progressione app-icona{transition:none;}}
 .liste-ios .contatore{display:flex;align-items:center;gap:2px;margin-inline-start:12px;}
 .liste-ios .contatore-btn{--padding-start:8px;--padding-end:8px;--color:var(--accent);margin:0;min-height:36px;}
 .liste-ios .contatore-btn[disabled]{--color:var(--label-3);}

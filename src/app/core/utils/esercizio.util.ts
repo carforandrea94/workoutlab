@@ -85,7 +85,8 @@ export function nuovoEsercizio(precedente?: Exercise): Exercise {
   if (!precedente) return ex;
   if (precedente.scheme === 'wave') {
     ex.scheme = 'wave';
-    ex.weekPlan = (precedente.weekPlan ?? []).map(w => ({ ...w }));
+    // Una progressione sua si porta dietro; se seguiva il programma, anche il nuovo lo segue.
+    if (precedente.weekPlan?.length) ex.weekPlan = precedente.weekPlan.map(w => ({ ...w }));
   }
   // Un cluster non si porta dietro: e' l'eccezione, non quello che viene dopo.
   if (!precedente.cluster) {
@@ -99,9 +100,10 @@ export function nuovoEsercizio(precedente?: Exercise): Exercise {
 }
 
 /**
- * Le settimane di un esercizio a onda: quelle del programma, se ci sono, e solo
- * se no un'onda di partenza. Cosi' chi passa a "Wave" non ritrova una
- * progressione inventata li' per li' accanto a quella che il programma ha gia'.
+ * Le settimane da cui parte un esercizio che personalizza la progressione: una
+ * copia di quelle del programma, se ci sono, e solo se no un'onda di partenza.
+ * Chi personalizza non ritrova una progressione inventata li' per li' accanto
+ * a quella che il programma ha gia'.
  */
 export function settimaneDaProgramma(programma: readonly WeekPlan[] | undefined): WeekPlan[] {
   return programma?.length

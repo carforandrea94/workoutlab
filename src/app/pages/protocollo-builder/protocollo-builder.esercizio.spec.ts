@@ -386,26 +386,110 @@ describe('ProtocolloBuilderComponent — inserire un esercizio', () => {
   });
 
   describe('Wave', () => {
-    it('passando a "Wave" la progressione e\' quella del programma, non una inventata', async () => {
-      const { c, apriNuovo, aggiorna, q, qa } = await monta();
+    it('passando a "Wave" l\'esercizio segue la progressione del programma: nessuna copia, e lo dice', async () => {
+      const { c, apriNuovo, aggiorna, q, qa, testo } = await monta();
       await apriNuovo(1);
       q('ion-segment')!.dispatchEvent(new CustomEvent('ionChange', { detail: { value: 'wave' } }));
       await aggiorna();
       expect(c.editingExercise!.ex.scheme).toBe('wave');
-      expect(c.editingExercise!.ex.weekPlan).toEqual([{ sets: 3, reps: '6-8' }, { sets: 4, reps: 10 }]);
-      expect(qa('.weekplan-row')).toHaveLength(2);
+      expect(c.editingExercise!.ex.weekPlan).toBeUndefined();
+      expect(qa('.weekplan-row')).toHaveLength(0);
+      expect(testo(q('.progressione-segue h2'))).toBe('Come il programma');
+      expect(testo(q('.progressione-segue p'))).toBe('2 settimane · 3×6-8 → 4×10');
+      expect(qa('ion-item.riga-azione').map(testo)).toContain('Personalizza per questo esercizio');
       // Niente contatori di serie e ripetizioni: li dice la progressione.
       expect(qa('ion-button.contatore-btn')).toHaveLength(0);
       expect(q('.nota-sotto')!.textContent).toContain('cambiano di settimana in settimana');
     });
 
-    it('la progressione e\' una copia: cambiarla non cambia quella del programma', async () => {
-      const { c, apriNuovo, aggiorna, q } = await monta();
+    it('"Personalizza" parte da una copia della progressione del programma, e cambiarla non cambia il programma', async () => {
+      const { c, apriNuovo, aggiorna, q, qa } = await monta();
       await apriNuovo(1);
       q('ion-segment')!.dispatchEvent(new CustomEvent('ionChange', { detail: { value: 'wave' } }));
       await aggiorna();
+      const personalizza = qa('ion-item.riga-azione').find(i => i.textContent!.includes('Personalizza per questo esercizio'))!;
+      personalizza.click();
+      await aggiorna();
+      expect(c.editingExercise!.ex.weekPlan).toEqual([{ sets: 3, reps: '6-8' }, { sets: 4, reps: 10 }]);
+      expect(qa('.weekplan-row')).toHaveLength(2);
+      expect(c.segueProgramma(c.editingExercise!.ex)).toBe(false);
       c.editingExercise!.ex.weekPlan![0].sets = 9;
       expect(c.protocol!.workout.weekPlan[0].sets).toBe(3);
+    });
+
+    it('una progressione sua si vede per settimane, con "Usa quella del programma"', async () => {
+      const { apriEsistente, qa, giorno, testo } = await monta();
+      await apriEsistente(2, 0);                // Rematore: una settimana sola, diversa da quella del programma
+      expect(qa('.weekplan-row')).toHaveLength(1);
+      expect(giorno(2).ex[0].weekPlan).toEqual([{ sets: 4, reps: 10 }]);
+      expect(qa('ion-item.riga-azione').map(testo)).toContain('Usa quella del programma');
+    });
+
+    it('tornare al programma chiede prima, perche\' quella dell\'esercizio si perde', async () => {
+      const { c, apriEsistente, giorno } = await monta();
+      const confirm = TestBed.inject(ConfirmDialogService).confirm as ReturnType<typeof vi.fn>;
+      await apriEsistente(2, 0);
+      confirm.mockResolvedValueOnce(false);
+      await c.tornaAlProgramma(giorno(2).ex[0]);
+      expect(giorno(2).ex[0].weekPlan).toBeDefined();
+      expect(confirm).toHaveBeenCalledWith('Usare la progressione del programma? Quella di questo esercizio si perde.', expect.anything());
+
+      confirm.mockResolvedValueOnce(true);
+      await c.tornaAlProgramma(giorno(2).ex[0]);
+      expect(giorno(2).ex[0].weekPlan).toBeUndefined();
+    });
+
+    it('se quella dell\'esercizio e\' uguale al programma si torna senza chiedere: non si perde niente', async () => {
+      const { c, apriEsistente, giorno } = await monta();
+      const confirm = TestBed.inject(ConfirmDialogService).confirm as ReturnType<typeof vi.fn>;
+      confirm.mockClear();
+      await apriEsistente(2, 0);
+      giorno(2).ex[0].weekPlan = [{ sets: '3' as any, reps: '6-8' }, { sets: 4, reps: ' 10 ' }];
+      await c.tornaAlProgramma(giorno(2).ex[0]);
+      expect(confirm).not.toHaveBeenCalled();
+      expect(giorno(2).ex[0].weekPlan).toBeUndefined();
+    });
+
+    it('aggiungere una settimana alla sua copia la fa come l\'ultima; toglierle tutte lo fa tornare al programma', async () => {
+      const { c, apriEsistente, aggiorna, giorno, qa } = await monta();
+      // L'ultima settimana non e' 4 x 10 (il valore di partenza): la nuova deve essere come lei.
+      giorno(2).ex[0].weekPlan = [{ sets: 4, reps: 10 }, { sets: 3, reps: '6-8' }];
+      await apriEsistente(2, 0);
+      c.addExWeek(giorno(2).ex[0]);
+      await aggiorna();
+      expect(giorno(2).ex[0].weekPlan).toEqual([{ sets: 4, reps: 10 }, { sets: 3, reps: '6-8' }, { sets: 3, reps: '6-8' }]);
+      expect(qa('.weekplan-row')).toHaveLength(3);
+      c.removeExWeek(giorno(2).ex[0], 2);
+      c.removeExWeek(giorno(2).ex[0], 1);
+      c.removeExWeek(giorno(2).ex[0], 0);
+      await aggiorna();
+      expect(giorno(2).ex[0].weekPlan).toBeUndefined();
+      expect(qa('.weekplan-row')).toHaveLength(0);
+      expect(c.segueProgramma(giorno(2).ex[0])).toBe(true);
+    });
+
+    it('una progressione scritta ma vuota non e\' una progressione: l\'esercizio segue il programma', async () => {
+      const { c, giorno } = await monta();
+      giorno(2).ex[0].weekPlan = [];
+      expect(c.segueProgramma(giorno(2).ex[0])).toBe(true);
+      giorno(2).ex[0].weekPlan = [{ sets: 4, reps: 10 }];
+      expect(c.segueProgramma(giorno(2).ex[0])).toBe(false);
+    });
+
+    it('un esercizio che gia\' seguiva si apre come "Come il programma"', async () => {
+      const { apriEsistente, giorno, q, testo } = await monta();
+      delete giorno(2).ex[0].weekPlan;
+      await apriEsistente(2, 0);
+      expect(testo(q('.progressione-segue'))).toContain('Come il programma');
+    });
+
+    it('la riga nell\'elenco dice se segue o ha una sua progressione', async () => {
+      const { c, giorno } = await monta();
+      expect(c.exerciseSummary(giorno(2).ex[0])).toBe('Wave · 1 settimana');
+      giorno(2).ex[0].weekPlan = [{ sets: 4, reps: 10 }, { sets: 4, reps: 8 }, { sets: 3, reps: 6 }];
+      expect(c.exerciseSummary(giorno(2).ex[0])).toBe('Wave · 3 settimane');
+      delete giorno(2).ex[0].weekPlan;
+      expect(c.exerciseSummary(giorno(2).ex[0])).toBe('Wave · come il programma');
     });
 
     it('un esercizio a cluster che passa a "Wave" perde il cluster: la progressione dice gia\' serie e ripetizioni', async () => {

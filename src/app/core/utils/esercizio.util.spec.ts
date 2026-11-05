@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Exercise } from '../../models/workout.model';
+import { Exercise, WeekPlan } from '../../models/workout.model';
 import {
   RIPETIZIONI_MAX, SERIE_MAX, impostaRipetizioniUguali, impostaSerie, nuovoEsercizio, passoRipetizioni,
   riepilogoSerie, ripetizioniComuni, ripetizioniUguali, settimaneDaProgramma
@@ -141,13 +141,22 @@ describe('nuovoEsercizio', () => {
     expect(n.muscle).toBe('Petto');
   });
 
-  it('dopo un esercizio a onda e\' a onda, con la sua progressione copiata', () => {
+  it('dopo un esercizio a onda con una progressione sua e\' a onda, con la stessa copiata', () => {
     const onda = ex(4, ['10', '10', '10', '10'], { scheme: 'wave', weekPlan: [{ sets: 4, reps: '6-8' }, { sets: 3, reps: 10 }] });
     const n = nuovoEsercizio(onda);
     expect(n.scheme).toBe('wave');
     expect(n.weekPlan).toEqual([{ sets: 4, reps: '6-8' }, { sets: 3, reps: 10 }]);
     n.weekPlan![0].reps = 99;
     expect(onda.weekPlan![0].reps).toBe('6-8');
+  });
+
+  it('dopo un esercizio a onda che segue il programma, anche il nuovo lo segue: niente progressione sua', () => {
+    const casi: (WeekPlan[] | undefined)[] = [undefined, []];
+    for (const weekPlan of casi) {
+      const n = nuovoEsercizio(ex(4, ['10', '10', '10', '10'], { scheme: 'wave', ...(weekPlan ? { weekPlan } : {}) }));
+      expect(n.scheme).toBe('wave');
+      expect('weekPlan' in n).toBe(false);
+    }
   });
 
   it('un esercizio prima senza ripetizioni scritte non svuota le serie: restano i valori di partenza', () => {

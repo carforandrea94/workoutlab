@@ -67,44 +67,77 @@ describe('ProtocolloBuilderComponent', () => {
     };
   }
 
-  it("save() ricalcola workout.weekPlan dai dati per-esercizio invece di salvare l'aggregato non aggiornato", async () => {
+  /** Il componente come negli altri test: senza route, con un servizio che ricorda cosa gli si e' fatto salvare. */
+  function costruisci(protocollo: Protocol) {
     const updateCalls: any[][] = [];
     const protocolSvc: any = {
       update: (...args: any[]) => { updateCalls.push(args); return Promise.resolve(); },
-      get: () => Promise.resolve(buildProtocol()),
+      get: () => Promise.resolve(structuredClone(protocollo)),
       activate: () => Promise.resolve()
     };
-
     const router: any = { navigateBack: () => {}, navigateForward: () => {} };
     const cdr: any = { detectChanges: () => {} };
-
     const component = new ProtocolloBuilderComponent(
-      {} as any, // ActivatedRoute: non usato, non chiamiamo ngOnInit in questo test
-      router,
-      protocolSvc,
-      new PdfImportService(),
-      new WorkoutDataService(),
-      cdr,
-      new ProtocolBuilderStateService(),
-      new ToastService(),
-      new ConfirmDialogService({} as any, {} as any)
+      {} as any, router, protocolSvc, new PdfImportService(), new WorkoutDataService(), cdr,
+      new ProtocolBuilderStateService(), new ToastService(), new ConfirmDialogService({} as any, {} as any)
     );
-    component.protocolId = 'proto1';
-    component.protocol = buildProtocol();
+    component.protocolId = protocollo.id;
+    component.protocol = protocollo;
+    return { component, updateCalls };
+  }
+
+  // La progressione del programma si scrive in "Progressione settimanale": e' quella che
+  // mostrano la Scheda e Info e che seguono gli esercizi a onda. Non e' piu' un aggregato
+  // da ricalcolare dagli esercizi ad ogni salvataggio (li' si azzerava appena gli esercizi
+  // smettevano di averne una copia).
+  it("save() salva la progressione del programma com'e', senza ricalcolarla dagli esercizi", async () => {
+    const { component, updateCalls } = costruisci(buildProtocol());
 
     await component.save(false);
 
     expect(updateCalls.length).toBe(1);
-    const savedPatch = updateCalls[0][1];
-    expect(savedPatch.workout.weekPlan).toEqual([
-      { sets: 4, reps: 10 },
-      { sets: 4, reps: 10 },
-      { sets: 4, reps: 8 },
-      { sets: 4, reps: 8 }
+    const salvato = updateCalls[0][1].workout;
+    // Il programma ha la sua (4 x 10 per quattro settimane), anche se l'esercizio ne ha una diversa...
+    expect(salvato.weekPlan).toEqual([
+      { sets: 4, reps: 10 }, { sets: 4, reps: 10 }, { sets: 4, reps: 10 }, { sets: 4, reps: 10 }
+    ]);
+    // ...e l'esercizio tiene la sua, perche' si distingue.
+    expect(salvato.days[0].ex[0].weekPlan).toEqual([
+      { sets: 4, reps: 10 }, { sets: 4, reps: 10 }, { sets: 4, reps: 8 }, { sets: 4, reps: 8 }
     ]);
   });
 
-  it("save() usa totalWeeks quando non ci sono esercizi wave", async () => {
+  it('save() ripulisce la progressione del programma: serie intere, ripetizioni leggibili, vuoti come la settimana prima', async () => {
+    const p = buildProtocol();
+    p.workout.weekPlan = [{ sets: '3' as any, reps: ' 6-8 ' }, { sets: 0, reps: '' }, { sets: 4.7, reps: '10' }];
+    const { component, updateCalls } = costruisci(p);
+
+    await component.save(false);
+
+    expect(updateCalls[0][1].workout.weekPlan).toEqual([
+      { sets: 3, reps: '6-8' }, { sets: 1, reps: '6-8' }, { sets: 4, reps: 10 }
+    ]);
+  });
+
+  it('save() fa seguire il programma agli esercizi che ne hanno una copia uguale, e lascia quelli che si distinguono', async () => {
+    const p = buildProtocol();
+    p.workout.weekPlan = [{ sets: 4, reps: 10 }, { sets: 4, reps: 8 }];
+    p.workout.days[0].ex = [
+      { name: 'Copia', scheme: 'wave', sets: 4, muscle: 'Gambe', reps: ['10'], weekPlan: [{ sets: '4' as any, reps: 10 }, { sets: 4, reps: ' 8 ' }] },
+      { name: 'Diversa', scheme: 'wave', sets: 4, muscle: 'Gambe', reps: ['10'], weekPlan: [{ sets: 4, reps: 10 }, { sets: 3, reps: 8 }] },
+      { name: 'Segue', scheme: 'wave', sets: 4, muscle: 'Gambe', reps: ['10'] }
+    ];
+    const { component, updateCalls } = costruisci(p);
+
+    await component.save(false);
+
+    const ex = updateCalls[0][1].workout.days[0].ex;
+    expect(ex[0].weekPlan).toBeUndefined();
+    expect(ex[1].weekPlan).toEqual([{ sets: 4, reps: 10 }, { sets: 3, reps: 8 }]);
+    expect(ex[2].weekPlan).toBeUndefined();
+  });
+
+  it("save() non cambia la progressione del programma quando non ci sono esercizi a onda", async () => {
     // Protocollo senza esercizi wave (tutti 'plain'): attiva il fallback
     const protocolNoWave: Protocol = {
       id: 'proto2',
@@ -170,8 +203,7 @@ describe('ProtocolloBuilderComponent', () => {
     expect(updateCalls.length).toBe(1);
     const savedPatch = updateCalls[0][1];
 
-    // Il fallback usa totalWeeks (= length del weekPlan stale = 4) e genera
-    // un array di 4 elementi, ognuno { sets: 4, reps: 10 }
+    // Le quattro settimane del programma restano quattro, com'erano scritte.
     expect(savedPatch.workout.weekPlan.length).toBe(4);
     expect(savedPatch.workout.weekPlan).toEqual([
       { sets: 4, reps: 10 },
