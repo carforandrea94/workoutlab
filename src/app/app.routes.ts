@@ -8,13 +8,13 @@ import { uscitaSenzaPerdite } from './core/guards/modifiche-non-salvate.guard';
 /**
  * Due livelli: le pagine senza barra (accesso, iscrizione, dati mancanti, privacy) e, sotto
  * TabsPage, tutto il resto. Dentro le tab il primo segmento dell'URL e' la
- * pila di navigazione: scheda, dieta, corsa, account. L'editor dei
+ * pila di navigazione: scheda, dieta, corsa, progressi, account. L'editor dei
  * protocolli sta nella pila "scheda", sotto /scheda/protocolli; le misure in
- * quella "account", sotto /account/misure (non sono piu' una tab).
+ * quella "progressi", sotto /progressi/misure (non sono una tab a se').
  *
  * L'ordine conta dove un segmento fisso e uno variabile si somigliano
- * (dieta/lista-spesa e dieta/storico prima di dieta/:mode, account/misure/storico e il rimando
- * di account/misure/analytics prima di account/misure/:categoria).
+ * (dieta/lista-spesa e dieta/storico prima di dieta/:mode, progressi/misure/storico e il rimando
+ * di progressi/misure/analytics prima di progressi/misure/:categoria).
  */
 export const routes: Routes = [
   {
@@ -128,7 +128,38 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/corsa-nuova/corsa-nuova.component').then(m => m.CorsaNuovaComponent)
       },
 
+      // ---- Progressi ----
+      // Come sta andando: la settimana scorsa, il corpo, il lavoro, il tonnellaggio.
+      // Da qui si aprono le misure (grafico, registrazione, storico).
+      {
+        path: 'progressi',
+        loadComponent: () => import('./pages/progressi/progressi.component').then(m => m.ProgressiComponent)
+      },
+
+      // ---- Misure, dentro Progressi ----
+      // Misure e' il grafico dell'andamento, e da li' si registra (prima l'andamento
+      // era una pagina a parte, /progressi/misure/analytics: ora rimanda qui).
+      {
+        path: 'progressi/misure',
+        loadComponent: () => import('./pages/misure/misure.component').then(m => m.MisureComponent)
+      },
+      {
+        path: 'progressi/misure/storico',
+        loadComponent: () => import('./pages/misure-storico/misure-storico.component').then(m => m.MisureStoricoComponent)
+      },
+      { path: 'progressi/misure/analytics', redirectTo: 'progressi/misure', pathMatch: 'full' },
+      {
+        path: 'progressi/misure/:categoria',
+        canDeactivate: [uscitaSenzaPerdite],
+        loadComponent: () => import('./pages/misura-categoria/misura-categoria.component').then(m => m.MisuraCategoriaComponent)
+      },
+      {
+        path: 'progressi/misure/storico/:key',
+        loadComponent: () => import('./pages/misure-storico-detail/misure-storico-detail.component').then(m => m.MisureStoricoDetailComponent)
+      },
+
       // ---- Account ----
+      // Chi sono e come funziona l'app: il profilo, dove voglio arrivare, i promemoria, le impostazioni.
       {
         path: 'account',
         loadComponent: () => import('./pages/account/account.component').then(m => m.AccountComponent)
@@ -148,34 +179,19 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/promemoria/promemoria.component').then(m => m.PromemoriaComponent)
       },
 
-      // ---- Misure, dentro Account ----
-      // Misure e' il grafico dell'andamento, e da li' si registra (prima l'andamento
-      // era una pagina a parte, /account/misure/analytics: ora rimanda qui).
-      {
-        path: 'account/misure',
-        loadComponent: () => import('./pages/misure/misure.component').then(m => m.MisureComponent)
-      },
-      {
-        path: 'account/misure/storico',
-        loadComponent: () => import('./pages/misure-storico/misure-storico.component').then(m => m.MisureStoricoComponent)
-      },
-      { path: 'account/misure/analytics', redirectTo: 'account/misure', pathMatch: 'full' },
-      {
-        path: 'account/misure/:categoria',
-        canDeactivate: [uscitaSenzaPerdite],
-        loadComponent: () => import('./pages/misura-categoria/misura-categoria.component').then(m => m.MisuraCategoriaComponent)
-      },
-      {
-        path: 'account/misure/storico/:key',
-        loadComponent: () => import('./pages/misure-storico-detail/misure-storico-detail.component').then(m => m.MisureStoricoDetailComponent)
-      },
-      // Gli indirizzi di quando Misure era una tab (segnalibri, l'app installata
-      // aperta su una pagina di Misure): portano allo stesso posto dentro Account.
-      { path: 'misure', redirectTo: 'account/misure', pathMatch: 'full' },
-      { path: 'misure/storico', redirectTo: 'account/misure/storico', pathMatch: 'full' },
-      { path: 'misure/analytics', redirectTo: 'account/misure', pathMatch: 'full' },
-      { path: 'misure/storico/:key', redirectTo: 'account/misure/storico/:key', pathMatch: 'full' },
-      { path: 'misure/:categoria', redirectTo: 'account/misure/:categoria', pathMatch: 'full' }
+      // Gli indirizzi di quando Misure era una tab, e poi una pagina di Account
+      // (segnalibri, l'app installata aperta su una pagina di Misure): portano
+      // allo stesso posto dentro Progressi, in un salto solo.
+      { path: 'account/misure', redirectTo: 'progressi/misure', pathMatch: 'full' },
+      { path: 'account/misure/storico', redirectTo: 'progressi/misure/storico', pathMatch: 'full' },
+      { path: 'account/misure/analytics', redirectTo: 'progressi/misure', pathMatch: 'full' },
+      { path: 'account/misure/storico/:key', redirectTo: 'progressi/misure/storico/:key', pathMatch: 'full' },
+      { path: 'account/misure/:categoria', redirectTo: 'progressi/misure/:categoria', pathMatch: 'full' },
+      { path: 'misure', redirectTo: 'progressi/misure', pathMatch: 'full' },
+      { path: 'misure/storico', redirectTo: 'progressi/misure/storico', pathMatch: 'full' },
+      { path: 'misure/analytics', redirectTo: 'progressi/misure', pathMatch: 'full' },
+      { path: 'misure/storico/:key', redirectTo: 'progressi/misure/storico/:key', pathMatch: 'full' },
+      { path: 'misure/:categoria', redirectTo: 'progressi/misure/:categoria', pathMatch: 'full' }
     ]
   },
   { path: '**', redirectTo: 'scheda' }

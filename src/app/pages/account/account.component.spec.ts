@@ -1,18 +1,16 @@
-import { CUSTOM_ELEMENTS_SCHEMA, signal } from '@angular/core';
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { NavController } from '@ionic/angular';
 import { describe, expect, it, vi } from 'vitest';
 import { providerPagina } from '../../../test-support/pagina';
-import { FormaCardComponent } from '../../components/forma-card/forma-card.component';
-import { BilancioSettimanaComponent } from '../../components/bilancio-settimana/bilancio-settimana.component';
 import { AuthService } from '../../core/services/auth.service';
 import { AccountComponent } from './account.component';
 import { AppStateService } from '../../services/app-state.service';
 import { PromemoriaService } from '../../services/promemoria.service';
 
 /**
- * Da Account si aprono l'obiettivo e i promemoria, in cima, e le impostazioni;
- * le misure, dal riassunto del corpo (vedi forma-card).
+ * Da Account si aprono l'obiettivo e i promemoria, in cima, e le impostazioni.
+ * Il corpo e il lavoro (misure, settimana scorsa) stanno in Progressi.
  */
 describe('AccountComponent — le voci', () => {
   function monta(obiettivo: unknown = null, load?: () => Promise<unknown>, promemoria?: () => Promise<unknown>) {
@@ -27,8 +25,6 @@ describe('AccountComponent — le voci', () => {
         { provide: PromemoriaService, useValue: { carica: promemoria ?? (async () => ({ attivo: false, giorni: [1, 3, 5], ora: '18:00' })) } }
       ]
     });
-    // Il riassunto del corpo legge mezza app: qui conta solo cosa c'e' sotto.
-    TestBed.overrideComponent(AccountComponent, { remove: { imports: [FormaCardComponent, BilancioSettimanaComponent] }, add: { schemas: [CUSTOM_ELEMENTS_SCHEMA] } });
     const fixture = TestBed.createComponent(AccountComponent);
     fixture.detectChanges();
     const root: HTMLElement = fixture.nativeElement;
@@ -37,12 +33,13 @@ describe('AccountComponent — le voci', () => {
     return { root, nav, voci, sotto, fixture };
   }
 
-  it('in cima Il mio obiettivo e i Promemoria, sotto il riassunto del corpo Impostazioni: le misure stanno nel gruppo del corpo', () => {
+  it('Il mio obiettivo e i Promemoria in cima, poi Impostazioni; il corpo non e\' piu\' qui', () => {
     const { voci, root } = monta();
     expect(voci().map(v => v.querySelector('ion-label h2')!.textContent!.trim())).toEqual(['Il mio obiettivo', 'Promemoria', 'Impostazioni']);
     expect(voci().map(v => v.querySelector('app-icona')!.getAttribute('name'))).toEqual(['flag', 'notifications', 'settings']);
-    const ordine = Array.from(root.querySelectorAll('app-forma-card, ion-item.voce')).map(e => e.tagName === 'APP-FORMA-CARD' ? 'corpo' : e.querySelector('h2')!.textContent!.trim());
-    expect(ordine).toEqual(['Il mio obiettivo', 'Promemoria', 'corpo', 'Impostazioni']);
+    // Il riassunto del corpo e la settimana scorsa sono passati in Progressi.
+    expect(root.querySelector('app-forma-card')).toBeNull();
+    expect(root.querySelector('app-bilancio-settimana')).toBeNull();
     // Obiettivo e promemoria nello stesso gruppo: vanno insieme.
     expect(voci()[0].parentElement).toBe(voci()[1].parentElement);
     // Portano a un'altra pagina: tasti col chevron di iOS.

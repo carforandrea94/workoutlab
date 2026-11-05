@@ -361,8 +361,8 @@ describe('styles.css — la barra come quella di Instagram', () => {
     expect(css).toMatch(/\n\.tabbar\{transition:[^}]*scale \.38s/);
   });
 
-  it('larga quanto le sue quattro icone, non quanto lo schermo; la pillola della sessione uguale', () => {
-    expect(css).toMatch(/--tabbar-w:\s*calc\(4 \* var\(--tabbtn-w\)\)/);
+  it('larga quanto le sue cinque icone, non quanto lo schermo; la pillola della sessione uguale', () => {
+    expect(css).toMatch(/--tabbar-w:\s*calc\(5 \* var\(--tabbtn-w\)\)/);
     // La barra e' content-box: il suo max-width conta solo i tasti. La pillola
     // (border-box) e' larga quanto la barra intera, bordo compreso.
     expect(css).toMatch(/\.tabbar\{[^}]*max-width:var\(--tabbar-w\)/);

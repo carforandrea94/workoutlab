@@ -14,7 +14,7 @@
     <ion-note slot="end" class="valore">{{ weightLabel }}<small>kg</small></ion-note>
   </ion-item>
   <ng-template #pesoMancante>
-    <ion-item [button]="true" [detail]="true" routerLink="/account/misure/peso" routerDirection="forward">
+    <ion-item [button]="true" [detail]="true" routerLink="/progressi/misure/peso" routerDirection="forward">
       <ion-label><h2>Peso</h2></ion-label>
       <ion-note slot="end" class="azione">Pesati</ion-note>
     </ion-item>
@@ -42,7 +42,7 @@
     <ion-note slot="end" class="valore">{{ bodyFatLabel }}<small>%</small></ion-note>
   </ion-item>
   <ion-item *ngIf="bodyFat.pct === null" [button]="true" [detail]="true" routerDirection="forward"
-    [routerLink]="bodyFatNeedsProfile ? '/account/impostazioni' : '/account/misure/pliche'">
+    [routerLink]="bodyFatNeedsProfile ? '/account/impostazioni' : '/progressi/misure/pliche'">
     <ion-label>
       <h2>Massa grassa</h2>
       <p>{{ bodyFatMissing }}</p>
@@ -60,7 +60,7 @@
 
   <!-- In fondo ai valori, che ne sono l'ultima lettura: tutte le misure con
        andamento e storico (stavano in una tab loro). -->
-  <ion-item class="voce-misure" [button]="true" [detail]="true" routerLink="/account/misure" routerDirection="forward">
+  <ion-item class="voce-misure" [button]="true" [detail]="true" routerLink="/progressi/misure" routerDirection="forward">
     <ion-label class="ion-text-wrap">
       <h2>Misure</h2>
       <p>Peso, centimetri e pliche, con andamento e storico</p>
