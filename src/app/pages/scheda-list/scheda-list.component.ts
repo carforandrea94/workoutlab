@@ -12,6 +12,8 @@ import { NavController, IonAvatar, IonBadge, IonButton, IonLabel, IonListHeader,
 import { IconaComponent } from '../../components/icona/icona.component';
 import { Costanza, ProgrammaCostanza, SETTIMANE_IN_VISTA, SETTIMANE_PROGRAMMA_IN_VISTA, costanza } from '../../core/utils/costanza.util';
 import { GiornoService } from '../../core/giorno.service';
+import { ProtocolService } from '../../services/protocol.service';
+import { ToastService } from '../../services/toast.service';
 
 @Component({
   selector: 'app-scheda-list',
@@ -37,8 +39,31 @@ export class SchedaListComponent implements OnInit {
     private nav: NavController,
     private appState: AppStateService,
     public weekly: WeeklyProgressService,
-    private sessionState: WorkoutSessionStateService
+    private sessionState: WorkoutSessionStateService,
+    private protocolSvc: ProtocolService,
+    private toast: ToastService
   ) {
+  }
+
+  /** Mentre il protocollo vuoto si crea, il tasto "Scrivila a mano" resta spento. */
+  readonly creando = signal(false);
+
+  /**
+   * Senza scheda, scriverla a mano: crea il protocollo vuoto e apre il builder, come
+   * "Crea manualmente" in Nuovo protocollo ma senza passare da Protocolli.
+   */
+  async scriviAMano(): Promise<void> {
+    if (this.creando()) return;
+    this.creando.set(true);
+    try {
+      const id = await this.protocolSvc.create();
+      await this.nav.navigateForward(['/scheda/protocolli/builder', id]);
+    } catch (e) {
+      console.error('Creazione del protocollo fallita:', e);
+      this.toast.error('Non sono riuscito a creare la scheda. Riprova.');
+    } finally {
+      this.creando.set(false);
+    }
   }
 
   /** Ionic tiene viva la pagina nella pila: tornandoci ngOnInit non riparte, e i dati possono essere cambiati altrove (salvataggi, eliminazioni). */

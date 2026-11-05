@@ -36,7 +36,7 @@ import { PdfImportService } from '../../services/pdf-import.service';
 import { ConfirmDialogService } from '../../services/confirm-dialog.service';
 import { IONIC_PAGE, IONIC_LINKS } from '../../core/ionic-page';
 import { IONIC_LIST } from '../../core/ionic-list';
-import { NavController, IonContent, IonInput, IonTextarea, IonSelect, IonSelectOption, IonSpinner, IonSegment, IonSegmentButton, IonToggle, IonButton, IonRouterOutlet, IonLabel, IonListHeader, IonNote, IonItemDivider } from '@ionic/angular';
+import { NavController, IonAvatar, IonContent, IonFooter, IonInput, IonTextarea, IonSelect, IonSelectOption, IonSpinner, IonSegment, IonSegmentButton, IonToggle, IonButton, IonRouterOutlet, IonLabel, IonListHeader, IonNote, IonItemDivider } from '@ionic/angular';
 import {
   LivelloBuilder, PosizioneBuilder, SchedaBuilder, chiaveBuilder, direzioneBuilder, etichettaFattoBuilder, etichettaSuBuilder,
   livelloBuilder, titoloBuilder
@@ -45,6 +45,7 @@ import { ConModificheNonSalvate } from '../../core/guards/modifiche-non-salvate.
 import { senzaSwipeIndietro } from '../../core/swipe-indietro';
 import { NomeCampoDirective } from '../../core/nome-campo.directive';
 import { IconaComponent } from '../../components/icona/icona.component';
+import { BarraAzioneDirective } from '../../core/directives/barra-azione.directive';
 import { IONIC_SLIDING } from '../../core/ionic-sliding';
 
 type Tab = SchedaBuilder;
@@ -64,7 +65,7 @@ export type ZonaDrop =
 @Component({
   selector: 'app-protocollo-builder',
   standalone: true,
-  imports: [NomeCampoDirective, IonButton, IonLabel, IonListHeader, IonNote, IonItemDivider, ...IONIC_SLIDING, ...IONIC_LIST, IonInput, IonTextarea, IonSelect, IonSelectOption, IonSpinner, IonSegment, IonSegmentButton, IonToggle, ...IONIC_PAGE, ...IONIC_LINKS,
+  imports: [NomeCampoDirective, BarraAzioneDirective, IonAvatar, IonFooter, IonButton, IonLabel, IonListHeader, IonNote, IonItemDivider, ...IONIC_SLIDING, ...IONIC_LIST, IonInput, IonTextarea, IonSelect, IonSelectOption, IonSpinner, IonSegment, IonSegmentButton, IonToggle, ...IONIC_PAGE, ...IONIC_LINKS,
     CommonModule, FormsModule, IconaComponent,
     CdkDropListGroup, CdkDropList, CdkDrag, CdkDragHandle, CdkDragPlaceholder
   ],
@@ -186,6 +187,14 @@ export class ProtocolloBuilderComponent implements OnInit, OnDestroy, DoCheck {
   get titoloHeader(): string { return titoloBuilder(this.posizione); }
   get etichettaSu(): string { return etichettaSuBuilder(this.posizione); }
   get etichettaFatto(): string { return etichettaFattoBuilder(this.posizione); }
+
+  /**
+   * "Salva e attiva" in basso: sull'elenco (non dentro un giorno o un piano, dove
+   * il gesto e' "Fatto") e solo se il protocollo non e' gia' quello attivo.
+   */
+  get conBarraAttiva(): boolean {
+    return !this.loading && !this.errorMsg && !!this.protocol && this.livello === 0 && this.protocol.status !== 'active';
+  }
 
   /** Da che parte entra la schermata che si sta per vedere: la legge il template. */
   direzione: 'avanti' | 'indietro' = 'avanti';
@@ -397,10 +406,41 @@ export class ProtocolloBuilderComponent implements OnInit, OnDestroy, DoCheck {
   /** Aggiunge un giorno e ci entra subito: chi lo crea lo vuole riempire. */
   addDay(): void {
     if (!this.protocol) return;
-    const n = this.protocol.workout.days.length + 1;
-    const day: Day = { id: `day${n}`, label: `Giorno ${n}`, rec: '60-90"', ex: [] };
-    this.protocol.workout.days.push(day);
-    this.openDay(day, this.protocol.workout.days.length - 1);
+    const days = this.protocol.workout.days;
+    const id = this.idGiornoLibero();
+    const day: Day = { id, label: `Giorno ${days.length + 1}`, rec: '60-90"', ex: [] };
+    days.push(day);
+    this.openDay(day, days.length - 1);
+  }
+
+  /**
+   * Un id di giorno che nessun altro ha. L'id e' quello con cui si riconoscono le sedute
+   * fatte e le bozze: togliendo un giorno di mezzo e aggiungendone un altro, "day" + il
+   * numero dei giorni darebbe quello di un giorno che c'e' ancora, e i due si confonderebbero.
+   */
+  private idGiornoLibero(): string {
+    const usati = new Set(this.protocol?.workout.days.map(d => d.id));
+    let n = (this.protocol?.workout.days.length ?? 0) + 1;
+    while (usati.has(`day${n}`)) n++;
+    return `day${n}`;
+  }
+
+  /**
+   * Copia il giorno aperto, subito dopo di lui, e apre la copia: due giorni quasi uguali
+   * (A e B, spinta e tirata) si scrivono una volta e si ritoccano, non si riscrivono da
+   * zero. Gli esercizi sono copie vere: cambiarne uno nel nuovo giorno non tocca l'altro.
+   */
+  duplicaGiorno(): void {
+    if (!this.protocol || !this.editingDay) return;
+    const { day, index } = this.editingDay;
+    const copia: Day = {
+      ...structuredClone(day),
+      id: this.idGiornoLibero(),
+      label: day.label ? `${day.label} (copia)` : ''
+    };
+    this.protocol.workout.days.splice(index + 1, 0, copia);
+    this.toast.success('Giorno duplicato ✓');
+    this.openDay(copia, index + 1);
   }
 
   openDay(day: Day, index: number): void {
@@ -1257,7 +1297,8 @@ export class ProtocolloBuilderComponent implements OnInit, OnDestroy, DoCheck {
     if (!await this.persist()) return;
 
     if (!activateAfter) {
-      this.toast.success('Bozza salvata ✓');
+      // Su un protocollo attivo non e' una bozza: e' quello che si sta seguendo.
+      this.toast.success(this.protocol?.status === 'draft' ? 'Bozza salvata ✓' : 'Salvato ✓');
       this.nav.navigateBack(['/scheda/protocolli']);
       return;
     }

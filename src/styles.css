@@ -363,6 +363,13 @@ ion-buttons ion-button.navicon:not(.button-round){--border-radius:var(--r-md);--
 ion-buttons[slot=end] ion-segment + .navicon{margin-left:8px;}
 ion-buttons[slot=end] > .navicon:last-child{margin-right:-11px;}
 ion-buttons[slot=start] > ion-back-button:first-child,ion-buttons[slot=start] > .navicon:first-child{margin-left:-11px;}
+/* Il tasto a parole della testata ("Salva", "Fatto"): il testo dell'accento, come
+   i tasti delle barre iOS, alto 44 e largo quanto serve. Come .navicon, riprende
+   le regole che Ionic mette ai pulsanti dentro ion-buttons. */
+ion-button.navtesto{--ion-toolbar-color:var(--accent);--background:transparent;--background-hover:transparent;--background-focused:var(--surface-press);--background-focused-opacity:1;--background-activated-opacity:0;--background-hover-opacity:0;--color:var(--accent);--border-radius:var(--r-md);--border-width:0;--box-shadow:none;--padding-start:10px;--padding-end:10px;--padding-top:0;--padding-bottom:0;min-width:44px;min-height:44px;height:44px;text-transform:none;font-size:var(--text-lg);font-weight:600;letter-spacing:0;}
+ion-buttons ion-button.navtesto:not(.button-round){--border-radius:var(--r-md);--padding-start:10px;--padding-end:10px;min-height:44px;margin-inline:0;}
+ion-buttons[slot=end] > .navtesto:last-child{margin-right:-6px;}
+ion-button.navtesto.button-disabled{opacity:.4;}
 /* Striscia sotto la barra di stato, solo nell'app installata sulla Home.
    Con apple-mobile-web-app-status-bar-style=black-translucent la pagina arriva
    sotto la barra di stato, e da iOS 26 il sistema ci disegna sopra una
@@ -533,6 +540,8 @@ ion-tab-bar.tabbar{touch-action:none;-webkit-touch-callout:none;}
 /* La riga d'azione in fondo a un gruppo ("Nuovo protocollo", "Aggiungi
    giorno"): come "Registra un'uscita" nella Corsa, il + e il testo in accento,
    senza chevron. Non un tasto pieno sopra o sotto la lista. */
+/* Senza scheda: il titolo dell'invito, piu' grande del testo che lo segue. */
+.scheda-vuota strong{display:block;margin-bottom:6px;font-size:var(--text-xl);font-weight:700;color:var(--label);}
 ion-item.riga-azione{--color:var(--accent);font-weight:600;font-size:var(--text-lg);}
 ion-item.riga-azione app-icona{margin-inline-end:14px;color:var(--accent);}
 /* L'azione in fondo a un riquadro ("Modifica peso"): una riga in accento sotto

@@ -1,6 +1,9 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { afterEach, vi } from 'vitest';
+import { NavController } from '@ionic/angular';
+import { ProtocolService } from '../../services/protocol.service';
+import { ToastService } from '../../services/toast.service';
 import { providerPagina } from '../../../test-support/pagina';
 import { SchedaListComponent } from './scheda-list.component';
 import { WorkoutDataService } from '../../services/workout-data.service';
@@ -21,7 +24,7 @@ describe('SchedaListComponent — da dove si parte', () => {
     { id: 'd3', label: 'Gambe', rec: '120"', ex: [{}, {}, {}] }
   ];
 
-  function monta(opzioni: { fatti?: string[]; sessioneSu?: string | null; bozze?: string[]; giorni?: any[]; settimane?: any[] } = {}) {
+  function monta(opzioni: { fatti?: string[]; sessioneSu?: string | null; bozze?: string[]; giorni?: any[]; settimane?: any[]; fornitori?: any[] } = {}) {
     const fatti = new Set(opzioni.fatti ?? []);
     const attiva = signal<any>(opzioni.sessioneSu ? { dayId: opzioni.sessioneSu } : null);
     TestBed.configureTestingModule({
@@ -32,7 +35,8 @@ describe('SchedaListComponent — da dove si parte', () => {
         { provide: WorkoutStateService, useValue: { currentWeek: 1 } },
         { provide: AppStateService, useValue: { load: async () => ({ workoutDrafts: Object.fromEntries((opzioni.bozze ?? []).map(d => [d, {}])) }) } },
         { provide: WeeklyProgressService, useValue: { refresh: vi.fn(), isDone: (id: string) => fatti.has(id), sedute: () => [] } },
-        { provide: WorkoutSessionStateService, useValue: { activeSession: attiva, isActiveForDay: (id: string) => attiva()?.dayId === id } }
+        { provide: WorkoutSessionStateService, useValue: { activeSession: attiva, isActiveForDay: (id: string) => attiva()?.dayId === id } },
+        ...(opzioni.fornitori ?? [])
       ]
     });
     const fixture = TestBed.createComponent(SchedaListComponent);
@@ -425,5 +429,95 @@ describe('SchedaListComponent — a mezzanotte', () => {
     vi.advanceTimersByTime(31_000);
     expect(giorno()).toBe('Lunedì');
     expect(frase()).toBe('Ancora 3 allenamenti');
+  });
+});
+
+/**
+ * Senza scheda, il primo avvio: la scheda la da' di solito un coach e arriva in PDF,
+ * o si scrive a mano. Le due strade sono qui, a un tocco: prima la pagina mandava a
+ * Protocolli, poi a Nuovo protocollo, e li' si sceglieva.
+ */
+describe('SchedaListComponent — senza scheda', () => {
+  const testo = (e: Element | null) => (e?.textContent ?? '').replace(/\s+/g, ' ').trim();
+
+  function vuota(create: () => Promise<string> = async () => 'nuovo1') {
+    const protocolSvc = { create: vi.fn(create) };
+    const nav = { navigateForward: vi.fn(async () => true) };
+    const m = monta({
+      giorni: [],
+      fornitori: [{ provide: ProtocolService, useValue: protocolSvc }, { provide: NavController, useValue: nav }]
+    });
+    const invito = () => m.root.querySelector<HTMLElement>('.scheda-vuota')!;
+    const primario = () => invito().querySelector<HTMLElement>('ion-button.savebtn')!;
+    const aMano = () => invito().querySelector<HTMLElement & { disabled?: boolean }>('ion-button.scheda-vuota-mano')!;
+    return { ...m, protocolSvc, nav, invito, primario, aMano };
+  }
+
+  function monta(opzioni: { giorni: any[]; fornitori: any[] }) {
+    TestBed.configureTestingModule({
+      imports: [SchedaListComponent],
+      providers: [
+        ...providerPagina(),
+        { provide: WorkoutDataService, useValue: { days: opzioni.giorni, WEEK_PLAN: [], hasCustomProtocol: false, protocolName: '' } },
+        { provide: WorkoutStateService, useValue: { currentWeek: 1 } },
+        { provide: AppStateService, useValue: { load: async () => ({ workoutDrafts: {} }) } },
+        { provide: WeeklyProgressService, useValue: { refresh: vi.fn(), isDone: () => false, sedute: () => [] } },
+        { provide: WorkoutSessionStateService, useValue: { activeSession: signal<any>(null), isActiveForDay: () => false } },
+        ...opzioni.fornitori
+      ]
+    });
+    const fixture = TestBed.createComponent(SchedaListComponent);
+    fixture.detectChanges();
+    return { fixture, root: fixture.nativeElement as HTMLElement };
+  }
+
+  it('invita a caricare la scheda e dice le due strade, senza mandare a Protocolli', () => {
+    const { invito } = vuota();
+    expect(testo(invito().querySelector('strong'))).toBe('Carica la tua scheda');
+    expect(testo(invito())).toContain('Se te l\'ha data il coach');
+    expect(testo(invito())).not.toContain('Vai ai protocolli');
+    expect(invito().querySelector('[routerLink="/scheda/protocolli"]')).toBeNull();
+  });
+
+  it('"Carica il PDF" porta dritto all\'importazione', () => {
+    const { primario } = vuota();
+    expect(testo(primario())).toBe('Carica il PDF');
+    expect(primario().getAttribute('routerLink')).toBe('/scheda/protocolli/importa-pdf');
+    expect(primario().getAttribute('routerDirection')).toBe('forward');
+  });
+
+  it('"Scrivila a mano" crea il protocollo vuoto e apre il builder', async () => {
+    const { aMano, protocolSvc, nav } = vuota();
+    expect(testo(aMano())).toBe('Scrivila a mano');
+    aMano().click();
+    await vi.waitFor(() => expect(nav.navigateForward).toHaveBeenCalledWith(['/scheda/protocolli/builder', 'nuovo1']));
+    expect(protocolSvc.create).toHaveBeenCalledTimes(1);
+  });
+
+  it('mentre il protocollo si crea il tasto e\' spento: un secondo tocco non ne crea due', async () => {
+    let finisci: (id: string) => void = () => {};
+    const { aMano, fixture, protocolSvc } = vuota(() => new Promise<string>(r => { finisci = r; }));
+    aMano().click();
+    fixture.detectChanges();
+    expect(aMano().disabled).toBe(true);
+    aMano().click();
+    expect(protocolSvc.create).toHaveBeenCalledTimes(1);
+    finisci('nuovo1');
+    await vi.waitFor(() => { fixture.detectChanges(); expect(aMano().disabled).toBe(false); });
+  });
+
+  it('se la creazione fallisce lo dice, non apre niente e il tasto torna acceso', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { aMano, nav, fixture } = vuota(async () => { throw new Error('rete'); });
+    aMano().click();
+    await vi.waitFor(() => expect(TestBed.inject(ToastService).toast()?.message).toBe('Non sono riuscito a creare la scheda. Riprova.'));
+    expect(nav.navigateForward).not.toHaveBeenCalled();
+    fixture.detectChanges();
+    expect(aMano().disabled).toBe(false);
+  });
+
+  it('con una scheda l\'invito non c\'e\'', () => {
+    const m = monta({ giorni: [{ id: 'd1', label: 'Gambe', rec: '90"', ex: [{}] }], fornitori: [] });
+    expect(m.root.querySelector('.scheda-vuota')).toBeNull();
   });
 });

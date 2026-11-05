@@ -18,6 +18,8 @@ import { ProtocolService } from '../../services/protocol.service';
 import { ConfirmDialogService } from '../../services/confirm-dialog.service';
 import { Protocol } from '../../models/protocol.model';
 import { NavController } from '@ionic/angular';
+import { Router } from '@angular/router';
+import { ToastService } from '../../services/toast.service';
 
 /** Dove il builder torna dopo aver salvato. */
 @Component({ standalone: true, template: '' })
@@ -67,7 +69,7 @@ describe('ProtocolloBuilderComponent — disegno vero', () => {
     HTMLElement.prototype.scrollIntoView = function () {} as any;
   });
 
-  async function monta(extra: Partial<Protocol> = {}) {
+  async function monta(extra: Partial<Protocol> = {}, rotte: { path: string; component: any }[] = []) {
     const protocolSvc = {
       changed$: new Subject<void>(),
       get: vi.fn(async () => structuredClone({ ...protocollo(), ...extra })),
@@ -78,7 +80,7 @@ describe('ProtocolloBuilderComponent — disegno vero', () => {
     TestBed.configureTestingModule({
       imports: [ProtocolloBuilderComponent],
       providers: [
-        ...providerPagina([{ path: 'scheda/protocolli', component: ElencoProtocolli }]),
+        ...providerPagina([{ path: 'scheda/protocolli', component: ElencoProtocolli }, ...rotte]),
         { provide: ActivatedRoute, useValue: { paramMap: of(convertToParamMap({ protocolId: 'proto1' })) } },
         { provide: ProtocolService, useValue: protocolSvc },
         { provide: ConfirmDialogService, useValue: { confirm: vi.fn(async () => true) } }
@@ -614,9 +616,10 @@ describe('ProtocolloBuilderComponent — disegno vero', () => {
       expect(root.querySelectorAll('ion-list.alt-pasto ion-item.alimento').length).toBe(1);
     });
 
-    it('"Fatto" e\' il segno di spunta della testata: in fondo resta solo "Rimuovi pasto", in rosso', async () => {
+    it('"Fatto" e\' il tasto a parole della testata: in fondo resta solo "Rimuovi pasto", in rosso', async () => {
       const { c, fixture, root, titolo } = await conPasto();
-      expect(Array.from(root.querySelectorAll('ion-button')).map(b => testo(b))).not.toContain('Fatto');
+      expect(Array.from(root.querySelectorAll('ion-header ion-button')).map(b => testo(b))).toContain('Fatto');
+      expect(Array.from(root.querySelectorAll('ion-content ion-button')).map(b => testo(b))).not.toContain('Fatto');
       const rimuovi = Array.from(root.querySelectorAll<HTMLElement>('ion-item.riga-distruttiva')).find(r => testo(r) === 'Rimuovi pasto')!;
       rimuovi.click();
       fixture.detectChanges();
@@ -760,6 +763,235 @@ describe('ProtocolloBuilderComponent — disegno vero', () => {
       await c.eliminaProtocollo();
       expect(indietro).not.toHaveBeenCalled();
       expect(c.haModificheNonSalvate()).toBe(true);
+    });
+  });
+  /**
+   * La testata dell'elenco aveva tre icone senza testo (salva, salva e attiva,
+   * aggiorna da PDF): per capire quale fosse quale bisognava provarle. Ora ha un
+   * "Salva" a parole; "Salva e attiva" e' il comando in basso, solo se il protocollo
+   * non e' gia' quello attivo; "Aggiorna da PDF" e' una riga in cima alla pagina.
+   */
+  describe('la testata e la barra in basso', () => {
+    const testo = (e: Element | null) => (e?.textContent ?? '').replace(/\s+/g, ' ').trim();
+    const tastiTestata = (root: HTMLElement) => Array.from(root.querySelectorAll<HTMLElement>('ion-header ion-buttons[slot="end"] ion-button'));
+    const footer = (root: HTMLElement) => root.querySelector<HTMLElement>('ion-footer.barra-azione');
+
+    it('sull\'elenco la testata ha un solo tasto, a parole: "Salva"', async () => {
+      const { root } = await monta();
+      expect(tastiTestata(root).map(t => testo(t))).toEqual(['Salva']);
+      // Niente icone senza testo in testata: il nome e' il testo del tasto.
+      expect(root.querySelector('ion-header ion-buttons[slot="end"] app-icona')).toBeNull();
+    });
+
+    it('"Salva" salva e torna all\'elenco senza attivare; su una bozza dice "Bozza salvata"', async () => {
+      const { root, protocolSvc } = await monta();
+      const indietro = vi.spyOn(TestBed.inject(NavController), 'navigateBack').mockResolvedValue(true);
+      tastiTestata(root)[0].click();
+      await vi.waitFor(() => expect(indietro).toHaveBeenCalledWith(['/scheda/protocolli']));
+      expect(protocolSvc.update).toHaveBeenCalledTimes(1);
+      expect(protocolSvc.activate).not.toHaveBeenCalled();
+      expect(TestBed.inject(ToastService).toast()?.message).toBe('Bozza salvata ✓');
+    });
+
+    it('su un protocollo attivo "Salva" non parla di bozza: non lo e\'', async () => {
+      const { root } = await monta({ status: 'active' });
+      vi.spyOn(TestBed.inject(NavController), 'navigateBack').mockResolvedValue(true);
+      tastiTestata(root)[0].click();
+      await vi.waitFor(() => expect(TestBed.inject(ToastService).toast()?.message).toBe('Salvato ✓'));
+    });
+
+    it('una bozza ha in basso "Salva e attiva", e il contenuto le fa posto', async () => {
+      const { root, protocolSvc } = await monta();
+      const barra = footer(root)!;
+      expect(testo(barra.querySelector('ion-button.setdone'))).toBe('Salva e attiva');
+      expect(root.querySelector('ion-content')!.classList.contains('con-barra')).toBe(true);
+      const indietro = vi.spyOn(TestBed.inject(NavController), 'navigateBack').mockResolvedValue(true);
+      barra.querySelector<HTMLElement>('ion-button.setdone')!.click();
+      await vi.waitFor(() => expect(protocolSvc.activate).toHaveBeenCalledWith('proto1'));
+      expect(protocolSvc.update).toHaveBeenCalledTimes(1);
+      await vi.waitFor(() => expect(indietro).toHaveBeenCalledWith(['/scheda/protocolli']));
+    });
+
+    it('un protocollo archiviato si puo\' riattivare: la barra c\'e\' anche li\'', async () => {
+      const { root } = await monta({ status: 'archived' });
+      expect(testo(footer(root)!.querySelector('ion-button.setdone'))).toBe('Salva e attiva');
+    });
+
+    it('su quello gia\' attivo non c\'e\' niente da attivare: niente barra, niente spazio riservato', async () => {
+      const { root } = await monta({ status: 'active' });
+      expect(footer(root)).toBeNull();
+      expect(root.querySelector('ion-content')!.classList.contains('con-barra')).toBe(false);
+    });
+
+    it('mentre si salva i tasti sono spenti, in testata e in basso', async () => {
+      const { c, fixture, root } = await monta();
+      c.protocolBuilderState.saving.set(true);
+      fixture.componentRef.changeDetectorRef.markForCheck();
+      fixture.detectChanges();
+      expect((tastiTestata(root)[0] as any).disabled).toBe(true);
+      expect((footer(root)!.querySelector('ion-button.setdone') as any).disabled).toBe(true);
+    });
+
+    it('dentro un giorno il gesto e\' "Fatto", e la barra di attivazione se ne va', async () => {
+      const { c, fixture, root } = await monta();
+      c.openDay(c.protocol!.workout.days[0], 0);
+      fixture.detectChanges();
+
+      const tasti = tastiTestata(root);
+      expect(tasti.map(t => testo(t))).toEqual(['Fatto']);
+      // A parole in testata, ma per lo screen reader dice cosa chiude.
+      expect(tasti[0].getAttribute('aria-label')).toBe('Salva il giorno');
+      expect(footer(root)).toBeNull();
+      expect(root.querySelector('ion-content')!.classList.contains('con-barra')).toBe(false);
+    });
+
+    it('tornando all\'elenco la barra ricompare', async () => {
+      const { c, fixture, root } = await monta();
+      c.openDay(c.protocol!.workout.days[0], 0);
+      fixture.detectChanges();
+      c.closeDay();
+      fixture.detectChanges();
+      expect(footer(root)).not.toBeNull();
+    });
+
+    it('"Aggiorna da PDF" e\' una riga con le parole, sotto il nome, per tutto il protocollo', async () => {
+      const Aggiorna = Component({ standalone: true, template: '' })(class {});
+      const { root } = await monta({}, [{ path: 'scheda/protocolli/aggiorna-pdf/:protocolId', component: Aggiorna }]);
+      // Il primo gruppo di campi e' quello in cima alla pagina: il nome e, sotto, l'aggiornamento.
+      const righe = Array.from(root.querySelector('ion-list.campi')!.querySelectorAll<HTMLElement>(':scope > ion-item'));
+      expect(righe.length).toBe(2);
+      expect(righe[0].querySelector('ion-input')).not.toBeNull();
+      const riga = root.querySelector<HTMLElement & { button?: boolean; detail?: boolean }>('ion-item.riga-aggiorna-pdf')!;
+      expect(riga).toBe(righe[1]);
+      expect(testo(riga.querySelector('h2'))).toBe('Aggiorna da PDF');
+      expect(testo(riga.querySelector('p'))).toContain('Carica il nuovo PDF');
+      expect(riga.button).toBe(true);
+      expect(riga.detail).toBe(true);
+      // Sta sopra il selettore delle schede: si vede sia dalla Scheda che dalla Dieta.
+      expect(riga.compareDocumentPosition(root.querySelector('.builder-tabsbar')!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+
+      riga.click();
+      await vi.waitFor(() => expect(TestBed.inject(Router).url).toBe('/scheda/protocolli/aggiorna-pdf/proto1'));
+    });
+
+    it('la riga resta anche sulla Dieta e sulla Corsa: l\'aggiornamento vale per tutto', async () => {
+      const { c, fixture, root } = await monta();
+      for (const t of ['dieta', 'corsa', 'info'] as const) {
+        c.vaAScheda(t);
+        fixture.detectChanges();
+        expect(root.querySelector('ion-item.riga-aggiorna-pdf'), t).not.toBeNull();
+      }
+    });
+  });
+
+  /**
+   * Due giorni quasi uguali (A e B, spinta e tirata) si scrivono una volta e si
+   * ritoccano: "Duplica giorno" copia quello aperto e apre la copia.
+   */
+  describe('duplicare un giorno', () => {
+    const testo = (e: Element | null) => (e?.textContent ?? '').replace(/\s+/g, ' ').trim();
+    const giorni = (c: ProtocolloBuilderComponent) => c.protocol!.workout.days;
+
+    async function dentroIlGiorno() {
+      const m = await monta();
+      m.c.openDay(giorni(m.c)[0], 0);
+      m.fixture.detectChanges();
+      const riga = () => m.root.querySelector<HTMLElement>('ion-list.azioni-giorno ion-item.riga-azione')!;
+      return { ...m, riga };
+    }
+
+    it('la riga sta fra le azioni del giorno, sopra "Rimuovi giorno" che resta in rosso', async () => {
+      const { root, riga } = await dentroIlGiorno();
+      expect(testo(riga())).toBe('Duplica giorno');
+      expect(Array.from(root.querySelectorAll('ion-list.azioni-giorno ion-item')).map(r => testo(r))).toEqual(['Duplica giorno', 'Rimuovi giorno']);
+      expect(root.querySelector('ion-list.azioni-giorno ion-item.riga-distruttiva')).not.toBeNull();
+    });
+
+    it('la copia viene subito dopo, con nome "(copia)", un id nuovo e gli stessi esercizi', async () => {
+      const { c, fixture, riga } = await dentroIlGiorno();
+      riga().click();
+      fixture.detectChanges();
+
+      expect(giorni(c).map(d => d.label)).toEqual(['Gambe', 'Gambe (copia)']);
+      expect(giorni(c)[1].id).not.toBe(giorni(c)[0].id);
+      expect(giorni(c)[1].rec).toBe('60-90"');
+      expect(giorni(c)[1].ex).toEqual(giorni(c)[0].ex);
+    });
+
+    it('apre la copia: e\' quella che si ritocca', async () => {
+      const { c, fixture, riga, titolo } = await dentroIlGiorno();
+      riga().click();
+      fixture.detectChanges();
+      expect(c.editingDay!.index).toBe(1);
+      expect(c.editingDay!.day).toBe(giorni(c)[1]);
+      expect(titolo()).toBe('Gambe (copia)');
+      expect(TestBed.inject(ToastService).toast()?.message).toBe('Giorno duplicato ✓');
+    });
+
+    it('gli esercizi sono copie vere: cambiare uno nel nuovo giorno non tocca l\'originale', async () => {
+      const { c, fixture, riga } = await dentroIlGiorno();
+      giorni(c)[0].ex[0].weekPlan = [{ sets: 3, reps: 8 }];
+      riga().click();
+      fixture.detectChanges();
+
+      const [orig, copia] = giorni(c);
+      expect(copia.ex[0]).not.toBe(orig.ex[0]);
+      copia.ex[0].name = 'Leg press';
+      copia.ex[0].weekPlan![0].sets = 5;
+      expect(orig.ex[0].name).toBe('Squat');
+      expect(orig.ex[0].weekPlan![0].sets).toBe(3);
+    });
+
+    it('si inserisce subito dopo il giorno aperto, non in fondo', async () => {
+      const m = await monta();
+      const { c, fixture } = m;
+      giorni(c).push({ id: 'day2', label: 'Spinta', rec: '90"', ex: [] }, { id: 'day3', label: 'Tirata', rec: '90"', ex: [] });
+      c.openDay(giorni(c)[0], 0);
+      fixture.detectChanges();
+      c.duplicaGiorno();
+      expect(giorni(c).map(d => d.label)).toEqual(['Gambe', 'Gambe (copia)', 'Spinta', 'Tirata']);
+      expect(new Set(giorni(c).map(d => d.id)).size).toBe(4);
+    });
+
+    it('un giorno senza nome ha una copia senza nome: non si inventa un "(copia)" di niente', async () => {
+      const { c, fixture } = await dentroIlGiorno();
+      giorni(c)[0].label = '';
+      c.duplicaGiorno();
+      fixture.detectChanges();
+      expect(giorni(c).map(d => d.label)).toEqual(['', '']);
+    });
+
+    it('il protocollo risulta cambiato: la guardia chiede conferma prima di uscire', async () => {
+      const { c, riga, fixture } = await dentroIlGiorno();
+      expect(c.haModificheNonSalvate()).toBe(false);
+      riga().click();
+      fixture.detectChanges();
+      expect(c.haModificheNonSalvate()).toBe(true);
+    });
+  });
+
+  /**
+   * L'id e' quello con cui si riconoscono le sedute fatte: due giorni con lo stesso
+   * id si confondono. "day" + il numero dei giorni lo ripeteva dopo aver tolto un
+   * giorno di mezzo.
+   */
+  describe('gli id dei giorni', () => {
+    it('togliendo un giorno di mezzo e aggiungendone uno, l\'id nuovo non e\' quello di un giorno che c\'e\'', async () => {
+      const { c, fixture } = await monta();
+      const giorni = c.protocol!.workout.days;
+      giorni.splice(0, giorni.length,
+        { id: 'day1', label: 'A', rec: '60"', ex: [] }, { id: 'day3', label: 'C', rec: '60"', ex: [] });
+      c.addDay();
+      fixture.detectChanges();
+      expect(giorni.map(d => d.id)).toEqual(['day1', 'day3', 'day4']);
+    });
+
+    it('senza buchi resta "day" + il numero: la scheda di sempre non cambia', async () => {
+      const { c } = await monta();
+      c.addDay();
+      c.closeDay();
+      c.addDay();
+      expect(c.protocol!.workout.days.map(d => d.id)).toEqual(['day1', 'day2', 'day3']);
     });
   });
 });
