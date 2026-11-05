@@ -22,7 +22,7 @@ class Vuota {}
  */
 describe('FormaCardComponent — le righe', () => {
   async function monta(opz: { profilo?: any; storico?: any[]; sedute?: any[]; inizio?: string } = {}) {
-    const rotte = ['account/misure', 'account/misure/peso', 'account/misure/pliche', 'account/impostazioni'].map(path => ({ path, component: Vuota }));
+    const rotte = ['progressi/misure', 'progressi/misure/peso', 'progressi/misure/pliche', 'account/impostazioni'].map(path => ({ path, component: Vuota }));
     TestBed.configureTestingModule({
       imports: [FormaCardComponent],
       providers: [
@@ -71,7 +71,7 @@ describe('FormaCardComponent — le righe', () => {
     expect([(misure as any).button, (misure as any).detail]).toEqual([true, true]);
     misure.click();
     await fixture.whenStable();
-    expect(router.url).toBe('/account/misure');
+    expect(router.url).toBe('/progressi/misure');
   });
 
   it('con i dati: il valore a destra, l\'unita\' accanto, cosa vuol dire sotto il nome', async () => {
@@ -110,7 +110,7 @@ describe('FormaCardComponent — le righe', () => {
 
     riga('Peso').click();
     await fixture.whenStable();
-    expect(router.url).toBe('/account/misure/peso');
+    expect(router.url).toBe('/progressi/misure/peso');
     riga('BMI').click();
     await fixture.whenStable();
     expect(router.url).toBe('/account/impostazioni');
@@ -121,7 +121,7 @@ describe('FormaCardComponent — le righe', () => {
     expect(valore('Massa grassa')).toBe('Vaiallepliche');
     riga('Massa grassa').click();
     await fixture.whenStable();
-    expect(router.url).toBe('/account/misure/pliche');
+    expect(router.url).toBe('/progressi/misure/pliche');
   });
 
   it('il tonnellaggio parte dal programma in corso: le sedute del vecchio, con gli stessi giorni, non contano', async () => {

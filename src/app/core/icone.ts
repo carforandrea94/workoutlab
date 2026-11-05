@@ -11,7 +11,7 @@ import {
   flagSharp, informationCircleOutline, informationCircleSharp, listOutline, listSharp, pause, pauseOutline,
   pauseSharp, pencilOutline, pencilSharp, person, personOutline, personSharp, play, playOutline, playSharp,
   removeCircle, removeCircleSharp, removeOutline, removeSharp, reorderThreeOutline, reorderTwoSharp, restaurant, restaurantOutline,
-  restaurantSharp, saveOutline, saveSharp, searchOutline, searchSharp, settingsOutline, settingsSharp,
+  restaurantSharp, saveOutline, saveSharp, searchOutline, searchSharp, settingsOutline, settingsSharp, statsChart, statsChartOutline, statsChartSharp,
   swapHorizontalOutline, swapHorizontalSharp, timeOutline, timerOutline, timerSharp, timeSharp, trashOutline,
   trashSharp, trendingUpOutline, trendingUpSharp, scaleOutline, scaleSharp, notifications, notificationsOutline,
   notificationsSharp
@@ -140,6 +140,7 @@ export const ICONE = {
   'scale': { ios: scaleOutline, md: scaleSharp },
   'scarpa': SCARPA,
   'settings': { ios: settingsOutline, md: settingsSharp },
+  'stats-chart': { ios: statsChartOutline, md: statsChartSharp, piena: statsChart },
   'swap-horizontal': { ios: swapHorizontalOutline, md: swapHorizontalSharp },
   'time': { ios: timeOutline, md: timeSharp },
   'timer': { ios: timerOutline, md: timerSharp },
