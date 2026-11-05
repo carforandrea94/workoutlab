@@ -729,3 +729,31 @@ describe('styles.css — gli avvisi come "Recupero finito"', () => {
     expect(css).not.toContain('ion-toast.apptoast');
   });
 });
+
+/**
+ * Il tasto a parole della testata ("Salva", "Fatto"): prima erano icone senza nome.
+ * Resta un bersaglio da 44 pt, col testo dell'accento, anche dentro ion-buttons
+ * (dove Ionic lo riporta a 32 px di altezza minima).
+ */
+describe('styles.css — il tasto a parole della testata', () => {
+  let css = '';
+  beforeAll(async () => {
+    const nome = 'node:fs';
+    const fs = await import(/* @vite-ignore */ nome);
+    css = fs.readFileSync('src/styles.css', 'utf8');
+  });
+  const regola = (sel: string) => css.match(new RegExp(sel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\{[^}]*\\}'))?.[0] ?? '';
+
+  it('alto almeno 44, col testo dell\'accento e senza maiuscole forzate', () => {
+    const r = regola('ion-button.navtesto');
+    expect(r).toContain('min-height:44px');
+    expect(r).toContain('height:44px');
+    expect(r).toContain('min-width:44px');
+    expect(r).toContain('--color:var(--accent)');
+    expect(r).toContain('text-transform:none');
+  });
+
+  it('dentro ion-buttons Ionic non gli riporta l\'altezza minima a 32', () => {
+    expect(regola('ion-buttons ion-button.navtesto:not(.button-round)')).toContain('min-height:44px');
+  });
+});

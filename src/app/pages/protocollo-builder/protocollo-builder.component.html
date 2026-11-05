@@ -21,29 +21,26 @@
     </ion-title>
     <ion-buttons slot="end">
       @if (livello === 0) {
-      <ion-button class="navicon" (click)="save(false)" [disabled]="protocolBuilderState.saving()" aria-label="Salva bozza" title="Salva bozza">
-        <app-icona name="save" [size]="22"></app-icona>
-      </ion-button>
-      <ion-button class="navicon" (click)="save(true)" [disabled]="protocolBuilderState.saving()" aria-label="Salva e attiva" title="Salva e attiva">
-        <app-icona name="checkmark" [size]="22"></app-icona>
-      </ion-button>
-      <ion-button class="navicon" [routerLink]="['/scheda/protocolli/aggiorna-pdf', protocolId]" routerDirection="forward" aria-label="Aggiorna da PDF" title="Aggiorna da PDF">
-        <app-icona name="cloud-upload" [size]="22"></app-icona>
-      </ion-button>
+      <!-- Un gesto solo, a parole: il "Salva" di una pagina iOS. Prima erano tre
+           icone senza testo (salva, salva e attiva, aggiorna da PDF) e per capire
+           quale fosse quale bisognava provarle. "Salva e attiva" sta in basso,
+           dove c'e' il comando principale, e solo se il protocollo non e' gia'
+           quello attivo; "Aggiorna da PDF" e' una riga in cima alla pagina. -->
+      <ion-button class="navtesto" (click)="save(false)" [disabled]="protocolBuilderState.saving()">Salva</ion-button>
       } @else {
       <!-- Dentro un livello il gesto e' uno solo, "fatto": salvare o attivare tutto
            il protocollo da un giorno aperto era fuori posto, e il tasto in fondo
-           alla pagina, in un giorno da sette esercizi, e' lontano. -->
-      <ion-button class="navicon" (click)="confermaLivello()" [disabled]="protocolBuilderState.saving()"
-        [attr.aria-label]="etichettaFatto" [title]="etichettaFatto">
-        <app-icona name="checkmark" [size]="22"></app-icona>
-      </ion-button>
+           alla pagina, in un giorno da sette esercizi, e' lontano. Il nome per
+           lo screen reader dice cosa chiude (il giorno, l'esercizio, il piano). -->
+      <ion-button class="navtesto" (click)="confermaLivello()" [disabled]="protocolBuilderState.saving()"
+        [attr.aria-label]="etichettaFatto" [title]="etichettaFatto">Fatto</ion-button>
       }
     </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
-<ion-content (ionInput)="aggiornaSwipe()" (ionChange)="aggiornaSwipe()" (click)="aggiornaSwipe()"
+<ion-content appBarraAzione #barra="barraAzione" [scrollEvents]="true" [class.con-barra]="conBarraAttiva"
+  (ionInput)="aggiornaSwipe()" (ionChange)="aggiornaSwipe()" (click)="aggiornaSwipe()"
   (touchstart)="alToccoInizio($event)" (touchend)="alToccoFine($event)">
   <div class="wrap">
     <div *ngIf="loading" class="history-empty"><ion-spinner name="crescent" aria-label="Caricamento"></ion-spinner></div>
@@ -64,8 +61,21 @@
              iOS: l'etichetta nella riga, il valore accanto. -->
         <div class="liste-ios">
           <ion-list [inset]="true" class="campi">
-            <ion-item lines="none">
+            <ion-item lines="inset">
               <ion-input label="Nome" [(ngModel)]="protocol.name" placeholder="Es. Protocollo Settembre"></ion-input>
+            </ion-item>
+            <!-- Il coach cambia la scheda (o la dieta) spesso: caricare il PDF nuovo e'
+                 un gesto che si fa di frequente, quindi sta in vista, a parole, e non
+                 dietro un'icona. Vale per tutto il protocollo, non per una scheda sola. -->
+            <ion-item class="riga-aggiorna-pdf" lines="none" [button]="true" [detail]="true"
+              [routerLink]="['/scheda/protocolli/aggiorna-pdf', protocolId]" routerDirection="forward">
+              <ion-avatar slot="start" class="riga-segno icona">
+                <app-icona name="cloud-upload" [size]="20"></app-icona>
+              </ion-avatar>
+              <ion-label class="ion-text-wrap">
+                <h2>Aggiorna da PDF</h2>
+                <p>Il coach ha cambiato scheda o dieta? Carica il nuovo PDF</p>
+              </ion-label>
             </ion-item>
           </ion-list>
         </div>
@@ -237,6 +247,11 @@
              in fondo la ripeteva. Toglierlo resta qui, in rosso. -->
         <div class="liste-ios">
           <ion-list [inset]="true" class="azioni-giorno">
+            <!-- Due giorni quasi uguali si scrivono una volta e si ritoccano. -->
+            <ion-item class="riga-azione" lines="inset" [button]="true" [detail]="false" (click)="duplicaGiorno()">
+              <app-icona slot="start" name="copy" [size]="22"></app-icona>
+              <ion-label>Duplica giorno</ion-label>
+            </ion-item>
             <ion-item class="riga-distruttiva" lines="none" [button]="true" [detail]="false" (click)="removeDay(ed.index)">
               <ion-label>Rimuovi giorno</ion-label>
             </ion-item>
@@ -802,3 +817,15 @@
     </ng-container>
   </div>
 </ion-content>
+
+<!-- Il comando principale, dove nelle tab sta la barra: attivare il protocollo. C'e' solo
+     sull'elenco (dentro un giorno o un esercizio il gesto e' "Fatto") e solo se il
+     protocollo non e' gia' quello attivo: su quello attivo non c'e' niente da attivare. -->
+<ion-footer *ngIf="conBarraAttiva" class="salva-footer barra-azione ion-no-border" animate.leave="barra-via"
+  [class.ridotta]="barra.ridotta()" [class.con-tastiera]="barra.tastiera()">
+  <div class="salva barra-pillola">
+    <ion-button type="button" class="setdone salva-btn" [disabled]="protocolBuilderState.saving()" (click)="save(true)">
+      Salva e attiva
+    </ion-button>
+  </div>
+</ion-footer>
