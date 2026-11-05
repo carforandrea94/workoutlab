@@ -115,11 +115,12 @@
   --tabbar-h: 52px;
   /* Quanto e' largo ogni tasto: la barra e' larga quanto le sue icone, non
      quanto lo schermo (su uno schermo stretto si ferma comunque ai 16 px di
-     margine). Quattro tab: Scheda, Dieta, Corsa, Account. */
-  --tabbtn-w: 72px;
+     margine). Cinque tab: Scheda, Dieta, Corsa, Progressi, Account: 64 px a
+     tasto danno una barra di 334 px, piu' stretta dello schermo piu' piccolo. */
+  --tabbtn-w: 64px;
   /* Come per l'altezza: --tabbar-w e' lo spazio dei tasti (la barra e'
      content-box), --tabbar-outer-w quanto e' larga davvero, bordo compreso. */
-  --tabbar-w: calc(4 * var(--tabbtn-w));
+  --tabbar-w: calc(5 * var(--tabbtn-w));
   --tabbar-outer-w: calc(var(--tabbar-w) + var(--tabbar-pad) * 2 + 2px);
   /* Scorrendo in giu' la barra si stringe di tanto (vedi riduci-barra.ts):
      abbastanza da lasciare piu' pagina, non tanto da sembrare un'altra barra.

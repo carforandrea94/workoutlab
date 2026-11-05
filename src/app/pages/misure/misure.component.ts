@@ -146,7 +146,7 @@ export class MisureComponent implements OnInit {
 
   /** Il modulo del gruppo mostrato: una misura nuova e' sempre di oggi. */
   registra(): void {
-    this.nav.navigateForward(['/account/misure', this.categoria]);
+    this.nav.navigateForward(['/progressi/misure', this.categoria]);
   }
 
   /** Le misure del gruppo mostrato. */

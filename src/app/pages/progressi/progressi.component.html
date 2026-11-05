@@ -1,0 +1,25 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-title>
+      <div class="navtitle">Progressi</div>
+    </ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<!-- scrollEvents: scorrendo, la barra delle tab si fa piccola (vedi tabs.page.ts). -->
+<ion-content [fullscreen]="true" [scrollEvents]="true" class="liste-ios">
+  <ion-header collapse="condense" class="ion-no-border">
+    <ion-toolbar>
+      <ion-title size="large">
+        <div class="navtitle">Progressi</div>
+      </ion-title>
+    </ion-toolbar>
+  </ion-header>
+  <div class="wrap">
+    <!-- La settimana scorsa, letta rispetto all'obiettivo: da lunedi' finche' non si tocca "Ho letto". -->
+    <app-bilancio-settimana></app-bilancio-settimana>
+
+    <!-- Il corpo, il lavoro e il tonnellaggio; le misure si aprono dal gruppo "Il corpo". -->
+    <app-forma-card></app-forma-card>
+  </div>
+</ion-content>

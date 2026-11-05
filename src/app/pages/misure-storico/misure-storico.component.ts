@@ -87,7 +87,7 @@ export class MisureStoricoComponent implements OnInit {
   }
 
   goToDetail(date: string): void {
-    this.nav.navigateForward(['/account/misure/storico', date]);
+    this.nav.navigateForward(['/progressi/misure/storico', date]);
   }
 
   async deleteEntry(date: string, event: MouseEvent): Promise<void> {

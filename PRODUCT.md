@@ -10,8 +10,10 @@ ios
 
 Chiunque si iscriva: l'app è aperta al pubblico, con registrazione libera (email e password, o
 Google). L'interfaccia è solo in italiano. Ogni utente costruisce e segue da sé i propri
-protocolli: non esiste il ruolo del coach (c'era nell'app originale, `imperial-gym-app`, ed è
-stato tolto).
+protocolli: non esiste il ruolo del coach dentro l'app (c'era nell'app originale,
+`imperial-gym-app`, ed è stato tolto). Ma la scheda, di solito, la dà un coach fuori dall'app:
+l'utente la carica da PDF o la scrive a mano, e quando il coach la aggiorna (spesso) la
+ricarica da PDF. Niente schede già pronte: il primo avvio è sempre «carico la mia scheda».
 
 La situazione che conta di più è la seduta in palestra: il telefono in una mano, pochi secondi
 fra una serie e l'altra, il recupero che scorre. Le altre situazioni d'uso sono la giornata
@@ -50,7 +52,7 @@ quattro app.
 
 ## Capabilities and Constraints
 
-**Sezioni** (barra delle tab: Scheda · Dieta · Corsa · Account):
+**Sezioni** (barra delle tab: Scheda · Dieta · Corsa · Progressi · Account):
 
 - **Scheda:** giorni del programma, settimana in corso, seduta con serie, carichi, recupero,
   salvataggio automatico, stima del massimale e carico a percentuale (Brzycki). Ci sono anche
@@ -64,9 +66,12 @@ quattro app.
   spesa.
 - **Corsa:** uscite (lento, medio, ripetute; facile, giusta, dura), obiettivo settimanale e
   storico.
-- **Account:** forma fisica (BMI, FFMI, massa grassa Jackson-Pollock) e misure corporee: peso,
-  7 pliche, 9 circonferenze, con storico e andamento. Ci sono poi le impostazioni (tema, dati,
-  percentuale del massimale, suono) e la chiusura dell'account.
+- **Progressi:** come sta andando, in una tab a sé: la settimana scorsa letta rispetto
+  all'obiettivo, il corpo (BMI, FFMI, massa grassa Jackson-Pollock) con le misure corporee
+  (peso, 7 pliche, 9 circonferenze, storico e andamento), il lavoro in palestra e il
+  tonnellaggio. Le misure stanno nella pila di Progressi (`/progressi/misure`).
+- **Account:** profilo, il mio obiettivo, i promemoria delle sedute, le impostazioni (tema,
+  dati, percentuale del massimale, suono) e la chiusura dell'account.
 
 **Termini dell'app:** protocollo, scheda, giorno, seduta, serie, blocchi (cluster), onda,
 recupero, massimale, piano, pasto, combinazione, alternative, lista della spesa, uscita,

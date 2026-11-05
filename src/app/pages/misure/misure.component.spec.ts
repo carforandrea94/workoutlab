@@ -329,7 +329,7 @@ describe('MisureComponent', () => {
       expect(indietro.defaultHref).toBe('/account');
       const storico = q('ion-header ion-buttons[slot=end] ion-button')!;
       expect(storico.getAttribute('title')).toBe('Storico');
-      expect(storico.getAttribute('routerLink')).toBe('/account/misure/storico');
+      expect(storico.getAttribute('routerLink')).toBe('/progressi/misure/storico');
       // L'andamento non e' piu' una pagina a parte.
       expect(q('ion-header [aria-label="Andamento"]')).toBeNull();
     });
@@ -369,7 +369,7 @@ describe('MisureComponent', () => {
       c.cambiaCategoria('pliche');
       fixture.detectChanges();
       q('ion-footer ion-button.registra-btn')!.click();
-      expect(avanti).toHaveBeenCalledWith(['/account/misure', 'pliche']);
+      expect(avanti).toHaveBeenCalledWith(['/progressi/misure', 'pliche']);
     });
 
     it('mentre carica il tasto non c\'e\'', async () => {

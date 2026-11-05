@@ -26,7 +26,8 @@
       </ion-item>
     </ion-list>
 
-    <!-- Dove si vuole arrivare: in cima, perche' il resto si legge rispetto a lui. -->
+    <!-- Dove si vuole arrivare, e come arrivarci: l'obiettivo e i promemoria. I progressi
+         (corpo, lavoro, tonnellaggio) hanno la loro tab. -->
     <ion-list [inset]="true" class="voci">
       <ion-item class="voce obiettivo-voce" [button]="true" [detail]="true" (click)="goToObiettivo()">
         <ion-avatar slot="start" class="riga-segno icona">
@@ -49,12 +50,6 @@
       </ion-item>
     </ion-list>
 
-    <!-- La settimana scorsa, letta rispetto all'obiettivo: da lunedi' finche' non si tocca "Ho letto". -->
-    <app-bilancio-settimana></app-bilancio-settimana>
-
-    <app-forma-card></app-forma-card>
-
-    <!-- Le misure si aprono dal gruppo "Il corpo", nel riassunto qui sopra. -->
     <ion-list [inset]="true" class="voci">
       <ion-item class="voce" [button]="true" [detail]="true" (click)="goToImpostazioni()">
         <ion-avatar slot="start" class="riga-segno icona">
