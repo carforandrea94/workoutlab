@@ -37,7 +37,7 @@
               <ion-item *ngFor="let m of p.pasti" class="pasto-mangiato">
                 <ion-label class="ion-text-wrap">
                   <h3>{{ m.nome }}<span class="combo" *ngIf="m.combinazione"> · {{ m.combinazione }}</span></h3>
-                  <p *ngFor="let a of m.alimenti" class="alimento">{{ testo(a) }}<span class="al-posto" *ngIf="a.alPostoDi">, al posto di {{ a.alPostoDi }}</span></p>
+                  <p *ngFor="let a of m.alimenti" class="alimento">{{ testo(a) }}</p>
                   <p *ngIf="m.integratori.length" class="integratori">Integratori: {{ m.integratori.join(' · ') }}</p>
                 </ion-label>
               </ion-item>

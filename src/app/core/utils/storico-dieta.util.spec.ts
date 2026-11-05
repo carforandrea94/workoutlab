@@ -33,22 +33,22 @@ describe('storico della dieta', () => {
       });
     });
 
-    it('con un\'altra combinazione e un alimento cambiato dice cosa diceva il piano', () => {
+    it('con un\'altra combinazione e un alimento cambiato dice solo quello che si e\' mangiato', () => {
       const p = fotografiaPasto({ meal: colazione(), completed: true, scelta: { combo: 'c2', macro: { carb: { fonte: 'pasto', nome: 'Pane' } } } });
       expect(p.combinazione).toBe('Dolce');
       expect(p.alimenti).toEqual([
-        { macro: 'carb', nome: 'Pane', qty: '60 g', alPostoDi: 'Pancake' },
+        { macro: 'carb', nome: 'Pane', qty: '60 g' },
         { macro: 'protein', nome: 'Whey', qty: '30 g' }
       ]);
     });
 
     it('un\'alternativa dell\'alimento vale come cambio', () => {
       const p = fotografiaPasto({ meal: colazione(), completed: false, scelta: { macro: { carb: { fonte: 'alimento', nome: 'Riso soffiato' } } } });
-      expect(p.alimenti[0]).toEqual({ macro: 'carb', nome: 'Riso soffiato', qty: '70 g', alPostoDi: 'Avena' });
+      expect(p.alimenti[0]).toEqual({ macro: 'carb', nome: 'Riso soffiato', qty: '70 g' });
       expect(p.fatto).toBe(false);
     });
 
-    it('un macro che la combinazione non ha, aggiunto dalle alternative, non e\' "al posto di" niente', () => {
+    it('un macro che la combinazione non ha, aggiunto dalle alternative, c\'e\' come gli altri', () => {
       const p = fotografiaPasto({ meal: colazione(), completed: true, scelta: { macro: { fat: { fonte: 'pasto', nome: 'Mandorle' } } } });
       expect(p.alimenti.at(-1)).toEqual({ macro: 'fat', nome: 'Mandorle', qty: '15 g' });
     });

@@ -21,8 +21,6 @@ export interface AlimentoMangiato {
   macro: FoodCategory;
   nome: string;
   qty: string;
-  /** Il piano diceva un altro alimento: quale. Assente se e' quello del piano. */
-  alPostoDi?: string;
 }
 
 export interface PastoDelGiorno {
@@ -62,7 +60,7 @@ function conQuantita(nome: string, qty: string): string {
   return qty ? `${nome} ${qty}` : nome;
 }
 
-/** Cosa si mangia in un pasto, con la scelta del giorno: combinazione, alimenti cambiati, integratori. */
+/** Cosa si mangia in un pasto, con la scelta del giorno: combinazione, alimenti scelti, integratori. */
 export function fotografiaPasto(p: PastoSegnato): PastoDelGiorno {
   const combo = comboDi(p.meal, p.scelta);
   const alimenti: AlimentoMangiato[] = [];
@@ -70,9 +68,7 @@ export function fotografiaPasto(p: PastoSegnato): PastoDelGiorno {
     const o = opzioniMacro(p.meal, combo, macro);
     const a = alimentoScelto(o, p.scelta?.macro?.[macro]);
     if (!a || !testo(a.name)) continue;
-    const alimento: AlimentoMangiato = { macro, nome: testo(a.name), qty: testo(a.qty) };
-    if (a.cambiato && o.base && testo(o.base.name)) alimento.alPostoDi = testo(o.base.name);
-    alimenti.push(alimento);
+    alimenti.push({ macro, nome: testo(a.name), qty: testo(a.qty) });
   }
   const pasto: PastoDelGiorno = {
     id: p.meal.id,
@@ -116,9 +112,7 @@ export function normalizzaGiorno(id: string, data: unknown): GiornoDieta | null 
           const a = (ag ?? {}) as Record<string, unknown>;
           const macro = a['macro'] as FoodCategory;
           if (!FOOD_CATEGORIES.includes(macro) || !testo(a['nome'])) continue;
-          const alimento: AlimentoMangiato = { macro, nome: testo(a['nome']), qty: testo(a['qty']) };
-          if (testo(a['alPostoDi'])) alimento.alPostoDi = testo(a['alPostoDi']);
-          alimenti.push(alimento);
+          alimenti.push({ macro, nome: testo(a['nome']), qty: testo(a['qty']) });
         }
         const pasto: PastoDelGiorno = {
           id: testo(x['id']) || nome,

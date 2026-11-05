@@ -18,7 +18,7 @@ describe('DietaStoricoComponent', () => {
     ({ id: nome, nome, fatto, alimenti: [], integratori: [], ...extra });
   const colazione = pasto('Colazione', true, {
     combinazione: 'Dolce',
-    alimenti: [{ macro: 'carb', nome: 'Pane', qty: '60 g', alPostoDi: 'Pancake' }, { macro: 'protein', nome: 'Whey', qty: '30 g' }],
+    alimenti: [{ macro: 'carb', nome: 'Pane', qty: '60 g' }, { macro: 'protein', nome: 'Whey', qty: '30 g' }],
     integratori: ['Creatina 5 g', 'Omega 3']
   });
   const giorni: GiornoDieta[] = [
@@ -88,7 +88,7 @@ describe('DietaStoricoComponent', () => {
     const pasti = Array.from(gruppi()[0].querySelectorAll('ion-item.pasto-mangiato'));
     expect(pasti.length).toBe(1);
     expect(pulito(pasti[0].querySelector('h3'))).toBe('Colazione · Dolce');
-    expect(Array.from(pasti[0].querySelectorAll('p.alimento')).map(p => pulito(p))).toEqual(['Pane 60 g, al posto di Pancake', 'Whey 30 g']);
+    expect(Array.from(pasti[0].querySelectorAll('p.alimento')).map(p => pulito(p))).toEqual(['Pane 60 g', 'Whey 30 g']);
     expect(pulito(pasti[0].querySelector('p.integratori'))).toBe('Integratori: Creatina 5 g · Omega 3');
     // Una sola combinazione o nessun integratore: niente da dire.
     const sabato = gruppi()[1].querySelector('ion-accordion.giorno-dieta')!;
