@@ -36,6 +36,8 @@ export interface MeasureField {
   key: MeasurementKey;
   label: string;
   unit: string;
+  /** Dove e come si prende la misura, in una riga: chi non l'ha mai fatta non lo sa. */
+  help?: string;
 }
 
 export type MeasureCategory = 'peso' | 'centimetri' | 'pliche';
@@ -46,13 +48,14 @@ export const PESO_FIELDS: MeasureField[] = [
 
 /** Nell'ordine del foglio, cosi' si trascrive dall'alto senza cercare. */
 export const PLICHE_FIELDS: MeasureField[] = [
-  { key: 'plicaAddominale', label: 'Plica addominale', unit: 'mm' },
-  { key: 'plicaIliaca', label: 'Plica iliaca', unit: 'mm' },
-  { key: 'plicaPettorale', label: 'Plica pettorale', unit: 'mm' },
-  { key: 'plicaTricipite', label: 'Plica tricipite', unit: 'mm' },
-  { key: 'plicaSottoscapolare', label: 'Plica sottoscapolare', unit: 'mm' },
+  { key: 'plicaAddominale', label: 'Plica addominale', unit: 'mm', help: 'Piega verticale, 2 cm di lato all\'ombelico.' },
+  { key: 'plicaIliaca', label: 'Plica iliaca', unit: 'mm', help: 'Piega obliqua appena sopra l\'osso del fianco, sulla linea che scende dall\'ascella.' },
+  { key: 'plicaPettorale', label: 'Plica pettorale', unit: 'mm', help: 'Piega obliqua a metà fra ascella e capezzolo.' },
+  { key: 'plicaTricipite', label: 'Plica tricipite', unit: 'mm', help: 'Piega verticale dietro il braccio, a metà fra spalla e gomito.' },
+  { key: 'plicaSottoscapolare', label: 'Plica sottoscapolare', unit: 'mm', help: 'Piega obliqua 1-2 cm sotto la punta della scapola.' },
+  // Lombare: non ha un punto standard, lo indica il coach (niente aiuto inventato).
   { key: 'plicaLombare', label: 'Plica lombare', unit: 'mm' },
-  { key: 'plicaQuadricipite', label: 'Plica quadricipite', unit: 'mm' }
+  { key: 'plicaQuadricipite', label: 'Plica quadricipite', unit: 'mm', help: 'Piega verticale davanti alla coscia, a metà fra inguine e rotula.' }
 ];
 
 export const CENTIMETRI_FIELDS: MeasureField[] = [

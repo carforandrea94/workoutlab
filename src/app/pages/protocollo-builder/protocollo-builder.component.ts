@@ -120,6 +120,9 @@ export class ProtocolloBuilderComponent implements OnInit, OnDestroy, DoCheck {
   /** Cosa dire a chi non vede lo schermo dopo uno spostamento: "Panca piana: posizione 2 di 8". */
   annuncioRiordino = '';
 
+  /** I recuperi fra le serie che si scrivono piu' spesso: il campo resta un testo libero. */
+  readonly recuperiRapidi: readonly string[] = ['60"', '90"', '120"', '60-90"', '90-120"'];
+
   readonly muscles: readonly string[] = GRUPPI_MUSCOLARI;
   readonly serieMax = SERIE_MAX;
 

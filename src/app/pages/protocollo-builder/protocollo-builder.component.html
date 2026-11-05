@@ -181,7 +181,14 @@
               <ion-input id="day-rec" label="Recupero" [(ngModel)]="ed.day.rec" placeholder='Es. 60-90"'></ion-input>
             </ion-item>
           </ion-list>
-          <p class="nota-sotto">Il recupero è un testo: si mostra così com'è scritto.</p>
+          <!-- I recuperi di solito: un tocco invece di scriverli. Resta un testo libero, per il
+               coach che scrive "60-90 + 30 fra i blocchi": si mostra com'e' scritto. -->
+          <div class="scelte-rapide" role="group" aria-label="Recuperi usati di solito">
+            <ion-button *ngFor="let r of recuperiRapidi" class="scelta-rapida tap44 tap44-v" size="small"
+              [fill]="ed.day.rec === r ? 'solid' : 'outline'" [attr.aria-pressed]="ed.day.rec === r"
+              (click)="ed.day.rec = r">{{ r }}</ion-button>
+          </div>
+          <p class="nota-sotto">Scegline uno o scrivilo come vuoi: si mostra così com'è scritto.</p>
         </div>
 
         <div class="sec-head mt-4">
@@ -612,12 +619,20 @@
                 <ion-label>Rimuovi questa combinazione</ion-label>
               </ion-item>
             </ion-list>
+            <!-- "Combinazione" e "alternativa" sono parole del builder, non di chi segue
+                 la dieta: si dicono qui, con un esempio, dove servono. -->
+            <p class="nota-sotto nota-combinazione">
+              Una combinazione è un modo di comporre questo pasto, ad esempio pane e uova oppure fette biscottate e yogurt: chi lo segue ne sceglie una.
+            </p>
 
             <!-- Un gruppo solo per tutti i posti dove un alimento puo' stare: le tre
                  caselle della combinazione, le alternative del pasto, quelle del
                  singolo alimento. Sono lo stesso alimento in tre posti diversi, e
                  spostarlo fra loro e' il mestiere di questa schermata. Gli
                  integratori restano fuori: non sono alimenti. -->
+            <p class="nota-sotto nota-alternative">
+              In ogni gruppo scrivi l'alimento della combinazione scelta. Le «Alternative» sotto un alimento sono altri alimenti che si possono usare al posto suo.
+            </p>
             <ng-container cdkDropListGroup>
               <ng-container *ngFor="let cat of foodCategories">
                 <ion-list-header class="sezione"><ion-label>{{ foodCategoryLabels[cat] }}</ion-label></ion-list-header>

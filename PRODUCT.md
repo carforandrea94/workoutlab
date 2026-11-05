@@ -48,7 +48,7 @@ quattro app.
   Impostazioni) e nell'app nativa una vibrazione.
 - Il protocollo spesso non nasce nell'app: lo si importa dai PDF (due modelli di scheda, dieta,
   integrazione) o lo si scrive nel builder.
-- Tema scuro e chiaro, a scelta dell'utente.
+- Tema scuro, chiaro o automatico (quello del telefono, anche quando cambia), a scelta dell'utente.
 
 ## Capabilities and Constraints
 

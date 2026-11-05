@@ -24,11 +24,10 @@
           <span slot="end" class="unita">min</span>
         </ion-input>
       </ion-item>
-      <ion-item>
-        <ion-label>Durata</ion-label>
-        <ion-note slot="end" class="valore" [class.vuoto]="liveMinutes === '—'">{{ liveMinutes }}</ion-note>
-      </ion-item>
     </ion-list>
+    <!-- Una riga "Durata" ripeteva i minuti appena scritti. Qui si dice solo quando
+         la lettura e' diversa da quello che si e' scritto: "1:20" o "75" si leggono "1h 20" e "1h 15". -->
+    <p class="nota-sotto" *ngIf="letturaMinuti as l">Si legge {{ l }}.</p>
 
     <ion-list-header class="sezione"><ion-label>Tipo di uscita</ion-label></ion-list-header>
     <ion-segment class="seg labelseg fullseg modulo-seg" [value]="type" aria-label="Tipo di uscita">

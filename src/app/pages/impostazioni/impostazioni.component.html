@@ -13,12 +13,13 @@
   <div class="wrap">
     <p class="sectiontitle mt-0">Aspetto</p>
     <div class="infocard">
-      <div class="account-row">
+      <div class="account-row con-scelta">
         <span class="account-row-label">Tema</span>
-        <ion-segment class="seg labelseg" [value]="theme.mode()">
-        <ion-segment-button value="dark" (click)="theme.setMode('dark')">Notte</ion-segment-button>
-        <ion-segment-button value="light" (click)="theme.setMode('light')">Giorno</ion-segment-button>
-      </ion-segment>
+        <ion-segment class="seg labelseg" [value]="theme.preference()" aria-label="Tema">
+          <ion-segment-button value="auto" (click)="theme.setMode('auto')">Automatico</ion-segment-button>
+          <ion-segment-button value="dark" (click)="theme.setMode('dark')">Notte</ion-segment-button>
+          <ion-segment-button value="light" (click)="theme.setMode('light')">Giorno</ion-segment-button>
+        </ion-segment>
       </div>
     </div>
 

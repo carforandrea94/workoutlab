@@ -52,18 +52,35 @@ describe('CorsaNuovaComponent — disegno vero', () => {
     expect(testo(minuti.querySelector('.unita'))).toBe('min');
   });
 
-  it('la durata e\' una riga che si legge: spenta finche\' non ci sono minuti, poi in ore e minuti', async () => {
+  it('non c\'e\' una riga "Durata" che ripete i minuti: si dice solo quando la lettura e\' diversa', async () => {
     const { root, fixture, c } = await monta();
-    const durata = () => root.querySelector('ion-list.campi ion-note.valore')!;
-    expect(durata().classList.contains('vuoto')).toBe(true);
-    // Si scrive come l'utente, con l'evento del campo: cambiare il modello a mano dopo il disegno da' NG0100.
-    const minuti = root.querySelector('ion-input.a-destra') as any;
-    minuti.value = '65';
-    minuti.dispatchEvent(new CustomEvent('ionInput', { bubbles: true, detail: { value: '65' } }));
-    fixture.detectChanges();
-    expect(c.minutes).toBe('65');
-    expect(durata().classList.contains('vuoto')).toBe(false);
-    expect(durata().textContent!.trim()).toBe(c.liveMinutes);
+    const nota = () => root.querySelector('p.nota-sotto');
+    const scrivi = (v: string) => {
+      // Si scrive come l'utente, con l'evento del campo: cambiare il modello a mano dopo il disegno da' NG0100.
+      const minuti = root.querySelector('ion-input.a-destra') as any;
+      minuti.value = v;
+      minuti.dispatchEvent(new CustomEvent('ionInput', { bubbles: true, detail: { value: v } }));
+      fixture.detectChanges();
+    };
+    expect(root.textContent).not.toContain('Durata');
+    expect(root.querySelector('ion-list.campi ion-note.valore')).toBeNull();
+    expect(nota()).toBeNull();
+
+    scrivi('40');
+    expect(c.minutes).toBe('40');
+    expect(nota()).toBeNull();
+
+    scrivi('65');
+    expect(nota()!.textContent!.trim()).toBe('Si legge 1h 05.');
+    scrivi('1:20');
+    expect(nota()!.textContent!.trim()).toBe('Si legge 1h 20.');
+    scrivi('0:45');
+    expect(nota()!.textContent!.trim()).toBe('Si legge 45 min.');
+    scrivi('abc');
+    expect(nota()).toBeNull();
+    // Zero minuti non e' una durata: non si legge "0 min".
+    scrivi('0:00');
+    expect(nota()).toBeNull();
   });
 
   it('i segmenti hanno la loro intestazione, e lo stesso nome per chi non vede', async () => {

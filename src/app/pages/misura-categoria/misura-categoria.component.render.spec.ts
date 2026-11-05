@@ -257,4 +257,41 @@ describe('MisuraCategoriaComponent — la pagina vera', () => {
       expect(toast.error).toHaveBeenCalled();
     });
   });
+
+  /**
+   * Le pliche non si prendono a occhio: chi non le ha mai misurate non sa dove pizzicare.
+   * Ogni riga dice dove, e in cima c'e' come.
+   */
+  describe('le pliche, spiegate', () => {
+    const testo = (e: Element | null) => (e?.textContent ?? '').replace(/\s+/g, ' ').trim();
+
+    it('in cima dice come si pizzica e si legge, e ogni plica dice dove', async () => {
+      const { root } = await monta({ categoria: 'pliche' });
+      expect(testo(root.querySelector('.plicometro-guida'))).toBe(
+        'Pizzica la pelle col pollice e l\'indice, sempre dallo stesso lato, e leggi il plicometro dopo due secondi.');
+      const righe = Array.from(root.querySelectorAll<HTMLElement>('ion-list.misure-campi ion-item'));
+      expect(righe.length).toBe(7);
+      const aiuto = (nome: string) => testo(righe.find(r => testo(r.querySelector('h2')) === nome)!.querySelector('.measure-help'));
+      expect(aiuto('Plica addominale')).toBe('Piega verticale, 2 cm di lato all\'ombelico.');
+      expect(aiuto('Plica pettorale')).toBe('Piega obliqua a metà fra ascella e capezzolo.');
+      expect(aiuto('Plica tricipite')).toBe('Piega verticale dietro il braccio, a metà fra spalla e gomito.');
+      expect(aiuto('Plica quadricipite')).toBe('Piega verticale davanti alla coscia, a metà fra inguine e rotula.');
+    });
+
+    it('la plica lombare non ha un punto standard: lo dice il coach, e l\'app non se ne inventa uno', async () => {
+      const { root } = await monta({ categoria: 'pliche' });
+      const lombare = Array.from(root.querySelectorAll<HTMLElement>('ion-list.misure-campi ion-item'))
+        .find(r => testo(r.querySelector('h2')) === 'Plica lombare')!;
+      expect(lombare.querySelector('.measure-help')).toBeNull();
+    });
+
+    it('peso e centimetri non hanno la guida: non ne hanno bisogno', async () => {
+      for (const categoria of ['peso', 'centimetri']) {
+        const { root } = await monta({ categoria });
+        expect(root.querySelector('.plicometro-guida'), categoria).toBeNull();
+        expect(root.querySelector('.measure-help'), categoria).toBeNull();
+        TestBed.resetTestingModule();
+      }
+    });
+  });
 });

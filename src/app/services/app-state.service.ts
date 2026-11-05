@@ -34,6 +34,8 @@ export interface ActiveWorkoutSession {
 }
 
 export type ThemeMode = 'dark' | 'light';
+/** Cosa sceglie l'utente: un tema fisso, o "automatico" (quello del telefono, anche quando cambia). */
+export type ThemePreference = ThemeMode | 'auto';
 
 export interface AppState {
   /** Una bozza per esercizio, nell'ordine in cui il giorno li aveva. `name` e' l'esercizio a cui appartiene: il builder puo' riordinarli. Manca nelle bozze di prima. */
@@ -46,7 +48,7 @@ export interface AppState {
   dietViewMode: 'list' | 'slider';
   /** I pasti di oggi: quali sono fatti e, per quelli in cui si e' scelto, cosa (vedi scelta-pasto.util). */
   mealsCompletion: { date: string; done: Record<string, boolean>; choices?: Record<string, SceltaPasto> } | null;
-  themeMode: ThemeMode | null;
+  themeMode: ThemePreference | null;
   activeWorkoutSession: ActiveWorkoutSession | null;
   /**
    * La percentuale del massimale su cui si vuole lavorare, valida per tutto il

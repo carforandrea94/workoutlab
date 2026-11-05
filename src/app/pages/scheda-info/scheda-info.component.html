@@ -33,7 +33,7 @@
       </ng-container>
 
       <ng-container *ngIf="weekPlan.length > 0">
-        <ion-list-header class="sezione"><ion-label>Onda di carico</ion-label></ion-list-header>
+        <ion-list-header class="sezione"><ion-label>Progressione settimanale</ion-label></ion-list-header>
         <ion-list [inset]="true" class="info-onda">
           <ion-item *ngFor="let wp of weekPlan; let i = index" [attr.aria-current]="i + 1 === currentWeek ? 'step' : null">
             <ion-label><h2>Settimana {{ i + 1 }} <ion-badge class="stato" *ngIf="i + 1 === currentWeek">Adesso</ion-badge></h2></ion-label>
