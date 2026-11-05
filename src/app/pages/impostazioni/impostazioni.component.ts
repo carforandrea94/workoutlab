@@ -3,6 +3,7 @@ import {
   signal
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/services/auth.service';
 import { Sex } from '../../core/models/user.model';
@@ -151,8 +152,17 @@ export class ImpostazioniComponent implements OnInit {
     private cdr: ChangeDetectorRef,
     private sessionState: WorkoutSessionStateService,
     private appState: AppStateService,
-    public segnale: SegnaleService
+    public segnale: SegnaleService,
+    private router: Router
   ) {}
+
+  /**
+   * Dove porta la freccia se non c'e' una pagina prima (indirizzo aperto a mano): la pagina
+   * e' la stessa in due pile, Account e Progressi, e si torna a quella da cui si e' entrati.
+   */
+  get tornaA(): string {
+    return this.router.url.startsWith('/progressi') ? '/progressi' : '/account';
+  }
 
   ngOnInit(): void {
     this.caricaPercentuale();

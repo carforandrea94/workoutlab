@@ -254,9 +254,21 @@ describe('styles.css — la barra si scorre col dito', () => {
     const alzata = regola('.tabbar.trascina .pill');
     const posata = regola('.tabbar .pill');
     expect(Number(alzata.match(/scale:([0-9.]+)/)?.[1])).toBeGreaterThan(1);
-    const durata = (r: string) => Number(r.match(/transition:transform ([0-9.]+)s/)?.[1]);
+    const durata = (r: string) => Number(r.match(/transition:translate ([0-9.]+)s/)?.[1]);
     expect(durata(alzata)).toBeLessThan(durata(posata));
     expect(durata(alzata)).toBeLessThanOrEqual(0.15);
+  });
+
+  it('la pastiglia si sposta con translate, non con transform: scale si compone dopo transform e ne moltiplicherebbe lo spostamento', () => {
+    // Con transform, a destra la lente ingrandita (x1,12) finiva a 12% del percorso dal dito
+    // (circa 30 px su cinque tab) e sporgeva dalla barra. translate si applica dopo scale.
+    for (const sel of ['.tabbar .pill.p1', '.tabbar-3 .pill.p2', '.tabbar-4 .pill.p3', '.tabbar-5 .pill.p4']) {
+      expect(regola(sel), sel).toMatch(/translate:\d+% 0/);
+      expect(regola(sel), sel).not.toContain('transform');
+    }
+    expect(regola('.tabbar .pill')).toContain('transition:translate ');
+    expect(regola('.tabbar.trascina .pill')).toContain('transition:translate ');
+    expect(css).not.toMatch(/\.tabbar[^{]*\.pill[^{]*\{[^}]*transform:translateX/);
   });
 
   it('durante il gesto il colore sta solo sotto la lente, non anche sulla tab da cui si e\' partiti', () => {

@@ -25,6 +25,7 @@ describe('eRadiceDiTab', () => {
     expect(eRadiceDiTab('/progressi/misure')).toBe(false);
     expect(eRadiceDiTab('/progressi/misure/peso')).toBe(false);
     expect(eRadiceDiTab('/account/impostazioni')).toBe(false);
+    expect(eRadiceDiTab('/progressi/impostazioni')).toBe(false);
   });
 
   it('Misure non e\' una tab: e\' una pagina dentro Progressi, anche dai vecchi indirizzi', () => {

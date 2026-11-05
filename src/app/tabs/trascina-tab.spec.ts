@@ -104,20 +104,20 @@ describe('TrascinaTab', () => {
     dito('pointermove', 50 + SOGLIA_PX);
     expect(lenti).toEqual([0]);
     // Col dito a 58 il centro della pastiglia andrebbe a 58: 3 px dopo il posto della prima.
-    expect(pastiglia.style.transform).toBe('translateX(3px)');
+    expect(pastiglia.style.translate).toBe('3px');
 
     dito('pointermove', 200);
     dito('pointermove', 210);
     // La tab sotto il dito si dice solo quando cambia.
     expect(lenti).toEqual([0, 2]);
-    expect(pastiglia.style.transform).toBe('translateX(155px)');
+    expect(pastiglia.style.translate).toBe('155px');
 
     dito('pointermove', 330);
     dito('pointerup', 330);
     expect(scelte).toEqual([[4, true]]);
     // La scelta arriva prima della lente che si posa, e la pastiglia torna alla sua classe.
     expect(lenti).toEqual([0, 2, 4, null]);
-    expect(pastiglia.style.transform).toBe('');
+    expect(pastiglia.style.translate).toBe('');
   });
 
   it('dopo un trascinamento il clic che segue non apre la tab e non segue il link', () => {
@@ -180,7 +180,7 @@ describe('TrascinaTab', () => {
     dito('pointerup', 200);
     expect(scelte).toEqual([]);
     expect(lenti).toEqual([2, null]);
-    expect(pastiglia.style.transform).toBe('');
+    expect(pastiglia.style.translate).toBe('');
   });
 
   it('perso il dito dalla barra il gesto finisce; perso da un tasto (che lo passa alla barra) no', () => {

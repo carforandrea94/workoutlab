@@ -443,20 +443,20 @@ ion-content::part(scroll){scroll-padding-bottom:calc(var(--coperto-base) + var(-
    anche a loro. */
 .tabbar .tabbtn .tablabel{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;}
 .tabbar .tabbtn.active{color:var(--accent);}
-.tabbar .pill{position:absolute;top:var(--tabbar-pad);left:var(--tabbar-pad);height:calc(100% - var(--tabbar-pad) * 2);width:calc(50% - var(--tabbar-pad));background:var(--bg-card-2);border:1px solid var(--border-line);border-radius:var(--r-pill);z-index:0;transition:transform .4s var(--spring),scale .4s var(--spring),box-shadow .25s ease;}
-.tabbar .pill.p1{transform:translateX(100%);}
+.tabbar .pill{position:absolute;top:var(--tabbar-pad);left:var(--tabbar-pad);height:calc(100% - var(--tabbar-pad) * 2);width:calc(50% - var(--tabbar-pad));background:var(--bg-card-2);border:1px solid var(--border-line);border-radius:var(--r-pill);z-index:0;transition:translate .4s var(--spring),scale .4s var(--spring),box-shadow .25s ease;}
+.tabbar .pill.p1{translate:100% 0;}
 .tabbar-3 .pill{width:calc((100% - var(--tabbar-pad) * 2) / 3);}
-.tabbar-3 .pill.p1{transform:translateX(100%);}
-.tabbar-3 .pill.p2{transform:translateX(200%);}
+.tabbar-3 .pill.p1{translate:100% 0;}
+.tabbar-3 .pill.p2{translate:200% 0;}
 .tabbar-4 .pill{width:calc((100% - var(--tabbar-pad) * 2) / 4);}
-.tabbar-4 .pill.p1{transform:translateX(100%);}
-.tabbar-4 .pill.p2{transform:translateX(200%);}
-.tabbar-4 .pill.p3{transform:translateX(300%);}
+.tabbar-4 .pill.p1{translate:100% 0;}
+.tabbar-4 .pill.p2{translate:200% 0;}
+.tabbar-4 .pill.p3{translate:300% 0;}
 .tabbar-5 .pill{width:calc((100% - var(--tabbar-pad) * 2) / 5);}
-.tabbar-5 .pill.p1{transform:translateX(100%);}
-.tabbar-5 .pill.p2{transform:translateX(200%);}
-.tabbar-5 .pill.p3{transform:translateX(300%);}
-.tabbar-5 .pill.p4{transform:translateX(400%);}
+.tabbar-5 .pill.p1{translate:100% 0;}
+.tabbar-5 .pill.p2{translate:200% 0;}
+.tabbar-5 .pill.p3{translate:300% 0;}
+.tabbar-5 .pill.p4{translate:400% 0;}
 .tabbar .tabbtn span{position:relative;z-index:1;}
 /* Scorrere col dito sulla barra (trascina-tab.ts), come su iOS 26: col dito
    giu' la pastiglia si alza come una lente (piu' grande, con l'ombra di cio'
@@ -465,7 +465,7 @@ ion-content::part(scroll){scroll-padding-bottom:calc(var(--coperto-base) + var(-
    molla di sempre. touch-action tiene il gesto alla barra (sotto non c'e'
    niente da scorrere) e niente menu del link alla pressione lunga su iOS. */
 ion-tab-bar.tabbar{touch-action:none;-webkit-touch-callout:none;}
-.tabbar.trascina .pill{scale:1.12;box-shadow:inset 0 1px 0 var(--glass-hi),var(--shadow-float);transition:transform .12s cubic-bezier(0.25,0.8,0.25,1),scale .3s var(--spring),box-shadow .25s ease;}
+.tabbar.trascina .pill{scale:1.12;box-shadow:inset 0 1px 0 var(--glass-hi),var(--shadow-float);transition:translate .12s cubic-bezier(0.25,0.8,0.25,1),scale .3s var(--spring),box-shadow .25s ease;}
 .tabbar .tabbtn .ic{transition:scale .25s var(--spring);}
 .tabbar .tabbtn.sotto-lente .ic{scale:1.12;}
 /* Il colore sta solo sotto la lente: la tab da cui si e' partiti resta aperta

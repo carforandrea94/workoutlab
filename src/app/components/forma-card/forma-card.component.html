@@ -28,7 +28,7 @@
     <ion-note slot="end" class="valore" [class.vuoto]="bmi === null">{{ bmi !== null ? bmiLabel : '—' }}</ion-note>
   </ion-item>
   <ng-template #bmiSenzaAltezza>
-    <ion-item [button]="true" [detail]="true" routerLink="/account/impostazioni" routerDirection="forward">
+    <ion-item [button]="true" [detail]="true" routerLink="/progressi/impostazioni" routerDirection="forward">
       <ion-label><h2>BMI</h2></ion-label>
       <ion-note slot="end" class="azione">Metti l'altezza</ion-note>
     </ion-item>
@@ -42,7 +42,7 @@
     <ion-note slot="end" class="valore">{{ bodyFatLabel }}<small>%</small></ion-note>
   </ion-item>
   <ion-item *ngIf="bodyFat.pct === null" [button]="true" [detail]="true" routerDirection="forward"
-    [routerLink]="bodyFatNeedsProfile ? '/account/impostazioni' : '/progressi/misure/pliche'">
+    [routerLink]="bodyFatNeedsProfile ? '/progressi/impostazioni' : '/progressi/misure/pliche'">
     <ion-label>
       <h2>Massa grassa</h2>
       <p>{{ bodyFatMissing }}</p>
