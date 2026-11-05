@@ -10,13 +10,17 @@ import { Subscription } from 'rxjs';
 import { ProtocolService } from '../../services/protocol.service';
 import { WorkoutDataService } from '../../services/workout-data.service';
 import { Protocol } from '../../models/protocol.model';
-import { Day, Exercise, ClusterSpec } from '../../models/workout.model';
+import { Day, Exercise, ClusterSpec, WeekPlan } from '../../models/workout.model';
 import {
   newCluster, clusterLabel, clusterScheme, formatClusterRest,
   CLUSTER_MIN_REST
 } from '../../core/utils/cluster.util';
 import { MAX_BLOCKS_PER_SET } from '../../core/utils/extra-sets.util';
 import { GRUPPI_MUSCOLARI, muscoloDaNome } from '../../core/utils/muscolo.util';
+import {
+  SETTIMANE_MAX, SETTIMANE_MIN, riepilogoProgressione, ripulisciProgressione, senzaCopieDelProgramma,
+  settimanaInPiu, stessaProgressione
+} from '../../core/utils/settimane-programma.util';
 import {
   RIPETIZIONI_PREDEFINITE, SERIE_MAX, impostaRipetizioniUguali, impostaSerie, nuovoEsercizio, passoRipetizioni, ripetizioniComuni,
   ripetizioniUguali, riepilogoSerie, settimaneDaProgramma
@@ -372,6 +376,9 @@ export class ProtocolloBuilderComponent implements OnInit, OnDestroy, DoCheck {
       // chilometri hanno un campo che non esiste piu'. Un obiettivo a zero vale
       // come "non impostato" e il cliente non vede barre.
       this.protocol.running = normalizeRunGoal(this.protocol.running);
+      // Un esercizio a onda con la stessa progressione del programma ne aveva una copia:
+      // da qui in poi la segue, e cambiando il programma cambia anche lui.
+      senzaCopieDelProgramma(this.protocol.workout.days, this.protocol.workout.weekPlan);
     } catch (e: any) {
       console.error('Errore caricamento protocollo:', e);
       this.errorMsg = e?.message === 'TIMEOUT'
@@ -573,10 +580,8 @@ export class ProtocolloBuilderComponent implements OnInit, OnDestroy, DoCheck {
       // Serie e ripetizioni tornano come erano: restano scritte anche mentre l'esercizio e' a onda.
       if (!ex.reps || ex.reps.length !== ex.sets) impostaSerie(ex, ex.sets);
     }
-    if (ex.scheme === 'wave') {
-      delete ex.cluster;
-      if (!ex.weekPlan || ex.weekPlan.length === 0) ex.weekPlan = settimaneDaProgramma(this.protocol?.workout.weekPlan);
-    }
+    // A onda un esercizio segue la progressione del programma; ne ha una sua solo se la si personalizza.
+    if (ex.scheme === 'wave') delete ex.cluster;
     this.cdr.detectChanges();
   }
 
@@ -745,21 +750,82 @@ export class ProtocolloBuilderComponent implements OnInit, OnDestroy, DoCheck {
     ex.reps = Array.from({ length: Math.max(1, ex.sets || 1) }, () => label);
   }
 
-  addExWeek(ex: Exercise): void {
-    if (!ex.weekPlan) ex.weekPlan = [];
-    ex.weekPlan.push({ sets: 4, reps: 10 });
+  // --- La progressione: del programma, e dell'esercizio che la personalizza ---------
+
+  /** La progressione del programma si apre e si chiude dalla riga "Progressione settimanale". */
+  progressioneAperta = false;
+
+  toggleProgressione(): void {
+    this.progressioneAperta = !this.progressioneAperta;
+  }
+
+  /** "8 settimane · 4×10 → 3×8": la progressione del programma in una riga. */
+  get riepilogoProgramma(): string {
+    return riepilogoProgressione(this.protocol?.workout.weekPlan);
+  }
+
+  get settimaneProgramma(): WeekPlan[] {
+    return this.protocol?.workout.weekPlan ?? [];
+  }
+
+  readonly settimaneMin = SETTIMANE_MIN;
+  readonly settimaneMax = SETTIMANE_MAX;
+
+  addSettimanaProgramma(): void {
+    const p = this.protocol;
+    if (!p || p.workout.weekPlan.length >= SETTIMANE_MAX) return;
+    p.workout.weekPlan = [...p.workout.weekPlan, settimanaInPiu(p.workout.weekPlan)];
     this.cdr.detectChanges();
   }
 
+  /** Il programma ha almeno una settimana: senza, "Settimana 1 di 0". */
+  removeSettimanaProgramma(i: number): void {
+    const p = this.protocol;
+    if (!p || p.workout.weekPlan.length <= SETTIMANE_MIN) return;
+    p.workout.weekPlan = p.workout.weekPlan.filter((_, j) => j !== i);
+    this.cdr.detectChanges();
+  }
+
+  /** L'esercizio a onda segue il programma finche' non ha una progressione sua. */
+  segueProgramma(ex: Exercise): boolean {
+    return !ex.weekPlan?.length;
+  }
+
+  /** Parte dalla progressione del programma: da li' si cambia solo quello che serve a questo esercizio. */
+  personalizzaProgressione(ex: Exercise): void {
+    ex.weekPlan = settimaneDaProgramma(this.protocol?.workout.weekPlan);
+    this.cdr.detectChanges();
+  }
+
+  /** Tornare al programma butta quella dell'esercizio: se e' diversa si chiede prima. */
+  async tornaAlProgramma(ex: Exercise): Promise<void> {
+    if (!ex.weekPlan?.length) return;
+    if (!stessaProgressione(ex.weekPlan, this.protocol?.workout.weekPlan)) {
+      const ok = await this.confirm.confirm('Usare la progressione del programma? Quella di questo esercizio si perde.', {
+        confirmLabel: 'Usa quella del programma', dangerous: true
+      });
+      if (!ok) return;
+    }
+    delete ex.weekPlan;
+    this.cdr.detectChanges();
+  }
+
+  addExWeek(ex: Exercise): void {
+    ex.weekPlan = [...(ex.weekPlan ?? []), settimanaInPiu(ex.weekPlan)];
+    this.cdr.detectChanges();
+  }
+
+  /** Senza piu' settimane l'esercizio torna a seguire il programma, invece di restare con una progressione vuota. */
   removeExWeek(ex: Exercise, i: number): void {
     ex.weekPlan?.splice(i, 1);
+    if (ex.weekPlan && ex.weekPlan.length === 0) delete ex.weekPlan;
     this.cdr.detectChanges();
   }
 
   exerciseSummary(ex: Exercise): string {
     if (ex.scheme === 'wave') {
       const n = ex.weekPlan?.length ?? 0;
-      return n > 0 ? `Wave · ${n} settimane` : 'Wave · da configurare';
+      return n > 0 ? `Wave · ${n === 1 ? '1 settimana' : `${n} settimane`}` : 'Wave · come il programma';
     }
     if (ex.cluster) return this.clusterScheme(ex);
     return riepilogoSerie(ex);
@@ -1227,15 +1293,13 @@ export class ProtocolloBuilderComponent implements OnInit, OnDestroy, DoCheck {
     this.saveMsg = '';
     this.protocolBuilderState.saving.set(true);
     try {
-      // L'aggregato di progressione (usato da Info/riepilogo settimane) va
-      // ricalcolato ad ogni salvataggio: se il coach ha modificato a mano la
-      // progressione di un esercizio wave, questo lo tiene sincronizzato
-      // invece di lasciarlo congelato al valore calcolato al momento
-      // dell'import PDF.
-      this.protocol.workout.weekPlan = this.pdfSvc.detectProtocolWeekPlan(
-        this.protocol.workout.days,
-        this.protocol.workout.weekPlan.length
-      );
+      // La progressione del programma (quella di "Info", del riepilogo "Settimana X di N" e
+      // degli esercizi a onda che la seguono) e' quella che si scrive in "Progressione
+      // settimanale", non un aggregato da ricalcolare dagli esercizi: ricalcolarla la
+      // azzererebbe ogni volta che gli esercizi la seguono. Si salvano valori leggibili, e
+      // una copia fatta da un esercizio e rimasta uguale al programma torna a seguirlo.
+      this.protocol.workout.weekPlan = ripulisciProgressione(this.protocol.workout.weekPlan);
+      senzaCopieDelProgramma(this.protocol.workout.days, this.protocol.workout.weekPlan);
 
       const toSave = {
         name: this.protocol.name,
@@ -1262,7 +1326,7 @@ export class ProtocolloBuilderComponent implements OnInit, OnDestroy, DoCheck {
         this.toast.error('Salvataggio incompleto, riprova.');
         return false;
       }
-      // Quello in memoria ora e' quello salvato (weekPlan ricalcolato compreso).
+      // Quello in memoria ora e' quello salvato (progressione ripulita compresa).
       this.baseline = this.fotografia();
       return true;
     } catch (e: any) {

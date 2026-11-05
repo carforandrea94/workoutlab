@@ -98,11 +98,40 @@
         <div class="liste-ios">
           <ion-list-header class="sezione"><ion-label>Programma</ion-label></ion-list-header>
           <ion-list [inset]="true" class="campi">
-            <ion-item lines="none">
+            <ion-item lines="inset">
               <ion-label><label for="prog-start">Inizio del programma</label></ion-label>
               <input id="prog-start" slot="end" class="data-riga" type="date" [(ngModel)]="protocol.workout.programStart" />
             </ion-item>
+            <!-- La progressione di serie e ripetizioni si scrive qui, una volta sola: la mostra
+                 la Scheda in alto ("Settimana 3 di 8 · 4x8 rip.") e la seguono gli esercizi a onda,
+                 salvo quelli che la personalizzano. -->
+            <ion-item lines="none" class="riga-progressione" [class.aperta]="progressioneAperta" [button]="true" [detail]="false"
+              [attr.aria-expanded]="progressioneAperta" (click)="toggleProgressione()">
+              <ion-label>
+                <h2>Progressione settimanale</h2>
+                <p>{{ riepilogoProgramma }}</p>
+              </ion-label>
+              <app-icona slot="end" name="chevron-down" [size]="18"></app-icona>
+            </ion-item>
           </ion-list>
+
+          <div class="infocard mb-4 progressione-programma" *ngIf="progressioneAperta">
+            <div class="weekplan-row" *ngFor="let wp of settimaneProgramma; let i = index">
+              <span class="weekplan-num">S{{ i + 1 }}</span>
+              <div class="measure-input-wrap weekplan-input">
+                <ion-input type="number" [(ngModel)]="wp.sets" placeholder="serie" [attr.aria-label]="'Serie della settimana ' + (i + 1)"></ion-input>
+                <span class="unit">serie</span>
+              </div>
+              <div class="measure-input-wrap weekplan-input">
+                <!-- Testo e non numero: un intervallo come "6-8" non entra in un campo numerico. -->
+                <ion-input type="text" [(ngModel)]="wp.reps" placeholder="rip" [attr.aria-label]="'Ripetizioni della settimana ' + (i + 1)"></ion-input>
+                <span class="unit">rip</span>
+              </div>
+              <ion-button class="delete-btn tap44" [disabled]="settimaneProgramma.length <= settimaneMin" (click)="removeSettimanaProgramma(i)"
+                title="Rimuovi settimana" [attr.aria-label]="'Rimuovi la settimana ' + (i + 1)"><app-icona name="close" [size]="14"></app-icona></ion-button>
+            </div>
+            <ion-button class="azione-riquadro" [disabled]="settimaneProgramma.length >= settimaneMax" (click)="addSettimanaProgramma()"><app-icona name="add" [size]="20"></app-icona>Aggiungi settimana</ion-button>
+          </div>
         </div>
 
         <p class="sectiontitle">Giorni di allenamento</p>
@@ -356,23 +385,53 @@
         </ng-container>
 
         <ng-container *ngIf="ee.ex.scheme === 'wave'">
-          <p class="sectiontitle">Progressione settimanale</p>
-          <div class="infocard mb-4">
-            <div class="weekplan-row" *ngFor="let wp of ee.ex.weekPlan; let i = index">
-              <span class="weekplan-num">S{{ i + 1 }}</span>
-              <div class="measure-input-wrap weekplan-input">
-                <ion-input type="number" [(ngModel)]="wp.sets" placeholder="serie"></ion-input>
-                <span class="unit">serie</span>
-              </div>
-              <div class="measure-input-wrap weekplan-input">
-                <!-- Testo e non numero: un intervallo come "6-8" non entra in un campo numerico. -->
-                <ion-input type="text" [(ngModel)]="wp.reps" placeholder="rip"></ion-input>
-                <span class="unit">rip</span>
-              </div>
-              <ion-button class="delete-btn tap44" (click)="removeExWeek(ee.ex, i)" title="Rimuovi settimana" [attr.aria-label]="'Rimuovi la settimana ' + (i + 1)"><app-icona name="close" [size]="14"></app-icona></ion-button>
+          <!-- A onda l'esercizio segue la progressione del programma (scritta una volta sola,
+               nella scheda): ne ha una sua solo se la si personalizza. -->
+          <ng-container *ngIf="segueProgramma(ee.ex); else progressionePropria">
+            <div class="liste-ios">
+              <ion-list [inset]="true" class="campi progressione-segue">
+                <ion-item lines="none">
+                  <ion-label>
+                    <h2>Come il programma</h2>
+                    <p>{{ riepilogoProgramma }}</p>
+                  </ion-label>
+                </ion-item>
+              </ion-list>
+              <p class="nota-sotto">Si cambia per tutto il programma, dalla scheda: «Progressione settimanale».</p>
+              <ion-list [inset]="true" class="azioni-esercizio">
+                <ion-item class="riga-azione" lines="none" [button]="true" [detail]="false" (click)="personalizzaProgressione(ee.ex)">
+                  <ion-label>Personalizza per questo esercizio</ion-label>
+                </ion-item>
+              </ion-list>
             </div>
-            <ion-button class="azione-riquadro" (click)="addExWeek(ee.ex)"><app-icona name="add" [size]="20"></app-icona>Aggiungi settimana</ion-button>
-          </div>
+          </ng-container>
+
+          <ng-template #progressionePropria>
+            <p class="sectiontitle">Progressione di questo esercizio</p>
+            <div class="infocard mb-4">
+              <div class="weekplan-row" *ngFor="let wp of ee.ex.weekPlan; let i = index">
+                <span class="weekplan-num">S{{ i + 1 }}</span>
+                <div class="measure-input-wrap weekplan-input">
+                  <ion-input type="number" [(ngModel)]="wp.sets" placeholder="serie"></ion-input>
+                  <span class="unit">serie</span>
+                </div>
+                <div class="measure-input-wrap weekplan-input">
+                  <!-- Testo e non numero: un intervallo come "6-8" non entra in un campo numerico. -->
+                  <ion-input type="text" [(ngModel)]="wp.reps" placeholder="rip"></ion-input>
+                  <span class="unit">rip</span>
+                </div>
+                <ion-button class="delete-btn tap44" (click)="removeExWeek(ee.ex, i)" title="Rimuovi settimana" [attr.aria-label]="'Rimuovi la settimana ' + (i + 1)"><app-icona name="close" [size]="14"></app-icona></ion-button>
+              </div>
+              <ion-button class="azione-riquadro" (click)="addExWeek(ee.ex)"><app-icona name="add" [size]="20"></app-icona>Aggiungi settimana</ion-button>
+            </div>
+            <div class="liste-ios">
+              <ion-list [inset]="true" class="azioni-esercizio">
+                <ion-item class="riga-azione" lines="none" [button]="true" [detail]="false" (click)="tornaAlProgramma(ee.ex)">
+                  <ion-label>Usa quella del programma</ion-label>
+                </ion-item>
+              </ion-list>
+            </div>
+          </ng-template>
         </ng-container>
 
         <!-- Salvare e' la spunta in alto: "Salva esercizio" in fondo la ripeteva.
