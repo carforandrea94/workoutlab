@@ -782,7 +782,7 @@ describe('ProtocolloBuilderComponent — disegno vero', () => {
    * La testata dell'elenco aveva tre icone senza testo (salva, salva e attiva,
    * aggiorna da PDF): per capire quale fosse quale bisognava provarle. Ora ha un
    * "Salva" a parole; "Salva e attiva" e' il comando in basso, solo se il protocollo
-   * non e' gia' quello attivo; "Aggiorna da PDF" e' una riga in cima alla pagina.
+   * non e' gia' quello attivo; "Aggiorna il piano" e' una riga in cima alla pagina.
    */
   describe('la testata e la barra in basso', () => {
     const testo = (e: Element | null) => (e?.textContent ?? '').replace(/\s+/g, ' ').trim();
@@ -867,7 +867,7 @@ describe('ProtocolloBuilderComponent — disegno vero', () => {
       expect(footer(root)).not.toBeNull();
     });
 
-    it('"Aggiorna da PDF" e\' una riga con le parole, sotto il nome, per tutto il protocollo', async () => {
+    it('"Aggiorna il piano" e\' una riga con le parole, sotto il nome, per tutto il protocollo', async () => {
       const Aggiorna = Component({ standalone: true, template: '' })(class {});
       const { root } = await monta({}, [{ path: 'scheda/protocolli/aggiorna-pdf/:protocolId', component: Aggiorna }]);
       // Il primo gruppo di campi e' quello in cima alla pagina: il nome e, sotto, l'aggiornamento.
@@ -876,8 +876,8 @@ describe('ProtocolloBuilderComponent — disegno vero', () => {
       expect(righe[0].querySelector('ion-input')).not.toBeNull();
       const riga = root.querySelector<HTMLElement & { button?: boolean; detail?: boolean }>('ion-item.riga-aggiorna-pdf')!;
       expect(riga).toBe(righe[1]);
-      expect(testo(riga.querySelector('h2'))).toBe('Aggiorna da PDF');
-      expect(testo(riga.querySelector('p'))).toContain('Carica il nuovo PDF');
+      expect(testo(riga.querySelector('h2'))).toBe('Aggiorna il piano');
+      expect(testo(riga.querySelector('p'))).toContain('Carica il PDF o incolla il testo');
       expect(riga.button).toBe(true);
       expect(riga.detail).toBe(true);
       // Sta sopra il selettore delle schede: si vede sia dalla Scheda che dalla Dieta.

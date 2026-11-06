@@ -4,25 +4,37 @@
       <ion-back-button [defaultHref]="isUpdateMode ? '/scheda/protocolli/builder/' + protocolId : '/scheda/protocolli/nuovo'" aria-label="Indietro"></ion-back-button>
     </ion-buttons>
     <ion-title>
-      <div class="navtitle">{{ isUpdateMode ? 'Aggiorna da PDF' : 'Importa da PDF' }}</div>
+      <div class="navtitle">{{ isUpdateMode ? 'Aggiorna il piano' : 'Importa il piano' }}</div>
     </ion-title>
   </ion-toolbar>
 </ion-header>
 
 <ion-content appBarraAzione #barra="barraAzione" [scrollEvents]="true" class="con-barra">
   <div class="wrap liste-ios">
-    <!-- Un PDF per riga, come un allegato in iOS: si tocca la riga e si sceglie
-         il file; la riga dice poi quale. Il campo file del browser scriveva
-         "Choose File / No file chosen", in inglese e fuori stile. -->
+    <!-- Una voce per riga, come un allegato in iOS: PDF o testo incollato. Il piano del coach
+         arriva spesso in chat, come testo: "Incolla" apre il campo sotto la riga. La riga dice
+         poi cosa e' stato dato. Il campo file del browser scriveva "Choose File / No file
+         chosen", in inglese e fuori stile. -->
     <ion-list [inset]="true" class="file-pdf">
-      <ion-item *ngFor="let f of fileDaScegliere" [button]="true" [detail]="false" (click)="scegli(f.id)">
-        <app-icona slot="start" class="file-segno" [class.scelto]="!!fileDi(f.id)" [name]="fileDi(f.id) ? 'checkmark-circle' : 'document-text'" [size]="24"></app-icona>
-        <ion-label class="ion-text-wrap">
-          <h2>{{ f.nome }}</h2>
-          <p>{{ fileDi(f.id)?.name || f.nota }}</p>
-        </ion-label>
-        <ion-note slot="end" class="azione">{{ fileDi(f.id) ? 'Cambia' : 'Scegli' }}</ion-note>
-      </ion-item>
+      <ng-container *ngFor="let f of fileDaScegliere; let ultima = last">
+        <ion-item class="riga-fonte" [lines]="aperto === f.id || ultima ? 'none' : 'inset'">
+          <app-icona slot="start" class="file-segno" [class.scelto]="haFonte(f.id)" [name]="haFonte(f.id) ? 'checkmark-circle' : 'document-text'" [size]="24"></app-icona>
+          <ion-label class="ion-text-wrap">
+            <h2>{{ f.nome }}</h2>
+            <p>{{ sottotitolo(f) }}</p>
+          </ion-label>
+          <ion-button slot="end" fill="clear" size="small" class="fonte-btn fonte-pdf tap44 tap44-v" (click)="scegli(f.id)"
+            [attr.aria-label]="'Scegli il PDF: ' + f.nome">PDF</ion-button>
+          <ion-button slot="end" fill="clear" size="small" class="fonte-btn fonte-testo tap44 tap44-v" [class.attiva]="aperto === f.id" (click)="incolla(f.id)"
+            [attr.aria-expanded]="aperto === f.id" [attr.aria-label]="'Incolla il testo: ' + f.nome">Incolla</ion-button>
+        </ion-item>
+        <!-- Il campo c'e' sempre, nascosto: cosi' "Incolla" lo mostra e ci mette il cursore dentro lo stesso tocco
+             (un campo appena creato non e' ancora pronto, e a iOS la tastiera la apre solo il fuoco di un gesto). -->
+        <ion-item [hidden]="aperto !== f.id" class="fonte-campo" [lines]="ultima ? 'none' : 'inset'">
+          <ion-textarea #campo [rows]="6" [autoGrow]="true" [value]="testi[f.id]" (ionInput)="onTesto(f.id, $any($event).detail.value)"
+            [attr.aria-label]="'Testo: ' + f.nome" placeholder="Incolla qui il testo che ti ha mandato il coach"></ion-textarea>
+        </ion-item>
+      </ng-container>
     </ion-list>
     <!-- I campi veri restano nascosti fuori dalla lista: la riga li apre. -->
     <input #pdfScheda type="file" accept="application/pdf" hidden aria-label="PDF della scheda allenamento" (change)="onFile($event, 'scheda')" />
@@ -31,11 +43,11 @@
 
     <!-- Due righe, non due paragrafi: cosa serve e cosa aspettarsi. -->
     <ng-container *ngIf="!isUpdateMode">
-      <p class="nota-sotto">Basta la scheda: dieta e integrazione si aggiungono dopo, da "Aggiorna da PDF".</p>
-      <p class="nota-sotto">L'app legge i PDF da sola e a volte sbaglia: rivedi la bozza prima di attivarla.</p>
+      <p class="nota-sotto">Basta la scheda: dieta e integrazione si aggiungono dopo, da "Aggiorna il piano".</p>
+      <p class="nota-sotto">L'app legge PDF e testo da sola e a volte sbaglia: rivedi la bozza prima di attivarla.</p>
     </ng-container>
     <p class="nota-sotto" *ngIf="isUpdateMode">
-      Carica uno o più PDF: si aggiornano solo le parti corrispondenti. Dieta e integrazione non si cancellano a vicenda.
+      Dai uno o più PDF o testi: si aggiornano solo le parti corrispondenti. Dieta e integrazione non si cancellano a vicenda.
     </p>
 
     <p class="autherror" *ngIf="errorMsg">{{ errorMsg }}</p>

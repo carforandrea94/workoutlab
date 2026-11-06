@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef, ElementRef, ViewChild } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, ElementRef, QueryList, ViewChild, ViewChildren } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { Subscription } from 'rxjs';
@@ -9,7 +9,7 @@ import { todayLocalISO } from '../../core/utils/date.util';
 import { Protocol } from '../../models/protocol.model';
 import { Diet, NamedMeal, newNamedMeal, SupplementItem } from '../../models/diet.model';
 import { IONIC_PAGE } from '../../core/ionic-page';
-import { IonLoading, NavController, IonButton, IonFooter, IonLabel, IonNote } from '@ionic/angular';
+import { IonLoading, NavController, IonButton, IonFooter, IonLabel, IonTextarea } from '@ionic/angular';
 import { IONIC_LIST } from '../../core/ionic-list';
 import { IconaComponent } from '../../components/icona/icona.component';
 import { BarraAzioneDirective } from '../../core/directives/barra-azione.directive';
@@ -32,10 +32,12 @@ const RIGHE_AGGIORNA: readonly RigaPdf[] = [
  *  (es. se il worker di pdf.js non riesce a caricarsi/rispondere). */
 const STEP_TIMEOUT_MS = 25000;
 
+const NESSUN_ESERCIZIO = 'Non ho trovato nessun esercizio nella scheda. Controlla di aver dato la scheda giusta, o scrivila a mano.';
+
 @Component({
   selector: 'app-protocollo-import',
   standalone: true,
-  imports: [BarraAzioneDirective, IonButton, IonFooter, IonLabel, IonNote, ...IONIC_LIST, ...IONIC_PAGE, IonLoading, CommonModule, IconaComponent],
+  imports: [BarraAzioneDirective, IonButton, IonFooter, IonLabel, IonTextarea, ...IONIC_LIST, ...IONIC_PAGE, IonLoading, CommonModule, IconaComponent],
   templateUrl: './protocollo-import.component.html'
 })
 export class ProtocolloImportComponent implements OnInit, OnDestroy {
@@ -55,6 +57,14 @@ export class ProtocolloImportComponent implements OnInit, OnDestroy {
   schedaFile: File | null = null;
   dietaFile: File | null = null;
   integrazioneFile: File | null = null;
+
+  /**
+   * Il testo incollato al posto del PDF: il piano del coach arriva spesso in chat, come testo.
+   * Per ogni voce vale o il file o il testo, non tutti e due: sceglierne uno toglie l'altro.
+   */
+  readonly testi: Record<QualePdf, string> = { scheda: '', dieta: '', integrazione: '' };
+  /** La voce di cui si sta incollando il testo (il campo si apre sotto la sua riga). */
+  aperto: QualePdf | null = null;
 
   processing = false;
   errorMsg = '';
@@ -107,6 +117,8 @@ export class ProtocolloImportComponent implements OnInit, OnDestroy {
   @ViewChild('pdfScheda') private pdfScheda?: ElementRef<HTMLInputElement>;
   @ViewChild('pdfDieta') private pdfDieta?: ElementRef<HTMLInputElement>;
   @ViewChild('pdfIntegrazione') private pdfIntegrazione?: ElementRef<HTMLInputElement>;
+  /** I campi del testo, nell'ordine delle righe: ce n'e' uno solo aperto per volta, gli altri nascosti. */
+  @ViewChildren('campo') private campiTesto?: QueryList<IonTextarea>;
 
   get fileDaScegliere(): readonly RigaPdf[] {
     return this.isUpdateMode ? RIGHE_AGGIORNA : RIGHE_NUOVO;
@@ -116,30 +128,83 @@ export class ProtocolloImportComponent implements OnInit, OnDestroy {
     return id === 'scheda' ? this.schedaFile : id === 'dieta' ? this.dietaFile : this.integrazioneFile;
   }
 
-  /** Tocca la riga: si apre il selettore del sistema, dal campo file nascosto. */
+  /** C'e' qualcosa da leggere per questa voce: un PDF scelto o del testo incollato. */
+  haFonte(id: QualePdf): boolean {
+    return !!this.fileDi(id) || this.testi[id].trim().length > 0;
+  }
+
+  /** Sotto il nome della riga: cosa e' stato dato (il file o il testo), o a cosa serve la voce. */
+  sottotitolo(riga: RigaPdf): string {
+    const testo = this.testi[riga.id].trim();
+    if (testo) {
+      const righe = testo.split(/\r\n|\r|\n/).filter(r => r.trim()).length;
+      return `Testo incollato · ${righe} ${righe === 1 ? 'riga' : 'righe'}`;
+    }
+    return this.fileDi(riga.id)?.name || riga.nota;
+  }
+
+  /** "PDF": si apre il selettore del sistema, dal campo file nascosto. */
   scegli(id: QualePdf): void {
     const campo = id === 'scheda' ? this.pdfScheda : id === 'dieta' ? this.pdfDieta : this.pdfIntegrazione;
     campo?.nativeElement.click();
   }
 
+  /** "Incolla": il campo del testo si apre (o si chiude) sotto la riga, e si apre col cursore dentro. */
+  incolla(id: QualePdf): void {
+    this.aperto = this.aperto === id ? null : id;
+    if (this.aperto === null) return;
+    // Il campo si mostra subito e prende il fuoco dentro il tocco: dato dopo (da un timer, o a campo
+    // appena creato) a iOS non apre la tastiera, e per incollare servirebbe un secondo tocco.
+    this.cdr.detectChanges();
+    const posto = this.fileDaScegliere.findIndex(r => r.id === id);
+    void this.campiTesto?.toArray()[posto]?.setFocus();
+  }
+
+  /** Il testo cambia: se c'e', vale lui, e il PDF scelto prima si toglie (e il suo campo si svuota, per poterlo scegliere di nuovo). */
+  onTesto(id: QualePdf, valore: string | null | undefined): void {
+    this.testi[id] = (valore ?? '').replace(/\r\n?/g, '\n');
+    if (!this.testi[id].trim()) return;
+    this.impostaFile(id, null);
+  }
+
   onFile(event: Event, which: QualePdf): void {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0] ?? null;
-    if (which === 'scheda') this.schedaFile = file;
-    if (which === 'dieta') this.dietaFile = file;
-    if (which === 'integrazione') this.integrazioneFile = file;
+    this.impostaFile(which, file);
+    // Scelto un PDF, il testo incollato per la stessa voce non vale piu'.
+    if (file) {
+      this.testi[which] = '';
+      if (this.aperto === which) this.aperto = null;
+    }
+  }
+
+  private impostaFile(id: QualePdf, file: File | null): void {
+    if (id === 'scheda') this.schedaFile = file;
+    if (id === 'dieta') this.dietaFile = file;
+    if (id === 'integrazione') this.integrazioneFile = file;
+    if (!file) {
+      const campo = id === 'scheda' ? this.pdfScheda : id === 'dieta' ? this.pdfDieta : this.pdfIntegrazione;
+      if (campo) campo.nativeElement.value = '';
+    }
   }
 
   get canProcess(): boolean {
     if (this.processing) return false;
     if (this.isUpdateMode) {
       if (this.loadingExisting) return false;
-      return !!(this.schedaFile || this.dietaFile || this.integrazioneFile);
+      return this.haFonte('scheda') || this.haFonte('dieta') || this.haFonte('integrazione');
     }
     // Solo la scheda e' obbligatoria. La dieta si puo' scrivere a mano nel
     // builder, e per molti clienti il coach la scrive li' e basta: chiedere
     // un PDF che non esiste bloccava la creazione del protocollo.
-    return !!this.schedaFile;
+    return this.haFonte('scheda');
+  }
+
+  /** Il testo di una voce: quello incollato, o quello che si legge dal PDF scelto. */
+  private async leggi(id: QualePdf, etichetta: string): Promise<string> {
+    const incollato = this.testi[id].trim();
+    if (incollato) return incollato;
+    return this.withTimeout(this.pdfSvc.extractText(this.fileDi(id)!), etichetta);
   }
 
   private async withTimeout<T>(promise: Promise<T>, label: string): Promise<T> {
@@ -169,9 +234,9 @@ export class ProtocolloImportComponent implements OnInit, OnDestroy {
 
   private buildConfirmMessage(): string {
     const parts: string[] = [];
-    if (this.schedaFile) parts.push('giorni di allenamento e progressione settimanale');
-    if (this.dietaFile) parts.push('dieta e note');
-    if (this.integrazioneFile) parts.push('note integrazione');
+    if (this.haFonte('scheda')) parts.push('giorni di allenamento e progressione settimanale');
+    if (this.haFonte('dieta')) parts.push('dieta e note');
+    if (this.haFonte('integrazione')) parts.push('note integrazione');
     return `Verranno aggiornati: ${parts.join(', ')}. Continuare?`;
   }
 
@@ -194,7 +259,7 @@ export class ProtocolloImportComponent implements OnInit, OnDestroy {
       }
     } catch (e: any) {
       console.error('Errore importazione PDF:', e);
-      this.errorMsg = e?.message || 'Errore durante la lettura dei PDF. Riprova o crea il protocollo manualmente.';
+      this.errorMsg = e?.message || 'Errore durante la lettura. Riprova o crea il protocollo manualmente.';
     } finally {
       this.processing = false;
       this.stage = '';
@@ -249,27 +314,32 @@ export class ProtocolloImportComponent implements OnInit, OnDestroy {
     const id = await this.withTimeout(this.protocolSvc.create(), 'Creazione bozza protocollo');
 
     this.setStage('Lettura scheda allenamento…', 20);
-    const schedaText = await this.withTimeout(this.pdfSvc.extractText(this.schedaFile!), 'Lettura scheda');
+    const schedaText = await this.leggi('scheda', 'Lettura scheda');
 
     // Senza il PDF della dieta il protocollo nasce con la dieta vuota: il
     // builder la apre su "Nessun piano ancora" e la si scrive li'.
     let dietaText = '';
-    if (this.dietaFile) {
+    if (this.haFonte('dieta')) {
       this.setStage('Lettura dieta…', 40);
-      dietaText = await this.withTimeout(this.pdfSvc.extractText(this.dietaFile), 'Lettura dieta');
+      dietaText = await this.leggi('dieta', 'Lettura dieta');
     }
 
     this.setStage('Analisi esercizi e alimenti…', 65);
     const days = this.pdfSvc.parseWorkoutText(schedaText);
+    if (days.length === 0) {
+      // Niente da salvare: la bozza appena creata e' vuota, e non resta li' a fare numero.
+      try { await this.protocolSvc.delete(id); } catch { /* una bozza vuota in piu' non fa danno */ }
+      throw new Error(NESSUN_ESERCIZIO);
+    }
     const diet = dietaText ? this.pdfSvc.parseDietText(dietaText) : [];
     const durationWeeks = this.pdfSvc.detectProgramDurationWeeks(schedaText);
     const weekPlan = this.pdfSvc.detectProtocolWeekPlan(days, durationWeeks);
 
     const dietNotesSource = dietaText ? this.pdfSvc.extractDietNotes(dietaText) : '';
     let supplementNotesSource = '';
-    if (this.integrazioneFile) {
+    if (this.haFonte('integrazione')) {
       this.setStage('Lettura integrazione…', 75);
-      const integrazioneText = await this.withTimeout(this.pdfSvc.extractText(this.integrazioneFile), 'Lettura integrazione');
+      const integrazioneText = await this.leggi('integrazione', 'Lettura integrazione');
       supplementNotesSource = integrazioneText.trim();
       this.applyParsedSupplements(diet, this.pdfSvc.parseSupplementText(integrazioneText));
     }
@@ -295,10 +365,13 @@ export class ProtocolloImportComponent implements OnInit, OnDestroy {
     const patch: Partial<Protocol> = {};
     let percent = 10;
 
-    if (this.schedaFile) {
+    if (this.haFonte('scheda')) {
       this.setStage('Lettura scheda allenamento…', percent);
-      const schedaText = await this.withTimeout(this.pdfSvc.extractText(this.schedaFile), 'Lettura scheda');
+      const schedaText = await this.leggi('scheda', 'Lettura scheda');
       const days = this.pdfSvc.parseWorkoutText(schedaText);
+      // Senza esercizi riconosciuti non si riscrive niente: sostituire i giorni di oggi con un elenco vuoto
+      // farebbe sparire la scheda per un testo sbagliato.
+      if (days.length === 0) throw new Error(NESSUN_ESERCIZIO);
       const durationWeeks = this.pdfSvc.detectProgramDurationWeeks(schedaText);
       const weekPlan = this.pdfSvc.detectProtocolWeekPlan(days, durationWeeks);
       patch.workout = { ...existing.workout, days, weekPlan };
@@ -315,24 +388,24 @@ export class ProtocolloImportComponent implements OnInit, OnDestroy {
     let dietNotesSource = existing.dietNotesSource ?? '';
     let supplementNotesSource = existing.supplementNotesSource ?? '';
 
-    if (this.dietaFile) {
+    if (this.haFonte('dieta')) {
       this.setStage('Lettura dieta…', percent);
-      const dietaText = await this.withTimeout(this.pdfSvc.extractText(this.dietaFile), 'Lettura dieta');
+      const dietaText = await this.leggi('dieta', 'Lettura dieta');
       patch.diet = this.pdfSvc.parseDietText(dietaText);
       dietNotesSource = this.pdfSvc.extractDietNotes(dietaText);
       percent = 65;
     }
 
-    if (this.integrazioneFile) {
+    if (this.haFonte('integrazione')) {
       this.setStage('Lettura integrazione…', percent);
-      const integrazioneText = await this.withTimeout(this.pdfSvc.extractText(this.integrazioneFile), 'Lettura integrazione');
+      const integrazioneText = await this.leggi('integrazione', 'Lettura integrazione');
       supplementNotesSource = integrazioneText.trim();
       const dietToPatch = patch.diet ?? existing.diet;
       this.applyParsedSupplements(dietToPatch, this.pdfSvc.parseSupplementText(integrazioneText));
       patch.diet = dietToPatch;
     }
 
-    if (this.dietaFile || this.integrazioneFile) {
+    if (this.haFonte('dieta') || this.haFonte('integrazione')) {
       // Scriviamo un campo sorgente nel patch SOLO se e' stato genuinamente ricaricato
       // in questa operazione, oppure era gia' tracciato in precedenza. Se scrivessimo
       // sempre entrambi i campi (anche quello NON ricaricato), un protocollo legacy
@@ -340,16 +413,16 @@ export class ProtocolloImportComponent implements OnInit, OnDestroy {
       // sul lato non toccato. Al ricaricamento singolo SUCCESSIVO dello stesso lato,
       // l'altra sorgente risulterebbe erroneamente gia' nota, facendo ricalcolare
       // infoNote e cancellando comunque il contenuto legacy mai davvero ricaricato.
-      if (this.dietaFile || dietSourceWasTracked) {
+      if (this.haFonte('dieta') || dietSourceWasTracked) {
         patch.dietNotesSource = dietNotesSource;
       }
-      if (this.integrazioneFile || supplementSourceWasTracked) {
+      if (this.haFonte('integrazione') || supplementSourceWasTracked) {
         patch.supplementNotesSource = supplementNotesSource;
       }
 
-      const bothReloadedTogether = !!this.dietaFile && !!this.integrazioneFile;
-      const otherSourceIsKnown = this.dietaFile
-        ? (this.integrazioneFile ? true : supplementSourceWasTracked)
+      const bothReloadedTogether = this.haFonte('dieta') && this.haFonte('integrazione');
+      const otherSourceIsKnown = this.haFonte('dieta')
+        ? (this.haFonte('integrazione') ? true : supplementSourceWasTracked)
         : dietSourceWasTracked;
 
       if (bothReloadedTogether || otherSourceIsKnown) {

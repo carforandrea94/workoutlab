@@ -1,10 +1,11 @@
 import {
-  ChangeDetectionStrategy, Component, DestroyRef, ElementRef, afterNextRender, computed, inject, input, linkedSignal, signal, viewChild
+  ChangeDetectionStrategy, Component, DestroyRef, ElementRef, afterNextRender, computed, inject, input, signal, viewChild
 } from '@angular/core';
 import { IonCard, IonCardContent, IonCardHeader, IonCardTitle } from '@ionic/angular';
 import {
-  PuntoMisura, dataBreve, dataLunga, disegnaAndamento, numeroIt, puntoPiuVicino, uguale, variazioneIt
+  PuntoMisura, dataBreve, dataLunga, disegnaAndamento, numeroIt, uguale, variazioneIt
 } from '../../core/utils/grafico-andamento.util';
+import { LetturaPunti } from '../../core/utils/lettura-punti';
 
 /** L'altezza del disegno, date comprese. */
 export const ALTEZZA_GRAFICO = 200;
@@ -48,24 +49,23 @@ export class GraficoAndamentoComponent {
    */
   readonly pesate = input<PuntoMisura[] | null>(null);
 
-  /** La misurazione scelta col dito o da tastiera; null: l'ultima, senza mirino. Cambiando misura si riparte da null. */
-  readonly scelto = linkedSignal<PuntoMisura[], number | null>({ source: this.punti, computation: () => null });
+  /** Toccare, passarci sopra o usare le frecce sceglie una misurazione (vedi LetturaPunti); null: l'ultima, senza mirino. */
+  readonly punto = new LetturaPunti(() => this.punti(), () => this.disegno().punti);
 
   readonly altezza = ALTEZZA_GRAFICO;
   readonly larghezza = signal(LARGHEZZA_INIZIALE);
   readonly sfumatura = `andamento-sfuma-${++progressivo}`;
 
   private readonly corpo = viewChild<ElementRef<HTMLElement>>('corpo');
-  private premuto = false;
 
   readonly disegno = computed(() =>
     disegnaAndamento(this.punti(), this.larghezza(), ALTEZZA_GRAFICO, this.traguardo()?.valore ?? null, this.pesate() ?? []));
 
   /** Il punto che la testata racconta: quello scelto, o l'ultimo. */
-  private readonly indice = computed(() => this.scelto() ?? this.punti().length - 1);
+  private readonly indice = this.punto.indice;
 
   readonly mirino = computed(() => {
-    const i = this.scelto();
+    const i = this.punto.scelto();
     return i === null ? null : this.disegno().punti[i] ?? null;
   });
 
@@ -109,47 +109,5 @@ export class GraficoAndamentoComponent {
       osserva.observe(el);
       destroy.onDestroy(() => osserva.disconnect());
     });
-  }
-
-  private scegliDa(ev: PointerEvent): void {
-    const el = ev.currentTarget as HTMLElement;
-    const x = ev.clientX - el.getBoundingClientRect().left;
-    const i = puntoPiuVicino(this.disegno().punti, x);
-    if (i >= 0) this.scelto.set(i);
-  }
-
-  giu(ev: PointerEvent): void {
-    if (this.punti().length < 2) return;
-    this.premuto = true;
-    (ev.currentTarget as HTMLElement).setPointerCapture?.(ev.pointerId);
-    this.scegliDa(ev);
-  }
-
-  muove(ev: PointerEvent): void {
-    if (this.punti().length < 2) return;
-    if (this.premuto || ev.pointerType === 'mouse') this.scegliDa(ev);
-  }
-
-  su(): void {
-    this.premuto = false;
-  }
-
-  /** Col mouse si legge passando sopra: uscendo si torna all'ultima. Col dito la scelta resta dov'e'. */
-  esce(ev: PointerEvent): void {
-    if (ev.pointerType === 'mouse' && !this.premuto) this.scelto.set(null);
-  }
-
-  tasto(ev: KeyboardEvent): void {
-    const n = this.punti().length;
-    if (n < 2) return;
-    const i = this.indice();
-    const dove: Record<string, number | null> = {
-      ArrowLeft: Math.max(0, i - 1), ArrowDown: Math.max(0, i - 1),
-      ArrowRight: Math.min(n - 1, i + 1), ArrowUp: Math.min(n - 1, i + 1),
-      Home: 0, End: n - 1, Escape: null
-    };
-    if (!(ev.key in dove) || (ev.key === 'Escape' && this.scelto() === null)) return;
-    ev.preventDefault();
-    this.scelto.set(dove[ev.key]);
   }
 }

@@ -459,7 +459,7 @@ describe('SchedaListComponent — senza scheda', () => {
     const invito = root.querySelector('app-invito-primo-avvio')!;
     expect(testo(invito.querySelector('strong'))).toBe('Carica la tua scheda');
     expect(testo(invito)).toContain('Se te l\'ha data il coach');
-    expect(testo(invito.querySelector('ion-button.savebtn'))).toBe('Carica il PDF');
+    expect(testo(invito.querySelector('ion-button.savebtn'))).toBe('Importa il piano');
     expect(testo(invito.querySelector('ion-button.invito-mano'))).toBe('Scrivila a mano');
     expect(testo(invito)).not.toContain('Vai ai protocolli');
   });

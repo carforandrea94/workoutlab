@@ -1,25 +1,45 @@
 <div #corpo class="storia-massimale">
   @if (testi(); as t) {
-    <p class="storia-cap"><span>{{ t.quante }}</span><span class="storia-cambio">{{ t.cambio }}</span></p>
+    <p class="storia-cap">
+      @if (lettura(); as l) {
+        <span>{{ l.quando }}</span><span class="storia-cambio">{{ l.cambio }}</span>
+      } @else {
+        <span>{{ t.quante }}</span><span class="storia-cambio">{{ t.cambio }}</span>
+      }
+    </p>
     @let d = disegno();
-    <svg role="img" [attr.aria-label]="t.descrizione" [attr.width]="d.larghezza" [attr.height]="d.altezza"
-      [attr.viewBox]="'0 0 ' + d.larghezza + ' ' + d.altezza">
-      @for (v of d.valori; track v.testo) {
-        <line class="griglia" [attr.x1]="d.piano.x0" [attr.x2]="d.piano.x1" [attr.y1]="v.y" [attr.y2]="v.y" />
-        <text class="asse" aria-hidden="true" [attr.x]="d.piano.x1 + 8" [attr.y]="v.y + 4">{{ v.testo }}</text>
-      }
-      @for (g of d.date; track g.testo) {
-        <text class="asse" aria-hidden="true" [attr.x]="g.x" [attr.y]="d.altezza - 6" [attr.text-anchor]="g.ancora">{{ g.testo }}</text>
-      }
-      <path class="linea" [attr.d]="d.linea" />
-      @if (d.conPallini) {
-        @for (p of d.punti; track p.date; let ultimo = $last) {
-          @if (!ultimo) { <circle class="pallino" [attr.cx]="p.x" [attr.cy]="p.y" r="3" /> }
+    <!-- Un cursore, come Andamento: il riquadro si tocca e si trascina in orizzontale (in verticale il foglio scorre ancora). -->
+    <div class="storia-piano" role="slider" tabindex="0"
+      [attr.aria-label]="t.descrizione"
+      aria-valuemin="1" [attr.aria-valuemax]="storia().length" [attr.aria-valuenow]="punto.indice() + 1"
+      [attr.aria-valuetext]="voce()"
+      (pointerdown)="punto.giu($event)" (pointermove)="punto.muove($event)" (pointerup)="punto.su()" (pointercancel)="punto.su()"
+      (pointerleave)="punto.esce($event)" (keydown)="punto.tasto($event)">
+      <svg aria-hidden="true" [attr.width]="d.larghezza" [attr.height]="d.altezza"
+        [attr.viewBox]="'0 0 ' + d.larghezza + ' ' + d.altezza">
+        @for (v of d.valori; track v.testo) {
+          <line class="griglia" [attr.x1]="d.piano.x0" [attr.x2]="d.piano.x1" [attr.y1]="v.y" [attr.y2]="v.y" />
+          <text class="asse" [attr.x]="d.piano.x1 + 8" [attr.y]="v.y + 4">{{ v.testo }}</text>
         }
-      }
-      @if (d.punti[d.punti.length - 1]; as u) {
-        <circle class="pallino ultimo" [attr.cx]="u.x" [attr.cy]="u.y" r="4.5" />
-      }
-    </svg>
+        @for (g of d.date; track g.testo) {
+          <text class="asse" [attr.x]="g.x" [attr.y]="d.altezza - 6" [attr.text-anchor]="g.ancora">{{ g.testo }}</text>
+        }
+        <path class="linea" [attr.d]="d.linea" />
+        @if (mirino(); as m) {
+          <line class="mirino" [attr.x1]="m.x" [attr.x2]="m.x" [attr.y1]="d.piano.y0" [attr.y2]="d.piano.y1" />
+        }
+        @if (d.conPallini) {
+          @for (p of d.punti; track p.date; let ultimo = $last) {
+            @if (!ultimo) { <circle class="pallino" [attr.cx]="p.x" [attr.cy]="p.y" r="4" /> }
+          }
+        }
+        @if (d.punti[d.punti.length - 1]; as u) {
+          <circle class="pallino ultimo" [attr.cx]="u.x" [attr.cy]="u.y" r="5.5" />
+        }
+        @if (mirino(); as m) {
+          <circle class="pallino scelto" [attr.cx]="m.x" [attr.cy]="m.y" r="6.5" />
+        }
+      </svg>
+    </div>
   }
 </div>

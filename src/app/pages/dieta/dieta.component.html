@@ -29,9 +29,9 @@
     <ng-container *ngIf="!hasAnyDietData">
       <div *ngIf="workoutData.protocolId; else senzaProtocollo" class="history-empty dieta-vuota">
         <strong>Il tuo protocollo non ha ancora una dieta</strong>
-        Se te l'ha data il coach o il nutrizionista, caricala dal PDF. Altrimenti scrivila a mano.
+        Se te l'ha data il coach o il nutrizionista, importala dal PDF o dal suo messaggio. Altrimenti scrivila a mano.
         <div class="mt-3">
-          <ion-button class="savebtn" [routerLink]="['/scheda/protocolli/aggiorna-pdf', workoutData.protocolId]" routerDirection="forward">Carica il PDF della dieta</ion-button>
+          <ion-button class="savebtn" [routerLink]="['/scheda/protocolli/aggiorna-pdf', workoutData.protocolId]" routerDirection="forward">Importa la dieta</ion-button>
         </div>
         <div class="mt-2">
           <ion-button fill="clear" class="dieta-mano" [routerLink]="['/scheda/protocolli/builder', workoutData.protocolId]" routerDirection="forward">Scrivila a mano</ion-button>
@@ -39,7 +39,7 @@
       </div>
       <ng-template #senzaProtocollo>
         <app-invito-primo-avvio titolo="Carica il tuo protocollo" etichettaMano="Scrivilo a mano"
-          testo="Scheda, dieta e corsa stanno nello stesso protocollo. Se te l'ha dato il coach, parti dal PDF: l'app lo legge e prepara tutto. Altrimenti scrivilo a mano."></app-invito-primo-avvio>
+          testo="Scheda, dieta e corsa stanno nello stesso protocollo. Se te l'ha dato il coach, importalo dal PDF o dal suo messaggio: l'app lo legge e prepara tutto. Altrimenti scrivilo a mano."></app-invito-primo-avvio>
       </ng-template>
     </ng-container>
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { PUNTI_STORIA, SEDUTE_STORIA, storiaDelMassimale, testiStoria } from './storia-massimale.util';
+import { PUNTI_STORIA, SEDUTE_STORIA, storiaDelMassimale, testiPunto, testiStoria } from './storia-massimale.util';
 import { oneRepMaxOf } from './load-estimate.util';
 
 describe('storia del massimale', () => {
@@ -45,5 +45,37 @@ describe('le scritte della storia', () => {
   it('in discesa col segno meno, ferma "uguale", e l\'anno quando le sedute lo attraversano', () => {
     expect(testiStoria([{ date: '2026-09-01', value: 90 }, { date: '2026-09-08', value: 88 }, { date: '2026-09-15', value: 87.5 }])!.cambio).toBe('-2,5 kg dal 1 set');
     expect(testiStoria([{ date: '2026-12-20', value: 90 }, { date: '2027-01-03', value: 92 }, { date: '2027-01-10', value: 90 }])!.cambio).toBe('uguale al 20 dic 2026');
+  });
+});
+
+describe('le scritte di una seduta sola', () => {
+  const STORIA = [
+    { date: '2026-08-24', value: 24.5 }, { date: '2026-09-07', value: 25.5 },
+    { date: '2026-10-05', value: 24.5 }, { date: '2026-10-26', value: 29.9 }
+  ];
+
+  it('giorno e massimale, e quanto e\' cambiato dalla prima seduta', () => {
+    expect(testiPunto(STORIA, 1)).toEqual({ quando: '7 set · 25,5 kg', cambio: '+1 kg dal 24 ago', voce: '7 settembre 2026: 25,5 kg' });
+    expect(testiPunto(STORIA, 3)).toEqual({ quando: '26 ott · 29,9 kg', cambio: '+5,4 kg dal 24 ago', voce: '26 ottobre 2026: 29,9 kg' });
+  });
+
+  it('la prima seduta non si confronta con se stessa', () => {
+    expect(testiPunto(STORIA, 0)!.cambio).toBe('prima seduta');
+  });
+
+  it('se e\' tornato dov\'era dice "uguale", non "0 kg"', () => {
+    expect(testiPunto(STORIA, 2)!.cambio).toBe('uguale al 24 ago');
+  });
+
+  it('se le sedute stanno in anni diversi le date hanno l\'anno', () => {
+    const t = testiPunto([{ date: '2025-12-20', value: 20 }, { date: '2026-01-10', value: 21 }], 1)!;
+    expect(t.quando).toContain('2026');
+    expect(t.cambio).toContain('2025');
+  });
+
+  it('un posto che non c\'e\' non da niente', () => {
+    expect(testiPunto(STORIA, 9)).toBeNull();
+    expect(testiPunto(STORIA, -1)).toBeNull();
+    expect(testiPunto([], 0)).toBeNull();
   });
 });
