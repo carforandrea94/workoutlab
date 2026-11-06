@@ -18,10 +18,10 @@
         @let d = disegno();
         <div class="andamento-piano" role="slider" tabindex="0"
           [attr.aria-label]="'Andamento di ' + nome()"
-          aria-valuemin="1" [attr.aria-valuemax]="punti().length" [attr.aria-valuenow]="(scelto() ?? punti().length - 1) + 1"
+          aria-valuemin="1" [attr.aria-valuemax]="punti().length" [attr.aria-valuenow]="punto.indice() + 1"
           [attr.aria-valuetext]="testoValore()"
-          (pointerdown)="giu($event)" (pointermove)="muove($event)" (pointerup)="su()" (pointercancel)="su()"
-          (pointerleave)="esce($event)" (keydown)="tasto($event)">
+          (pointerdown)="punto.giu($event)" (pointermove)="punto.muove($event)" (pointerup)="punto.su()" (pointercancel)="punto.su()"
+          (pointerleave)="punto.esce($event)" (keydown)="punto.tasto($event)">
           <svg [attr.width]="d.larghezza" [attr.height]="d.altezza" [attr.viewBox]="'0 0 ' + d.larghezza + ' ' + d.altezza" aria-hidden="true">
             <defs>
               <linearGradient [attr.id]="sfumatura" x1="0" y1="0" x2="0" y2="1">
@@ -41,7 +41,7 @@
               <path class="area" [attr.d]="d.area" [attr.fill]="'url(#' + sfumatura + ')'" />
             }
             @for (p of d.pesate; track p.date) {
-              <circle class="pesata" [attr.cx]="p.x" [attr.cy]="p.y" r="3.5" />
+              <circle class="pesata" [attr.cx]="p.x" [attr.cy]="p.y" r="4" />
             }
             @if (d.traguardo; as t) {
               <line class="traguardo" [attr.x1]="d.piano.x0" [attr.x2]="d.piano.x1" [attr.y1]="t.y" [attr.y2]="t.y" />
@@ -53,11 +53,11 @@
             }
             @if (d.conPallini) {
               @for (p of d.punti; track p.date; let ultimo = $last) {
-                @if (!ultimo) { <circle class="pallino" [attr.cx]="p.x" [attr.cy]="p.y" r="3.5" /> }
+                @if (!ultimo) { <circle class="pallino" [attr.cx]="p.x" [attr.cy]="p.y" r="4" /> }
               }
             }
             @if (d.punti[d.punti.length - 1]; as u) {
-              <circle class="pallino ultimo" [attr.cx]="u.x" [attr.cy]="u.y" r="5" />
+              <circle class="pallino ultimo" [attr.cx]="u.x" [attr.cy]="u.y" r="5.5" />
             }
             @if (mirino(); as m) {
               <circle class="pallino scelto" [attr.cx]="m.x" [attr.cy]="m.y" r="6.5" />

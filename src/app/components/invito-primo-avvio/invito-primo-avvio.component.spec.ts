@@ -8,7 +8,7 @@ import { ToastService } from '../../services/toast.service';
 import { InvitoPrimoAvvioComponent } from './invito-primo-avvio.component';
 
 /**
- * Il primo avvio senza protocollo: "Carica il PDF" porta dritto all'importazione, "Scrivila a mano"
+ * Il primo avvio senza protocollo: "Importa il piano" porta dritto all'importazione, "Scrivila a mano"
  * crea il protocollo vuoto e apre il builder. Prima si passava da Protocolli e da Nuovo protocollo.
  */
 describe('InvitoPrimoAvvioComponent', () => {
@@ -42,9 +42,9 @@ describe('InvitoPrimoAvvioComponent', () => {
     expect(testo(root)).toContain('Se te l\'ha data il coach, parti dal PDF.');
   });
 
-  it('"Carica il PDF" porta dritto all\'importazione', () => {
+  it('"Importa il piano" porta dritto all\'importazione (PDF o testo)', () => {
     const { primario } = monta();
-    expect(testo(primario())).toBe('Carica il PDF');
+    expect(testo(primario())).toBe('Importa il piano');
     expect(primario().getAttribute('routerLink')).toBe('/scheda/protocolli/importa-pdf');
     expect(primario().getAttribute('routerDirection')).toBe('forward');
   });

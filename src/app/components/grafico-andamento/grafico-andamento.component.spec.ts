@@ -196,6 +196,16 @@ describe('GraficoAndamentoComponent', () => {
     expect(Number(pallini[3].getAttribute('r'))).toBeGreaterThan(Number(pallini[0].getAttribute('r')));
   });
 
+  // Un segno sotto gli 8 px si perde sul telefono: vale per i pallini, per le pesate e per il mirino.
+  it('i pallini e il mirino sono larghi almeno 8 px, anello escluso; il mirino copre l\'ultimo', () => {
+    const { q, tasto } = monta();
+    for (const c of Array.from(q('.andamento-piano svg')!.querySelectorAll('circle.pallino'))) {
+      expect(Number(c.getAttribute('r')) * 2).toBeGreaterThanOrEqual(8);
+    }
+    tasto('ArrowLeft');
+    expect(Number(q('circle.pallino.scelto')!.getAttribute('r'))).toBeGreaterThan(Number(q('circle.pallino.ultimo')!.getAttribute('r')));
+  });
+
   it('senza traguardo niente linea e niente riga in testa', () => {
     const { q } = monta();
     expect(q('.andamento-piano line.traguardo')).toBeNull();
@@ -238,6 +248,13 @@ describe('GraficoAndamentoComponent', () => {
       expect(root.querySelectorAll('.andamento-piano circle.pesata').length).toBe(3);
       expect(root.querySelector('.andamento-piano path.area')).toBeNull();
       expect(Array.from(root.querySelectorAll('.andamento-piano circle.pallino')).map(c => c.getAttribute('class'))).toEqual(['pallino ultimo']);
+    });
+
+    it('le pesate sono larghe almeno 8 px, come i pallini', () => {
+      const { fixture } = conPesate();
+      const raggi = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('circle.pesata')).map(c => Number(c.getAttribute('r')));
+      expect(raggi.length).toBe(3);
+      for (const r of raggi) expect(r * 2).toBeGreaterThanOrEqual(8);
     });
 
     it('in testa il valore della media e la pesata di quel giorno', () => {

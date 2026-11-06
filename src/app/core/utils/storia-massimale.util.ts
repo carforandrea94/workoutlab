@@ -50,3 +50,23 @@ export function testiStoria(storia: readonly PuntoMisura[]): TestiStoria | null 
       + `da ${numeroIt(primo.value)} kg il ${dataLunga(primo.date)} a ${numeroIt(ultimo.value)} kg il ${dataLunga(ultimo.date)}`
   };
 }
+
+/**
+ * Le stesse scritte quando si legge un punto solo (col dito, col mouse o con le
+ * frecce): a sinistra il giorno e il massimale di quella seduta, a destra quanto
+ * e' cambiato dalla prima. Come la testata di Andamento, in piccolo. Per lo
+ * screen reader, il giorno per esteso.
+ */
+export function testiPunto(storia: readonly PuntoMisura[], i: number): { quando: string; cambio: string; voce: string } | null {
+  const p = storia[i];
+  if (!p) return null;
+  const primo = storia[0];
+  const conAnno = primo.date.slice(0, 4) !== storia[storia.length - 1].date.slice(0, 4);
+  const diff = p.value - primo.value;
+  const dal = dataBreve(primo.date, conAnno);
+  return {
+    quando: `${dataBreve(p.date, conAnno)} · ${numeroIt(p.value)} kg`,
+    cambio: i === 0 ? 'prima seduta' : uguale(diff) ? `uguale al ${dal}` : `${variazioneIt(diff)} kg dal ${dal}`,
+    voce: `${dataLunga(p.date)}: ${numeroIt(p.value)} kg`
+  };
+}

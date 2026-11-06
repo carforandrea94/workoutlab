@@ -18,7 +18,7 @@ import { ToastService } from '../../services/toast.service';
       <strong>{{ titolo() }}</strong>
       {{ testo() }}
       <div class="mt-3">
-        <ion-button class="savebtn" routerLink="/scheda/protocolli/importa-pdf" routerDirection="forward">Carica il PDF</ion-button>
+        <ion-button class="savebtn" routerLink="/scheda/protocolli/importa-pdf" routerDirection="forward">Importa il piano</ion-button>
       </div>
       <div class="mt-2">
         <ion-button fill="clear" class="invito-mano" [disabled]="creando()" (click)="scriviAMano()">{{ etichettaMano() }}</ion-button>

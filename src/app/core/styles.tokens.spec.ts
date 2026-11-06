@@ -277,7 +277,7 @@ describe('styles.css — la barra si scorre col dito', () => {
   });
 
   it('con "riduci movimento" niente molla e niente lente', () => {
-    expect(css).toMatch(/@media \(prefers-reduced-motion:reduce\)\{\.tabbar \.pill,\.tabbar\.trascina \.pill,\.tabbar \.tabbtn \.ic\{transition:none;\}\.tabbar\.trascina \.pill,\.tabbar \.tabbtn\.sotto-lente \.ic\{scale:none;\}\}/);
+    expect(css).toMatch(/@media \(prefers-reduced-motion:reduce\)\{\.tabbar \.pill,\.tabbar\.trascina \.pill,\.tabbar \.tabbtn \.ic\{transition:none;\}\.tabbar\.trascina \.pill,\.tabbar \.tabbtn\.sotto-lente \.ic,\.tabbar \.tabbtn:active \.ic\{scale:none;\}\}/);
   });
 });
 
@@ -530,6 +530,10 @@ describe('styles.css — i moduli di iOS', () => {
   it('il PDF scelto ha la spunta verde', () => {
     expect(regola('.liste-ios app-icona.file-segno.scelto')).toContain('color:var(--state-success)');
   });
+
+  it('il campo del testo chiuso sparisce davvero: hidden da solo perde contro il display dell\'ion-item', () => {
+    expect(regola('.liste-ios ion-item.fonte-campo[hidden]')).toContain('display:none');
+  });
 });
 
 
@@ -701,6 +705,53 @@ describe('styles.css — Andamento', () => {
   it('una misura senza dati non sparisce sotto le opacita\' di Ionic', () => {
     expect(regola('.andamento ion-list.andamento-misure ion-radio.radio-disabled')).toContain('opacity:1');
   });
+
+  // Un segno del grafico che porta un dato deve stare a 3:1 dalla card (WCAG 1.4.11), in tutti e due i temi.
+  // Le pesate erano --label-3 a opacita' .55: in chiaro 2,15:1, e si perdevano sul bianco.
+  describe('le pesate si vedono anche in chiaro', () => {
+    const luce = (hex: string) => {
+      const [r, g, b] = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255)
+        .map(c => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
+      return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    };
+    const contrasto = (a: string, b: string) => {
+      const [chiaro, scuro] = [luce(a), luce(b)].sort((x, y) => y - x);
+      return (chiaro + 0.05) / (scuro + 0.05);
+    };
+    /** Il valore di un token nel tema scuro (:root) o in quello chiaro. */
+    const token = (nome: string, tema: 'scuro' | 'chiaro') => {
+      const blocco = tema === 'scuro'
+        ? css.slice(css.indexOf(':root {'), css.indexOf(':root[data-theme="light"] {'))
+        : css.slice(css.indexOf(':root[data-theme="light"] {'));
+      const m = blocco.match(new RegExp(`--${nome}:\\s*(#[0-9a-fA-F]{6})`));
+      if (!m) throw new Error(`--${nome} non trovato nel tema ${tema}`);
+      return m[1];
+    };
+
+    it('il punto grigio sta a 3:1 dalla card, nel tema scuro e nel chiaro', () => {
+      for (const tema of ['scuro', 'chiaro'] as const) {
+        expect(contrasto(token('ink-subdued', tema), token('surface-card', tema))).toBeGreaterThanOrEqual(3);
+      }
+    });
+
+    it('e lo usano il punto e la sua voce in legenda, senza un\'opacita\' sopra', () => {
+      const punto = regola('.andamento-piano .pesata');
+      expect(punto).toContain('fill:var(--ink-subdued)');
+      expect(punto).not.toContain('opacity');
+      const voce = regola('.andamento-card .leggenda i.p');
+      expect(voce).toContain('background:var(--ink-subdued)');
+      expect(voce).not.toContain('opacity');
+      expect(voce).toContain('width:8px;height:8px');
+    });
+  });
+
+  it('il massimale nel foglio si legge come Andamento: si tocca in orizzontale, la pagina scorre ancora in verticale', () => {
+    const r = regola('.storia-piano');
+    expect(r).toContain('touch-action:pan-y');
+    expect(r).toContain('user-select:none');
+    expect(regola('.storia-piano:focus-visible')).toContain('var(--accent)');
+    expect(regola('.storia-massimale .mirino')).toContain('stroke:var(--label-3)');
+  });
 });
 
 /**
@@ -767,5 +818,71 @@ describe('styles.css — il tasto a parole della testata', () => {
 
   it('dentro ion-buttons Ionic non gli riporta l\'altezza minima a 32', () => {
     expect(regola('ion-buttons ion-button.navtesto:not(.button-round)')).toContain('min-height:44px');
+  });
+});
+
+/**
+ * Tocco e movimento uguali dappertutto: cosa succede sotto il dito e quanto
+ * dura, deciso una volta nei token e non regola per regola. Prima ogni stato
+ * premuto aveva il suo numero (da .90 a .97), il passaggio del puntatore
+ * restava acceso sul telefono dopo un tocco, la molla superava il traguardo
+ * del 10% (25 px sulla pastiglia della barra) e il cambio di livello del
+ * builder durava 320 ms.
+ */
+describe('styles.css — tocco e movimento', () => {
+  let css = '';
+  beforeAll(async () => {
+    const nome = 'node:fs';
+    const fs = await import(/* @vite-ignore */ nome);
+    css = fs.readFileSync('src/styles.css', 'utf8');
+  });
+  const regola = (sel: string) => css.match(new RegExp('(?:^|\\n)' + sel.replace(/[.()[\]>+:]/g, '\\$&') + '\\{[^}]*\\}'))?.[0] ?? '';
+  const numero = (token: string) => {
+    const m = css.match(new RegExp(`--${token}:\\s*(\\.?[0-9.]+)\\s*;`));
+    if (!m) throw new Error(`token --${token} non trovato`);
+    return parseFloat(m[1]);
+  };
+
+  it('le misure del tocco sono due, e quella dei bersagli piccoli stringe di piu\'', () => {
+    expect(numero('press-scale')).toBeGreaterThanOrEqual(0.95);
+    expect(numero('press-scale')).toBeLessThan(1);
+    expect(numero('press-scale-small')).toBeLessThan(numero('press-scale'));
+    expect(numero('press-scale-small')).toBeGreaterThanOrEqual(0.9);
+  });
+
+  it('ogni stato premuto che stringe usa un token, non un numero suo', () => {
+    // La sola eccezione e' il segno grafico del grasso (.9 in un ::before), che non e' un tocco.
+    const premuti = [...css.matchAll(/:active[^{]*\{[^}]*transform:\s*scale\((var\([^)]*\)|[^)]*)\)/g)].map(m => m[1]);
+    expect(premuti.length).toBeGreaterThanOrEqual(8);
+    for (const valore of premuti) expect(valore).toMatch(/^var\(--press-scale(-small)?\)$/);
+  });
+
+  it('il passaggio del puntatore c\'e\' solo dove c\'e\' un puntatore, non resta acceso dopo un tocco sul telefono', () => {
+    // Ogni regola :hover sta dentro @media (hover:hover).
+    const senzaNote = css.replace(/\/\*[^]*?\*\//g, '');
+    const fuori = senzaNote.replace(/@media \(hover:hover\)\{(?:[^{}]|\{[^{}]*\})*\}/g, '');
+    expect(fuori).not.toMatch(/:hover/);
+    expect(css).toMatch(/@media \(hover:hover\)\{[^]*\.ex-chip\.rest:hover/);
+  });
+
+  it('la molla supera il traguardo di poco: la seconda tangente non va oltre 1,35', () => {
+    const m = css.match(/--spring:\s*cubic-bezier\(([^)]*)\)/);
+    expect(m).not.toBeNull();
+    const y1 = parseFloat(m![1].split(',')[1]);
+    expect(y1).toBeGreaterThan(1);
+    expect(y1).toBeLessThanOrEqual(1.35);
+  });
+
+  it('il cambio di livello del builder dura meno di 300 ms, con la curva delle pagine', () => {
+    const r = regola('.livello');
+    const ms = parseFloat(r.match(/animation:livello-avanti\s+([0-9.]+)s/)![1]) * 1000;
+    expect(ms).toBeLessThan(300);
+    expect(ms).toBeGreaterThanOrEqual(180);
+    expect(r).toContain('cubic-bezier(0.32,0.72,0,1)');
+  });
+
+  it('una tab premuta stringe l\'icona, ma non sotto la lente, che la ingrandisce', () => {
+    const r = regola('.tabbar .tabbtn:active:not(.sotto-lente) .ic');
+    expect(r).toContain('scale:var(--press-scale-small)');
   });
 });

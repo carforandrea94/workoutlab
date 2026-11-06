@@ -650,7 +650,11 @@ describe('SchedaDetailComponent — accessibilita\' delle testate (disegno vero)
       const f = await apri(tutti('.exslide')[0], aggiorna);
       const storiaEl = f.querySelector('.massimale app-storia-massimale')!;
       expect(Array.from(storiaEl.querySelectorAll('.storia-cap span')).map(pulito)).toEqual(['Nelle ultime 3 sedute', '+11,5 kg dal 19 set']);
-      expect(storiaEl.querySelector('svg')!.getAttribute('aria-label')).toBe('Massimale stimato nelle ultime 3 sedute: da 81,5 kg il 19 settembre 2026 a 93 kg il 3 ottobre 2026');
+      // Per chi non vede il disegno e' un cursore: la descrizione e, sotto le dita o le frecce, una seduta per volta.
+      const piano = storiaEl.querySelector('.storia-piano')!;
+      expect(piano.getAttribute('role')).toBe('slider');
+      expect(piano.getAttribute('aria-label')).toBe('Massimale stimato nelle ultime 3 sedute: da 81,5 kg il 19 settembre 2026 a 93 kg il 3 ottobre 2026');
+      expect(piano.getAttribute('aria-valuetext')).toBe('3 ottobre 2026: 93 kg');
     });
 
     it('sotto, i pesi della serie in corso, con la percentuale; la spunta e\' sul peso nella ruota', async () => {

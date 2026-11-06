@@ -47,7 +47,7 @@
                 <div class="meta">
                   <!-- Lo stato e' un badge come "Prossimo" e "Adesso": pieno se attivo, spento se no. -->
                   <ion-badge class="stato" [class.bozza]="p.status !== 'active'">{{ statusLabel(p) }}</ion-badge>
-                  {{ p.source === 'pdf' ? 'da PDF' : 'manuale' }}
+                  {{ p.source === 'pdf' ? 'importato' : 'manuale' }}
                 </div>
               </div>
               <ion-button class="attiva-btn tap44" fill="clear" *ngIf="p.status !== 'active'"

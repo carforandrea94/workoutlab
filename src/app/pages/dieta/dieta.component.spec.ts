@@ -230,7 +230,7 @@ describe('DietaComponent — senza piani', () => {
     const invito = root.querySelector('app-invito-primo-avvio')!;
     expect(testo(invito.querySelector('strong'))).toBe('Carica il tuo protocollo');
     expect(testo(invito)).toContain('Scheda, dieta e corsa stanno nello stesso protocollo');
-    expect(testo(invito.querySelector('ion-button.savebtn'))).toBe('Carica il PDF');
+    expect(testo(invito.querySelector('ion-button.savebtn'))).toBe('Importa il piano');
     expect(invito.querySelector('ion-button.savebtn')!.getAttribute('routerLink')).toBe('/scheda/protocolli/importa-pdf');
     expect(testo(invito.querySelector('ion-button.invito-mano'))).toBe('Scrivilo a mano');
     expect(root.querySelector('.dieta-vuota')).toBeNull();
@@ -249,14 +249,14 @@ describe('DietaComponent — senza piani', () => {
     expect(root.querySelector('app-invito-primo-avvio')).toBeNull();
   });
 
-  it('con un protocollo senza dieta si porta a completarlo: PDF della dieta o builder, sul suo protocollo', async () => {
+  it('con un protocollo senza dieta si porta a completarlo: importare la dieta o builder, sul suo protocollo', async () => {
     const { root, testo, router, fixture } = await monta('p7');
     const pdf = root.querySelector<HTMLElement>('.dieta-vuota ion-button.savebtn')!;
     const mano = root.querySelector<HTMLElement>('.dieta-vuota ion-button.dieta-mano')!;
-    expect(testo(pdf)).toBe('Carica il PDF della dieta');
+    expect(testo(pdf)).toBe('Importa la dieta');
     expect(testo(mano)).toBe('Scrivila a mano');
 
-    // Le due strade vanno al protocollo che c'e' (aggiorna da PDF, builder), non all'elenco.
+    // Le due strade vanno al protocollo che c'e' (aggiorna il piano, builder), non all'elenco.
     pdf.click();
     await vi.waitFor(() => expect(router.url).toBe('/scheda/protocolli/aggiorna-pdf/p7'));
     mano.click();
