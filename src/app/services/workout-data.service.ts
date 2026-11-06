@@ -43,6 +43,8 @@ export class WorkoutDataService {
   hasCustomProtocol = false;
   infoNote = '';
   protocolName = '';
+  /** L'id del protocollo attivo: serve a chi deve portare l'utente a completarlo (Dieta senza piani). Vuoto se non c'e'. */
+  protocolId = '';
 
   days: Day[] = [];
 
@@ -60,6 +62,7 @@ export class WorkoutDataService {
     this.hasCustomProtocol = false;
     this.infoNote = '';
     this.protocolName = '';
+    this.protocolId = '';
   }
 
   getExSetsReps(ex: Exercise, week: number): { sets: number; reps: (number | string)[] } {

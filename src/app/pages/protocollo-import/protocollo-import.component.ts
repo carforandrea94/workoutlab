@@ -169,7 +169,7 @@ export class ProtocolloImportComponent implements OnInit, OnDestroy {
 
   private buildConfirmMessage(): string {
     const parts: string[] = [];
-    if (this.schedaFile) parts.push('giorni di allenamento e onda di carico');
+    if (this.schedaFile) parts.push('giorni di allenamento e progressione settimanale');
     if (this.dietaFile) parts.push('dieta e note');
     if (this.integrazioneFile) parts.push('note integrazione');
     return `Verranno aggiornati: ${parts.join(', ')}. Continuare?`;

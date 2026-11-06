@@ -82,9 +82,17 @@ describe('FormaCardComponent — le righe', () => {
     expect(valore('Peso')).toBe('82kg');
     expect(sotto('Peso')).toBe('+0,4 kg dall\'ultima pesata');
     expect(valore('BMI')).toBe('25,3');
-    // Una riga col suo valore non porta da nessuna parte.
-    expect((riga('Peso') as any).button).toBeFalsy();
+    // Il BMI col suo valore non porta da nessuna parte: e' un calcolo, non qualcosa da scrivere.
     expect((riga('BMI') as any).button).toBeFalsy();
+  });
+
+  it('il peso si registra spesso: la riga col suo valore porta dritto al modulo, con il chevron', async () => {
+    const { riga, router, fixture } = await monta({ storico: [{ date: '2026-10-17', peso: '82' }] });
+    const peso = riga('Peso');
+    expect([(peso as any).button, (peso as any).detail]).toEqual([true, true]);
+    peso.click();
+    await fixture.whenStable();
+    expect(router.url).toBe('/progressi/misure/peso');
   });
 
   it('il lavoro della settimana: giorni fatti su previsti, sedute, minuti di corsa', async () => {

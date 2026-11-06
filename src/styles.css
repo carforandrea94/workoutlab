@@ -544,8 +544,8 @@ ion-tab-bar.tabbar{touch-action:none;-webkit-touch-callout:none;}
 /* Le scelte rapide sotto un campo di testo (il recupero del giorno): pillole a contorno, quella in uso piena. */
 .scelte-rapide{display:flex;flex-wrap:wrap;gap:8px;margin:0 4px 10px;}
 ion-button.scelta-rapida{--border-radius:var(--r-pill);--padding-start:10px;--padding-end:10px;margin:0;min-height:36px;font-size:var(--text-md);font-weight:600;font-variant-numeric:tabular-nums;text-transform:none;}
-/* Senza scheda: il titolo dell'invito, piu' grande del testo che lo segue. */
-.scheda-vuota strong{display:block;margin-bottom:6px;font-size:var(--text-xl);font-weight:700;color:var(--label);}
+/* Il primo avvio senza protocollo: il titolo dell'invito, piu' grande del testo che lo segue. */
+.invito-primo-avvio strong,.dieta-vuota strong{display:block;margin-bottom:6px;font-size:var(--text-xl);font-weight:700;color:var(--label);}
 ion-item.riga-azione{--color:var(--accent);font-weight:600;font-size:var(--text-lg);}
 ion-item.riga-azione app-icona{margin-inline-end:14px;color:var(--accent);}
 /* L'azione in fondo a un riquadro ("Modifica peso"): una riga in accento sotto
