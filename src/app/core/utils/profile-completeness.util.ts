@@ -3,9 +3,11 @@ import { dividiNome, componiNome } from './nome.util';
 import { HEIGHT_MIN_CM, HEIGHT_MAX_CM } from './height.util';
 
 /**
- * I dati dell'account che l'app vuole avere: nome e cognome, data di nascita,
- * sesso e altezza. Gli ultimi tre sono l'ingresso delle formule di
- * composizione corporea (Misure), che senza eta' e sesso non funzionano.
+ * I dati dell'account che l'app vuole avere: il nome, la data di nascita, il
+ * sesso e l'altezza. Gli ultimi tre sono l'ingresso delle formule di
+ * composizione corporea (Misure), che senza eta' e sesso non funzionano. Il
+ * cognome e' facoltativo: non entra in nessuna formula, e chiederlo come
+ * obbligatorio allungava il primo avvio per un dato che non serve a niente.
  */
 export type CampoProfilo = 'nome' | 'cognome' | 'birthDate' | 'sex' | 'heightCm';
 
@@ -20,15 +22,14 @@ export interface DatiProfilo {
 }
 
 /**
- * Quali dati mancano. Nome e cognome si leggono come li legge il resto
- * dell'app (dividiNome): un profilo nato con il solo nome intero ha il cognome
- * dentro displayName, e non e' un dato che manca.
+ * Quali dati mancano. Il nome si legge come lo legge il resto dell'app
+ * (dividiNome): un profilo nato con il solo nome intero ha il nome dentro
+ * displayName, e non e' un dato che manca. Il cognome non manca mai: e' facoltativo.
  */
 export function campiMancanti(profilo: DatiProfilo): CampoProfilo[] {
-  const { nome, cognome } = dividiNome(profilo);
+  const { nome } = dividiNome(profilo);
   const mancanti: CampoProfilo[] = [];
   if (!nome) mancanti.push('nome');
-  if (!cognome) mancanti.push('cognome');
   if (!profilo.birthDate) mancanti.push('birthDate');
   if (profilo.sex !== 'm' && profilo.sex !== 'f') mancanti.push('sex');
   if (profilo.heightCm === null || profilo.heightCm === undefined) mancanti.push('heightCm');
@@ -75,8 +76,8 @@ export function validaProfilo(input: InputProfilo, oggi: string): ErroriProfilo 
   const cognome = input.cognome.trim();
   if (!nome) errori.nome = 'Il nome è obbligatorio.';
   else if (nome.length > 80) errori.nome = 'Il nome è troppo lungo.';
-  if (!cognome) errori.cognome = 'Il cognome è obbligatorio.';
-  else if (cognome.length > 80) errori.cognome = 'Il cognome è troppo lungo.';
+  // Il cognome si puo' lasciare vuoto: se c'e', deve solo stare nei limiti.
+  if (cognome.length > 80) errori.cognome = 'Il cognome è troppo lungo.';
   // Il nome intero e' un campo solo, e le regole lo tengono sotto gli 80.
   if (!errori.nome && !errori.cognome && componiNome(nome, cognome).length > 80) {
     errori.cognome = 'Nome e cognome insieme sono troppo lunghi.';

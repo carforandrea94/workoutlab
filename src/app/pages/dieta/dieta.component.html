@@ -24,13 +24,24 @@
     </ion-toolbar>
   </ion-header>
   <div class="wrap">
-    <div *ngIf="!hasAnyDietData" class="history-empty">
-      Non hai ancora un protocollo attivo.<br>
-      Creane uno per avere il tuo piano alimentare.
-      <div class="mt-3">
-        <ion-button class="savebtn" routerLink="/scheda/protocolli" routerDirection="forward">Vai ai protocolli</ion-button>
+    <!-- Senza piani: o manca il protocollo (e si parte dall'invito del primo avvio), o c'e' e non ha
+         una dieta (la dieta e' facoltativa: il PDF puo' averla lasciata fuori) e si completa da li'. -->
+    <ng-container *ngIf="!hasAnyDietData">
+      <div *ngIf="workoutData.protocolId; else senzaProtocollo" class="history-empty dieta-vuota">
+        <strong>Il tuo protocollo non ha ancora una dieta</strong>
+        Se te l'ha data il coach o il nutrizionista, caricala dal PDF. Altrimenti scrivila a mano.
+        <div class="mt-3">
+          <ion-button class="savebtn" [routerLink]="['/scheda/protocolli/aggiorna-pdf', workoutData.protocolId]" routerDirection="forward">Carica il PDF della dieta</ion-button>
+        </div>
+        <div class="mt-2">
+          <ion-button fill="clear" class="dieta-mano" [routerLink]="['/scheda/protocolli/builder', workoutData.protocolId]" routerDirection="forward">Scrivila a mano</ion-button>
+        </div>
       </div>
-    </div>
+      <ng-template #senzaProtocollo>
+        <app-invito-primo-avvio titolo="Carica il tuo protocollo" etichettaMano="Scrivilo a mano"
+          testo="Scheda, dieta e corsa stanno nello stesso protocollo. Se te l'ha dato il coach, parti dal PDF: l'app lo legge e prepara tutto. Altrimenti scrivilo a mano."></app-invito-primo-avvio>
+      </ng-template>
+    </ng-container>
 
     <ng-container *ngIf="hasAnyDietData">
       <ion-list-header class="sezione">

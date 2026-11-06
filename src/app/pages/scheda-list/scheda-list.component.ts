@@ -12,15 +12,14 @@ import { NavController, IonAvatar, IonBadge, IonButton, IonLabel, IonListHeader,
 import { IconaComponent } from '../../components/icona/icona.component';
 import { Costanza, ProgrammaCostanza, SETTIMANE_IN_VISTA, SETTIMANE_PROGRAMMA_IN_VISTA, costanza } from '../../core/utils/costanza.util';
 import { GiornoService } from '../../core/giorno.service';
-import { ProtocolService } from '../../services/protocol.service';
-import { ToastService } from '../../services/toast.service';
+import { InvitoPrimoAvvioComponent } from '../../components/invito-primo-avvio/invito-primo-avvio.component';
 
 @Component({
   selector: 'app-scheda-list',
   standalone: true,
   imports: [
     IonButton, IonAvatar, IonBadge, IonLabel, IonListHeader, IonNote, IonProgressBar,
-    ...IONIC_LIST, ...IONIC_PAGE, ...IONIC_LINKS, CommonModule, IconaComponent
+    ...IONIC_LIST, ...IONIC_PAGE, ...IONIC_LINKS, CommonModule, IconaComponent, InvitoPrimoAvvioComponent
   ],
   templateUrl: './scheda-list.component.html'
 })
@@ -39,31 +38,8 @@ export class SchedaListComponent implements OnInit {
     private nav: NavController,
     private appState: AppStateService,
     public weekly: WeeklyProgressService,
-    private sessionState: WorkoutSessionStateService,
-    private protocolSvc: ProtocolService,
-    private toast: ToastService
+    private sessionState: WorkoutSessionStateService
   ) {
-  }
-
-  /** Mentre il protocollo vuoto si crea, il tasto "Scrivila a mano" resta spento. */
-  readonly creando = signal(false);
-
-  /**
-   * Senza scheda, scriverla a mano: crea il protocollo vuoto e apre il builder, come
-   * "Crea manualmente" in Nuovo protocollo ma senza passare da Protocolli.
-   */
-  async scriviAMano(): Promise<void> {
-    if (this.creando()) return;
-    this.creando.set(true);
-    try {
-      const id = await this.protocolSvc.create();
-      await this.nav.navigateForward(['/scheda/protocolli/builder', id]);
-    } catch (e) {
-      console.error('Creazione del protocollo fallita:', e);
-      this.toast.error('Non sono riuscito a creare la scheda. Riprova.');
-    } finally {
-      this.creando.set(false);
-    }
   }
 
   /** Ionic tiene viva la pagina nella pila: tornandoci ngOnInit non riparte, e i dati possono essere cambiati altrove (salvataggi, eliminazioni). */
@@ -206,7 +182,7 @@ export class SchedaListComponent implements OnInit {
     return n > 0 ? Math.min(1, Math.max(0, this.currentWeek / n)) : 0;
   }
 
-  /** Sotto la settimana: lo schema di oggi e, se c'e', il metodo ("4×10 rip. · Wave loading"). */
+  /** Sotto la settimana: lo schema di oggi e, se c'e', il metodo ("4×10 rip. · Wave"). */
   get sottotitoloSettimana(): string {
     return [this.getWaveInfo(), this.metodo].filter(Boolean).join(' · ');
   }
@@ -224,7 +200,7 @@ export class SchedaListComponent implements OnInit {
    * ha almeno un esercizio a onda.
    */
   get metodo(): string | null {
-    return this.days.some(d => d.ex.some(e => e.scheme === 'wave')) ? 'Wave loading' : null;
+    return this.days.some(d => d.ex.some(e => e.scheme === 'wave')) ? 'Wave' : null;
   }
 
   get todayWeekday(): string {

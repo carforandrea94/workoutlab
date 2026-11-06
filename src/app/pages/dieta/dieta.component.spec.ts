@@ -1,9 +1,13 @@
-import { signal } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { Router } from '@angular/router';
 import { afterEach, vi } from 'vitest';
 import { providerPagina } from '../../../test-support/pagina';
 import { DietaComponent } from './dieta.component';
 import { DietDataService } from '../../services/diet-data.service';
+import { WorkoutDataService } from '../../services/workout-data.service';
+import { ProtocolService } from '../../services/protocol.service';
+import { NavController } from '@ionic/angular';
 import { AppStateService } from '../../services/app-state.service';
 import { todayLocalISO } from '../../core/utils/date.util';
 import { GiornoService } from '../../core/giorno.service';
@@ -183,5 +187,80 @@ describe('DietaComponent — le card dei piani', () => {
       expect(intestazione()).toBe('ciclo di 1 giorno');
       expect(nota()).toBeNull();
     });
+  });
+});
+
+/**
+ * Senza piani la Dieta dice la cosa giusta: se manca il protocollo, parte l'invito del primo avvio
+ * (non il giro Protocolli > Nuovo); se il protocollo c'e' e non ha una dieta, non si dice "non hai
+ * un protocollo attivo" e si porta a completarlo.
+ */
+describe('DietaComponent — senza piani', () => {
+  @Component({ standalone: true, template: '' })
+  class Vuota {}
+
+  async function monta(protocolId: string) {
+    const protocolSvc = { create: vi.fn(async () => 'nuovo1') };
+    TestBed.configureTestingModule({
+      imports: [DietaComponent],
+      providers: [
+        ...providerPagina([
+          { path: 'scheda/protocolli/aggiorna-pdf/:protocolId', component: Vuota },
+          { path: 'scheda/protocolli/builder/:protocolId', component: Vuota }
+        ]),
+        { provide: DietDataService, useValue: { diet: [], ciclo: signal({ tipo: 'onoff', inizio: null }) } },
+        { provide: WorkoutDataService, useValue: { protocolId } },
+        { provide: AppStateService, useValue: { load: vi.fn(async () => ({ mealsCompletion: null })) } },
+        { provide: ProtocolService, useValue: protocolSvc }
+      ]
+    });
+    const nav = TestBed.inject(NavController);
+    const apre = vi.spyOn(nav, 'navigateForward').mockResolvedValue(true);
+    const fixture = TestBed.createComponent(DietaComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    const root: HTMLElement = fixture.nativeElement;
+    const testo = (e: Element | null) => (e?.textContent ?? '').replace(/\s+/g, ' ').trim();
+    return { fixture, root, testo, protocolSvc, apre, router: TestBed.inject(Router) };
+  }
+
+  it('senza protocollo c\'e\' l\'invito del primo avvio, con le due strade a un tocco', async () => {
+    const { root, testo, protocolSvc, apre } = await monta('');
+    const invito = root.querySelector('app-invito-primo-avvio')!;
+    expect(testo(invito.querySelector('strong'))).toBe('Carica il tuo protocollo');
+    expect(testo(invito)).toContain('Scheda, dieta e corsa stanno nello stesso protocollo');
+    expect(testo(invito.querySelector('ion-button.savebtn'))).toBe('Carica il PDF');
+    expect(invito.querySelector('ion-button.savebtn')!.getAttribute('routerLink')).toBe('/scheda/protocolli/importa-pdf');
+    expect(testo(invito.querySelector('ion-button.invito-mano'))).toBe('Scrivilo a mano');
+    expect(root.querySelector('.dieta-vuota')).toBeNull();
+    expect(testo(root)).not.toContain('Vai ai protocolli');
+
+    invito.querySelector<HTMLElement>('ion-button.invito-mano')!.click();
+    await vi.waitFor(() => expect(apre).toHaveBeenCalledWith(['/scheda/protocolli/builder', 'nuovo1']));
+    expect(protocolSvc.create).toHaveBeenCalledTimes(1);
+  });
+
+  it('con un protocollo senza dieta non dice che manca il protocollo: dice che manca la dieta', async () => {
+    const { root, testo } = await monta('p7');
+    const vuota = root.querySelector('.dieta-vuota')!;
+    expect(testo(vuota.querySelector('strong'))).toBe('Il tuo protocollo non ha ancora una dieta');
+    expect(testo(root)).not.toContain('Non hai ancora un protocollo attivo');
+    expect(root.querySelector('app-invito-primo-avvio')).toBeNull();
+  });
+
+  it('con un protocollo senza dieta si porta a completarlo: PDF della dieta o builder, sul suo protocollo', async () => {
+    const { root, testo, router, fixture } = await monta('p7');
+    const pdf = root.querySelector<HTMLElement>('.dieta-vuota ion-button.savebtn')!;
+    const mano = root.querySelector<HTMLElement>('.dieta-vuota ion-button.dieta-mano')!;
+    expect(testo(pdf)).toBe('Carica il PDF della dieta');
+    expect(testo(mano)).toBe('Scrivila a mano');
+
+    // Le due strade vanno al protocollo che c'e' (aggiorna da PDF, builder), non all'elenco.
+    pdf.click();
+    await vi.waitFor(() => expect(router.url).toBe('/scheda/protocolli/aggiorna-pdf/p7'));
+    mano.click();
+    await vi.waitFor(() => expect(router.url).toBe('/scheda/protocolli/builder/p7'));
+    fixture.destroy();
   });
 });

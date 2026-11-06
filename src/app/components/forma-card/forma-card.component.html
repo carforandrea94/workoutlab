@@ -6,7 +6,9 @@
   <ion-label>Il corpo</ion-label>
 </ion-list-header>
 <ion-list [inset]="true" class="forma-corpo">
-  <ion-item *ngIf="weightKg() !== null; else pesoMancante">
+  <!-- Il peso si registra spesso: toccare la riga porta dritto al modulo, senza passare da Misure. -->
+  <ion-item *ngIf="weightKg() !== null; else pesoMancante" [button]="true" [detail]="true"
+    routerLink="/progressi/misure/peso" routerDirection="forward">
     <ion-label>
       <h2>Peso</h2>
       <p>{{ weightDelta !== null ? weightDeltaLabel : 'prima pesata' }}</p>

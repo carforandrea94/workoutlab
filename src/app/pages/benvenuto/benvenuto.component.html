@@ -8,7 +8,9 @@
 
       <form (ngSubmit)="salva()" novalidate>
 
-        <div class="authfield">
+        <!-- Il nome l'ha gia' dato l'iscrizione (o Google): si chiede solo se manca. Il cognome non
+             si chiede: non entra in nessuna formula, e resta nelle Impostazioni per chi lo vuole. -->
+        <div class="authfield" *ngIf="chiediNome">
           <label for="ob-nome">Nome</label>
           <div class="measure-input-wrap">
             <ion-input id="ob-nome" type="text" autocomplete="given-name" name="nome"
@@ -16,16 +18,6 @@
               [attr.aria-invalid]="errori.nome ? 'true' : null" aria-describedby="ob-nome-err"></ion-input>
           </div>
           <p class="fielderr" id="ob-nome-err" *ngIf="errori.nome">{{ errori.nome }}</p>
-        </div>
-
-        <div class="authfield">
-          <label for="ob-cognome">Cognome</label>
-          <div class="measure-input-wrap">
-            <ion-input id="ob-cognome" type="text" autocomplete="family-name" name="cognome"
-              [(ngModel)]="cognome" (ionInput)="rivaluta()" maxlength="80" placeholder="Il tuo cognome"
-              [attr.aria-invalid]="errori.cognome ? 'true' : null" aria-describedby="ob-cognome-err"></ion-input>
-          </div>
-          <p class="fielderr" id="ob-cognome-err" *ngIf="errori.cognome">{{ errori.cognome }}</p>
         </div>
 
         <div class="authfield">

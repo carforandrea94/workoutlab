@@ -60,6 +60,7 @@ export class ProtocolBootstrapService {
         this.workoutData.applyProtocol(active.workout);
         this.workoutData.infoNote = active.infoNote ?? '';
         this.workoutData.protocolName = active.name ?? '';
+        this.workoutData.protocolId = active.id;
         this.dietData.applyDiet(active.diet, normalizzaCiclo(active.dietType, active.dietCycleStart));
         this.workoutState.recomputeWeek(active.workout.programStart, active.workout.weekPlan.length);
         this.runningState.applyGoal(active.running);

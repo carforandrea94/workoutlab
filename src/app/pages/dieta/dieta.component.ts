@@ -2,6 +2,8 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 import { DietDataService } from '../../services/diet-data.service';
+import { WorkoutDataService } from '../../services/workout-data.service';
+import { InvitoPrimoAvvioComponent } from '../../components/invito-primo-avvio/invito-primo-avvio.component';
 import { AppStateService } from '../../services/app-state.service';
 import { GiornoService } from '../../core/giorno.service';
 import { DietPlan } from '../../models/diet.model';
@@ -20,7 +22,7 @@ interface DietPlanCard {
 @Component({
   selector: 'app-dieta',
   standalone: true,
-  imports: [IonButton, IonAvatar, IonBadge, IonLabel, IonListHeader, ...IONIC_LIST, ...IONIC_PAGE, ...IONIC_LINKS, CommonModule, IconaComponent],
+  imports: [IonButton, IonAvatar, IonBadge, IonLabel, IonListHeader, ...IONIC_LIST, ...IONIC_PAGE, ...IONIC_LINKS, CommonModule, IconaComponent, InvitoPrimoAvvioComponent],
   templateUrl: './dieta.component.html'
 })
 export class DietaComponent implements OnInit {
@@ -44,6 +46,7 @@ export class DietaComponent implements OnInit {
 
   constructor(
     public dietData: DietDataService,
+    public workoutData: WorkoutDataService,
     private nav: NavController,
     private appState: AppStateService
   ) {}

@@ -31,7 +31,10 @@ import { NomeCampoDirective } from '../../core/nome-campo.directive';
 })
 export class BenvenutoComponent {
   nome: string;
+  /** Non si chiede (e' facoltativo): si tiene quello che c'e' gia' e si riscrive com'e'. */
   cognome: string;
+  /** Il nome si chiede solo a chi non l'ha ancora dato: l'iscrizione e Google lo danno gia'. */
+  readonly chiediNome: boolean;
   birthDate: string;
   sex: Sex | null;
   /** Il campo e' un numero, ma finche' si scrive puo' essere vuoto: da qui number | null. */
@@ -53,6 +56,7 @@ export class BenvenutoComponent {
     const { nome, cognome } = dividiNome(utente ?? {});
     this.nome = nome;
     this.cognome = cognome;
+    this.chiediNome = !nome;
     this.birthDate = utente?.birthDate ?? '';
     this.sex = utente?.sex ?? null;
     this.heightCm = utente?.heightCm ?? null;

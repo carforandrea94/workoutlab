@@ -218,7 +218,7 @@ export class AuthService {
     await deleteDoc(doc(this.fb.db, 'users', uid));
   }
 
-  /** Mancano dati dell'account (cognome, nascita, sesso, altezza...): va mostrata la schermata per inserirli. */
+  /** Mancano dati dell'account (nascita, sesso, altezza...; il cognome e' facoltativo): va mostrata la schermata per inserirli. */
   profiloIncompleto(): boolean {
     const utente = this.currentUser();
     return !!utente && !profiloCompleto(utente);

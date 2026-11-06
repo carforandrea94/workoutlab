@@ -3,7 +3,7 @@ import { CanActivateFn, Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
 
 /**
- * Se all'account mancano dei dati (cognome, data di nascita, sesso, altezza)
+ * Se all'account mancano dei dati (data di nascita, sesso, altezza: il cognome e' facoltativo)
  * si passa dalla schermata che li chiede, prima di entrare nell'app. Non
  * blocca chi ha scelto "Più tardi": per quella sessione si entra.
  */
