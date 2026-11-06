@@ -6,6 +6,7 @@ import { routes } from './app.routes';
 import { MisureComponent } from './pages/misure/misure.component';
 import { ProgressiComponent } from './pages/progressi/progressi.component';
 import { ObiettivoComponent } from './pages/obiettivo/obiettivo.component';
+import { ImpostazioniComponent } from './pages/impostazioni/impostazioni.component';
 
 @Component({ standalone: true, template: '' })
 class Vuota {}
@@ -110,5 +111,18 @@ describe('rotte — Il mio obiettivo', () => {
     const r = dentroLeTab.find(x => x.path === 'account/obiettivo')!;
     expect(await (r.loadComponent!() as Promise<unknown>)).toBe(ObiettivoComponent);
     expect(r.canDeactivate).toBeUndefined();
+  });
+});
+
+/**
+ * Il profilo (altezza, sesso, nascita) serve al corpo: chi lo completa da Progressi non deve
+ * saltare nella pila di Account. E' la stessa pagina delle Impostazioni, aperta nella pila di Progressi.
+ */
+describe('rotte — Impostazioni da Progressi', () => {
+  it('/progressi/impostazioni apre le Impostazioni, e anche /account/impostazioni', async () => {
+    for (const path of ['progressi/impostazioni', 'account/impostazioni']) {
+      const r = dentroLeTab.find(x => x.path === path)!;
+      expect(await (r.loadComponent!() as Promise<unknown>), path).toBe(ImpostazioniComponent);
+    }
   });
 });

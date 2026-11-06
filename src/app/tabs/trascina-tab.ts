@@ -167,7 +167,10 @@ export class TrascinaTab {
     const c = this.corsia;
     if (!c) return;
     const p = this.pastiglia();
-    if (p) p.style.transform = `translateX(${spostamento(this.x, c)}px)`;
+    // translate e non transform: la lente e' ingrandita con `scale`, che si compone dopo
+    // `transform` e ne moltiplicherebbe lo spostamento (a destra la lente sfuggiva dal dito
+    // e dalla barra di un dodicesimo del percorso); con `translate` il suo centro sta sul dito.
+    if (p) p.style.translate = `${spostamento(this.x, c)}px`;
     const i = indiceSotto(this.x, c);
     if (i !== this.sotto) {
       this.sotto = i;
@@ -188,7 +191,7 @@ export class TrascinaTab {
     if (!alzata) return;
     // Via la posizione del dito: la pastiglia torna al posto che le da' la
     // sua classe, con la molla di sempre.
-    this.pastiglia()?.style.removeProperty('transform');
+    this.pastiglia()?.style.removeProperty('translate');
     try { if (dito !== null) this.barra.releasePointerCapture?.(dito); } catch { /* gia' rilasciato */ }
     this.azioni.lente(null);
   }

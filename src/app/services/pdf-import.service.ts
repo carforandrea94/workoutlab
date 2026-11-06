@@ -410,7 +410,7 @@ export class PdfImportService {
   }
 
   /**
-   * Onda di carico a livello di protocollo (usata nella schermata "Onda di carico" e
+   * Progressione settimanale a livello di protocollo (usata nella schermata "Progressione settimanale" e
    * nel riepilogo "Settimana X di N"): deriva la progressione piu' frequente tra gli
    * esercizi wave effettivamente trovati nel PDF, invece di uno schema fisso identico
    * per ogni settimana. Se il PDF non contiene esercizi wave (es. programma tutto a

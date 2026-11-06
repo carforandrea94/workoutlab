@@ -1,5 +1,6 @@
 import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { Router } from '@angular/router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { providerPagina } from '../../../test-support/pagina';
 import { ImpostazioniComponent } from './impostazioni.component';
@@ -29,7 +30,7 @@ describe('Impostazioni — il segnale di fine recupero (disegno vero)', () => {
       providers: [
         ...providerPagina(),
         { provide: AuthService, useValue: { currentUser: signal({ email: 'a@b.it', name: 'Ada' }), usesPassword: () => true } },
-        { provide: ThemeService, useValue: { mode: signal('dark'), setMode: vi.fn() } },
+        { provide: ThemeService, useValue: { mode: signal('dark'), preference: signal('dark'), setMode: vi.fn() } },
         { provide: ToastService, useValue: { error: vi.fn(), success: vi.fn() } },
         { provide: WorkoutSessionStateService, useValue: { clearLocalCache: vi.fn() } },
         { provide: AppStateService, useValue: { load: async () => ({ loadPercent: null }), patchField: async () => {} } },
@@ -50,6 +51,35 @@ describe('Impostazioni — il segnale di fine recupero (disegno vero)', () => {
     };
     return { fixture, root, per, scegli };
   }
+
+  it('la freccia di riserva torna alla pila da cui si e\' entrati: Progressi o Account', async () => {
+    const { fixture } = await monta();
+    const router = TestBed.inject(Router);
+    const url = vi.spyOn(router, 'url', 'get');
+    url.mockReturnValue('/progressi/impostazioni');
+    expect((fixture.componentInstance as any).tornaA).toBe('/progressi');
+    url.mockReturnValue('/account/impostazioni');
+    expect((fixture.componentInstance as any).tornaA).toBe('/account');
+  });
+
+  it('il tema ha tre scelte, Automatico per primo, e ognuna si salva con il suo valore', async () => {
+    const { root, fixture } = await monta();
+    const segmento = root.querySelector<HTMLElement & { value?: string }>('ion-segment[aria-label="Tema"]')!;
+    const tasti = Array.from(segmento.querySelectorAll<HTMLElement>('ion-segment-button'));
+    expect(tasti.map(t => [t.getAttribute('value'), (t.textContent ?? '').trim()]))
+      .toEqual([['auto', 'Automatico'], ['dark', 'Notte'], ['light', 'Giorno']]);
+    // La scelta attiva e' quella che l'utente ha fatto (preference), non il tema che si vede (mode).
+    expect(segmento.value).toBe('dark');
+    const tema = TestBed.inject(ThemeService) as any;
+    // Su Automatico il tema che si vede e' Notte (mode), ma la scelta in evidenza e' Automatico.
+    tema.preference.set('auto');
+    fixture.detectChanges();
+    expect(tema.mode()).toBe('dark');
+    expect(segmento.value).toBe('auto');
+    for (const t of tasti) t.click();
+    fixture.detectChanges();
+    expect(tema.setMode.mock.calls.map((c: unknown[]) => c[0])).toEqual(['auto', 'dark', 'light']);
+  });
 
   it('c\'e\' il suono a fine recupero, acceso di partenza', async () => {
     const { per } = await monta();

@@ -564,6 +564,19 @@ describe('ProtocolloBuilderComponent — disegno vero', () => {
         .toEqual(['Rimuovi questa combinazione', 'Rimuovi pasto']);
     });
 
+    it('"combinazione" e "alternativa" si spiegano dove servono, con un esempio', async () => {
+      const { root } = await conPasto();
+      const testo = (e: Element | null) => (e?.textContent ?? '').replace(/\s+/g, ' ').trim();
+      expect(testo(root.querySelector('.nota-combinazione')))
+        .toBe('Una combinazione è un modo di comporre questo pasto, ad esempio pane e uova oppure fette biscottate e yogurt: chi lo segue ne sceglie una.');
+      expect(testo(root.querySelector('.nota-alternative')))
+        .toBe('In ogni gruppo scrivi l\'alimento della combinazione scelta. Le «Alternative» sotto un alimento sono altri alimenti che si possono usare al posto suo.');
+      // La spiegazione delle combinazioni sta subito dopo il loro gruppo, e quella delle alternative prima degli alimenti.
+      const ordine = Array.from(root.querySelectorAll('ion-list.combinazione, .nota-combinazione, .nota-alternative, ion-list.macro'))
+        .map(e => e.matches('ion-list.combinazione') ? 'combinazioni' : e.matches('.nota-combinazione') ? 'nota-combinazione' : e.matches('.nota-alternative') ? 'nota-alternative' : 'macro');
+      expect(ordine.slice(0, 4)).toEqual(['combinazioni', 'nota-combinazione', 'nota-alternative', 'macro']);
+    });
+
     it('la quantita\' ha la sua etichetta visibile, non solo il segnaposto', async () => {
       const { root } = await conPasto();
       const qty = Array.from(root.querySelectorAll<HTMLElement & { label?: string }>('.slotdrop ion-input.alimento-qty'));
@@ -881,6 +894,51 @@ describe('ProtocolloBuilderComponent — disegno vero', () => {
         fixture.detectChanges();
         expect(root.querySelector('ion-item.riga-aggiorna-pdf'), t).not.toBeNull();
       }
+    });
+  });
+
+  /**
+   * Il recupero del giorno e' un testo libero (il coach scrive come vuole): le scelte
+   * rapide sono un aiuto, non un limite.
+   */
+  describe('il recupero del giorno', () => {
+    const testo = (e: Element | null) => (e?.textContent ?? '').replace(/\s+/g, ' ').trim();
+
+    async function dentroIlGiorno() {
+      const m = await monta();
+      m.c.openDay(m.c.protocol!.workout.days[0], 0);
+      m.fixture.detectChanges();
+      const scelte = () => Array.from(m.root.querySelectorAll<HTMLElement & { fill?: string }>('.scelte-rapide ion-button'));
+      return { ...m, scelte };
+    }
+
+    it('sotto il campo ci sono i recuperi di solito, come scelte rapide', async () => {
+      const { scelte, root } = await dentroIlGiorno();
+      expect(scelte().map(b => testo(b))).toEqual(['60"', '90"', '120"', '60-90"', '90-120"']);
+      expect(root.querySelector('.scelte-rapide')!.getAttribute('role')).toBe('group');
+      expect(root.querySelector('.scelte-rapide')!.getAttribute('aria-label')).toBe('Recuperi usati di solito');
+    });
+
+    it('un tocco scrive il recupero nel campo, e la scelta in uso e\' quella piena', async () => {
+      const { c, fixture, scelte } = await dentroIlGiorno();
+      // Il giorno di prova ha 60-90": e' gia' quello in uso.
+      expect(scelte().map(b => b.fill)).toEqual(['outline', 'outline', 'outline', 'solid', 'outline']);
+
+      scelte()[2].click();
+      fixture.detectChanges();
+
+      expect(c.editingDay!.day.rec).toBe('120"');
+      expect(scelte().map(b => b.fill)).toEqual(['outline', 'outline', 'solid', 'outline', 'outline']);
+      expect(c.haModificheNonSalvate()).toBe(true);
+    });
+
+    it('resta un testo libero: un recupero scritto a mano non e\' una scelta, ma si legge com\'e\'', async () => {
+      const { c, fixture, scelte, root } = await dentroIlGiorno();
+      c.editingDay!.day.rec = '60-90" + 30" fra i blocchi';
+      fixture.detectChanges();
+      expect(scelte().every(b => b.fill === 'outline')).toBe(true);
+      const campo = root.querySelector<HTMLElement & { value?: string }>('ion-input#day-rec')!;
+      expect(campo).toBeTruthy();
     });
   });
 

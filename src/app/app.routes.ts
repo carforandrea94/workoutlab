@@ -136,6 +136,14 @@ export const routes: Routes = [
         loadComponent: () => import('./pages/progressi/progressi.component').then(m => m.ProgressiComponent)
       },
 
+      // Il profilo (altezza, sesso, data di nascita) serve al corpo: chi lo completa da Progressi
+      // resta in Progressi, invece di saltare nella pila di Account e tornare da li'. E' la stessa
+      // pagina delle Impostazioni, aperta dalla sua pila.
+      {
+        path: 'progressi/impostazioni',
+        loadComponent: () => import('./pages/impostazioni/impostazioni.component').then(m => m.ImpostazioniComponent)
+      },
+
       // ---- Misure, dentro Progressi ----
       // Misure e' il grafico dell'andamento, e da li' si registra (prima l'andamento
       // era una pagina a parte, /progressi/misure/analytics: ora rimanda qui).

@@ -39,7 +39,7 @@ describe('SchedaInfoComponent — disegno vero', () => {
     const { root, testo } = await monta();
     expect(root.querySelector('ion-content')!.classList.contains('liste-ios')).toBe(true);
     expect(Array.from(root.querySelectorAll('ion-list-header.sezione')).map(testo))
-      .toEqual(['Note del programma', 'Onda di carico', 'Il programma', 'Consigli generali']);
+      .toEqual(['Note del programma', 'Progressione settimanale', 'Il programma', 'Consigli generali']);
     expect(root.querySelector('.infocard, .infowave, .consigli')).toBeNull();
   });
 

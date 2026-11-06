@@ -117,10 +117,14 @@ export class CorsaNuovaComponent implements OnInit, OnDestroy, ConModificheNonSa
     return this.editId ? 'Modifica uscita' : 'Nuova uscita';
   }
 
-  /** Come verra' letto il tempo digitato: `1:20` non e' un'ora e venti per tutti. */
-  get liveMinutes(): string {
+  /**
+   * Come verra' letto il tempo digitato, quando non e' lo stesso: `1:20` non e' un'ora e venti
+   * per tutti, e `75` e' un'ora e un quarto. Sotto l'ora, scritto in minuti, non c'e' niente da dire.
+   */
+  get letturaMinuti(): string {
     const min = parseMinutes(this.minutes);
-    return min > 0 ? formatMinutes(min) : '—';
+    if (min <= 0) return '';
+    return this.minutes.includes(':') || min >= 60 ? formatMinutes(min) : '';
   }
 
   get canSave(): boolean {

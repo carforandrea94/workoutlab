@@ -22,7 +22,7 @@ class Vuota {}
  */
 describe('FormaCardComponent — le righe', () => {
   async function monta(opz: { profilo?: any; storico?: any[]; sedute?: any[]; inizio?: string } = {}) {
-    const rotte = ['progressi/misure', 'progressi/misure/peso', 'progressi/misure/pliche', 'account/impostazioni'].map(path => ({ path, component: Vuota }));
+    const rotte = ['progressi/misure', 'progressi/misure/peso', 'progressi/misure/pliche', 'progressi/impostazioni'].map(path => ({ path, component: Vuota }));
     TestBed.configureTestingModule({
       imports: [FormaCardComponent],
       providers: [
@@ -113,7 +113,8 @@ describe('FormaCardComponent — le righe', () => {
     expect(router.url).toBe('/progressi/misure/peso');
     riga('BMI').click();
     await fixture.whenStable();
-    expect(router.url).toBe('/account/impostazioni');
+    // Il profilo si completa senza lasciare Progressi: la pagina e' nella sua pila.
+    expect(router.url).toBe('/progressi/impostazioni');
   });
 
   it('la massa grassa senza pliche porta alle pliche, se il profilo e\' completo', async () => {

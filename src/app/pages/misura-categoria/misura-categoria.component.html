@@ -29,10 +29,15 @@
              volta a sinistra, il valore da scrivere a destra con l'unita'. Toccare
              la riga in un punto qualsiasi mette a fuoco il campo. Prima erano
              riquadri a due colonne, con l'etichetta sopra e l'ultimo valore sotto. -->
+        <!-- Le pliche non si prendono a occhio: come pizzicare, e dove, sta qui e sotto ogni riga. -->
+        <p class="nota-sotto plicometro-guida" *ngIf="category === 'pliche'">
+          Pizzica la pelle col pollice e l'indice, sempre dallo stesso lato, e leggi il plicometro dopo due secondi.
+        </p>
         <ion-list [inset]="true" class="campi misure-campi">
           <ion-item *ngFor="let f of fields" (click)="fuocoSulCampo($event)">
-            <ion-label>
+            <ion-label class="ion-text-wrap">
               <h2>{{ f.label }}</h2>
+              <p class="measure-help" *ngIf="f.help">{{ f.help }}</p>
               <p class="measure-last" *ngIf="ultimo(f) as u">{{ u }}</p>
             </ion-label>
             <ion-input slot="end" class="a-destra misura-valore" type="text" inputmode="decimal"

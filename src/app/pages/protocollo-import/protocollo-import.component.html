@@ -29,20 +29,13 @@
     <input #pdfDieta type="file" accept="application/pdf" hidden aria-label="PDF della dieta" (change)="onFile($event, 'dieta')" />
     <input #pdfIntegrazione type="file" accept="application/pdf" hidden aria-label="PDF dell'integrazione" (change)="onFile($event, 'integrazione')" />
 
-    <p class="nota-sotto" *ngIf="!isUpdateMode">
-      L'app prova a leggere i PDF ed estrarre esercizi e alimenti automaticamente.
-      È un'estrazione best-effort: funziona meglio se il PDF ha un formato semplice
-      (una riga per esercizio/alimento). Rivedi sempre la bozza nel builder prima di attivarla.
-    </p>
-    <p class="nota-sotto" *ngIf="!isUpdateMode">
-      Serve solo la scheda. Senza il PDF della dieta il protocollo nasce senza piani
-      alimentari e la dieta si scrive a mano nel builder — dove si può anche caricarla
-      più tardi, con "Aggiorna da PDF".
-    </p>
+    <!-- Due righe, non due paragrafi: cosa serve e cosa aspettarsi. -->
+    <ng-container *ngIf="!isUpdateMode">
+      <p class="nota-sotto">Basta la scheda: dieta e integrazione si aggiungono dopo, da "Aggiorna da PDF".</p>
+      <p class="nota-sotto">L'app legge i PDF da sola e a volte sbaglia: rivedi la bozza prima di attivarla.</p>
+    </ng-container>
     <p class="nota-sotto" *ngIf="isUpdateMode">
-      Carica almeno uno dei PDF per aggiornare le parti corrispondenti del
-      protocollo. Ricaricare la dieta o l'integrazione da sola non cancella le
-      note dell'altra.
+      Carica uno o più PDF: si aggiornano solo le parti corrispondenti. Dieta e integrazione non si cancellano a vicenda.
     </p>
 
     <p class="autherror" *ngIf="errorMsg">{{ errorMsg }}</p>

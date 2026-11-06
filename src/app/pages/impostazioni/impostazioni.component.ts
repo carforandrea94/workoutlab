@@ -3,6 +3,7 @@ import {
   signal
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { AuthService } from '../../core/services/auth.service';
 import { Sex } from '../../core/models/user.model';
@@ -37,6 +38,9 @@ import { IconaComponent } from '../../components/icona/icona.component';
       min-height: 52px; padding: 6px 0; border-bottom: 1px solid var(--separator);
     }
     .account-row:last-child { border-bottom: none; }
+    /* Una riga con una scelta a tre voci (il tema): il nome sopra, la scelta a tutta larghezza,
+       come il segmento di un modulo di iOS. A fianco dell'etichetta le tre voci non ci stanno. */
+    .account-row.con-scelta { flex-direction: column; align-items: stretch; justify-content: center; gap: 10px; padding: 12px 0; }
     /* Il suggerimento in fondo alla card non e' una riga: senza questo
        involucro sarebbe lui l'ultimo figlio, e l'ultima riga vera terrebbe
        un separatore appeso al nulla. */
@@ -151,8 +155,17 @@ export class ImpostazioniComponent implements OnInit {
     private cdr: ChangeDetectorRef,
     private sessionState: WorkoutSessionStateService,
     private appState: AppStateService,
-    public segnale: SegnaleService
+    public segnale: SegnaleService,
+    private router: Router
   ) {}
+
+  /**
+   * Dove porta la freccia se non c'e' una pagina prima (indirizzo aperto a mano): la pagina
+   * e' la stessa in due pile, Account e Progressi, e si torna a quella da cui si e' entrati.
+   */
+  get tornaA(): string {
+    return this.router.url.startsWith('/progressi') ? '/progressi' : '/account';
+  }
 
   ngOnInit(): void {
     this.caricaPercentuale();
