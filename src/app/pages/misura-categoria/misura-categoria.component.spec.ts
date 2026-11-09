@@ -8,7 +8,7 @@ import { MisuraCategoriaComponent } from './misura-categoria.component';
  * niente. Una in modifica no, e li' la guardia deve saperlo.
  */
 describe('MisuraCategoriaComponent — uscire dalla pagina', () => {
-  async function pagina(modifica: boolean) {
+  async function pagina(modifica: boolean, outlet: any = null) {
     const data: any = {
       getCategoryValues: vi.fn(async () => ({ peso: '80' })),
       getLastValuesWithDate: vi.fn(async () => ({})),
@@ -29,7 +29,7 @@ describe('MisuraCategoriaComponent — uscire dalla pagina', () => {
     const cdr: any = { detectChanges: vi.fn() };
     const state: any = { registerSaveHandler: vi.fn(), saving: { set: vi.fn() } };
     const toast: any = { success: vi.fn(), error: vi.fn() };
-    const c = new MisuraCategoriaComponent(route, nav, data, cdr, state, toast);
+    const c = new MisuraCategoriaComponent(route, nav, data, cdr, state, toast, outlet);
     c.ngOnInit();
     await vi.waitFor(() => expect(c.loading).toBe(false));
     return { c, data, nav };
@@ -57,6 +57,38 @@ describe('MisuraCategoriaComponent — uscire dalla pagina', () => {
     await c.save();
     expect(nav.navigateBack).toHaveBeenCalled();
     expect(c.haModificheNonSalvate()).toBe(false);
+  });
+
+  // Registrare il peso dalla riga di Progressi e salvare riportava a Misure, mai visitata: la apriva come
+  // prima pagina della pila e la sua freccia mandava in Account, senza uscita dalla tab Progressi.
+  describe('salvata una misura nuova, si torna da dove si e\' venuti', () => {
+    it('con una pagina prima (Progressi o Misure) toglie questa dalla pila, senza aprire Misure', async () => {
+      const outlet: any = { canGoBack: vi.fn(() => true), pop: vi.fn(async () => undefined) };
+      const { c, nav } = await pagina(false, outlet);
+      c.values['peso'] = '80';
+      await c.save();
+      expect(outlet.pop).toHaveBeenCalledTimes(1);
+      expect(nav.navigateBack).not.toHaveBeenCalled();
+    });
+
+    it('senza pila (pagina aperta da segnalibro o dopo una ricarica) va a Misure', async () => {
+      const outlet: any = { canGoBack: vi.fn(() => false), pop: vi.fn(async () => undefined) };
+      const { c, nav } = await pagina(false, outlet);
+      c.values['peso'] = '80';
+      await c.save();
+      expect(outlet.pop).not.toHaveBeenCalled();
+      expect(nav.navigateBack).toHaveBeenCalledWith(['/progressi/misure']);
+    });
+
+    it('se il salvataggio non riesce resta dov\'e\': non torna indietro', async () => {
+      const outlet: any = { canGoBack: vi.fn(() => true), pop: vi.fn(async () => undefined) };
+      const { c, nav, data } = await pagina(false, outlet);
+      data.saveCategoryToday.mockResolvedValueOnce(false);
+      c.values['peso'] = '80';
+      await c.save();
+      expect(outlet.pop).not.toHaveBeenCalled();
+      expect(nav.navigateBack).not.toHaveBeenCalled();
+    });
   });
 
   it('una misura nuova non chiede mai: ha la bozza', async () => {

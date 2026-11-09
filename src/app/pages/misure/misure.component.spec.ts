@@ -322,11 +322,11 @@ describe('MisureComponent', () => {
   });
 
   describe('la pagina Misure', () => {
-    it('e\' una pagina dentro Account: si chiama Misure, la freccia torna ad Account, in alto lo Storico', async () => {
+    it('e\' una pagina dentro Progressi: si chiama Misure, la freccia torna a Progressi (non ad Account), in alto lo Storico', async () => {
       const { q, testo } = await monta();
       expect(testo(q('ion-header .navtitle'))).toBe('Misure');
       const indietro = q('ion-header ion-buttons[slot=start] ion-back-button') as HTMLElement & { defaultHref?: string };
-      expect(indietro.defaultHref).toBe('/account');
+      expect(indietro.defaultHref).toBe('/progressi');
       const storico = q('ion-header ion-buttons[slot=end] ion-button')!;
       expect(storico.getAttribute('title')).toBe('Storico');
       expect(storico.getAttribute('routerLink')).toBe('/progressi/misure/storico');

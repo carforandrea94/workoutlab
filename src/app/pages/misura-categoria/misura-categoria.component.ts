@@ -9,6 +9,7 @@ import { MeasureCategory, MeasureField, CATEGORY_FIELDS, CATEGORY_LABELS } from 
 import { MeasureCategoryStateService } from '../../services/measure-category-state.service';
 import { ToastService } from '../../services/toast.service';
 import { IONIC_PAGE } from '../../core/ionic-page';
+import { tornaDaDoveSeiVenuto } from '../../core/torna-indietro';
 import { NavController, IonFooter, IonInput, IonSpinner, IonButton, IonRouterOutlet, IonLabel } from '@ionic/angular';
 import { IONIC_LIST } from '../../core/ionic-list';
 import { ConModificheNonSalvate } from '../../core/guards/modifiche-non-salvate.guard';
@@ -229,7 +230,8 @@ export class MisuraCategoriaComponent implements OnInit, OnDestroy, ConModifiche
       if (ok) {
         await this.data.clearDraft(this.category);
         this.toast.success(this.messaggioSalvato());
-        this.nav.navigateBack(['/progressi/misure']);
+        // Da dove si e' venuti (Progressi o Misure); senza pila, a Misure, che ha la sua freccia verso Progressi.
+        tornaDaDoveSeiVenuto(this.nav, this.outlet, ['/progressi/misure']);
       } else {
         this.toast.error('Errore durante il salvataggio. Riprova.');
       }
