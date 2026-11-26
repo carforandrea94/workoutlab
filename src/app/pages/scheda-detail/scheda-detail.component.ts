@@ -33,6 +33,7 @@ import { ToastService } from '../../services/toast.service';
 import { serieDiRiscaldamento } from '../../core/utils/riscaldamento.util';
 import { conSconto, primaDelloStessoGruppo, scontoFatica } from '../../core/utils/fatica.util';
 import { PASSO_PROGRESSIONE, provaDiPiu, ripetizioniDaRaggiungere } from '../../core/utils/progressione.util';
+import { MassimaleDiOggi, massimaleDiOggi, percentualeRm, pesoDellaSerie, rigaInFuoco } from '../../core/utils/percentuale-rm.util';
 import { scontoPausa } from '../../core/utils/pausa.util';
 import { PUNTI_STORIA, storiaDelMassimale } from '../../core/utils/storia-massimale.util';
 import { WeeklyProgressService } from '../../services/weekly-progress.service';
@@ -1710,10 +1711,44 @@ export class SchedaDetailComponent implements OnInit, AfterViewInit, OnDestroy {
     this.foglioCaricoAperto = true;
   }
 
+  /**
+   * Il massimale da cui leggere le percentuali sulla card: quello dell'ultima
+   * volta, alzato dalle serie fatte oggi (vedi percentuale-rm.util). Si
+   * ricalcola a ogni serie spuntata.
+   */
+  massimaleOggi(vm: ExerciseVM): MassimaleDiOggi | null {
+    return massimaleDiOggi(vm.insight?.oneRm?.value, vm.rows);
+  }
+
+  /** Oggi un massimale piu' alto di quello dell'ultima volta: il valore e la serie da cui viene. */
+  massimaleAlzato(vm: ExerciseVM): { value: number; load: number; reps: number } | null {
+    const m = this.massimaleOggi(vm);
+    return m?.daOggi ? { value: m.value, load: m.daOggi.load, reps: m.daOggi.reps } : null;
+  }
+
+  /**
+   * La percentuale del massimale di una serie, per la tabella e per le righe
+   * chiuse. Non sui cluster: li' il peso e' dei blocchi, e ogni blocco ha il suo.
+   */
+  percentualeRiga(vm: ExerciseVM, row: SerieRow): number | null {
+    // Nello storico si corregge una seduta passata: il massimale di "oggi" non c'entra.
+    if (this.isStorico || vm.cluster || row.blocks?.length) return null;
+    return percentualeRm(pesoDellaSerie(row), this.massimaleOggi(vm)?.value);
+  }
+
+  /** La percentuale sul chip dell'esercizio: quella della serie aperta, o della prossima da fare. */
+  percentualeInFuoco(vm: ExerciseVM): number | null {
+    if (this.isStorico) return null;
+    const j = rigaInFuoco(vm.rows, vm.activeRow);
+    return j < 0 ? null : percentualeRm(pesoDellaSerie(vm.rows[j]), this.massimaleOggi(vm)?.value);
+  }
+
   /** Il nome del bilanciere: un'icona sola non dice niente a chi non la vede. */
   etichettaMassimale(vm: ExerciseVM): string {
-    const m = vm.insight?.oneRm;
-    return m ? `Massimale stimato ${this.kg(m.value)} kg: apri i pesi` : 'Massimale: apri i pesi';
+    const m = this.massimaleOggi(vm);
+    if (!m) return 'Massimale: apri i pesi';
+    const p = this.percentualeInFuoco(vm);
+    return `Massimale stimato ${this.kg(m.value)} kg` + (p !== null ? `, ${p}% sulla serie in corso` : '') + ': apri i pesi';
   }
 
   /** Perche' il foglio non ha un massimale da dire. */
