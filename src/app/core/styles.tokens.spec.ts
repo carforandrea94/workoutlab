@@ -920,3 +920,43 @@ describe('styles.css — la percentuale del massimale sulla card', () => {
     expect(regola('.ex-chip.rm')).toContain('gap:5px');
   });
 });
+
+/**
+ * La scala dei pesi nel foglio del massimale: un punto per peso su una riga
+ * dall'80 al 100%. I punti sono segni che portano un dato: larghi almeno 8 px,
+ * a 3:1 dalla card, con l'anello del colore della card come nei grafici.
+ */
+describe('styles.css — la scala dei pesi', () => {
+  let css = '';
+  beforeAll(async () => {
+    const nome = 'node:fs';
+    const fs = await import(/* @vite-ignore */ nome);
+    css = fs.readFileSync('src/styles.css', 'utf8');
+  });
+  const regola = (sel: string) => css.match(new RegExp('(?:^|\\n)' + sel.replace(/[.()[\]>+:]/g, '\\$&') + '\\{[^}]*\\}'))?.[0] ?? '';
+
+  it('i punti sono larghi almeno 8 px, con l\'anello della card e il colore del segno secondario', () => {
+    const r = regola('.scala-punto');
+    expect(r).toContain('width:8px;height:8px');
+    expect(r).toContain('background:var(--ink-subdued)');
+    expect(r).toContain('box-shadow:0 0 0 2px var(--surface-card)');
+    expect(regola('.scala-punto.scelto')).toContain('background:var(--accent)');
+  });
+
+  it('la riga e il pieno sono sottili e dello stesso spessore', () => {
+    expect(regola('.scala-riempi')).toContain('height:4px');
+    expect(css).toContain('.scala-pista::before{content:"";position:absolute;left:0;right:0;top:30px;height:4px;');
+  });
+
+  it('le etichette hanno le cifre tabellari e non vanno a capo', () => {
+    const r = regola('.scala-kg');
+    expect(r).toContain('font-variant-numeric:tabular-nums');
+    expect(r).toContain('white-space:nowrap');
+  });
+
+  it('il peso e, sotto, percentuale e ripetizioni: una colonna a destra che non si restringe', () => {
+    expect(regola('.carico-num')).toContain('flex-direction:column');
+    expect(regola('.carico-num')).toContain('flex-shrink:0');
+    expect(regola('.carico-meta')).toContain('white-space:nowrap');
+  });
+});

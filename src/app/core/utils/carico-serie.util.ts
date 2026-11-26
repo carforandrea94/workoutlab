@@ -1,5 +1,6 @@
 import { ProgramLoad } from '../../models/workout.model';
-import { RmRow } from './load-estimate.util';
+import { RmRow, repsAtPercent } from './load-estimate.util';
+import { percentualeRm } from './percentuale-rm.util';
 import { conSconto } from './fatica.util';
 import { PASSO_PROGRESSIONE } from './progressione.util';
 import { MASSIMO_SCONTO } from './pausa.util';
@@ -34,6 +35,13 @@ export interface OpzioneCarico {
   kg: number;
   /** La riga nella card quando nella ruota c'e' questo peso: "come il 03/10". */
   breve: string;
+  /** Il peso come percentuale del massimale stimato; null senza massimale. */
+  percento: number | null;
+  /**
+   * Quante ripetizioni escono a questo peso, con la formula del massimale. null
+   * senza massimale o oltre il cento per cento: li' non c'e' un numero da dire.
+   */
+  ripAttese: number | null;
 }
 
 export interface DatiCarico {
@@ -105,6 +113,26 @@ function ripetizioni(raw: string | null | undefined): number | null {
  */
 export function opzioniCarico(d: DatiCarico): OpzioneCarico[] {
   const out: OpzioneCarico[] = [];
+  // Il massimale e' la riga "1 ripetizione" della tabella: il 100%.
+  const massimale = d.rmRows?.find(r => r.reps === 1)?.load ?? null;
+  /** Dove sta un peso rispetto al massimale: percentuale e ripetizioni che ne escono. */
+  const lettura = (kg: number): Pick<OpzioneCarico, 'percento' | 'ripAttese'> => {
+    const percento = percentualeRm(kg, massimale);
+    const rip = massimale ? repsAtPercent(kg / massimale * 100) : 0;
+    return { percento, ripAttese: rip > 0 ? rip : null };
+  };
+  /**
+   * A questo peso escono meno ripetizioni di quelle che il piano chiede oggi: lo si dice, perche'
+   * il numero nella ruota viene da un'altra seduta e il piano puo' essere cambiato. Non sui blocchi
+   * di un cluster, dove le ripetizioni sono del blocco e il peso della serie.
+   */
+  const troppoPesante = (kg: number): string | null => {
+    if (d.blocco !== undefined || d.previste === null) return null;
+    const attese = lettura(kg).ripAttese;
+    return attese !== null && d.previste - attese >= 1
+      ? `Oggi il piano ne chiede ${d.previste}: a questo peso ne escono circa ${attese}.`
+      : null;
+  };
   const fatica = d.fatica?.percento ?? 0;
   const pausa = d.pausa ?? 0;
   // Le due correzioni si sommano, fino a un tetto (vedi pausa.util).
@@ -124,9 +152,10 @@ export function opzioniCarico(d: DatiCarico): OpzioneCarico[] {
       // E' un fatto, e resta com'era; ma se oggi si arriva piu' stanchi lo si dice.
       avviso: fatica ? `${d.fatica!.motivo}: con questo peso potrebbero uscirne meno.`
         : pausa ? 'Dopo una pausa: con questo peso potrebbero uscirne meno.'
-        : null,
+        : troppoPesante(kgUltima),
       kg: kgUltima,
-      breve: `come il ${d.ultima.data}`
+      breve: `come il ${d.ultima.data}`,
+      ...lettura(kgUltima)
     });
 
     // Dall'ultima volta, un passo avanti o uno indietro: e' il peso che la
@@ -138,16 +167,19 @@ export function opzioniCarico(d: DatiCarico): OpzioneCarico[] {
         dettaglio: `Il peso del ${d.ultima.data} meno il ${pausa}%: si riprende il ritmo`,
         avviso: null,
         kg: conSconto(kgUltima, pausa),
-        breve: `−${pausa}% sul ${d.ultima.data}`
+        breve: `−${pausa}% sul ${d.ultima.data}`,
+        ...lettura(conSconto(kgUltima, pausa))
       });
     } else if (d.piu && !fatica) {
       out.push({
         chiave: 'piu',
         titolo: 'Prova di più',
         dettaglio: `Il ${d.ultima.data} sono uscite tutte le ripetizioni: un passo in più`,
-        avviso: null,
+        // E' un passo voluto: se a quel peso escono meno ripetizioni del piano, lo si legge qui.
+        avviso: troppoPesante(kgUltima + PASSO_PROGRESSIONE),
         kg: kgUltima + PASSO_PROGRESSIONE,
-        breve: `+${kgIt(PASSO_PROGRESSIONE)} kg sul ${d.ultima.data}`
+        breve: `+${kgIt(PASSO_PROGRESSIONE)} kg sul ${d.ultima.data}`,
+        ...lettura(kgUltima + PASSO_PROGRESSIONE)
       });
     }
   }
@@ -167,7 +199,8 @@ export function opzioniCarico(d: DatiCarico): OpzioneCarico[] {
         ? `Sopra le ${d.soglia} ripetizioni la stima si allarga: prendila come indicazione.`
         : null,
       kg: conSconto(riga.load, sconto),
-      breve: conCorrezione(comePrimo ? 'come il primo blocco' : `${riga.percent}% del massimale`)
+      breve: conCorrezione(comePrimo ? 'come il primo blocco' : `${riga.percent}% del massimale`),
+      ...lettura(conSconto(riga.load, sconto))
     });
   }
 
@@ -180,14 +213,34 @@ export function opzioniCarico(d: DatiCarico): OpzioneCarico[] {
     out.push({
       chiave: 'programma',
       titolo: `Dal programma, ${p.percent}%`,
-      dettaglio: conCorrezione(`Circa ${p.reps} ${p.reps === 1 ? 'ripetizione' : 'ripetizioni'}`),
+      dettaglio: conCorrezione(rispettoAllUltima(out.find(o => o.chiave === 'ultima')?.kg ?? null, conSconto(p.load, sconto))),
       avviso: scarto ? `Oggi il piano ne chiede ${d.previste}: a questo peso ne escono circa ${p.reps}.` : null,
       kg: conSconto(p.load, sconto),
-      breve: conCorrezione(`programma ${p.percent}%`)
+      breve: conCorrezione(`programma ${p.percent}%`),
+      ...lettura(conSconto(p.load, sconto))
     });
   }
 
+  // "Come l'ultima volta" e "Per N ripetizioni" sono spesso lo stesso peso, scritto una volta con
+  // la virgola (112,2) e una arrotondata al mezzo chilo (112): due risposte alla stessa domanda.
+  // Si tiene la prima e si dice che vale anche per le ripetizioni di oggi. Non con uno sconto
+  // (allora le due cose sono davvero diverse) ne' sui blocchi di un cluster.
+  const ultima = out.find(o => o.chiave === 'ultima');
+  const stima = out.find(o => o.chiave === 'rm');
+  if (ultima && stima && !sconto && !comePrimo && Math.abs(stima.kg - ultima.kg) <= 0.5) {
+    ultima.dettaglio += ` · è anche il peso per ${n}`;
+    out.splice(out.indexOf(stima), 1);
+  }
+
   return out;
+}
+
+/** Il peso del programma rispetto a quello dell'ultima volta: e' quello che fa dire "ma ho fatto di piu'". */
+function rispettoAllUltima(kgUltima: number | null, kg: number): string {
+  if (kgUltima === null) return 'La percentuale scelta per tutto il programma';
+  const diff = kg - kgUltima;
+  if (Math.abs(diff) < 0.5) return 'Come l\'ultima volta';
+  return diff < 0 ? 'Più leggero dell\'ultima volta' : 'Più pesante dell\'ultima volta';
 }
 
 const uguali = (a: number, b: number) => Math.abs(a - b) < 0.01;
