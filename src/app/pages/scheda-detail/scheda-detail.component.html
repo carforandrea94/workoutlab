@@ -92,9 +92,11 @@
             <span class="piano-n" role="columnheader"><span class="sr-only">Serie</span></span>
             <span role="columnheader" *ngFor="let k of blocchiAnteprima(vm)">Blocco {{ k }}</span>
           </div>
-          <div class="piano-riga" role="row" *ngFor="let row of vm.rows; let j = index">
+          <div class="piano-riga" role="row" *ngFor="let row of vm.rows; let j = index"
+            [class.con-pct]="percentualeRiga(vm, row) !== null">
             <span class="piano-n" role="rowheader">{{ j + 1 }}</span>
             <span role="cell" *ngFor="let c of celleAnteprima(vm, row)">{{ c }}</span>
+            <span class="piano-pct" role="cell" *ngIf="percentualeRiga(vm, row) as p">{{ p }}%<span class="sr-only"> del massimale</span></span>
           </div>
         </div>
         <p class="piano-fonte" *ngIf="pesiUltimaVolta(vm)" [class.passo]="vm.passo">
@@ -113,6 +115,7 @@
               [class.done]="row.done" [disabled]="setsLocked" (click)="setActive(vm, j)">
               <span class="setline-n">{{ j + 1 }}</span>
               <span class="setline-val">{{ rowSummary(row) }}</span>
+              <span class="setline-pct" *ngIf="percentualeRiga(vm, row) as p">{{ p }}%<span class="sr-only"> del massimale</span></span>
               <span class="setline-extra" *ngIf="row.extra">in più</span>
               <app-icona *ngIf="row.done" name="checkmark" [size]="14" class="setline-tick"></app-icona>
               <!-- La matita dice che una serie fatta si riapre: e' cosi' che si torna a correggerla. -->
@@ -307,9 +310,13 @@
           <!-- Il massimale e i pesi che ne vengono stanno in un foglio, come il
                recupero: il bilanciere lo apre. Nella card occupavano mezza
                schermata sotto le serie. -->
+          <!-- Con la percentuale del massimale della serie in corso: segue le serie
+               (spuntata una passa alla prossima) e il massimale, che oggi sale se una
+               serie va meglio dell'ultima volta. -->
           <button class="ex-chip rm" *ngIf="!isStorico" (click)="apriMassimale(vm, $event)"
             [attr.aria-label]="etichettaMassimale(vm)">
             <app-icona name="barbell" [size]="14"></app-icona>
+            <span class="rm-pct" *ngIf="percentualeInFuoco(vm) as p">{{ p }}%</span>
           </button>
           <!-- Solo quando e' WAVE: "FISSO" e' il caso normale e occupava una riga
                per non distinguere niente. -->
@@ -550,6 +557,10 @@
         <ng-template #nessunaStima>
           <p class="massimale-vuoto">{{ testoSenzaMassimale(f.vm) }}</p>
         </ng-template>
+        <!-- Una serie di oggi ha superato il massimale: le percentuali sulla card partono da questo. -->
+        <p class="massimale-oggi" *ngIf="massimaleAlzato(f.vm) as o">
+          Oggi {{ kg(o.value) }} kg, da {{ kg(o.load) }} × {{ o.reps }}: le percentuali sulla card partono da qui.
+        </p>
 
         <ng-container *ngIf="opzioniDelFoglio(f) as opzioni">
           <ng-container *ngIf="opzioni.length">

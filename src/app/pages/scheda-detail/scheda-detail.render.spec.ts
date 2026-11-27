@@ -332,7 +332,7 @@ describe('SchedaDetailComponent — accessibilita\' delle testate (disegno vero)
       const storia = [{ id: 's1', session: { date: '2026-10-03', exercises: [{ name: 'Panca piana', sets: [{ load: '33', reps: '10' }, { load: '33', reps: '9' }] }] } }];
       const { tutti, testo } = await monta('slider', false, false, undefined, undefined, storia);
       const card = tutti('.exslide')[0];
-      expect(Array.from(card.querySelectorAll('.piano-riga span[role="cell"]')).map(e => e.textContent!.trim())).toEqual(['10 × 33 kg', '10 × 33 kg']);
+      expect(Array.from(card.querySelectorAll('.piano-riga span[role="cell"]:not(.piano-pct)')).map(e => e.textContent!.trim())).toEqual(['10 × 33 kg', '10 × 33 kg']);
       expect(testo('.exslide .piano-fonte')[0]).toBe('Pesi dell\'ultima volta, 03/10');
       expect(tutti('.infocard.ripresa').length).toBe(0);
     });
@@ -341,7 +341,7 @@ describe('SchedaDetailComponent — accessibilita\' delle testate (disegno vero)
       const storia = [{ id: 's1', session: { date: '2026-10-03', exercises: [{ name: 'Panca piana', sets: [{ load: '33', reps: '10' }, { load: '32,5', reps: '11' }] }] } }];
       const { tutti, testo } = await monta('slider', false, false, undefined, undefined, storia);
       const card = tutti('.exslide')[0];
-      expect(Array.from(card.querySelectorAll('.piano-riga span[role="cell"]')).map(e => e.textContent!.trim())).toEqual(['10 × 35,5 kg', '10 × 35 kg']);
+      expect(Array.from(card.querySelectorAll('.piano-riga span[role="cell"]:not(.piano-pct)')).map(e => e.textContent!.trim())).toEqual(['10 × 35,5 kg', '10 × 35 kg']);
       expect(testo('.exslide .piano-fonte')[0]).toBe('Pesi del 03/10 più 2,5 kg: sono uscite tutte le ripetizioni');
       // Il riscaldamento porta al peso di oggi: 40-60-80% di 35,5.
       expect(testo('.exslide .suggestion-chip')[0]).toBe('Riscaldamento: 15 kg x8, 22,5 kg x5, 27,5 kg x3');
@@ -353,7 +353,7 @@ describe('SchedaDetailComponent — accessibilita\' delle testate (disegno vero)
       expect(c.pausa).toBe(5);
       const card = tutti('.exslide')[0];
       // Niente passo in piu': si riparte.
-      expect(Array.from(card.querySelectorAll('.piano-riga span[role="cell"]')).map(e => e.textContent!.trim())).toEqual(['10 × 38 kg', '10 × 38 kg']);
+      expect(Array.from(card.querySelectorAll('.piano-riga span[role="cell"]:not(.piano-pct)')).map(e => e.textContent!.trim())).toEqual(['10 × 38 kg', '10 × 38 kg']);
       expect(testo('.exslide .piano-fonte')[0]).toBe('Pesi del 03/10 meno il 5%, per ripartire');
       expect(testo('.infocard.ripresa')).toEqual(['Si riparte. Oggi i pesi suggeriti partono il 5% più bassi: si riprende il ritmo, poi si torna a salire.']);
       expect(testo('.infocard.ripresa')[0]).not.toMatch(/giorn/);
@@ -611,11 +611,151 @@ describe('SchedaDetailComponent — accessibilita\' delle testate (disegno vero)
       expect(chip.length).toBe(3);
       expect(chip.every(b => b.previousElementSibling?.classList.contains('rest'))).toBe(true);
       expect(chip.map(b => b.getAttribute('aria-label'))).toEqual([
-        'Massimale stimato 93 kg: apri i pesi', 'Massimale: apri i pesi', 'Massimale: apri i pesi'
+        'Massimale stimato 93 kg, 86% sulla serie in corso: apri i pesi', 'Massimale: apri i pesi', 'Massimale: apri i pesi'
       ]);
       expect(chip[0].querySelector('app-icona')).not.toBeNull();
       // Nella card il massimale non c'e' piu': sta nel foglio.
       expect(tutti('.exslide .massimale').length).toBe(0);
+    });
+
+    /**
+     * La percentuale del massimale sta sull'esercizio e segue le serie: il peso
+     * diviso il massimale, e il massimale sale se oggi una serie va meglio
+     * dell'ultima volta (vedi percentuale-rm.util). Con 80 x 6 l'ultima volta il
+     * massimale e' 93 kg: 80 kg e' l'86%.
+     */
+    describe('la percentuale del massimale sulla card', () => {
+      const pct = (card: HTMLElement) => card.querySelector('button.ex-chip.rm .rm-pct')?.textContent?.trim() ?? null;
+      const righePct = (card: HTMLElement) => Array.from(card.querySelectorAll('.piano-pct')).map(e => e.firstChild!.textContent!.trim());
+
+      it('prima dell\'avvio c\'e\' sul chip e a fianco di ogni serie della tabella', async () => {
+        const { tutti } = await monta('slider', false, false, undefined, undefined, storia);
+        const card = tutti('.exslide')[0];
+        expect(pct(card)).toBe('86%');
+        expect(righePct(card)).toEqual(['86%', '86%']);
+        // Una colonna in piu' solo dove c'e'; chi non la vede la sente: "86% del massimale".
+        expect(card.querySelectorAll('.piano-riga.con-pct').length).toBe(2);
+        expect(card.querySelector('.piano-pct .sr-only')!.textContent).toBe(' del massimale');
+      });
+
+      it('un esercizio senza storia non ha percentuali: niente massimale, niente numero inventato', async () => {
+        const { tutti } = await monta('slider', true, false, undefined, undefined, storia);
+        const senza = tutti('.exslide')[1];
+        expect(pct(senza)).toBeNull();
+        expect(senza.querySelector('.setline-pct')).toBeNull();
+        expect(senza.querySelector('.piano-pct')).toBeNull();
+      });
+
+      it('in allenamento le righe chiuse dicono la percentuale, e spuntare una serie la porta sulla prossima', async () => {
+        const { c, tutti, aggiorna } = await monta('slider', true, false, undefined, undefined, storia);
+        const vm = c.exercises[0];
+        const card = () => tutti('.exslide')[0];
+        // Aperta la prima, la seconda e' una riga chiusa con il suo peso suggerito.
+        expect(Array.from(card().querySelectorAll('.setline-pct')).map(e => e.firstChild!.textContent!.trim())).toEqual(['86%']);
+        expect(pct(card())).toBe('86%');
+
+        // Nella serie aperta si gira la ruota: il chip segue il peso che c'e'.
+        c.setLoad(vm, 0, 85);
+        aggiorna();
+        expect(pct(card())).toBe('91%');
+        c.setReps(vm, 0, 6);
+
+        // Spuntata, la serie 1 resta con la sua percentuale e il chip passa alla 2 (80 kg).
+        // 85 x 6 -> massimale di oggi 98,5: 85 e' l'86%, 80 e' l'81%.
+        c.confirmSet(vm, 0);
+        aggiorna();
+        expect(Array.from(card().querySelectorAll('.setline-pct')).map(e => e.firstChild!.textContent!.trim())).toEqual(['86%']);
+        expect(pct(card())).toBe('81%');
+      });
+
+      it('il massimale sale con una serie migliore dell\'ultima volta e le percentuali si ricalcolano', async () => {
+        const { c, tutti, aggiorna } = await monta('slider', true, false, undefined, undefined, storia);
+        const vm = c.exercises[0];
+        expect(c.massimaleOggi(vm)).toEqual({ value: 93, daOggi: null });
+        expect(c.massimaleAlzato(vm)).toBeNull();
+
+        c.setLoad(vm, 0, 90);
+        c.setReps(vm, 0, 6);
+        c.confirmSet(vm, 0);
+        aggiorna();
+        // 90 x 6 = 90 * 36 / 31 = 104,5
+        expect(c.massimaleOggi(vm)).toEqual({ value: 104.5, daOggi: { load: 90, reps: 6 } });
+        expect(c.massimaleAlzato(vm)).toEqual({ value: 104.5, load: 90, reps: 6 });
+        // La serie 2 resta a 80 kg: dall'86% (su 93) al 77% (su 104,5).
+        expect(pct(tutti('.exslide')[0])).toBe('77%');
+        expect(tutti('.exslide')[0].querySelector('button.ex-chip.rm')!.getAttribute('aria-label'))
+          .toBe('Massimale stimato 104,5 kg, 77% sulla serie in corso: apri i pesi');
+      });
+
+      it('una serie piu\' leggera non abbassa il massimale', async () => {
+        const { c, tutti, aggiorna } = await monta('slider', true, false, undefined, undefined, storia);
+        const vm = c.exercises[0];
+        c.setLoad(vm, 0, 60);
+        c.setReps(vm, 0, 6);
+        c.confirmSet(vm, 0);
+        aggiorna();
+        // 60 x 6 = 69,5: sotto i 93 dell'ultima volta
+        expect(c.massimaleOggi(vm)).toEqual({ value: 93, daOggi: null });
+        // 80 kg sulla serie 2: sempre l'86%.
+        expect(pct(tutti('.exslide')[0])).toBe('86%');
+      });
+
+      it('senza storia il massimale nasce dalla prima serie fatta oggi, e da quel momento ci sono le percentuali', async () => {
+        const { c, tutti, aggiorna } = await monta('slider', true, false, undefined, undefined, storia);
+        const vm = c.exercises[1];
+        expect(c.massimaleOggi(vm)).toBeNull();
+        c.setLoad(vm, 0, 60);
+        c.setReps(vm, 0, 8);
+        c.confirmSet(vm, 0);
+        aggiorna();
+        // 60 x 8 = 60 * 36 / 29 = 74,5; la serie 2 non ha ancora un peso: niente numero.
+        expect(c.massimaleOggi(vm)).toEqual({ value: 74.5, daOggi: { load: 60, reps: 8 } });
+        const card = tutti('.exslide')[1];
+        expect(Array.from(card.querySelectorAll('.setline-pct')).map(e => e.firstChild!.textContent!.trim())).toEqual(['81%']);
+        expect(pct(card)).toBeNull();
+        expect(card.querySelector('button.ex-chip.rm')!.getAttribute('aria-label')).toBe('Massimale stimato 74,5 kg: apri i pesi');
+      });
+
+      // Su un cluster il peso e' dei blocchi e ognuno ha il suo: la tabella e le righe non portano una
+      // percentuale sola, il chip dice quella del primo blocco, che e' quello che decide il peso della serie.
+      it('su un cluster niente percentuale sulle righe, e sul chip quella del primo blocco', async () => {
+        const { c } = await monta('slider', true, false, undefined, undefined, storia);
+        const vm: any = {
+          cluster: { blocks: [8, 8], restSec: 20, end: 'fixed' },
+          insight: { oneRm: { value: 100 } },
+          activeRow: 0,
+          rows: [{
+            reps: '', load: '62,5-55', done: false, ripPlaceholder: '', loadPlaceholder: '', extra: false,
+            blocks: [
+              { reps: '', load: '', ripPlaceholder: '8', loadPlaceholder: '62,5', done: false },
+              { reps: '', load: '', ripPlaceholder: '8', loadPlaceholder: '55', done: false }
+            ]
+          }]
+        };
+        expect(c.percentualeRiga(vm, vm.rows[0])).toBeNull();
+        expect(c.percentualeInFuoco(vm)).toBe(63);
+      });
+
+      it('nel foglio una riga dice da dove viene il massimale di oggi, solo quando e\' salito', async () => {
+        const { c, tutti, aggiorna } = await monta('slider', true, false, undefined, undefined, storia);
+        let f = await apri(tutti('.exslide')[0], aggiorna);
+        expect(f.querySelector('.massimale-oggi')).toBeNull();
+        c.caricoChiuso();
+
+        const vm = c.exercises[0];
+        c.setLoad(vm, 0, 90);
+        c.setReps(vm, 0, 6);
+        c.confirmSet(vm, 0);
+        aggiorna();
+        c.foglioCarico = { vm, serie: vm.activeRow };
+        c.foglioCaricoAperto = true;
+        aggiorna();
+        f = foglio()!;
+        expect(pulito(f.querySelector('.massimale-oggi'))).toBe('Oggi 104,5 kg, da 90 × 6: le percentuali sulla card partono da qui.');
+        // Il massimale di cui parla la testata del foglio resta quello dell'ultima volta.
+        expect(pulito(f.querySelector('.massimale-kg'))).toBe('93 kg');
+      });
+
     });
 
     it('c\'e\' anche prima dell\'avvio e nell\'elenco', async () => {
@@ -1082,6 +1222,18 @@ describe('SchedaDetailComponent — il resoconto nella pagina (disegno vero)', (
     expect(tutti('ion-header ion-segment').length).toBe(0);
     // Eliminare la seduta resta in fondo in tutte e due le viste.
     expect(tutti('.azioni-seduta').length).toBe(1);
+  });
+
+  it('nello storico le serie non portano la percentuale: il massimale di oggi non c\'entra con una seduta passata', async () => {
+    const { c, tutti, aggiorna } = await monta(true);
+    c.mostraVistaStorico('serie');
+    aggiorna();
+    expect(tutti('.exlist').length).toBe(1);
+    expect(tutti('.setline-pct').length).toBe(0);
+    expect(tutti('.piano-pct').length).toBe(0);
+    expect(tutti('button.ex-chip.rm .rm-pct').length).toBe(0);
+    expect(c.percentualeInFuoco(c.exercises[0])).toBeNull();
+    expect(c.percentualeRiga(c.exercises[0], c.exercises[0].rows[0])).toBeNull();
   });
 
   it('"Serie" mostra le serie da correggere e toglie il resoconto', async () => {

@@ -886,3 +886,37 @@ describe('styles.css — tocco e movimento', () => {
     expect(r).toContain('scale:var(--press-scale-small)');
   });
 });
+
+/**
+ * La percentuale del massimale sulla card: sul chip del bilanciere, in una
+ * colonna a destra della tabella e in fondo alle righe chiuse. Senza la colonna
+ * in piu' la cella andrebbe a capo come una riga nuova.
+ */
+describe('styles.css — la percentuale del massimale sulla card', () => {
+  let css = '';
+  beforeAll(async () => {
+    const nome = 'node:fs';
+    const fs = await import(/* @vite-ignore */ nome);
+    css = fs.readFileSync('src/styles.css', 'utf8');
+  });
+  const regola = (sel: string) => css.match(new RegExp('(?:^|\\n)' + sel.replace(/[.()[\]>+:]/g, '\\$&') + '\\{[^}]*\\}'))?.[0] ?? '';
+
+  it('la tabella ha una colonna in piu\' solo sulle righe che hanno la percentuale', () => {
+    const r = regola('.piano-riga.con-pct');
+    expect(r).toMatch(/grid-template-columns:28px repeat\(var\(--colonne, 1\), minmax\(0, 1fr\)\) auto;/);
+    // La regola base resta senza: le righe dei cluster non la mostrano.
+    expect(regola('.piano-riga')).not.toContain('auto');
+  });
+
+  it('le percentuali hanno le cifre tabellari e il colore secondario, come gli altri numeri di contorno', () => {
+    expect(regola('.ex-chip.rm .rm-pct')).toContain('font-variant-numeric:tabular-nums');
+    expect(regola('.setline-pct')).toContain('font-variant-numeric:tabular-nums');
+    expect(regola('.setline-pct')).toContain('color:var(--label-3)');
+    expect(regola('.piano-riga > span.piano-pct')).toContain('color:var(--label-3)');
+    expect(regola('.piano-riga > span.piano-pct')).toContain('text-align:right');
+  });
+
+  it('il chip del bilanciere con la percentuale tiene il respiro dell\'icona, come quello del recupero', () => {
+    expect(regola('.ex-chip.rm')).toContain('gap:5px');
+  });
+});
