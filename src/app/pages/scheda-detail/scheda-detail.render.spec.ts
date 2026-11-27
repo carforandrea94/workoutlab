@@ -672,7 +672,6 @@ describe('SchedaDetailComponent — accessibilita\' delle testate (disegno vero)
         const { c, tutti, aggiorna } = await monta('slider', true, false, undefined, undefined, storia);
         const vm = c.exercises[0];
         expect(c.massimaleOggi(vm)).toEqual({ value: 93, daOggi: null });
-        expect(c.massimaleAlzato(vm)).toBeNull();
 
         c.setLoad(vm, 0, 90);
         c.setReps(vm, 0, 6);
@@ -680,7 +679,6 @@ describe('SchedaDetailComponent — accessibilita\' delle testate (disegno vero)
         aggiorna();
         // 90 x 6 = 90 * 36 / 31 = 104,5
         expect(c.massimaleOggi(vm)).toEqual({ value: 104.5, daOggi: { load: 90, reps: 6 } });
-        expect(c.massimaleAlzato(vm)).toEqual({ value: 104.5, load: 90, reps: 6 });
         // La serie 2 resta a 80 kg: dall'86% (su 93) al 77% (su 104,5).
         expect(pct(tutti('.exslide')[0])).toBe('77%');
         expect(tutti('.exslide')[0].querySelector('button.ex-chip.rm')!.getAttribute('aria-label'))
@@ -736,10 +734,11 @@ describe('SchedaDetailComponent — accessibilita\' delle testate (disegno vero)
         expect(c.percentualeInFuoco(vm)).toBe(63);
       });
 
-      it('nel foglio una riga dice da dove viene il massimale di oggi, solo quando e\' salito', async () => {
+      it('nel foglio l\'intestazione e\' il massimale di oggi, con la serie da cui viene, solo quando e\' salito', async () => {
         const { c, tutti, aggiorna } = await monta('slider', true, false, undefined, undefined, storia);
         let f = await apri(tutti('.exslide')[0], aggiorna);
-        expect(f.querySelector('.massimale-oggi')).toBeNull();
+        expect(pulito(f.querySelector('.massimale-kg'))).toBe('93 kg');
+        expect(pulito(f.querySelector('.massimale-da'))).toMatch(/^Una stima, non un peso da caricare\. Da 80 × 6 del 03\/10/);
         c.caricoChiuso();
 
         const vm = c.exercises[0];
@@ -751,9 +750,159 @@ describe('SchedaDetailComponent — accessibilita\' delle testate (disegno vero)
         c.foglioCaricoAperto = true;
         aggiorna();
         f = foglio()!;
-        expect(pulito(f.querySelector('.massimale-oggi'))).toBe('Oggi 104,5 kg, da 90 × 6: le percentuali sulla card partono da qui.');
-        // Il massimale di cui parla la testata del foglio resta quello dell'ultima volta.
-        expect(pulito(f.querySelector('.massimale-kg'))).toBe('93 kg');
+        // 90 x 6 = 104,5: il massimale e' quello di oggi, e dice da dove viene e com'era l'ultima volta.
+        expect(pulito(f.querySelector('.massimale-kg'))).toBe('104,5 kg');
+        expect(pulito(f.querySelector('.massimale-da'))).toBe('Una stima, non un peso da caricare. Da 90 × 6 di oggi · l\'ultima volta 93 kg');
+        // La riga "Oggi ..." di prima non serve piu': e' l'intestazione.
+        expect(f.querySelector('.massimale-oggi')).toBeNull();
+      });
+
+      /**
+       * "Ho fatto 12 ripetizioni con 20 kg: come fa a essere 17 il mio massimale?" Alzate a 90: l'ultima volta 12 x 12
+       * (17,5 kg), la volta prima 14 x 12 (20 kg), oggi 20 x 12. Il foglio intestava il 17,5 e proponeva pesi
+       * (15 kg dal programma, 14,5 da "Prova di piu'") calcolati su quello, con "Oggi 29 kg" in una riga a parte.
+       */
+      describe('con un massimale di oggi molto sopra l\'ultima volta (Alzate a 90)', () => {
+        // Un esercizio di un muscolo che oggi non ha altri esercizi prima di lui: niente sconto per l'ordine
+        // (Croci verrebbe dopo la panca, e lo sconto toglierebbe "Prova di piu'").
+        const alzate = [
+          { id: 'a0', session: { date: '2026-10-31', exercises: [{ name: 'Dip', sets: [{ load: '14', reps: '12' }, { load: '14', reps: '12' }] }] } },
+          { id: 'a1', session: { date: '2026-11-07', exercises: [{ name: 'Dip', sets: [{ load: '12', reps: '12' }, { load: '12', reps: '12' }] }] } }
+        ];
+        const titoli = (f: HTMLElement) => Array.from(f.querySelectorAll('ion-radio-group ion-item.scelta-opt, ion-list.carico-lettura ion-item.scelta-opt'))
+          .map(v => [pulito(v.querySelector('.carico-titolo')), pulito(v.querySelector('.carico-kg')), pulito(v.querySelector('.carico-meta'))]);
+
+        // Il foglio e' un ion-modal attaccato al body: quello di un test prima non deve passare per il nostro.
+        beforeEach(() => { document.querySelectorAll('ion-modal').forEach(m => m.remove()); });
+        async function apriPer(c: any, vm: any, aggiorna: () => void) {
+          c.foglioCarico = { vm, serie: vm.activeRow };
+          c.foglioCaricoAperto = true;
+          aggiorna();
+          await vi.waitFor(() => expect(foglio()).not.toBeNull());
+          aggiorna();
+          return foglio()!;
+        }
+
+        async function conVentiPerDodici(storiaDi: unknown[] = alzate) {
+          const m = await monta('slider', true, false, undefined, undefined, storiaDi, 85);
+          const vm = m.c.exercises[2];
+          // Il piano chiede 12 ripetizioni: la serie 2 e' quella per cui il foglio propone i pesi.
+          m.c.setReps(vm, 1, 12);
+          m.c.setLoad(vm, 0, 20); m.c.setReps(vm, 0, 12); m.c.confirmSet(vm, 0);
+          m.aggiorna();
+          return { ...m, vm };
+        }
+
+        it('prima di oggi il foglio dice 17,5, com\'era', async () => {
+          const { tutti, aggiorna } = await monta('slider', true, false, undefined, undefined, alzate, 85);
+          const f = await apri(tutti('.exslide')[2], aggiorna);
+          expect(pulito(f.querySelector('.massimale-kg'))).toBe('17,5 kg');
+          expect(pulito(f.querySelector('.massimale-da'))).toBe('Una stima, non un peso da caricare. Da 12 × 12 del 07/11 · −2,5 kg dalla volta prima');
+        });
+
+        it('dopo 20 x 12 il massimale e\' 29, e dice da quale serie e com\'era l\'ultima volta', async () => {
+          const { vm, c, tutti, aggiorna } = await conVentiPerDodici();
+          const f = await apriPer(c, vm, aggiorna);
+          expect(pulito(f.querySelector('.massimale-kg'))).toBe('29 kg');
+          expect(pulito(f.querySelector('.massimale-da'))).toBe('Una stima, non un peso da caricare. Da 20 × 12 di oggi · l\'ultima volta 17,5 kg');
+          // E la scala ha in fondo lo stesso 29.
+          expect(pulito(f.querySelector('.scala-kg-massimale'))).toBe('29');
+          expect(tutti('.exslide').length).toBeGreaterThan(0);
+        });
+
+        it('i pesi stimati e le percentuali partono dal 29: 12 ripetizioni sono 20 kg, il programma all\'85% e\' 24,5', async () => {
+          const { vm, c, aggiorna } = await conVentiPerDodici();
+          const f = await apriPer(c, vm, aggiorna);
+          // Dal piu' pesante: programma 24,5 (84% di 29, circa 7 rip.), per 12 rip. 20 (69%), "prova di piu'" 14,5 (50%), ultima volta 12 (41%).
+          expect(titoli(f)).toEqual([
+            ['Dal programma, 85%', '24,5 kg', '84% · circa 7 rip.'],
+            ['Per 12 ripetizioni', '20 kg', '69% · circa 12 rip.'],
+            ['Prova di più', '14,5 kg', '50% · circa 19 rip.'],
+            ['Come l\'ultima volta', '12 kg', '41% · circa 22 rip.']
+          ]);
+        });
+
+        it('sulla card la percentuale e\' la stessa del foglio: la serie 2 a 20 kg e\' il 69%', async () => {
+          const { vm, c, tutti, aggiorna } = await conVentiPerDodici();
+          c.setLoad(vm, 1, 20);
+          aggiorna();
+          expect(tutti('.exslide')[2].querySelector('button.ex-chip.rm .rm-pct')!.textContent!.trim()).toBe('69%');
+        });
+
+        it('senza una serie di oggi sopra l\'ultima volta non cambia niente: la tabella e il programma restano quelli di prima', async () => {
+          const { c, tutti, aggiorna } = await monta('slider', true, false, undefined, undefined, alzate, 85);
+          const vm = c.exercises[2];
+          // 10 x 12 = 14,5: sotto il 17,5 dell'ultima volta
+          c.setLoad(vm, 0, 10);
+          c.setReps(vm, 0, 12);
+          c.confirmSet(vm, 0);
+          aggiorna();
+          expect(c.massimaleOggi(vm)).toEqual({ value: 17.5, daOggi: null });
+          const f = await apriPer(c, vm, aggiorna);
+          expect(pulito(f.querySelector('.massimale-kg'))).toBe('17,5 kg');
+          expect(titoli(f).map(r => r[0])).toContain('Dal programma, 85%');
+          expect(tutti('.exslide').length).toBeGreaterThan(0);
+        });
+
+        it('senza storia, fatta la prima serie il foglio ha un massimale e i suoi pesi', async () => {
+          const { c, vm, aggiorna } = await conVentiPerDodici([]);
+          const f = await apriPer(c, vm, aggiorna);
+          expect(f.querySelector('.massimale-vuoto')).toBeNull();
+          expect(pulito(f.querySelector('.massimale-kg'))).toBe('29 kg');
+          expect(pulito(f.querySelector('.massimale-da'))).toBe('Una stima, non un peso da caricare. Da 20 × 12 di oggi');
+          expect(titoli(f).map(r => r[0])).toEqual(['Dal programma, 85%', 'Per 12 ripetizioni']);
+        });
+      });
+
+      it('dopo una pausa, una serie di oggi sopra l\'ultima volta toglie "Per ripartire" e lo sconto: oggi si e\' gia\' misurato', async () => {
+        document.querySelectorAll('ion-modal').forEach(m => m.remove());
+        const { c, tutti, aggiorna } = await monta('slider', true, false, undefined, undefined, storia, null, addDaysISO(todayLocalISO(), -9));
+        expect(c.pausa).toBe(5);
+        const vm = c.exercises[0];
+        let f = await apri(tutti('.exslide')[0], aggiorna);
+        const titolo = (v: HTMLElement) => Array.from(v.querySelectorAll('ion-item.scelta-opt')).map(i => pulito(i.querySelector('.carico-titolo')));
+        expect(titolo(f)).toContain('Per ripartire');
+        expect(Array.from(f.querySelectorAll('.carico-dettaglio')).some(d => pulito(d).includes('per ripartire'))).toBe(true);
+        c.caricoChiuso();
+
+        // 90 x 6 = 104,5: sopra i 93 dell'ultima volta
+        c.setLoad(vm, 0, 90);
+        c.setReps(vm, 0, 6);
+        c.confirmSet(vm, 0);
+        aggiorna();
+        c.foglioCarico = { vm, serie: vm.activeRow };
+        c.foglioCaricoAperto = true;
+        aggiorna();
+        await vi.waitFor(() => expect(foglio()).not.toBeNull());
+        aggiorna();
+        f = foglio()!;
+        expect(titolo(f)).not.toContain('Per ripartire');
+        expect(Array.from(f.querySelectorAll('.carico-dettaglio')).some(d => pulito(d).includes('per ripartire'))).toBe(false);
+      });
+
+      it('con una serie di oggi sopra l\'ultima volta gli sconti per l\'ordine non servono piu\': il massimale e\' misurato', async () => {
+        const allora = [{ id: 's1', session: { date: '2026-10-03', exercises: [
+          { name: 'Croci', sets: [{ load: '20', reps: '10', done: true }] },
+          { name: 'Panca piana', sets: [{ load: '80', reps: '6', done: true }] }
+        ] } }];
+        const { c, tutti, aggiorna } = await monta('slider', true, false, undefined, undefined, allora);
+        const vm = c.exercises[1];
+        let f = await apri(tutti('.exslide')[1], aggiorna);
+        expect(f.querySelector('.massimale-fatica')).not.toBeNull();
+        c.caricoChiuso();
+
+        // 30 x 10 = 40: sopra i 26,5 dell'ultima volta
+        c.setLoad(vm, 0, 30);
+        c.setReps(vm, 0, 10);
+        c.confirmSet(vm, 0);
+        aggiorna();
+        c.foglioCarico = { vm, serie: vm.activeRow };
+        c.foglioCaricoAperto = true;
+        aggiorna();
+        f = foglio()!;
+        expect(f.querySelector('.massimale-fatica')).toBeNull();
+        const per = Array.from(f.querySelectorAll('ion-item.scelta-opt')).find(v => pulito(v.querySelector('.carico-titolo')).startsWith('Per '))!;
+        expect(pulito(per.querySelector('.carico-dettaglio'))).not.toContain('per l\'ordine');
       });
 
     });
@@ -954,7 +1103,8 @@ describe('SchedaDetailComponent — accessibilita\' delle testate (disegno vero)
       c.exercises[0].activeRow = null;
       aggiorna();
       const f = await apri(tutti('.exslide')[0], aggiorna);
-      expect(pulito(f.querySelector('.massimale-kg'))).toBe('93 kg');
+      // Tutte fatte ai pesi e alle ripetizioni del piano (80 x 10): il massimale e' quello di oggi, 106,5, non i 93 di prima.
+      expect(pulito(f.querySelector('.massimale-kg'))).toBe('106,5 kg');
       expect(f.querySelector('.scelta-gruppo')).toBeNull();
       expect(c.foglioCarico!.serie).toBeNull();
       expect(c.opzioniDelFoglio(c.foglioCarico!)).toEqual([]);
