@@ -322,7 +322,9 @@ describe('SchedaDetailComponent — la tabella dei massimali per esercizio', () 
     component.setReps(vm, 0, 1);
     expect(stima(component, vm).kg).toBe(93);     // la riga "1" E' il massimale
     component.setReps(vm, 0, 6);
-    expect(stima(component, vm).kg).toBe(80);     // il peso davvero sollevato
+    // A 6 ripetizioni il peso e' quello davvero sollevato: lo stesso dell'ultima volta, una riga sola.
+    expect(stima(component, vm)).toBeUndefined();
+    expect(component.opzioniCarico(vm, 0)[0]).toMatchObject({ chiave: 'ultima', kg: 80, dettaglio: 'Serie 1 del 24/09, 6 ripetizioni · è anche il peso per 6' });
     component.setReps(vm, 0, 3);
     expect(stima(component, vm).kg).toBe(88);
   });
@@ -1523,7 +1525,11 @@ describe('SchedaDetailComponent — massimale e pesi, le correzioni', () => {
     it('il primo blocco ha il peso per le sue ripetizioni, il secondo lo stesso, non quello per 6', () => {
       const { component, vm } = conCluster();
       const per = (n: number) => vm.insight.rmRows.find((r: any) => r.reps === n).load;
-      expect(component.opzioniCarico(vm, 0).find(o => o.chiave === 'rm')).toMatchObject({ titolo: 'Per 8 ripetizioni', kg: per(8) });
+      // Il primo blocco ripete l'ultima volta (60 x 8): e' lo stesso peso, e sta in una riga sola.
+      const primo = component.opzioniCarico(vm, 0);
+      expect(primo.find(o => o.chiave === 'rm')).toBeUndefined();
+      expect(primo.find(o => o.chiave === 'ultima')!.dettaglio).toContain('è anche il peso per 8');
+      expect(primo.find(o => o.chiave === 'ultima')!.kg).toBe(per(8));
       vm.rows[0].blocks[0].done = true;
       vm.rows[0].blocks[0].reps = '8';
       const secondo = component.opzioniCarico(vm, 0).find(o => o.chiave === 'rm')!;

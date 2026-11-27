@@ -34,6 +34,8 @@ import { serieDiRiscaldamento } from '../../core/utils/riscaldamento.util';
 import { conSconto, primaDelloStessoGruppo, scontoFatica } from '../../core/utils/fatica.util';
 import { PASSO_PROGRESSIONE, provaDiPiu, ripetizioniDaRaggiungere } from '../../core/utils/progressione.util';
 import { MassimaleDiOggi, massimaleDiOggi, percentualeRm, pesoDellaSerie, rigaInFuoco } from '../../core/utils/percentuale-rm.util';
+import { PuntoScala } from '../../core/utils/scala-carichi.util';
+import { ScalaCarichiComponent } from '../../components/scala-carichi/scala-carichi.component';
 import { scontoPausa } from '../../core/utils/pausa.util';
 import { PUNTI_STORIA, storiaDelMassimale } from '../../core/utils/storia-massimale.util';
 import { WeeklyProgressService } from '../../services/weekly-progress.service';
@@ -93,7 +95,7 @@ interface FoglioCarico {
   imports: [
     IonButton, IonFooter, TastoDirective, IonSegment, IonSegmentButton, IonSpinner, ...IONIC_PAGE, IonModal,
     IonRadioGroup, IonRadio, IonItem, IonList, IonLabel, CommonModule, FormsModule, IconaComponent, NumberWheelComponent,
-    ResocontoComponent, StoriaMassimaleComponent
+    ResocontoComponent, StoriaMassimaleComponent, ScalaCarichiComponent
   ],
   templateUrl: './scheda-detail.component.html'
 })
@@ -1694,9 +1696,22 @@ export class SchedaDetailComponent implements OnInit, AfterViewInit, OnDestroy {
     return fonteDelCarico(opzioni, row.load, row.loadPlaceholder) ?? (opzioni.length ? 'scegli il peso' : null);
   }
 
-  /** Le fonti di un peso nel foglio: quelle della sua serie, nessuna se non ce n'e' una da fare. */
+  /**
+   * Le fonti di un peso nel foglio: quelle della sua serie, nessuna se non ce n'e' una da fare. Dal peso
+   * piu' alto al piu' basso, come stanno sulla scala: l'ordine in cui le guarda la card (l'ultima volta
+   * per prima) non e' quello in cui si confrontano.
+   */
   opzioniDelFoglio(f: FoglioCarico): OpzioneCarico[] {
-    return f.serie === null ? [] : this.opzioniCarico(f.vm, f.serie);
+    if (f.serie === null) return [];
+    return [...this.opzioniCarico(f.vm, f.serie)].sort((a, b) => b.kg - a.kg);
+  }
+
+  /** I pesi del foglio per la scala: solo quelli che hanno una percentuale, col peso nella ruota segnato. */
+  puntiScala(f: FoglioCarico): PuntoScala[] {
+    const scelta = this.sceltaCarico(f);
+    return this.opzioniDelFoglio(f)
+      .filter(o => o.percento !== null)
+      .map(o => ({ chiave: o.chiave, kg: o.kg, percento: o.percento!, scelto: o.chiave === scelta }));
   }
 
   /**

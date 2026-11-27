@@ -67,7 +67,7 @@ describe('opzioniCarico', () => {
   it('sopra la soglia la stima avvisa che si allarga', () => {
     const rm = opzioniCarico(dati({ ripetizioni: 14 })).find(o => o.chiave === 'rm')!;
     expect(rm.avviso).toContain('Sopra le 12 ripetizioni');
-    expect(opzioniCarico(dati({ ripetizioni: 12 })).find(o => o.chiave === 'rm')!.avviso).toBeNull();
+    expect(opzioniCarico(dati({ ripetizioni: 12, ultima: null })).find(o => o.chiave === 'rm')!.avviso).toBeNull();
   });
 
   it('senza massimale, o oltre la tabella, la stima non c\'e\'', () => {
@@ -78,7 +78,7 @@ describe('opzioniCarico', () => {
 
   it('il programma dice quante ne escono, e avvisa se il piano ne chiede altre', () => {
     const p = opzioniCarico(dati()).find(o => o.chiave === 'programma')!;
-    expect(p).toMatchObject({ titolo: 'Dal programma, 85%', dettaglio: 'Circa 6 ripetizioni', kg: 40.5, breve: 'programma 85%' });
+    expect(p).toMatchObject({ titolo: 'Dal programma, 85%', dettaglio: 'Più pesante dell\'ultima volta', kg: 40.5, breve: 'programma 85%' });
     expect(p.avviso).toBe('Oggi il piano ne chiede 10: a questo peso ne escono circa 6.');
   });
 
@@ -209,7 +209,7 @@ describe('opzioniCarico — cluster e ordine', () => {
     expect(rm.dettaglio).toBe(`${riga(10).percent}% del massimale stimato, −5% per l'ordine`);
     expect(rm.breve).toBe(`${riga(10).percent}% del massimale, −5% per l'ordine`);
     expect(programma.kg).toBe(Math.round(40.5 * 0.95 * 2) / 2);
-    expect(programma.dettaglio).toBe('Circa 6 ripetizioni, −5% per l\'ordine');
+    expect(programma.dettaglio).toBe('Più pesante dell\'ultima volta, −5% per l\'ordine');
     expect(programma.breve).toBe('programma 85%, −5% per l\'ordine');
     // L'ultima volta e' un fatto: il peso resta, e la ragione si legge.
     expect(ultima.kg).toBe(33);
@@ -231,7 +231,7 @@ describe('opzioniCarico — un passo avanti o indietro', () => {
     expect(opzioni[1]).toEqual({
       chiave: 'piu', titolo: 'Prova di più',
       dettaglio: 'Il 03/10 sono uscite tutte le ripetizioni: un passo in più',
-      avviso: null, kg: 35.5, breve: '+2,5 kg sul 03/10'
+      avviso: null, kg: 35.5, breve: '+2,5 kg sul 03/10', percento: 75, ripAttese: 10
     });
     // La serie 2 era a 32,5: il passo e' sul suo peso.
     expect(opzioniCarico(dati({ serie: 1, piu: true }))[1].kg).toBe(35);
@@ -253,7 +253,7 @@ describe('opzioniCarico — un passo avanti o indietro', () => {
     expect(ripresa).toEqual({
       chiave: 'ripresa', titolo: 'Per ripartire',
       dettaglio: 'Il peso del 03/10 meno il 5%: si riprende il ritmo',
-      avviso: null, kg: Math.round(33 * 0.95 * 2) / 2, breve: '−5% sul 03/10'
+      avviso: null, kg: Math.round(33 * 0.95 * 2) / 2, breve: '−5% sul 03/10', percento: 32, ripAttese: 26
     });
     // L'ultima volta resta un fatto, con la ragione per cui oggi potrebbe pesare di piu'.
     expect(ultima).toMatchObject({ kg: 33, avviso: 'Dopo una pausa: con questo peso potrebbero uscirne meno.' });
@@ -282,5 +282,110 @@ describe('opzioniCarico — un passo avanti o indietro', () => {
     expect(fonteDelCarico(conPasso, '', '35,5')).toBe('+2,5 kg sul 03/10');
     const conPausa = opzioniCarico(dati({ pausa: 10 }));
     expect(fonteDelCarico(conPausa, '', '29,5')).toBe('−10% sul 03/10');
+  });
+});
+
+/**
+ * Il foglio del massimale mette i pesi in scala: ognuno con la sua percentuale
+ * e le ripetizioni che ne escono. Il caso e' quello delle Trazioni: 112,2 x 5
+ * l'ultima volta (massimale 126), quattro serie da 5, programma all'85%.
+ */
+describe('opzioniCarico — percentuale e ripetizioni attese', () => {
+  const trazioni = (extra: Partial<DatiCarico> = {}) => dati({
+    ultima: { data: '23/11', serie: [{ load: '112,2', reps: '5' }] },
+    ripetizioni: 5, previste: 5, rmRows: rmTable(126),
+    programma: { percent: 85, load: 107, reps: 6 }, piu: true, ...extra
+  });
+  const per = (o: ReturnType<typeof opzioniCarico>, chiave: string) => o.find(x => x.chiave === chiave)!;
+
+  it('ogni peso dice dov\'e\' sul massimale e quante ripetizioni ne escono', () => {
+    const o = opzioniCarico(trazioni());
+    expect(per(o, 'ultima')).toMatchObject({ kg: 112.2, percento: 89, ripAttese: 5 });
+    expect(per(o, 'piu')).toMatchObject({ kg: 114.7, percento: 91, ripAttese: 4 });
+    expect(per(o, 'programma')).toMatchObject({ kg: 107, percento: 85, ripAttese: 6 });
+  });
+
+  it('senza massimale non c\'e\' ne\' percentuale ne\' ripetizioni', () => {
+    const [ultima] = opzioniCarico(dati({ rmRows: null }));
+    expect(ultima).toMatchObject({ percento: null, ripAttese: null });
+  });
+
+  it('sopra il massimale la percentuale supera il cento e le ripetizioni non si dicono', () => {
+    const [ultima] = opzioniCarico(trazioni({ ultima: { data: '23/11', serie: [{ load: '130', reps: '1' }] }, piu: false }));
+    expect(ultima).toMatchObject({ percento: 103, ripAttese: null });
+  });
+
+  describe('"Per N ripetizioni" quando e\' lo stesso peso dell\'ultima volta', () => {
+    it('si unisce all\'ultima volta: una riga sola, che dice anche per quante vale', () => {
+      // 126 per 5 ripetizioni sono 112: a 112,2 e' lo stesso peso.
+      const o = opzioniCarico(trazioni());
+      expect(o.map(x => x.chiave)).toEqual(['ultima', 'piu', 'programma']);
+      expect(per(o, 'ultima').dettaglio).toBe('Serie 1 del 23/11, 5 ripetizioni · è anche il peso per 5');
+    });
+
+    it('entro mezzo chilo si unisce, oltre no', () => {
+      const con = (kg: string) => opzioniCarico(trazioni({ ultima: { data: '23/11', serie: [{ load: kg, reps: '5' }] }, piu: false })).map(x => x.chiave);
+      expect(con('112,5')).toEqual(['ultima', 'programma']);
+      expect(con('111,5')).toEqual(['ultima', 'programma']);
+      expect(con('111,4')).toEqual(['ultima', 'rm', 'programma']);
+      expect(con('110')).toEqual(['ultima', 'rm', 'programma']);
+    });
+
+    it('con uno sconto (ordine o pausa) non si unisce: sono due pesi diversi per ragioni diverse', () => {
+      // 112 -5% = 106,5: se l'ultima volta fosse stata 106,5 sarebbe lo stesso numero, ma non la stessa cosa.
+      const fatica = { percento: 5, motivo: 'Oggi arrivi qui con un esercizio di Dorso in più' };
+      const o = opzioniCarico(trazioni({ ultima: { data: '23/11', serie: [{ load: '106,5', reps: '5' }] }, piu: false, fatica }));
+      expect(o.map(x => x.chiave)).toEqual(['ultima', 'rm', 'programma']);
+    });
+
+    it('dal secondo blocco di un cluster resta "Come il primo blocco"', () => {
+      const o = opzioniCarico(trazioni({
+        ultima: { data: '23/11', serie: [{ load: '112', reps: '5', blocchi: [{ load: '112', reps: '5' }, { load: '112', reps: '5' }] }] },
+        blocco: 2, primoBlocco: 5, piu: false
+      }));
+      expect(o.map(x => x.titolo)).toContain('Come il primo blocco');
+    });
+  });
+
+  describe('l\'avviso quando a quel peso escono meno ripetizioni del piano', () => {
+    it('"Prova di più" lo dice: 114,7 kg sono circa 4 ripetizioni, il piano ne chiede 5', () => {
+      expect(per(opzioniCarico(trazioni()), 'piu').avviso).toBe('Oggi il piano ne chiede 5: a questo peso ne escono circa 4.');
+    });
+
+    it('anche "Come l\'ultima volta", se oggi il piano ne chiede di piu\'', () => {
+      expect(per(opzioniCarico(trazioni({ previste: 8, piu: false })), 'ultima').avviso)
+        .toBe('Oggi il piano ne chiede 8: a questo peso ne escono circa 5.');
+    });
+
+    it('con una ripetizione di scarto sul piano si avvisa, a pari ripetizioni o con piu\' ripetizioni no', () => {
+      expect(per(opzioniCarico(trazioni({ piu: false })), 'ultima').avviso).toBeNull();
+      expect(per(opzioniCarico(trazioni({ previste: 3, piu: false })), 'ultima').avviso).toBeNull();
+      expect(per(opzioniCarico(trazioni({ previste: null })), 'piu').avviso).toBeNull();
+    });
+
+    it('la fatica dell\'ordine ha la precedenza: la ragione detta e\' quella', () => {
+      const fatica = { percento: 5, motivo: 'Oggi arrivi qui con un esercizio di Dorso in più' };
+      expect(per(opzioniCarico(trazioni({ previste: 8, piu: false, fatica })), 'ultima').avviso)
+        .toBe('Oggi arrivi qui con un esercizio di Dorso in più: con questo peso potrebbero uscirne meno.');
+    });
+
+    it('sui cluster non si dice: le ripetizioni sono del blocco e il peso della serie', () => {
+      const o = opzioniCarico(trazioni({ previste: 12, piu: false, blocco: 1 }));
+      expect(per(o, 'ultima').avviso).toBeNull();
+    });
+  });
+
+  describe('il programma dice come sta rispetto all\'ultima volta', () => {
+    const programma = (extra: Partial<DatiCarico>) => per(opzioniCarico(trazioni({ piu: false, ...extra })), 'programma').dettaglio;
+
+    it('piu\' leggero, piu\' pesante o uguale', () => {
+      expect(programma({})).toBe('Più leggero dell\'ultima volta');
+      expect(programma({ programma: { percent: 95, load: 120, reps: 2 } })).toBe('Più pesante dell\'ultima volta');
+      expect(programma({ programma: { percent: 89, load: 112, reps: 5 } })).toBe('Come l\'ultima volta');
+    });
+
+    it('senza un\'ultima volta dice cos\'e\'', () => {
+      expect(programma({ ultima: null })).toBe('La percentuale scelta per tutto il programma');
+    });
   });
 });

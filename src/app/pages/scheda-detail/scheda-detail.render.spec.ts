@@ -769,7 +769,9 @@ describe('SchedaDetailComponent — accessibilita\' delle testate (disegno vero)
       const f = await apri(tutti('.exslide')[0], aggiorna);
       expect(pulito(f.querySelector('.sheet-title'))).toBe('Massimale — Panca piana');
       expect(pulito(f.querySelector('.massimale-kg'))).toBe('93 kg');
-      expect(pulito(f.querySelector('.massimale-da'))).toBe('Da 80 × 6 del 03/10 · +6 kg dalla volta prima');
+      // Il numero grande dice cos'e': il massimale per una ripetizione, non un peso da usare.
+      expect(pulito(f.querySelector('.massimale-titolo'))).toBe('Massimale per 1 ripetizione');
+      expect(pulito(f.querySelector('.massimale-da'))).toBe('Una stima, non un peso da caricare. Da 80 × 6 del 03/10 · +6 kg dalla volta prima');
     });
 
     it('con due sedute niente linea: la riga sopra dice gia\' la differenza', async () => {
@@ -805,14 +807,61 @@ describe('SchedaDetailComponent — accessibilita\' delle testate (disegno vero)
       expect(c.foglioCarico!.serie).toBe(1);
       expect(pulito(f.querySelector('.scelta-gruppo'))).toBe('Che peso metto · serie 2');
       const voci = Array.from(f.querySelectorAll('ion-radio-group ion-item.scelta-opt'));
-      expect(voci.map(v => pulito(v.querySelector('.carico-titolo')))).toEqual(['Come l\'ultima volta', 'Per 10 ripetizioni', 'Dal programma, 85%']);
-      expect(pulito(voci[1].querySelector('.carico-dettaglio'))).toMatch(/^\d+% del massimale stimato$/);
+      // Dal peso piu' alto al piu' basso, come sulla scala; ognuno con la sua percentuale e le ripetizioni che ne escono.
+      expect(voci.map(v => pulito(v.querySelector('.carico-titolo')))).toEqual(['Come l\'ultima volta', 'Dal programma, 85%', 'Per 10 ripetizioni']);
+      expect(voci.map(v => pulito(v.querySelector('.carico-meta')))).toEqual(['86% · circa 6 rip.', '85% · circa 6 rip.', '75% · circa 10 rip.']);
+      expect(pulito(voci[2].querySelector('.carico-dettaglio'))).toMatch(/^\d+% del massimale stimato$/);
+      // Ultima volta 80 x 6: oggi il piano ne chiede 10, e a 80 kg ne escono circa 6.
+      expect(pulito(voci[0].querySelector('.carico-avviso'))).toBe('Oggi il piano ne chiede 10: a questo peso ne escono circa 6.');
       expect((f.querySelector('ion-radio-group') as any).value).toBe('ultima');
 
       c.scegliCarico(c.foglioCarico!, 'programma');
       aggiorna();
       expect(c.exercises[0].rows[1].load).toBe('79');
       expect(c.foglioCaricoAperto).toBe(false);
+    });
+
+    it('i pesi stanno anche su una scala dall\'80 al 100%, col peso nella ruota segnato', async () => {
+      const { c, tutti, aggiorna } = await monta('slider', true, false, undefined, undefined, storia, 85);
+      c.exercises[0].activeRow = 1;
+      aggiorna();
+      const f = await apri(tutti('.exslide')[0], aggiorna);
+      // 80 (86%), 79 (85%) e 70 (75%) sul massimale di 93: il 75% e' sotto l'80, la riga comincia al 75.
+      const scala = f.querySelector('app-scala-carichi .scala-carichi')!;
+      expect(scala).not.toBeNull();
+      expect(Array.from(scala.querySelectorAll('.scala-punto')).length).toBe(3);
+      expect(Array.from(scala.querySelectorAll('.scala-kg:not(.scala-kg-massimale)')).map(pulito)).toEqual(['70', '79', '80']);
+      expect(pulito(scala.querySelector('.scala-kg-massimale'))).toBe('93');
+      expect(Array.from(scala.querySelectorAll('.scala-assi span')).map(pulito)).toEqual(['75%', '100% del massimale']);
+      // Il peso nella ruota e' quello dell'ultima volta (80).
+      expect(pulito(scala.querySelector('.scala-kg.scelto'))).toBe('80');
+      // Sta fra il titolo del gruppo e le righe.
+      expect(f.querySelector('.scelta-gruppo')!.nextElementSibling!.tagName.toLowerCase()).toBe('app-scala-carichi');
+    });
+
+    it('lo stesso peso dell\'ultima volta e della stima e\' una riga sola, e lo dice', async () => {
+      const { c, tutti, aggiorna } = await monta('slider', true, false, undefined, undefined, storia, 85);
+      // 6 ripetizioni nella ruota: a 6 il peso per il massimale e' 80, quello sollevato l'ultima volta.
+      c.setReps(c.exercises[0], 1, 6);
+      c.exercises[0].activeRow = 1;
+      aggiorna();
+      const f = await apri(tutti('.exslide')[0], aggiorna);
+      const voci = Array.from(f.querySelectorAll('ion-radio-group ion-item.scelta-opt'));
+      expect(voci.map(v => pulito(v.querySelector('.carico-titolo')))).toEqual(['Come l\'ultima volta', 'Dal programma, 85%']);
+      expect(pulito(voci[0].querySelector('.carico-dettaglio'))).toBe('Serie 2 del 03/10, 6 ripetizioni · è anche il peso per 6');
+      // E la scala ha un punto per riga.
+      expect(f.querySelectorAll('.scala-punto').length).toBe(2);
+    });
+
+    it('il programma dice com\'e\' rispetto all\'ultima volta', async () => {
+      const { c, tutti, aggiorna } = await monta('slider', true, false, undefined, undefined, storia, 85);
+      c.exercises[0].activeRow = 1;
+      aggiorna();
+      const f = await apri(tutti('.exslide')[0], aggiorna);
+      const programma = Array.from(f.querySelectorAll('ion-radio-group ion-item.scelta-opt'))
+        .find(v => pulito(v.querySelector('.carico-titolo')).startsWith('Dal programma'))!;
+      // 79 contro 80: sotto il mezzo chilo di differenza dice "come", sopra "piu' leggero": qui 1 kg.
+      expect(pulito(programma.querySelector('.carico-dettaglio'))).toBe('Più leggero dell\'ultima volta');
     });
 
     it('se oggi le croci vengono dopo la panca e allora no, il foglio lo dice e i pesi stimati scendono', async () => {
@@ -825,8 +874,10 @@ describe('SchedaDetailComponent — accessibilita\' delle testate (disegno vero)
       expect(pulito(croci.querySelector('.massimale-fatica')))
         .toBe('Oggi arrivi qui con un esercizio di Petto in più rispetto al 03/10: i pesi stimati scendono del 5%.');
       const voci = Array.from(croci.querySelectorAll('ion-radio-group ion-item.scelta-opt'));
-      expect(pulito(voci[1].querySelector('.carico-dettaglio'))).toMatch(/^\d+% del massimale stimato, −5% per l'ordine$/);
-      expect(pulito(voci[0].querySelector('.carico-avviso'))).toContain('con questo peso potrebbero uscirne meno');
+      const per = voci.find(v => pulito(v.querySelector('.carico-titolo')).startsWith('Per '))!;
+      const ultima = voci.find(v => pulito(v.querySelector('.carico-titolo')) === 'Come l\'ultima volta')!;
+      expect(pulito(per.querySelector('.carico-dettaglio'))).toMatch(/^\d+% del massimale stimato, −5% per l'ordine$/);
+      expect(pulito(ultima.querySelector('.carico-avviso'))).toContain('con questo peso potrebbero uscirne meno');
     });
 
     it('con la fatica dell\'ordine il passo in piu\' non c\'e\', anche con tutte le ripetizioni uscite', async () => {
@@ -894,7 +945,7 @@ describe('SchedaDetailComponent — accessibilita\' delle testate (disegno vero)
       const { tutti, aggiorna } = await monta('slider', true, false, undefined, undefined, blocchi);
       const f = await apri(tutti('.exslide')[0], aggiorna);
       expect(pulito(f.querySelector('.massimale-kg'))).toBe('74,5 kg');
-      expect(pulito(f.querySelector('.massimale-da'))).toBe('Da 60 × 8, primo blocco, del 03/10');
+      expect(pulito(f.querySelector('.massimale-da'))).toBe('Una stima, non un peso da caricare. Da 60 × 8, primo blocco, del 03/10');
     });
 
     it('con le serie tutte fatte resta il massimale, senza pesi da scegliere', async () => {
