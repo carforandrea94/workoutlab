@@ -538,16 +538,24 @@
       <div class="bottomsheet scelta-sheet carico-sheet" *ngIf="foglioCarico as f">
         <p class="confirmtext sheet-title">Massimale — {{ f.vm.ex.name }}</p>
 
-        <div class="massimale" *ngIf="f.vm.insight?.oneRm as m; else nessunaStima">
+        <!-- Il massimale di oggi: quello dell'ultima volta, alzato dalle serie fatte oggi (vedi percentuale-rm.util).
+             Tutto il foglio parte da qui, come le percentuali sulla card. -->
+        <div class="massimale" *ngIf="massimaleOggi(f.vm) as m; else nessunaStima">
           <div class="massimale-testa">
             <span class="massimale-titolo">Massimale per 1 ripetizione</span>
             <span class="massimale-kg">{{ kg(m.value) }} kg</span>
           </div>
-          <p class="massimale-da">
-            Una stima, non un peso da caricare. Da {{ kg(m.load) }} × {{ m.reps }}<ng-container *ngIf="m.blocco">, primo blocco,</ng-container><ng-container *ngIf="m.data"> del {{ m.data }}</ng-container><ng-container *ngIf="m.delta"> · {{ conSegno(m.delta) }} kg dalla volta prima</ng-container>
+          <p class="massimale-da" *ngIf="m.daOggi as d; else daUltimaVolta">
+            Una stima, non un peso da caricare. Da {{ kg(d.load) }} × {{ d.reps }} di oggi<ng-container *ngIf="f.vm.insight?.oneRm as p"> · l'ultima volta {{ kg(p.value) }} kg</ng-container>
           </p>
-          <!-- L'ordine e' cambiato: oggi si arriva qui piu' stanchi di allora (vedi fatica.util). -->
-          <p class="carico-avviso massimale-fatica" *ngIf="f.vm.insight?.fatica as fa">
+          <ng-template #daUltimaVolta>
+            <p class="massimale-da" *ngIf="f.vm.insight?.oneRm as o">
+              Una stima, non un peso da caricare. Da {{ kg(o.load) }} × {{ o.reps }}<ng-container *ngIf="o.blocco">, primo blocco,</ng-container><ng-container *ngIf="o.data"> del {{ o.data }}</ng-container><ng-container *ngIf="o.delta"> · {{ conSegno(o.delta) }} kg dalla volta prima</ng-container>
+            </p>
+          </ng-template>
+          <!-- L'ordine e' cambiato: oggi si arriva qui piu' stanchi di allora (vedi fatica.util). Non piu' se oggi
+               una serie ha gia' superato l'ultima volta: il massimale e' misurato, non stimato. -->
+          <p class="carico-avviso massimale-fatica" *ngIf="!m.daOggi && f.vm.insight?.fatica as fa">
             <app-icona name="information-circle" [size]="13"></app-icona>{{ fa.motivo }}: i pesi stimati scendono del {{ fa.percento }}%.
           </p>
           <!-- Le ultime sedute in fila: dicono se si sta salendo, piu' della differenza con la volta prima. -->
@@ -557,16 +565,12 @@
         <ng-template #nessunaStima>
           <p class="massimale-vuoto">{{ testoSenzaMassimale(f.vm) }}</p>
         </ng-template>
-        <!-- Una serie di oggi ha superato il massimale: le percentuali sulla card partono da questo. -->
-        <p class="massimale-oggi" *ngIf="massimaleAlzato(f.vm) as o">
-          Oggi {{ kg(o.value) }} kg, da {{ kg(o.load) }} × {{ o.reps }}: le percentuali sulla card partono da qui.
-        </p>
 
         <ng-container *ngIf="opzioniDelFoglio(f) as opzioni">
           <ng-container *ngIf="opzioni.length">
             <p class="scelta-gruppo">Che peso metto · serie {{ (f.serie ?? 0) + 1 }}<ng-container *ngIf="bloccoDelFoglio(f) as k">, blocco {{ k }}</ng-container></p>
             <!-- I pesi in scala: l'ordine e la distanza si vedono, senza leggere quattro percentuali. -->
-            <app-scala-carichi [punti]="puntiScala(f)" [massimale]="f.vm.insight?.oneRm?.value ?? null"></app-scala-carichi>
+            <app-scala-carichi [punti]="puntiScala(f)" [massimale]="massimaleOggi(f.vm)?.value ?? null"></app-scala-carichi>
             <ion-radio-group *ngIf="!setsLocked; else soloDaLeggere" [value]="sceltaCarico(f)"
               (ionChange)="scegliCarico(f, $event.detail.value, $event.detail.event)"
               [attr.aria-label]="'Carico della serie ' + ((f.serie ?? 0) + 1) + ' di ' + f.vm.ex.name">

@@ -1664,28 +1664,42 @@ export class SchedaDetailComponent implements OnInit, AfterViewInit, OnDestroy {
         } : null,
         ripetizioni: this.numero(b.reps) ?? this.numero(b.ripPlaceholder),
         primoBlocco: k > 0 ? (this.numero(row.blocks![0].reps) ?? this.numero(row.blocks![0].ripPlaceholder)) : null,
-        rmRows: vm.insight?.rmRows ?? null,
-        programma: vm.insight?.programLoad ?? null,
         previste: numeroSevero(b.ripPlaceholder),
         soglia: this.rmSoftOver,
-        fatica: vm.insight?.fatica ?? null,
-        pausa: this.pausa
+        ...this.baseDelFoglio(vm)
       });
     }
     return opzioniCarico({
       serie,
       ultima: vm.ultima,
       ripetizioni: this.numero(row.reps) ?? this.numero(row.ripPlaceholder),
-      rmRows: vm.insight?.rmRows ?? null,
-      programma: vm.insight?.programLoad ?? null,
       previste: numeroSevero(row.ripPlaceholder),
       soglia: this.rmSoftOver,
-      fatica: vm.insight?.fatica ?? null,
       // Il passo avanti vale per le serie del piano: una aggiunta a mano non
       // ha ripetizioni da raggiungere.
       piu: vm.passo === 'piu' && !row.extra,
-      pausa: this.pausa
+      ...this.baseDelFoglio(vm)
     });
+  }
+
+  /**
+   * Da dove partono i pesi stimati del foglio: la tabella dei massimali, il peso del programma e gli sconti
+   * per l'ordine e la pausa. Di norma e' il massimale dell'ultima volta. Se una serie di oggi lo ha superato,
+   * il massimale e' quello di oggi, e con lui tabella e programma: restare su quello di una seduta fa
+   * (17,5 kg) quando oggi si sono fatte 12 ripetizioni con 20 (29 kg) proponeva pesi che non c'entrano.
+   * Gli sconti servivano a stimare come si sta, e oggi lo si e' gia' misurato: si tolgono.
+   */
+  private baseDelFoglio(vm: ExerciseVM) {
+    const m = this.massimaleOggi(vm);
+    if (m?.daOggi) {
+      return { rmRows: rmTable(m.value), programma: this.caricoDiProgramma(m.value), fatica: null, pausa: 0 };
+    }
+    return {
+      rmRows: vm.insight?.rmRows ?? null,
+      programma: vm.insight?.programLoad ?? null,
+      fatica: vm.insight?.fatica ?? null,
+      pausa: this.pausa
+    };
   }
 
   /** La riga in cima alla serie: da dove viene il numero nella ruota. */
@@ -1733,12 +1747,6 @@ export class SchedaDetailComponent implements OnInit, AfterViewInit, OnDestroy {
    */
   massimaleOggi(vm: ExerciseVM): MassimaleDiOggi | null {
     return massimaleDiOggi(vm.insight?.oneRm?.value, vm.rows);
-  }
-
-  /** Oggi un massimale piu' alto di quello dell'ultima volta: il valore e la serie da cui viene. */
-  massimaleAlzato(vm: ExerciseVM): { value: number; load: number; reps: number } | null {
-    const m = this.massimaleOggi(vm);
-    return m?.daOggi ? { value: m.value, load: m.daOggi.load, reps: m.daOggi.reps } : null;
   }
 
   /**
